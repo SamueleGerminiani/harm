@@ -4,8 +4,9 @@
 
 ## HARM
 
-  
+The official repo of the Hint-Based AsseRtion Miner
 
+<img src="icon.png" alt="drawing" width="200"/>
   
 
 ## Table of contents
