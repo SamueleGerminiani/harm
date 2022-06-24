@@ -1,0 +1,25 @@
+<harm>
+	<context name="default">
+                  <prop exp="busy"   loc="a" />
+                  <prop exp="wb_ack"   loc="a" />
+                  <prop exp="wb_err"   loc="a" />
+                  <prop exp="wb_stall" loc="a" />
+                  <prop exp="request"  loc="a" />
+                  <prop exp="write"    loc="a" />
+                  <prop exp="busy"   loc="a" />
+                  <prop exp="wb_ack"   loc="a" />
+                  <prop exp="wb_err"   loc="a" />
+                  <prop exp="wb_stall" loc="a" />
+                  <prop exp="request"  loc="a" />
+                  <prop exp="write"    loc="a" />
+                  <prop exp="busy"     loc="c" />
+                  <prop exp="write"    loc="c" />
+                  <prop exp="wb_stb"   loc="c" />
+                  <prop exp="wb_we"    loc="c" />
+                  <prop exp="ready_from_bus" loc="c" />
+
+                  <template bdtLimits="3D,3W,3A,0E,R" exp="G({..#1&..}|-> X(P0))" />
+
+	</context>
+</harm>
+

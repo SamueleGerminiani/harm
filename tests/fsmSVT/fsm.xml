@@ -1,0 +1,21 @@
+<harm>
+	<context name="default">
+
+		<prop exp="intf::a" loc="a"/>
+		<prop exp="intf::out3" loc="c"/>
+		<prop exp="intf::out2" loc="c"/>
+		<prop exp="intf::out1" loc="c"/>
+
+        <numeric exp="DUT::state"/>
+
+		<template bdtLimits="3D,2W,3A,0.1E,R,N" exp="G({..#1&..}|-> (P0))" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

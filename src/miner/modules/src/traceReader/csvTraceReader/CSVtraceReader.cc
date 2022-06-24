@@ -1,0 +1,140 @@
+#include "CSVtraceReader.hh"
+#include "csv.hpp"
+#include "exp.hh"
+#include "expUtils/VarType.hh"
+#include "expUtils/expUtils.hh"
+#include "message.hh"
+#include "minerUtils.hh"
+#include "varDeclarationParser.hh"
+
+#include <bitset>
+#include <cctype>
+#include <iostream>
+
+namespace harm {
+using namespace csv;
+using namespace expression;
+
+CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files)
+    : TraceReader(files, "") {}
+
+CSVtraceReader::CSVtraceReader(const std::string &file)
+    : TraceReader(std::vector<std::string>({file}), "") {}
+DataType toDataType(std::string name, std::string type, uint8_t size) {
+  DataType ret;
+
+  auto type_size = variableTypeFromString(type, size);
+  ret.setName(name);
+  ret.setType(type_size.first, type_size.second);
+
+  return ret;
+}
+std::pair<std::string, std::pair<std::string, uint8_t>>
+parseVariable(std::string varDecl) {
+  hparser::VarDeclarationParserHandler listenerLocDec;
+  listenerLocDec.addErrorMessage("\t\t\tIn declaration: " + varDecl);
+  antlr4::ANTLRInputStream inputLocDec(varDecl);
+  varDeclarationLexer lexerLocDec(&inputLocDec);
+  CommonTokenStream tokensLocDec(&lexerLocDec);
+  varDeclarationParser parserPrecLocDec(&tokensLocDec);
+  tree::ParseTree *treeLocDec = parserPrecLocDec.file();
+  tree::ParseTreeWalker::DEFAULT.walk(&listenerLocDec, treeLocDec);
+
+  return listenerLocDec.getVarDeclaration();
+}
+Trace *CSVtraceReader::readTrace(const std::string file) {
+
+  std::vector<DataType> vars_dt;
+  std::vector<VarType> varIndexToBucket;
+  std::vector<BooleanVariable *> boolVars;
+  std::vector<NumericVariable *> numVars;
+  std::vector<LogicVariable *> logVars;
+  messageInfo("Parsing " + file);
+
+  CSVFormat format;
+  format.delimiter(';');
+  CSVReader reader(file, format);
+  for (auto cn : reader.get_col_names()) {
+    auto var = parseVariable(cn);
+    vars_dt.push_back(
+        toDataType(var.first, var.second.first, var.second.second));
+
+    if (vars_dt.back().getType() == VarType::Bool) {
+      varIndexToBucket.push_back(VarType::Bool);
+    } else if (vars_dt.back().getType() == VarType::Numeric) {
+      varIndexToBucket.push_back(VarType::Numeric);
+    } else if (vars_dt.back().getType() == VarType::SLogic) {
+      varIndexToBucket.push_back(VarType::SLogic);
+    } else if (vars_dt.back().getType() == VarType::ULogic) {
+      varIndexToBucket.push_back(VarType::ULogic);
+    } else {
+      messageError("Unknown var type!");
+    }
+  }
+
+  size_t number_of_entries = 0;
+  std::string line;
+  std::ifstream myfile(file);
+  std::getline(myfile, line);
+  while (std::getline(myfile, line)) {
+    line.erase(remove_if(line.begin(), line.end(), isspace), line.end());
+    if (!std::isdigit(line[0]) && !(line[0] == '-')) {
+      break;
+    }
+    ++number_of_entries;
+  }
+  messageErrorIf(number_of_entries <= 1, "No data found in csv file:" + file);
+
+  Trace *trace = new Trace(vars_dt, number_of_entries);
+
+  for (auto &var : vars_dt) {
+    if (var.getType() == VarType::Bool) {
+      boolVars.push_back(trace->getBooleanVariable(var.getName()));
+    } else if (var.getType() == VarType::Numeric) {
+      numVars.push_back(trace->getNumericVariable(var.getName()));
+    } else {
+      logVars.push_back(trace->getLogicVariable(var.getName()));
+    }
+  }
+
+  size_t time = 0;
+  for (CSVRow &row : reader) {
+    size_t bfieldIndex = 0;
+    size_t nfieldIndex = 0;
+    size_t lfieldIndex = 0;
+    size_t fieldIndex = 0;
+    for (CSVField &field : row) {
+      if (varIndexToBucket[fieldIndex] == VarType::Bool) {
+        boolVars[bfieldIndex++]->assign(time, field.get<bool>());
+      } else if (varIndexToBucket[fieldIndex] == VarType::Numeric) {
+        if (numVars[nfieldIndex]->getType().second == 64) {
+          numVars[nfieldIndex++]->assign(time, field.get<double>());
+        } else {
+          numVars[nfieldIndex++]->assign(time, field.get<float>());
+        }
+      } else {
+        if (logVars[lfieldIndex]->getType().first == VarType::SLogic) {
+          logVars[lfieldIndex++]->assign(time, field.get<int64_t>());
+        } else {
+          logVars[lfieldIndex++]->assign(time, field.get<uint64_t>());
+        }
+      }
+      fieldIndex++;
+    }
+    time++;
+  }
+
+  for (auto i : boolVars) {
+    delete i;
+  }
+  for (auto i : logVars) {
+    delete i;
+  }
+  for (auto i : numVars) {
+    delete i;
+  }
+
+  return trace;
+}
+
+} // namespace harm

@@ -1,0 +1,53 @@
+<harm>
+	<context name="default">
+
+		<prop exp="busy" loc="c"/>
+		<prop exp="reset" loc="c"/>
+		<prop exp="error_from_bus" loc="c"/>
+		<prop exp="write" loc="c"/>
+		<prop exp="request" loc="c"/>
+		<prop exp="wb_ack" loc="c"/>
+		<prop exp="wb_stall" loc="c"/>
+		<prop exp="wb_err" loc="c"/>
+		<prop exp="wb_cyc" loc="c"/>
+		<prop exp="wb_stb" loc="c"/>
+		<prop exp="wb_we" loc="c"/>
+		<prop exp="ready_from_bus" loc="c"/>
+		<prop exp="wb_rst" loc="c"/>
+
+		<prop exp="busy" loc="a"/>
+		<prop exp="reset" loc="a"/>
+		<prop exp="error_from_bus" loc="a"/>
+		<prop exp="write" loc="a"/>
+		<prop exp="request" loc="a"/>
+		<prop exp="wb_ack" loc="a"/>
+		<prop exp="wb_stall" loc="a"/>
+		<prop exp="wb_err" loc="a"/>
+		<prop exp="wb_cyc" loc="a"/>
+		<prop exp="wb_stb" loc="a"/>
+		<prop exp="wb_we" loc="a"/>
+		<prop exp="ready_from_bus" loc="a"/>
+		<prop exp="wb_rst" loc="a"/>
+
+
+
+        <!--
+		<numeric clsEffort="0.1" exp="wb_dat_i" loc="bdt"/>
+		<numeric clsEffort="0.1" exp="wb_sel" loc="bdt"/>
+        -->
+        <template bdtLimits="3A,-0.1E,S" exp="G({..[->1]@;..}|-> X(P0))" /> 
+		<template bdtLimits="3A,-0.1E,S,O" exp="G({..&&..}|-> X(P0))" /> 
+		<template bdtLimits="3A,-0.1E,S,O" exp="G({..##1..}|-> X(P0))" /> 
+		<template bdtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" /> 
+		<template bdtLimits="3A,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
+		<template bdtLimits="3A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

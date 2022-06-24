@@ -1,0 +1,28 @@
+<harm>
+	<context name="default"> 
+		<prop exp="v1" loc="a"/>
+		<prop exp="v2" loc="a"/>
+		<prop exp="v3" loc="a"/>
+		<prop exp="v4" loc="a"/>
+		<prop exp="v5" loc="c"/>
+		<prop exp="v6" loc="c"/>
+        <!-- 
+        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v10 U v11))" /> 
+        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v11 U v10))" /> 
+                  <sort name="complexity" exp="1/complexity" threshold="3"/>
+        <template check="1" exp="G({{1 ; v4}} []-> X(v6 R v5))" /> 
+        <template check="1" exp=" G({{(!v4) ##1 (v3) ; v4}} []-> X(v6 R v5))" /> 
+
+
+            -->
+        <template exp="G(v1 => v2)" /> 
+
+                  <filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
+                  <sort name="frequency" exp="atct/traceLength"/> 
+                  <sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
+                  <!--
+                  <sort name="causality" exp="1-afct/traceLength"/>
+                  <sort name="frequency" exp="atct/traceLength"/> 
+                      --> 
+	</context>
+</harm>

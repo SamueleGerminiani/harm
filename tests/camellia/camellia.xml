@@ -1,0 +1,31 @@
+<harm>
+	<context name="default">
+
+		<prop exp="Krdy" loc="a"/>
+		<prop exp="Drdy" loc="a"/>
+		<prop exp="EncDec" loc="a"/>
+
+		<prop exp="RSTn" loc="c"/>
+		<prop exp="EncDec" loc="c"/>
+		<prop exp="!EncDec" loc="c"/>
+		<prop exp="Dvld" loc="c"/>
+		<prop exp="Kvld" loc="c"/>
+
+
+
+        <!--
+		<template bdtLimits="2D,1W,2A,0E,R" exp="G({..##1..}|-> X[7](P0))" /> 
+		<template bdtLimits="2D,1W,2A,0E,R" exp="G({..##1..}|-> X[24](P0))" /> 
+        -->
+		<template bdtLimits="2D,2W,4A,0E,R" exp="G({..#1&..}|-> X(EncDec && X[23]Dvld))" /> 
+		<template bdtLimits="2D,2W,4A,0E,R" exp="G({..#1&..}|-> X(!EncDec && X[23]Dvld))" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

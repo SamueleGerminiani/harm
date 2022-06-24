@@ -1,0 +1,20 @@
+<harm>
+	<context name="default">
+
+
+		<numeric exp="a"/>
+		<numeric exp="b"/>
+		<numeric exp="c"/>
+
+
+        <template bdtLimits="3D,3W,4A,1E,S" exp="G({..##1..}|-> X(con))" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

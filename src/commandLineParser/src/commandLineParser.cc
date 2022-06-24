@@ -1,0 +1,168 @@
+#include "commandLineParser.hh"
+// HARM
+cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
+  try {
+    cxxopts::Options options(argv[0], "");
+    options.positional_help("[optional args]").show_positional_help();
+
+    std::string file = "";
+
+    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
+                          "<FILE>")(
+        "vcd_r", "recursively add signals for all sub-scopes")(
+        "vcd_dir", "set of .vcd trace", cxxopts::value<std::string>(),
+        "<DIRECTORY>")
+        ("vcd_ss",
+                       "select a scope of signals in the .vcd trace (use vcd_r "
+                       "for recursive add)",
+                       cxxopts::value<std::string>(), "<String>")
+        (
+        "csv", ".csv trace file", cxxopts::value<std::string>(), "<FILE>")(
+        "csv_dir", "set of .csv traces files", cxxopts::value<std::string>(),
+        "<DIRECTORY>")("c", ".xml configuration file", cxxopts::value<std::string>(), "<FILE>")( "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+        ("sva"," output assertions in SystemVerilog Assertion format")
+        ("fd", "path to the directory containing faulty traces", cxxopts::value<std::string>(), "<DIRECTORY>")
+        ("ftm", "'fault-on-trace mode', give the path to a file containing comma seperated 'output variables', harm will perform fault coverage by inserting stuck-at faults in the 'outputs' of the trace", cxxopts::value<std::string>(), "<FILE>")
+        ( "max_threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+        ( "testLevel", "test one level of the 3lp (1,2 or 3)", cxxopts::value<size_t>(), "<uint>")
+        ("generate_config", "generate template xml configuration")
+        ("find_min_subset","find the minimum number of assertions covering all faults")
+        ( "dump", "dump assertions to file")
+        ( "dumpStat", "dump statistics to file")
+            ( "dump-no-data", "dump assertions to file without contingency")(
+        "dumpTo", "dump assertions to file with given path",
+        cxxopts::value<std::string>(), "<DIRECTORY>")(
+        "dumpTo-no-data",
+        "dump assertions to file with given path without contingency",
+        cxxopts::value<std::string>(),
+        "<DIRECTORY>")("dont-fill-ass",
+                       "do not populate assertions with values (saves memory)")(
+        "interactive", "enable interactive assertion ranking")(
+        "splitLogic", "split bitvectors into boolean variabes")(
+        "dont-print-ass", "do not print the mined assertions")(
+        "silent", "disable all outputs")("wsilent", "disable all warning")(
+        "isilent", "disable all info")("psilent", "disable all progress bars")(
+        "clsAlg", "type of clustering algorithm; <kmeans>, <kde> kernel density estimation, <hc> hierarchical (default is kmeans)",
+        cxxopts::value<std::string>(), "<String>")("help", "Show options")
+        ("name", "name of this execution (used when dumping statistics)", cxxopts::value<std::string>(), "<String>");
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+    if (((result.count("vcd") == 1 || result.count("vcd_dir") == 1) &&
+         result.count("clk") == 0) ||
+        (result.count("vcd") == 0 && result.count("vcd_dir") == 0 &&
+         result.count("csv") == 0 && result.count("csv_dir") == 0) ||
+        result.count("c") == 0) {
+      std::cout << "Usage:\n harm [--vcd <vcdFile> --clk <clkSignal> | --csv "
+                   "<csvFile>] -c <xmlConfigFile>"
+                << "\n";
+      exit(0);
+    }
+
+    return result;
+
+  } catch (const cxxopts::OptionException &e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    exit(1);
+  }
+}
+
+// Trace generator
+cxxopts::ParseResult parseTraceGenerator(int argc, char *argv[]) {
+  try {
+    cxxopts::Options options(argv[0], "");
+    options.positional_help("[optional args]").show_positional_help();
+
+    std::string file = "";
+
+    options.add_options()("f", "", cxxopts::value<std::string>(),
+                          "LTL formula")(
+        "v", "", cxxopts::value<std::string>(),
+        "types of vars used in the formual (C types): type1 var1, type2 "
+        "var2,..., typeN varN")(
+        "l", "", cxxopts::value<size_t>(),
+        "length of the trace to be generated (default 100)")(
+        "o", "", cxxopts::value<std::string>(), "output file")(
+        "core", "", cxxopts::value<size_t>(),
+        "max numbers of tests for each proposition (default 10)")(
+        "dto", "", cxxopts::value<std::string>(),
+        "operands in the dt operator: {prop1; depth1},{prop2; "
+        "depth2},...,{propN; depthN}")("help", "Show options");
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+    if (result.count("f") == 0 || result.count("v") == 0) {
+      std::cout
+          << "Usage:\n traceGenerator -f <formula> -v <varsDecl> [-l <length>]"
+          << "\n";
+      exit(0);
+    }
+
+    return result;
+
+  } catch (const cxxopts::OptionException &e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    exit(1);
+  }
+}
+
+// Var estimator
+cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
+  try {
+    cxxopts::Options options(argv[0], "");
+    options.positional_help("[optional args]").show_positional_help();
+
+    std::string file = "";
+
+    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
+                          "<FILE>")(
+        "path", "", cxxopts::value<std::string>(),
+        "path to assertion file (one per each line)")(
+        "sa", "", cxxopts::value<std::string>(),
+        "stuck at 0, 1 or X ")("cluster", "", cxxopts::value<std::string>(),
+                               "divide the score into N clusters")(
+        "cs", "", cxxopts::value<std::string>(),
+        "chunkSize (depends on the available memory) ")(
+        "consec", "insert faults consecutively in the variables")(
+        "ant", "insert faults in ant variables")(
+        "con", "insert faults in ant variables")(
+        "technique", "", cxxopts::value<std::string>(),
+        "technique used to perform the estimation")(
+        "clk", "clk signal", cxxopts::value<std::string>(),
+        "<String>")
+        ("fd", "path to the directory containing faulty traces", cxxopts::value<std::string>(), "<DIRECTORY>")
+        ( "max_threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+            ("help", "Show options");
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+    if (result.count("path") == 0 || result.count("technique") == 0 ||
+        result.count("vcd") == 0 || result.count("clk") == 0 ||
+        (result.count("ant") == 0 && result.count("con") == 0)) {
+      std::cout << "Usage:\n varEstimator --path <FILE> --technique <string> "
+                   "--vcd <FILE>"
+                   " --clk <string>"
+                   " [--ant | --con]"
+                << "\n";
+      exit(0);
+    }
+
+    return result;
+
+  } catch (const cxxopts::OptionException &e) {
+    std::cout << "error parsing options: " << e.what() << std::endl;
+    exit(1);
+  }
+}
