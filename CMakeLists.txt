@@ -188,6 +188,8 @@ file(COPY src/utils/include/colors.hh DESTINATION src/api/cpp/include/harm/)
 file(COPY src/miner/utils/include/Assertion.hh DESTINATION src/api/cpp/include/harm/)
 file(COPY src/miner/utils/include/Trinary.hh DESTINATION src/api/cpp/include/harm/)
 
+#Install
+
 INSTALL(FILES src/globals/include/globals.hh src/utils/include/colors.hh src/miner/utils/include/Assertion.hh src/miner/utils/include/Trinary.hh DESTINATION harm/include/harm)
 INSTALL(FILES src/api/cpp/include/harm.hh DESTINATION harm/include)
 
@@ -197,9 +199,21 @@ INSTALL(TARGETS harm devharm
     ARCHIVE DESTINATION harm/lib
     )
 
-file(COPY ${SPOTLTL_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/harm/lib FOLLOW_SYMLINK_CHAIN)
-file(COPY ${ANTLR4_RUNTIME} DESTINATION ${CMAKE_INSTALL_PREFIX}/harm/lib FOLLOW_SYMLINK_CHAIN)
-file(COPY ${Z3_LIBRARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/harm/lib FOLLOW_SYMLINK_CHAIN)
-
 INSTALL(PROGRAMS ${SPOTLTL_LIB} ${ANTLR4_RUNTIME} ${Z3_LIBRARY} DESTINATION harm/lib)
+
+#Copy the libraries with their symbolic links
+INSTALL(
+    CODE
+    "execute_process(
+        COMMAND
+        ${CMAKE_COMMAND}
+        -DS=${SPOTLTL_LIB}
+        -DB=${BDDX_LIB}
+        -DA=${ANTLR4_RUNTIME}
+        -DZ=${Z3_LIBRARY}
+        -DIP=${CMAKE_INSTALL_PREFIX}
+        -P
+        ${CMAKE_SOURCE_DIR}/cmake/PostInstall.cmake
+    )"
+)
 

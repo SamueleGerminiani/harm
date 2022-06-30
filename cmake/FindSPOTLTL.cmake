@@ -14,8 +14,8 @@ else()
         set(libspot "libspot.so.0")
         set(libbddx "libbddx.so.0")
     elseif(APPLE)
-        set(libspot "libspot.dylib.0")
-        set(libbddx "libbddx.dylib.0")
+        set(libspot "libspot.dylib")
+        set(libbddx "libbddx.dylib")
     endif()
 
     find_library(SPOTLTL_LIB NAMES ${libspot} HINTS /usr/local/lib/spot

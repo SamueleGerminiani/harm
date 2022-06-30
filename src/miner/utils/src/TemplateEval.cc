@@ -6,7 +6,6 @@
 #include "minerUtils.hh"
 
 #include <algorithm>
-#include <bits/types/siginfo_t.h>
 #include <math.h>
 #include <mutex>
 #include <sstream>

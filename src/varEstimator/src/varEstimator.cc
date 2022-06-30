@@ -17,7 +17,6 @@
 #include <filesystem>
 
 #include <algorithm>
-#include <boost/algorithm/string/replace.hpp>
 #include <fstream>
 #include <mutex>
 #include <spot/tl/parse.hh>
