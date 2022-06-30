@@ -211,7 +211,7 @@ public:
   std::shared_ptr<spot::twa_graph>
   generateDeterministicSpotAutomaton(spot::formula &formula);
 
-  void check(const std::string &dumpPrefix = "default_");
+  void check();
 
   Proposition *getPropByToken(const std::string &token);
   Automaton *buildDiamondAutomaton(bool conNegated = 0);

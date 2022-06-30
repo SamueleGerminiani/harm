@@ -2,8 +2,8 @@
 #include "CSVtraceReader.hh"
 #include "ManualDefinition.hh"
 #include "Miner.hh"
-#include "TLMiner.hh"
 #include "Qualifier.hh"
+#include "TLMiner.hh"
 #include "VCDtraceReader.hh"
 #include "colors.hh"
 #include "exp.hh"
@@ -140,25 +140,8 @@ runMiner(Miner::Config_t &config) {
     else
       config.propertyQualifier->qualify(*context, trace);
 
-    if (!toCheck.empty()) {
-      if (clc::dumpAssToFile) {
-        // all the checked assertions will be appended to these files
-        std::ofstream assFile(clc::dumpPath + "/" + context->_name +
-                                  "_checkedAss.txt",
-                              std::ios_base::out);
-        assFile.close();
-        std::ofstream contingencyFile(clc::dumpPath + "/" + context->_name +
-                                          "_checkedAss_cont.txt",
-                                      std::ios_base::out);
-        contingencyFile.close();
-        std::ofstream varsStat(clc::dumpPath + "/" + context->_name +
-                                   "_checkedAss_vars.txt",
-                               std::ios_base::out);
-        varsStat.close();
-      }
-      for (Template *t : toCheck) {
-        t->check(clc::dumpPath + "/" + context->_name);
-      }
+    for (Template *t : toCheck) {
+      t->check();
     }
     // save the assertions
     contextToAss[context->_name] = context->_assertions;

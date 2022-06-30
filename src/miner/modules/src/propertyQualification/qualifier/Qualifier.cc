@@ -781,61 +781,9 @@ void Qualifier::dumpAssToFile(Context &context, Trace *trace,
 
   messageErrorIf(!std::filesystem::exists(clc::dumpPath),
                  "Can not find directory '" + clc::dumpPath + "'");
-  std::ofstream contingencyFile;
-  std::ofstream varsStat;
-  if (!clc::noData) {
-    contingencyFile.open(clc::dumpPath + "/" + context._name + "_cont.txt");
-    varsStat.open(clc::dumpPath + "/" + context._name + "_vars.txt");
-  }
   std::ofstream assFile(clc::dumpPath + "/" + context._name + "_ass.txt");
   for (auto &a : assertions) {
 
-    if (!clc::noData) {
-      // dump contingency
-      Template *t = hparser::parseTemplate(a->_toString.first, trace, "Spot",
-                                           BDTLimits(), 1);
-      t->nextPerm();
-      t->evaluate(0);
-
-      auto loadedPropsAnt = t->getLoadedPropositionsWithDepthAnt();
-      auto loadedPropsCon = t->getLoadedPropositionsWithDepthCon();
-
-      // ant
-      std::vector<std::pair<std::string, size_t>> varsAnt;
-      for (auto &p : loadedPropsAnt) {
-        auto vs = getVars(*p.first);
-        for (auto &v : vs) {
-          v.second += p.second + 2;
-        }
-        varsAnt.insert(varsAnt.end(), vs.begin(), vs.end());
-      }
-      for (auto v : varsAnt) {
-        varsStat << v.first << " " << v.second << " ";
-      }
-
-      varsStat << "; ";
-
-      // con
-      std::vector<std::pair<std::string, size_t>> varsCon;
-      for (auto &p : loadedPropsCon) {
-        auto vs = getVars(*p.first);
-        for (auto &v : vs) {
-          v.second += p.second + 2;
-        }
-        varsCon.insert(varsCon.end(), vs.begin(), vs.end());
-      }
-      for (auto v : varsCon) {
-        varsStat << v.first << " " << v.second << " ";
-      }
-
-      varsStat << "\n";
-
-      for (size_t i = 0; i < 9; i++) {
-        contingencyFile << a->_ct[i / 3][i % 3] << " ";
-      }
-      contingencyFile << "\n";
-      delete t;
-    }
     // ass
     if (clc::outputLang == "Spot") {
       assFile << a->_toString.first << "\n";
@@ -849,10 +797,6 @@ void Qualifier::dumpAssToFile(Context &context, Trace *trace,
 #endif
   }
 
-  if (!clc::noData) {
-    contingencyFile.close();
-    varsStat.close();
-  }
   assFile.close();
 #if enPB
   pb.done(0);

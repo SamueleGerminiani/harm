@@ -1,11 +1,10 @@
 #include "Miner.hh"
 #include "globals.hh"
-#include "message.hh"
 #include "harmIcon.hh"
+#include "message.hh"
 #include <chrono>
 #include <filesystem>
 #include <type_traits>
-
 
 namespace harm {
 
@@ -91,25 +90,8 @@ void Miner::run() {
     else
       _config.propertyQualifier->qualify(*context, trace);
 
-    if (!toCheck.empty()) {
-      if (clc::dumpAssToFile) {
-        // all the checked assertions will be appended to these files
-        std::ofstream assFile(clc::dumpPath + "/" + context->_name +
-                                  "_checkedAss.txt",
-                              std::ios_base::out);
-        assFile.close();
-        std::ofstream contingencyFile(clc::dumpPath + "/" + context->_name +
-                                          "_checkedAss_cont.txt",
-                                      std::ios_base::out);
-        contingencyFile.close();
-        std::ofstream varsStat(clc::dumpPath + "/" + context->_name +
-                                   "_checkedAss_vars.txt",
-                               std::ios_base::out);
-        varsStat.close();
-      }
-      for (Template *t : toCheck) {
-        t->check(clc::dumpPath + "/" + context->_name);
-      }
+    for (Template *t : toCheck) {
+      t->check();
     }
     delete context;
   }
@@ -142,7 +124,7 @@ void Miner::printStats() {
             << "\n";
 
   if (clc::dumpStat) {
-    std::string filename = "stat_out_"+hs::name+".csv";
+    std::string filename = "stat_out_" + hs::name + ".csv";
     bool exists = std::filesystem::exists(filename);
     std::ofstream of(filename,
                      exists ? std::ofstream::app : std::ofstream::trunc);
@@ -165,21 +147,24 @@ void Miner::printStats() {
 }
 void Miner::_printWelcomeMessage() {
   std::cout << getIcon() << "\n";
-//  std::string shift = "                             ";
-//
-//  std::cout << shift << "╭╮╱╭┳━━━┳━━━┳━╮╭━╮"
-//            << "\n";
-//  std::cout << shift << "┃┃╱┃┃╭━╮┃╭━╮┃┃╰╯┃┃"
-//            << "\n";
-//  std::cout << shift << "┃╰━╯┃┃╱┃┃╰━╯┃╭╮╭╮┃"
-//            << "\n";
-//  std::cout << shift << "┃╭━╮┃╰━╯┃╭╮╭┫┃┃┃┃┃"
-//            << "\n";
-//  std::cout << shift << "┃┃╱┃┃╭━╮┃┃┃╰┫┃┃┃┃┃"
-//            << "\n";
-//  std::cout << shift << "╰╯╱╰┻╯╱╰┻╯╰━┻╯╰╯╰╯"
-//            << "\n";
 
+
+  //FIXME should we keep this?
+ 
+  //  std::string shift = "                             ";
+  //
+  //  std::cout << shift << "╭╮╱╭┳━━━┳━━━┳━╮╭━╮"
+  //            << "\n";
+  //  std::cout << shift << "┃┃╱┃┃╭━╮┃╭━╮┃┃╰╯┃┃"
+  //            << "\n";
+  //  std::cout << shift << "┃╰━╯┃┃╱┃┃╰━╯┃╭╮╭╮┃"
+  //            << "\n";
+  //  std::cout << shift << "┃╭━╮┃╰━╯┃╭╮╭┫┃┃┃┃┃"
+  //            << "\n";
+  //  std::cout << shift << "┃┃╱┃┃╭━╮┃┃┃╰┫┃┃┃┃┃"
+  //            << "\n";
+  //  std::cout << shift << "╰╯╱╰┻╯╱╰┻╯╰━┻╯╰╯╰╯"
+  //            << "\n";
 }
 
 } // namespace harm

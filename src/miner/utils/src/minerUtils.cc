@@ -84,8 +84,8 @@ std::vector<Proposition *> inline makeLogicRange(
       ret.push_back(
           makeExpression<PropositionAnd>(makeExpression<LogicGreaterEq>(l1, ll),
                                          makeExpression<LogicLessEq>(l2, rl)));
-      ret.push_back(makeExpression<LogicGreaterEq>(copy(*l1), copy(*ll)));
-      ret.push_back(makeExpression<LogicLessEq>(copy(*l2), copy(*rl)));
+      //ret.push_back(makeExpression<LogicGreaterEq>(copy(*l1), copy(*ll)));
+      //ret.push_back(makeExpression<LogicLessEq>(copy(*l2), copy(*rl)));
     } else {
       LogicExpression *lc =
           new LogicConstant(c.first, type.first, type.second, cn->getMaxTime());
@@ -113,8 +113,8 @@ std::vector<Proposition *> inline makeNumericRange(
       ret.push_back(makeExpression<PropositionAnd>(
           makeExpression<NumericGreaterEq>(l1, ll),
           makeExpression<NumericLessEq>(l2, rl)));
-      ret.push_back(makeExpression<NumericGreaterEq>(copy(*l1), copy(*ll)));
-      ret.push_back(makeExpression<NumericLessEq>(copy(*l2), copy(*rl)));
+      //ret.push_back(makeExpression<NumericGreaterEq>(copy(*l1), copy(*ll)));
+      //ret.push_back(makeExpression<NumericLessEq>(copy(*l2), copy(*rl)));
     } else {
       NumericExpression *lc = new NumericConstant(
           c.first, type.first, type.second, cn->getMaxTime());

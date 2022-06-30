@@ -984,10 +984,10 @@ void Template::printContingency() {
   table << "AU" << ct[2][0] << ct[2][1] << ct[2][2] << fort::endr;
   std::cout << table.to_string() << std::endl;
 }
-void Template::check(const std::string &dumpPrefix) {
+void Template::check() {
   messageErrorIf(
       !isFullyInstantiated(),
-      "Checking is available only for fully instantiated templates!");
+      "Checking is available only for fully instantiated templates (assertions)!");
   std::cout << "==============================================================="
                "==========="
             << "\n";
@@ -1081,57 +1081,6 @@ void Template::check(const std::string &dumpPrefix) {
   std::cout << "==============================================================="
                "==========="
             << "\n";
-
-  if (clc::dumpAssToFile) {
-
-    std::ofstream assFile(dumpPrefix + "_checkedAss.txt",
-                          std::ios_base::out | std::ios_base::app);
-    std::ofstream contingencyFile(dumpPrefix + "_checkedAss_cont.txt",
-                                  std::ios_base::out | std::ios_base::app);
-    std::ofstream varsStat(dumpPrefix + "_checkedAss_vars.txt",
-                           std::ios_base::out | std::ios_base::app);
-    auto loadedPropsAnt = getLoadedPropositionsWithDepthAnt();
-    auto loadedPropsCon = getLoadedPropositionsWithDepthCon();
-
-    // ant
-    std::vector<std::pair<std::string, size_t>> varsAnt;
-    for (auto &p : loadedPropsAnt) {
-      auto vs = getVars(*p.first);
-      for (auto &v : vs) {
-        v.second += p.second + 2;
-      }
-      varsAnt.insert(varsAnt.end(), vs.begin(), vs.end());
-    }
-    for (auto v : varsAnt) {
-      varsStat << v.first << " " << v.second << " ";
-    }
-
-    varsStat << "; ";
-
-    // con
-    std::vector<std::pair<std::string, size_t>> varsCon;
-    for (auto &p : loadedPropsCon) {
-      auto vs = getVars(*p.first);
-      for (auto &v : vs) {
-        v.second += p.second + 2;
-      }
-      varsCon.insert(varsCon.end(), vs.begin(), vs.end());
-    }
-    for (auto v : varsCon) {
-      varsStat << v.first << " " << v.second << " ";
-    }
-
-    varsStat << "\n";
-    assFile << getAssertion() << "\n";
-
-    for (size_t i = 0; i < 9; i++) {
-      contingencyFile << ct[i / 3][i % 3] << " ";
-    }
-    contingencyFile << "\n";
-
-    assFile.close();
-    contingencyFile.close();
-  }
 }
 Hstring Template::getTemplateFormula() {
   return _templateFormula;
