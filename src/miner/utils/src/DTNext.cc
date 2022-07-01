@@ -1,5 +1,5 @@
-#include "BDTNext.hh"
-#include "BDTUtils.hh"
+#include "DTNext.hh"
+#include "DTUtils.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "message.hh"
@@ -10,16 +10,16 @@
 #include <unordered_set>
 #include <utility>
 namespace harm {
-//--BDTNext---------------------------------------
+//--DTNext---------------------------------------
 
-BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
-                 const BDTLimits &limits)
+DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
+                 const DTLimits &limits)
     : _t(t), _shift(shift), _tc(p) {
 
   _limits = limits;
   _limits._maxWidth = -1;
   // The base case automata were already generated in the template
-  _tokens.push_back("bdtNext0");
+  _tokens.push_back("dtNext0");
   _ant.push_back(_t->_ant);
   // storing depths
   _antDepth.push_back(_t->getDepth(_ant.back()));
@@ -27,7 +27,7 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
   // adjust offset:  we shouldn't have any delaying when we have only one
   // operand
   for (auto &e : t->_templateFormula)
-    e._offset = (e._t == Hstring::Stype::BDTNext ? 0 : e._offset);
+    e._offset = (e._t == Hstring::Stype::DTNext ? 0 : e._offset);
 
   _formulas.push_back(t->_templateFormula);
 
@@ -38,7 +38,7 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
             _tokens.back(),
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening before the bdtNext operator when using "
+        "Can't have events happening before the dtNext operator when using "
         "|-> ");
   } else {
     messageErrorIf(
@@ -46,7 +46,7 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
             _tokens.back(),
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening after the bdtNext operator when not using "
+        "Can't have events happening after the dtNext operator when not using "
         "|-> ");
   }
 
@@ -65,16 +65,16 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
     auto hant = _formulas[i - 1].getAnt();
 
     if (_t->_applyDynamicShift) {
-      // bdtNextM ##N bdtNextM-1 ##N ... ##N bdtNext0
+      // dtNextM ##N dtNextM-1 ##N ... ##N dtNext0
       // last insertion point
       size_t lastIP = -1;
       // find the last operand and append a new one
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNext) {
+        if (hant[j]._t == Hstring::Stype::DTNext) {
           Proposition **pp = new Proposition *(nullptr);
-          std::string token = "bdtNext" + std::to_string(i);
+          std::string token = "dtNext" + std::to_string(i);
           hant.insert(hant.begin() + j,
-                      Hstring(token, Hstring::Stype::BDTNext, pp));
+                      Hstring(token, Hstring::Stype::DTNext, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -87,20 +87,20 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
       // adjust offset: only the last operand should have delay equal to 0
       hant[lastIP]._offset = 0;
       for (size_t j = lastIP + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNext) {
+        if (hant[j]._t == Hstring::Stype::DTNext) {
           hant[j]._offset = _shift;
         }
       }
     } else {
 
-      // bdtNext1 ##N bdtNext2 ##N ... ##N bdtNextM
+      // dtNext1 ##N dtNext2 ##N ... ##N dtNextM
       // find the last operand and append a new one
       for (int j = hant.size() - 1; j >= 0; j--) {
-        if (hant[j]._t == Hstring::Stype::BDTNext) {
+        if (hant[j]._t == Hstring::Stype::DTNext) {
           Proposition **pp = new Proposition *(nullptr);
-          std::string token = "bdtNext" + std::to_string(i);
+          std::string token = "dtNext" + std::to_string(i);
           hant.insert(hant.begin() + j + 1,
-                      Hstring(token, Hstring::Stype::BDTNext, pp));
+                      Hstring(token, Hstring::Stype::DTNext, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -110,16 +110,16 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
         }
       }
       // adjust offset: only the first operand should have delay equal to 0
-      size_t firstBDT = 0;
+      size_t firstDT = 0;
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNext) {
-          firstBDT = j;
+        if (hant[j]._t == Hstring::Stype::DTNext) {
+          firstDT = j;
           break;
         }
       }
-      hant[firstBDT]._offset = 0;
-      for (size_t j = firstBDT + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNext) {
+      hant[firstDT]._offset = 0;
+      for (size_t j = firstDT + 1; j < hant.size(); j++) {
+        if (hant[j]._t == Hstring::Stype::DTNext) {
           hant[j]._offset = _shift;
         }
       }
@@ -165,7 +165,7 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
       messageErrorIf(depth == -1, " parallel depth is unknown");
       baseDepth = (baseDepth == -1 ? depth : baseDepth);
       if (depth == 0) {
-        if (!onlyToken("bdtNext0", portionFormula.f)) {
+        if (!onlyToken("dtNext0", portionFormula.f)) {
           _parallelDepth++;
         }
         delete pAnt;
@@ -185,14 +185,14 @@ BDTNext::BDTNext(BooleanConstant *p, size_t shift, Template *t,
     removeItems();
   }
 }
-BDTNext::~BDTNext() {
+DTNext::~DTNext() {
   for (size_t i = 0; i < _tokens.size(); i++) {
     delete _ant[i];
   }
   delete _tc;
 }
 
-std::vector<Proposition *> BDTNext::minimize(bool isOffset) {
+std::vector<Proposition *> DTNext::minimize(bool isOffset) {
 
   std::vector<std::vector<size_t>> c;
   std::vector<Proposition *> original;
@@ -244,7 +244,7 @@ end:;
   }
   return ret;
 }
-void BDTNext::removeItems() {
+void DTNext::removeItems() {
 
   if (_parallelDepth) {
     for (size_t i = 0; i < _limits._maxDepth; i++) {
@@ -260,7 +260,7 @@ void BDTNext::removeItems() {
   _order.clear();
   _currDepth = 0;
 }
-void BDTNext::popItem(int depth) {
+void DTNext::popItem(int depth) {
   if (depth == -1) {
     depth = _currDepth;
   }
@@ -285,7 +285,7 @@ void BDTNext::popItem(int depth) {
   _order.pop_back();
   assert(_choices.size() == _order.size());
 }
-void BDTNext::addItem(Proposition *p, int depth) {
+void DTNext::addItem(Proposition *p, int depth) {
 
   if (depth == -1) {
     if (!_choices.empty()) {
@@ -324,15 +324,15 @@ void BDTNext::addItem(Proposition *p, int depth) {
   }
   assert(_choices.size() == _order.size());
 }
-std::vector<Proposition *> BDTNext::getItems() {
+std::vector<Proposition *> DTNext::getItems() {
   std::vector<Proposition *> ret;
   for (size_t i = 0; i <= _currDepth; i++) {
     ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
   }
   return ret;
 }
-bool BDTNext::isMultiDimensional() { return 0; }
-bool BDTNext::canInsertAtDepth(int depth) {
+bool DTNext::isMultiDimensional() { return 0; }
+bool DTNext::canInsertAtDepth(int depth) {
   if (depth == -1) {
     return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
   } else {
@@ -340,14 +340,14 @@ bool BDTNext::canInsertAtDepth(int depth) {
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }
-bool BDTNext::isRandomConstructed() { return _limits._isRandomConstructed; }
-size_t BDTNext::getNChoices() { return _choices.size(); }
-bool BDTNext::isTaken(size_t id, bool second, int depth) { return false; }
-void BDTNext::removeLeaf(size_t id, bool second, int depth) {}
-void BDTNext::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
-const BDTLimits &BDTNext::getLimits() { return _limits; }
-size_t BDTNext::getCurrentDepth() { return _currDepth; }
-std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
+bool DTNext::isRandomConstructed() { return _limits._isRandomConstructed; }
+size_t DTNext::getNChoices() { return _choices.size(); }
+bool DTNext::isTaken(size_t id, bool second, int depth) { return false; }
+void DTNext::removeLeaf(size_t id, bool second, int depth) {}
+void DTNext::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
+const DTLimits &DTNext::getLimits() { return _limits; }
+size_t DTNext::getCurrentDepth() { return _currDepth; }
+std::pair<std::string, std::string> DTNext::prettyPrint(bool offset) {
 
   std::vector<Proposition *> original;
   for (size_t i = 0; i <= _currDepth; i++) {
@@ -355,7 +355,7 @@ std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
   }
   auto solTemplate = _formulas[_currDepth];
 
-  size_t bdtIndex = _t->_applyDynamicShift ? 0 : _currDepth;
+  size_t dtIndex = _t->_applyDynamicShift ? 0 : _currDepth;
   size_t comulativeShift = 0;
   size_t lastCandidate = 0;
   std::unordered_set<size_t> toDelete;
@@ -363,20 +363,20 @@ std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
 
   // slide bw
   for (int j = solTemplate.size() - 1; j >= 0; j--) {
-    if (solTemplate[j]._t == Hstring::Stype::BDTNext) {
-      Proposition *p = *_t->_tokenToProp.at(_tokens[bdtIndex]);
+    if (solTemplate[j]._t == Hstring::Stype::DTNext) {
+      Proposition *p = *_t->_tokenToProp.at(_tokens[dtIndex]);
       // base case
-      if (_t->_applyDynamicShift ? (bdtIndex == 0) : (bdtIndex == _currDepth)) {
+      if (_t->_applyDynamicShift ? (dtIndex == 0) : (dtIndex == _currDepth)) {
         toUpdate.insert(
-            {{bdtIndex, std::pair(p, _currDepth == 0 ? 0 : _shift)}});
-        lastCandidate = bdtIndex;
-        bdtIndex = _t->_applyDynamicShift ? bdtIndex + 1 : bdtIndex - 1;
+            {{dtIndex, std::pair(p, _currDepth == 0 ? 0 : _shift)}});
+        lastCandidate = dtIndex;
+        dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
         continue;
       }
-      if ((bdtIndex <= _currDepth) &&
+      if ((dtIndex <= _currDepth) &&
           dynamic_cast<BooleanConstant *>(p) != nullptr) {
         comulativeShift += _shift;
-        toDelete.insert(bdtIndex);
+        toDelete.insert(dtIndex);
         //                          std::cout << "toD:" << prop2String(*p) <<
         //                          "\n";
       } else {
@@ -384,14 +384,14 @@ std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
         //                   std::cout << "toU:" <<
         //                   prop2String(*toUpdate.at(lastCandidate).first) <<
         //                   "," << toUpdate.at(lastCandidate).second << "\n";
-        lastCandidate = bdtIndex;
-        toUpdate.insert({{bdtIndex, std::pair(p, solTemplate[j]._offset)}});
+        lastCandidate = dtIndex;
+        toUpdate.insert({{dtIndex, std::pair(p, solTemplate[j]._offset)}});
         comulativeShift = 0;
       }
-      bdtIndex = _t->_applyDynamicShift ? bdtIndex + 1 : bdtIndex - 1;
+      dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
     }
   }
-  if (toDelete.count(_t->_applyDynamicShift ? bdtIndex - 1 : bdtIndex + 1)) {
+  if (toDelete.count(_t->_applyDynamicShift ? dtIndex - 1 : dtIndex + 1)) {
     toUpdate.at(lastCandidate).second += (comulativeShift - _shift);
   }
 
@@ -402,7 +402,7 @@ std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
   auto reducedTemplate = _formulas[_currDepth - toDelete.size()];
 
   for (int j = reducedTemplate.size() - 1; j >= 0; j--) {
-    if (reducedTemplate[j]._t == Hstring::Stype::BDTNext) {
+    if (reducedTemplate[j]._t == Hstring::Stype::DTNext) {
       size_t adjustedIndex = _t->_applyDynamicShift ? toUpdate.begin()->first
                                                     : toUpdate.rbegin()->first;
       reducedTemplate[j]._offset = toUpdate.at(adjustedIndex).second;
@@ -431,30 +431,30 @@ std::pair<std::string, std::string> BDTNext::prettyPrint(bool offset) {
   return ret;
 }
 
-std::vector<Proposition *> BDTNext::unpack() {
+std::vector<Proposition *> DTNext::unpack() {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 };
-std::vector<Proposition *> BDTNext::unpack(Proposition *pack) {
+std::vector<Proposition *> DTNext::unpack(Proposition *pack) {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 };
-std::vector<Proposition *> BDTNext::unpack(std::vector<Proposition *> &pack) {
+std::vector<Proposition *> DTNext::unpack(std::vector<Proposition *> &pack) {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 }
 
-void BDTNext::clearPack(Proposition *pack) {
+void DTNext::clearPack(Proposition *pack) {
   messageError("Can't clear pack in unidimensional operator'");
 }
-bool BDTNext::isSolutionInconsequential(std::vector<Proposition *> &sol) {
+bool DTNext::isSolutionInconsequential(std::vector<Proposition *> &sol) {
   if (_applyDynamicShift) {
     return sol.empty() || sol.back() == _tc;
   } else {
     return sol.empty() || sol.front() == _tc;
   }
 }
-void BDTNext::substitute(int depth, int width, Proposition *&sub) {
+void DTNext::substitute(int depth, int width, Proposition *&sub) {
   if (depth == -1) {
     depth = _currDepth;
   }

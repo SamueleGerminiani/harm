@@ -159,11 +159,11 @@ void SpotParserHandler::exitTformula(spotParser::TformulaContext *ctx) {
     _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     return;
   }
-  if (ctx->BDT_AND() != nullptr) {
-    messageErrorIf(bdtCount > 0, "More than one bdt operator defined\n" +
+  if (ctx->DT_AND() != nullptr) {
+    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
                                      printErrorMessage());
-    std::string ph = "bdtAnd" + std::to_string(bdtCount++);
-    _subFormulas.push(Hstring(ph, Hstring::Stype::BDTAnd, nullptr));
+    std::string ph = "dtAnd" + std::to_string(dtCount++);
+    _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
     return;
   }
 
@@ -296,55 +296,55 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     }
     return;
   }
-  if (ctx->bdt_next() != nullptr) {
-    messageErrorIf(bdtCount > 0, "More than one bdt operator defined\n" +
+  if (ctx->dt_next() != nullptr) {
+    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
                                      printErrorMessage());
-    std::string ph = "bdtNext" + std::to_string(bdtCount++);
-    Hstring tmp = Hstring(ph, Hstring::Stype::BDTNext, nullptr);
+    std::string ph = "dtNext" + std::to_string(dtCount++);
+    Hstring tmp = Hstring(ph, Hstring::Stype::DTNext, nullptr);
     tmp._offset =
-        std::stoull(ctx->bdt_next()->NUMERIC()->getText(), nullptr, 10);
+        std::stoull(ctx->dt_next()->NUMERIC()->getText(), nullptr, 10);
     tmp[0]._offset = tmp._offset;
     _subFormulas.push(tmp);
 
     return;
   }
-  if (ctx->bdt_NCReps() != nullptr) {
-    messageErrorIf(bdtCount > 0, "More than one bdt operator defined\n" +
+  if (ctx->dt_NCReps() != nullptr) {
+    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
                                      printErrorMessage());
     std::string ph =
-        "bdtNCReps0[->" + ctx->bdt_NCReps()->NUMERIC()->getText() + "]:bdtMock";
-    Hstring tmp = Hstring(ph, Hstring::Stype::BDTNCReps, nullptr);
+        "dtNCReps0[->" + ctx->dt_NCReps()->NUMERIC()->getText() + "]:dtMock";
+    Hstring tmp = Hstring(ph, Hstring::Stype::DTNCReps, nullptr);
     tmp._offset =
-        std::stoull(ctx->bdt_NCReps()->NUMERIC()->getText(), nullptr, 10);
+        std::stoull(ctx->dt_NCReps()->NUMERIC()->getText(), nullptr, 10);
     tmp[0]._offset = tmp._offset;
-    if (ctx->bdt_NCReps()->SEP()->getText() == "@;") {
+    if (ctx->dt_NCReps()->SEP()->getText() == "@;") {
       tmp._sep = ";";
-    } else if (ctx->bdt_NCReps()->SEP()->getText() == "@:") {
+    } else if (ctx->dt_NCReps()->SEP()->getText() == "@:") {
       tmp._sep = ":";
     } else {
-      messageError("Unknown separator: " + ctx->bdt_NCReps()->SEP()->getText()+printErrorMessage());
+      messageError("Unknown separator: " + ctx->dt_NCReps()->SEP()->getText()+printErrorMessage());
     }
     _subFormulas.push(tmp);
 
     return;
   }
-  if (ctx->bdt_next_and() != nullptr) {
-    messageErrorIf(bdtCount > 0, "More than one bdt operator defined\n" +
+  if (ctx->dt_next_and() != nullptr) {
+    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
                                      printErrorMessage());
-    std::string ph = "bdtNextAnd" + std::to_string(bdtCount++);
-    Hstring tmp = Hstring(ph, Hstring::Stype::BDTNextAnd, nullptr);
+    std::string ph = "dtNextAnd" + std::to_string(dtCount++);
+    Hstring tmp = Hstring(ph, Hstring::Stype::DTNextAnd, nullptr);
     tmp._offset =
-        std::stoull(ctx->bdt_next_and()->NUMERIC()->getText(), nullptr, 10);
+        std::stoull(ctx->dt_next_and()->NUMERIC()->getText(), nullptr, 10);
     tmp[0]._offset = tmp._offset;
     _subFormulas.push(tmp);
 
     return;
   }
-  if (ctx->BDT_AND() != nullptr) {
-    messageErrorIf(bdtCount > 0, "More than one bdt operator defined\n" +
+  if (ctx->DT_AND() != nullptr) {
+    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
                                      printErrorMessage());
-    std::string ph = "bdtAnd" + std::to_string(bdtCount++);
-    _subFormulas.push(Hstring(ph, Hstring::Stype::BDTAnd, nullptr));
+    std::string ph = "dtAnd" + std::to_string(dtCount++);
+    _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
     return;
   }
 

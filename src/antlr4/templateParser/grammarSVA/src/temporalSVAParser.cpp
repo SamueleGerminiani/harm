@@ -333,8 +333,8 @@ tree::TerminalNode* temporalSVAParser::SereContext::NOT() {
   return getToken(temporalSVAParser::NOT, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::SereContext::BDT_AND() {
-  return getToken(temporalSVAParser::BDT_AND, 0);
+tree::TerminalNode* temporalSVAParser::SereContext::DT_AND() {
+  return getToken(temporalSVAParser::DT_AND, 0);
 }
 
 tree::TerminalNode* temporalSVAParser::SereContext::LPAREN() {
@@ -385,16 +385,16 @@ tree::TerminalNode* temporalSVAParser::SereContext::RCPAREN() {
   return getToken(temporalSVAParser::RCPAREN, 0);
 }
 
-temporalSVAParser::Bdt_nextContext* temporalSVAParser::SereContext::bdt_next() {
-  return getRuleContext<temporalSVAParser::Bdt_nextContext>(0);
+temporalSVAParser::Dt_nextContext* temporalSVAParser::SereContext::dt_next() {
+  return getRuleContext<temporalSVAParser::Dt_nextContext>(0);
 }
 
-temporalSVAParser::Bdt_next_andContext* temporalSVAParser::SereContext::bdt_next_and() {
-  return getRuleContext<temporalSVAParser::Bdt_next_andContext>(0);
+temporalSVAParser::Dt_next_andContext* temporalSVAParser::SereContext::dt_next_and() {
+  return getRuleContext<temporalSVAParser::Dt_next_andContext>(0);
 }
 
-temporalSVAParser::Bdt_NCRepsContext* temporalSVAParser::SereContext::bdt_NCReps() {
-  return getRuleContext<temporalSVAParser::Bdt_NCRepsContext>(0);
+temporalSVAParser::Dt_NCRepsContext* temporalSVAParser::SereContext::dt_NCReps() {
+  return getRuleContext<temporalSVAParser::Dt_NCRepsContext>(0);
 }
 
 tree::TerminalNode* temporalSVAParser::SereContext::BOR() {
@@ -501,7 +501,7 @@ temporalSVAParser::SereContext* temporalSVAParser::sere(int precedence) {
 
     case 3: {
       setState(100);
-      match(temporalSVAParser::BDT_AND);
+      match(temporalSVAParser::DT_AND);
       break;
     }
 
@@ -574,19 +574,19 @@ temporalSVAParser::SereContext* temporalSVAParser::sere(int precedence) {
 
     case 7: {
       setState(124);
-      bdt_next();
+      dt_next();
       break;
     }
 
     case 8: {
       setState(125);
-      bdt_next_and();
+      dt_next_and();
       break;
     }
 
     case 9: {
       setState(126);
-      bdt_NCReps();
+      dt_NCReps();
       break;
     }
 
@@ -889,8 +889,8 @@ temporalSVAParser::PlaceholderContext* temporalSVAParser::TformulaContext::place
   return getRuleContext<temporalSVAParser::PlaceholderContext>(0);
 }
 
-tree::TerminalNode* temporalSVAParser::TformulaContext::BDT_AND() {
-  return getToken(temporalSVAParser::BDT_AND, 0);
+tree::TerminalNode* temporalSVAParser::TformulaContext::DT_AND() {
+  return getToken(temporalSVAParser::DT_AND, 0);
 }
 
 tree::TerminalNode* temporalSVAParser::TformulaContext::LPAREN() {
@@ -1021,7 +1021,7 @@ temporalSVAParser::TformulaContext* temporalSVAParser::tformula(int precedence) 
 
     case 3: {
       setState(209);
-      match(temporalSVAParser::BDT_AND);
+      match(temporalSVAParser::DT_AND);
       break;
     }
 
@@ -1227,40 +1227,40 @@ temporalSVAParser::PlaceholderContext* temporalSVAParser::placeholder() {
   return _localctx;
 }
 
-//----------------- Bdt_nextContext ------------------------------------------------------------------
+//----------------- Dt_nextContext ------------------------------------------------------------------
 
-temporalSVAParser::Bdt_nextContext::Bdt_nextContext(ParserRuleContext *parent, size_t invokingState)
+temporalSVAParser::Dt_nextContext::Dt_nextContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_nextContext::NUMERIC() {
+tree::TerminalNode* temporalSVAParser::Dt_nextContext::NUMERIC() {
   return getToken(temporalSVAParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_nextContext::DOTS() {
+tree::TerminalNode* temporalSVAParser::Dt_nextContext::DOTS() {
   return getToken(temporalSVAParser::DOTS, 0);
 }
 
 
-size_t temporalSVAParser::Bdt_nextContext::getRuleIndex() const {
-  return temporalSVAParser::RuleBdt_next;
+size_t temporalSVAParser::Dt_nextContext::getRuleIndex() const {
+  return temporalSVAParser::RuleDt_next;
 }
 
-void temporalSVAParser::Bdt_nextContext::enterRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_nextContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_next(this);
+    parserListener->enterDt_next(this);
 }
 
-void temporalSVAParser::Bdt_nextContext::exitRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_nextContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_next(this);
+    parserListener->exitDt_next(this);
 }
 
-temporalSVAParser::Bdt_nextContext* temporalSVAParser::bdt_next() {
-  Bdt_nextContext *_localctx = _tracker.createInstance<Bdt_nextContext>(_ctx, getState());
-  enterRule(_localctx, 10, temporalSVAParser::RuleBdt_next);
+temporalSVAParser::Dt_nextContext* temporalSVAParser::dt_next() {
+  Dt_nextContext *_localctx = _tracker.createInstance<Dt_nextContext>(_ctx, getState());
+  enterRule(_localctx, 10, temporalSVAParser::RuleDt_next);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1288,44 +1288,44 @@ temporalSVAParser::Bdt_nextContext* temporalSVAParser::bdt_next() {
   return _localctx;
 }
 
-//----------------- Bdt_next_andContext ------------------------------------------------------------------
+//----------------- Dt_next_andContext ------------------------------------------------------------------
 
-temporalSVAParser::Bdt_next_andContext::Bdt_next_andContext(ParserRuleContext *parent, size_t invokingState)
+temporalSVAParser::Dt_next_andContext::Dt_next_andContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_next_andContext::NUMERIC() {
+tree::TerminalNode* temporalSVAParser::Dt_next_andContext::NUMERIC() {
   return getToken(temporalSVAParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_next_andContext::BAND() {
+tree::TerminalNode* temporalSVAParser::Dt_next_andContext::BAND() {
   return getToken(temporalSVAParser::BAND, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_next_andContext::DOTS() {
+tree::TerminalNode* temporalSVAParser::Dt_next_andContext::DOTS() {
   return getToken(temporalSVAParser::DOTS, 0);
 }
 
 
-size_t temporalSVAParser::Bdt_next_andContext::getRuleIndex() const {
-  return temporalSVAParser::RuleBdt_next_and;
+size_t temporalSVAParser::Dt_next_andContext::getRuleIndex() const {
+  return temporalSVAParser::RuleDt_next_and;
 }
 
-void temporalSVAParser::Bdt_next_andContext::enterRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_next_andContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_next_and(this);
+    parserListener->enterDt_next_and(this);
 }
 
-void temporalSVAParser::Bdt_next_andContext::exitRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_next_andContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_next_and(this);
+    parserListener->exitDt_next_and(this);
 }
 
-temporalSVAParser::Bdt_next_andContext* temporalSVAParser::bdt_next_and() {
-  Bdt_next_andContext *_localctx = _tracker.createInstance<Bdt_next_andContext>(_ctx, getState());
-  enterRule(_localctx, 12, temporalSVAParser::RuleBdt_next_and);
+temporalSVAParser::Dt_next_andContext* temporalSVAParser::dt_next_and() {
+  Dt_next_andContext *_localctx = _tracker.createInstance<Dt_next_andContext>(_ctx, getState());
+  enterRule(_localctx, 12, temporalSVAParser::RuleDt_next_and);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1355,48 +1355,48 @@ temporalSVAParser::Bdt_next_andContext* temporalSVAParser::bdt_next_and() {
   return _localctx;
 }
 
-//----------------- Bdt_NCRepsContext ------------------------------------------------------------------
+//----------------- Dt_NCRepsContext ------------------------------------------------------------------
 
-temporalSVAParser::Bdt_NCRepsContext::Bdt_NCRepsContext(ParserRuleContext *parent, size_t invokingState)
+temporalSVAParser::Dt_NCRepsContext::Dt_NCRepsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_NCRepsContext::NUMERIC() {
+tree::TerminalNode* temporalSVAParser::Dt_NCRepsContext::NUMERIC() {
   return getToken(temporalSVAParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_NCRepsContext::RCPAREN() {
+tree::TerminalNode* temporalSVAParser::Dt_NCRepsContext::RCPAREN() {
   return getToken(temporalSVAParser::RCPAREN, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_NCRepsContext::SEP() {
+tree::TerminalNode* temporalSVAParser::Dt_NCRepsContext::SEP() {
   return getToken(temporalSVAParser::SEP, 0);
 }
 
-tree::TerminalNode* temporalSVAParser::Bdt_NCRepsContext::DOTS() {
+tree::TerminalNode* temporalSVAParser::Dt_NCRepsContext::DOTS() {
   return getToken(temporalSVAParser::DOTS, 0);
 }
 
 
-size_t temporalSVAParser::Bdt_NCRepsContext::getRuleIndex() const {
-  return temporalSVAParser::RuleBdt_NCReps;
+size_t temporalSVAParser::Dt_NCRepsContext::getRuleIndex() const {
+  return temporalSVAParser::RuleDt_NCReps;
 }
 
-void temporalSVAParser::Bdt_NCRepsContext::enterRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_NCRepsContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_NCReps(this);
+    parserListener->enterDt_NCReps(this);
 }
 
-void temporalSVAParser::Bdt_NCRepsContext::exitRule(tree::ParseTreeListener *listener) {
+void temporalSVAParser::Dt_NCRepsContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<temporalSVAListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_NCReps(this);
+    parserListener->exitDt_NCReps(this);
 }
 
-temporalSVAParser::Bdt_NCRepsContext* temporalSVAParser::bdt_NCReps() {
-  Bdt_NCRepsContext *_localctx = _tracker.createInstance<Bdt_NCRepsContext>(_ctx, getState());
-  enterRule(_localctx, 14, temporalSVAParser::RuleBdt_NCReps);
+temporalSVAParser::Dt_NCRepsContext* temporalSVAParser::dt_NCReps() {
+  Dt_NCRepsContext *_localctx = _tracker.createInstance<Dt_NCRepsContext>(_ctx, getState());
+  enterRule(_localctx, 14, temporalSVAParser::RuleDt_NCReps);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3052,8 +3052,8 @@ atn::ATN temporalSVAParser::_atn;
 std::vector<uint16_t> temporalSVAParser::_serializedATN;
 
 std::vector<std::string> temporalSVAParser::_ruleNames = {
-  "file", "formula", "sere", "tformula", "placeholder", "bdt_next", "bdt_next_and", 
-  "bdt_NCReps", "boolean", "booleanAtom", "booleanConstant", "booleanVariable", 
+  "file", "formula", "sere", "tformula", "placeholder", "dt_next", "dt_next_and", 
+  "dt_NCReps", "boolean", "booleanAtom", "booleanConstant", "booleanVariable", 
   "logic", "logicAtom", "logicConstant", "logicVariable", "numeric", "numericAtom", 
   "numericConstant", "numericVariable", "variable", "relop"
 };
@@ -3069,7 +3069,7 @@ std::vector<std::string> temporalSVAParser::_literalNames = {
 };
 
 std::vector<std::string> temporalSVAParser::_symbolicNames = {
-  "", "", "", "", "", "", "", "", "", "", "BDT_AND", "SEP", "EVENTUALLY", 
+  "", "", "", "", "", "", "", "", "", "", "DT_AND", "SEP", "EVENTUALLY", 
   "ALWAYS", "NEXT", "UNTIL", "RELEASE", "DOTS", "IMPL", "IMPL2", "IFF", 
   "XOR", "BIND1", "BIND2", "ASS", "DELAY", "SCOL", "COL", "FIRST_MATCH", 
   "SIGN", "LGPAREN", "RGPAREN", "LCPAREN", "RCPAREN", "LPAREN", "RPAREN", 

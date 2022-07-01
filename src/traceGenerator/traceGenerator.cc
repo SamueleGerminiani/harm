@@ -123,7 +123,7 @@ Proposition *edgePropToProp(EdgeProposition *ep) {
 }
 Template *parseAssertion(
     Trace *trace,
-    std::vector<std::tuple<Proposition *, size_t, size_t>> &bdtOperands) {
+    std::vector<std::tuple<Proposition *, size_t, size_t>> &dtOperands) {
   size_t impl1Pos = clc::formula.find("|->", 0);
   size_t impl2Pos = clc::formula.find("|=>", 0);
   size_t impl3Pos = clc::formula.find("[]->", 0);
@@ -138,9 +138,9 @@ Template *parseAssertion(
     clc::constShift = 1;
   }
 
-  size_t bdtMaxDepth = 0;
-  size_t bdtMaxWidth = 0;
-  size_t bdtMaxOperands = 0;
+  size_t dtMaxDepth = 0;
+  size_t dtMaxWidth = 0;
+  size_t dtMaxOperands = 0;
   if (clc::dtOperator != "") {
 
     std::string operandsStr = clc::dtOperator;
@@ -161,42 +161,42 @@ Template *parseAssertion(
         while (i < operandsStr.size() && operandsStr[i] != '}') {
           depthStr += operandsStr[i++];
         }
-        bdtOperands.push_back(std::make_tuple(
+        dtOperands.push_back(std::make_tuple(
             hparser::parseProposition(propStr, trace), std::stoul(depthStr),
             depthToWidth[std::stoul(depthStr)]));
 
         depthToWidth.at(std::stoul(depthStr))++;
-        bdtMaxDepth = bdtMaxDepth < std::stoul(depthStr) ? std::stoul(depthStr)
-                                                         : bdtMaxDepth;
-        bdtMaxWidth = bdtMaxWidth < depthToWidth.at(std::stoul(depthStr))
+        dtMaxDepth = dtMaxDepth < std::stoul(depthStr) ? std::stoul(depthStr)
+                                                         : dtMaxDepth;
+        dtMaxWidth = dtMaxWidth < depthToWidth.at(std::stoul(depthStr))
                           ? depthToWidth.at(std::stoul(depthStr))
-                          : bdtMaxWidth;
+                          : dtMaxWidth;
       }
     }
-    messageErrorIf(bdtOperands.empty(), "Malformed dto");
-    bdtMaxOperands = bdtOperands.size();
-    bdtMaxDepth++;
+    messageErrorIf(dtOperands.empty(), "Malformed dto");
+    dtMaxOperands = dtOperands.size();
+    dtMaxDepth++;
   }
-  BDTLimits limits(bdtMaxDepth, bdtMaxWidth, bdtMaxOperands, 0.1, true, true,
+  DTLimits limits(dtMaxDepth, dtMaxWidth, dtMaxOperands, 0.1, true, true,
                    true);
   Template *ass =
       hparser::parseTemplate(clc::formula, trace, "Spot", limits);
   //   debug
-  //   std::cout <<"maxDepth:" <<ass->getBDT()->getLimits()._maxDepth << "\n";
-  //   std::cout <<"maxWidth:" <<ass->getBDT()->getLimits()._maxWidth << "\n";
-  //   std::cout <<"maxAll:" <<ass->getBDT()->getLimits()._maxAll << "\n";
-  //   std::cout <<"maxDepth:" <<bdtMaxDepth << "\n";
-  //   std::cout <<"maxWidth:" <<bdtMaxWidth << "\n";
-  //   std::cout <<"maxAll:" <<bdtMaxOperands << "\n";
-  BDTOperator *bdt_template = ass->getBDT();
-  for (auto &op : bdtOperands) {
-    bdt_template->addItem(std::get<0>(op), std::get<1>(op));
+  //   std::cout <<"maxDepth:" <<ass->getDT()->getLimits()._maxDepth << "\n";
+  //   std::cout <<"maxWidth:" <<ass->getDT()->getLimits()._maxWidth << "\n";
+  //   std::cout <<"maxAll:" <<ass->getDT()->getLimits()._maxAll << "\n";
+  //   std::cout <<"maxDepth:" <<dtMaxDepth << "\n";
+  //   std::cout <<"maxWidth:" <<dtMaxWidth << "\n";
+  //   std::cout <<"maxAll:" <<dtMaxOperands << "\n";
+  DTOperator *dt_template = ass->getDT();
+  for (auto &op : dtOperands) {
+    dt_template->addItem(std::get<0>(op), std::get<1>(op));
   }
   return ass;
 }
 std::vector<z3::TestCase> getCounterExamples(
     Template *ass,
-    std::vector<std::tuple<Proposition *, size_t, size_t>> &bdtOperands,
+    std::vector<std::tuple<Proposition *, size_t, size_t>> &dtOperands,
     bool cut) {
 
   std::vector<z3::TestCase> ret;
@@ -216,15 +216,15 @@ std::vector<z3::TestCase> getCounterExamples(
 
   // generate counterexamples
 
-  BDTOperator *bdt_template = ass->getBDT();
+  DTOperator *dt_template = ass->getDT();
   std::vector<std::tuple<Proposition *, size_t, size_t>> trueConstants;
-  for (auto &p_d : bdtOperands) {
+  for (auto &p_d : dtOperands) {
     trueConstants.emplace_back(new BooleanConstant(true, VarType::Bool, 1, 0),
                                std::get<1>(p_d), std::get<2>(p_d));
   }
 
   for (auto &p_d : trueConstants) {
-    bdt_template->substitute(std::get<1>(p_d), std::get<2>(p_d),
+    dt_template->substitute(std::get<1>(p_d), std::get<2>(p_d),
                              std::get<0>(p_d));
   }
 
@@ -233,7 +233,7 @@ std::vector<z3::TestCase> getCounterExamples(
     comb(trueConstants.size(), i, c);
     for (auto &comb : c) {
       for (auto ce : comb) {
-        bdt_template->substitute(std::get<1>(trueConstants[ce]),
+        dt_template->substitute(std::get<1>(trueConstants[ce]),
                                  std::get<2>(trueConstants[ce]),
                                  std::get<0>(trueConstants[ce]));
       }
@@ -243,14 +243,14 @@ std::vector<z3::TestCase> getCounterExamples(
 
       auto subTrace =
           genTrace(paths, clc::length / 2,
-                   dynamic_cast<BDTNCReps *>(ass->getBDT()) != nullptr);
+                   dynamic_cast<DTNCReps *>(ass->getDT()) != nullptr);
       ret.insert(ret.end(), subTrace.begin(), subTrace.end());
       if (cut) {
         ret.push_back(z3::TestCase({std::make_pair("@cut", z3::TypeValue())}));
       }
 
       for (auto ce : comb) {
-        bdt_template->substitute(std::get<1>(trueConstants[ce]),
+        dt_template->substitute(std::get<1>(trueConstants[ce]),
                                  std::get<2>(trueConstants[ce]),
                                  std::get<0>(trueConstants[ce]));
       }
@@ -455,8 +455,8 @@ int main(int arg, char *argv[]) {
   // allocate trace
   Trace *trace = new Trace(vars_dt, clc::length);
 
-  std::vector<std::tuple<Proposition *, size_t, size_t>> bdtOperands;
-  Template *ass = parseAssertion(trace, bdtOperands);
+  std::vector<std::tuple<Proposition *, size_t, size_t>> dtOperands;
+  Template *ass = parseAssertion(trace, dtOperands);
 
   // debug
   std::cout << ass->getColoredAssertion() << "\n";
@@ -475,17 +475,17 @@ int main(int arg, char *argv[]) {
   }
 
   z3trace = genTrace(paths, clc::length / 2,
-                     dynamic_cast<BDTNCReps *>(ass->getBDT()) != nullptr);
+                     dynamic_cast<DTNCReps *>(ass->getDT()) != nullptr);
 
-  if (ass->getBDT() != nullptr && ass->getBDT()->getNChoices() > 1) {
-    // get the counterexample trace for bdt mining
+  if (ass->getDT() != nullptr && ass->getDT()->getNChoices() > 1) {
+    // get the counterexample trace for dt mining
     auto ce = getCounterExamples(
-        ass, bdtOperands, dynamic_cast<BDTNCReps *>(ass->getBDT()) != nullptr);
+        ass, dtOperands, dynamic_cast<DTNCReps *>(ass->getDT()) != nullptr);
     // add ce to the main trace->t
     z3trace.insert(z3trace.end(), ce.begin(), ce.end());
   }
 
-  if (dynamic_cast<BDTNCReps *>(ass->getBDT()) == nullptr) {
+  if (dynamic_cast<DTNCReps *>(ass->getDT()) == nullptr) {
     z3trace.push_back(z3::TestCase({std::make_pair("@cut", z3::TypeValue())}));
   }
 

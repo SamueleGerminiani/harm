@@ -242,7 +242,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
   std::vector<Assertion *> assp;
   t->loadPerm(l2InstId);
 
-  if (t->getBDT() != nullptr) {
+  if (t->getDT() != nullptr) {
 
     DecTreeVariables candidateVariables;
     for (size_t i = 0; i < _propsAnt.size(); i++) {
@@ -281,22 +281,22 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
     // Onset
     for (std::vector<Proposition *> &props : antGen.onSets) {
-      if (t->getBDT()->isMultiDimensional()) {
+      if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
-          for (auto prop : t->getBDT()->unpack(props[i])) {
-            t->getBDT()->addItem(prop, i);
+          for (auto prop : t->getDT()->unpack(props[i])) {
+            t->getDT()->addItem(prop, i);
           }
         }
       } else {
         for (auto prop : props) {
-          t->getBDT()->addItem(prop, -1);
+          t->getDT()->addItem(prop, -1);
         }
       }
 
-      assert(!t->getBDT()->getItems().empty());
+      assert(!t->getDT()->getItems().empty());
       if (!t->isVacuous(Location::Ant)) {
 
-        auto prettyAss = t->getBDT()->prettyPrint(0);
+        auto prettyAss = t->getDT()->prettyPrint(0);
 
         Assertion *ass = new Assertion();
         t->fillContingency(ass->_ct, 0);
@@ -308,23 +308,23 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
         assp.push_back(ass);
         messageErrorIf(!t->assHoldsOnTrace(harm::Location::None),
-                       "bdt assertion is false: " + t->getColoredAssertion());
+                       "dt assertion is false: " + t->getColoredAssertion());
       }
 #if dumpVacAss
 
       else {
         vacLock.lock();
         std::ofstream vacFile("vac.txt", ios_base::app);
-        vacFile << t->getBDT()->prettyPrint(0).first + "\n";
+        vacFile << t->getDT()->prettyPrint(0).first + "\n";
         vacFile.close();
         vacLock.unlock();
       }
 #endif
       // clear
-      t->getBDT()->removeItems();
-      if (t->getBDT()->isMultiDimensional()) {
+      t->getDT()->removeItems();
+      if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
-          t->getBDT()->clearPack(props[i]);
+          t->getDT()->clearPack(props[i]);
           delete props[i];
         }
       }
@@ -332,23 +332,23 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
     // Offset
     for (const std::vector<Proposition *> &props : antGen.offSets) {
-      if (t->getBDT()->isMultiDimensional()) {
+      if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
-          for (auto prop : t->getBDT()->unpack(props[i])) {
-            t->getBDT()->addItem(prop, i);
+          for (auto prop : t->getDT()->unpack(props[i])) {
+            t->getDT()->addItem(prop, i);
           }
         }
 
       } else {
         for (auto prop : props) {
-          t->getBDT()->addItem(prop, -1);
+          t->getDT()->addItem(prop, -1);
         }
       }
 
-      assert(!t->getBDT()->getItems().empty());
+      assert(!t->getDT()->getItems().empty());
 
       if (!t->isVacuousOffset(Location::Ant)) {
-        auto prettyAss = t->getBDT()->prettyPrint(1);
+        auto prettyAss = t->getDT()->prettyPrint(1);
         Assertion *ass = new Assertion();
         t->fillContingency(ass->_ct, 1);
         ass->_toString = prettyAss;
@@ -363,16 +363,16 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       else {
         vacLock.lock();
         std::ofstream vacFile("vac.txt", ios_base::app);
-        vacFile << t->getBDT()->prettyPrint(1).first + "\n";
+        vacFile << t->getDT()->prettyPrint(1).first + "\n";
         vacFile.close();
         vacLock.unlock();
       }
 #endif
 
-      t->getBDT()->removeItems();
-      if (t->getBDT()->isMultiDimensional()) {
+      t->getDT()->removeItems();
+      if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
-          t->getBDT()->clearPack(props[i]);
+          t->getDT()->clearPack(props[i]);
           delete props[i];
         }
       }
@@ -393,10 +393,10 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     }
     numericCandidates.clear();
 
-  } // bdt
+  } // dt
   else {
     // Step 2.2)
-    // If the template does not have a bdt
+    // If the template does not have a dt
 
     if (!t->isVacuous(harm::Location::AntCon) &&
         t->assHoldsOnTrace(harm::Location::None)) {

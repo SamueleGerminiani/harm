@@ -29,14 +29,14 @@ public:
   virtual void enterPlaceholder(spotParser::PlaceholderContext *ctx) = 0;
   virtual void exitPlaceholder(spotParser::PlaceholderContext *ctx) = 0;
 
-  virtual void enterBdt_next(spotParser::Bdt_nextContext *ctx) = 0;
-  virtual void exitBdt_next(spotParser::Bdt_nextContext *ctx) = 0;
+  virtual void enterDt_next(spotParser::Dt_nextContext *ctx) = 0;
+  virtual void exitDt_next(spotParser::Dt_nextContext *ctx) = 0;
 
-  virtual void enterBdt_next_and(spotParser::Bdt_next_andContext *ctx) = 0;
-  virtual void exitBdt_next_and(spotParser::Bdt_next_andContext *ctx) = 0;
+  virtual void enterDt_next_and(spotParser::Dt_next_andContext *ctx) = 0;
+  virtual void exitDt_next_and(spotParser::Dt_next_andContext *ctx) = 0;
 
-  virtual void enterBdt_NCReps(spotParser::Bdt_NCRepsContext *ctx) = 0;
-  virtual void exitBdt_NCReps(spotParser::Bdt_NCRepsContext *ctx) = 0;
+  virtual void enterDt_NCReps(spotParser::Dt_NCRepsContext *ctx) = 0;
+  virtual void exitDt_NCReps(spotParser::Dt_NCRepsContext *ctx) = 0;
 
   virtual void enterBoolean(spotParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(spotParser::BooleanContext *ctx) = 0;

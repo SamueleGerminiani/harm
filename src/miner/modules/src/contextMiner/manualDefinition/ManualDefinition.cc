@@ -1,7 +1,7 @@
 #include "Template.hh"
 #include "ManualDefinition.hh"
 #include "ProgressBar.hpp"
-#include "bdtLimitsParser.hh"
+#include "dtLimitsParser.hh"
 #include "classes/atom/Atom.hh"
 #include "metricParser.hh"
 #include "metricParsingUtils.hh"
@@ -40,20 +40,20 @@ void ManualDefinition::mineContexts(Trace *trace,
     for (auto &templateTag : templatesTag) {
       auto exp = getAttributeValue(templateTag, "exp", "");
       auto check = getAttributeValue(templateTag, "check", "0");
-      auto bdtLimitsStr =
-          getAttributeValue(templateTag, "bdtLimits", "3W,3D,3A,!O,N,0.1E,R");
-      BDTLimits bdtLimits = hparser::parseLimits(bdtLimitsStr);
+      auto dtLimitsStr =
+          getAttributeValue(templateTag, "dtLimits", "3W,3D,3A,!O,N,0.1E,R");
+      DTLimits dtLimits = hparser::parseLimits(dtLimitsStr);
       //  debug
-      // std::cout << "maxDepth:" << bdtLimits._maxDepth << "\n";
-      // std::cout << "maxWidth:" << bdtLimits._maxWidth << "\n";
-      // std::cout << "maxAll:" << bdtLimits._maxAll << "\n";
-      // std::cout << "bdtRange:" << bdtLimits._bdtRange << "\n";
-      // std::cout << "isRandomConstructed:" << bdtLimits._isRandomConstructed
+      // std::cout << "maxDepth:" << dtLimits._maxDepth << "\n";
+      // std::cout << "maxWidth:" << dtLimits._maxWidth << "\n";
+      // std::cout << "maxAll:" << dtLimits._maxAll << "\n";
+      // std::cout << "dtRange:" << dtLimits._dtRange << "\n";
+      // std::cout << "isRandomConstructed:" << dtLimits._isRandomConstructed
       //          << "\n";
-      // std::cout << "saveOffset:" << bdtLimits._saveOffset << "\n";
-      // std::cout << "useNegatedProps:" << bdtLimits._useNegatedProps << "\n";
+      // std::cout << "saveOffset:" << dtLimits._saveOffset << "\n";
+      // std::cout << "useNegatedProps:" << dtLimits._useNegatedProps << "\n";
       context->_templates.push_back(
-          hparser::parseTemplate(exp, trace, language, bdtLimits));
+          hparser::parseTemplate(exp, trace, language, dtLimits));
       messageErrorIf(check != "0" && check != "1",
                      "Unknown value for 'check' field");
       context->_templates.back()->_check = (check == "1" ? 1 : 0);
@@ -101,7 +101,7 @@ void ManualDefinition::mineContexts(Trace *trace,
           new CachedProposition(hparser::parseProposition(exp, trace)), loc);
     }
 
-    // numerics for bdt
+    // numerics for dt
     std::vector<rapidxml::xml_node<> *> numsTag;
     getNodesFromName(contextTag, "numeric", numsTag);
 
@@ -112,7 +112,7 @@ void ManualDefinition::mineContexts(Trace *trace,
 #endif
       for (auto &numTag : numsTag) {
         auto exp = getAttributeValue(numTag, "exp", "");
-        auto loc = getAttributeValue(numTag, "loc", "bdt");
+        auto loc = getAttributeValue(numTag, "loc", "dt");
         double clsEffort =
             std::stod(getAttributeValue(numTag, "clsEffort", "0.3"));
         // convert to proposition to avoid having multiple parsers for similar
@@ -167,7 +167,7 @@ void ManualDefinition::mineContexts(Trace *trace,
             context->_props.emplace_back(p, Location::AntCon);
           }
           delete nn;
-        } else if (loc == "bdt") {
+        } else if (loc == "dt") {
           context->_numerics.push_back(nn);
         } else {
           messageError("Unsopported attribute '" + loc + "'");

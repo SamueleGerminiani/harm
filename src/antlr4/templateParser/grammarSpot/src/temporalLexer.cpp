@@ -61,7 +61,7 @@ std::vector<uint16_t> temporalLexer::_serializedATN;
 
 std::vector<std::string> temporalLexer::_ruleNames = {
   "T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
-  "BDT_AND", "SEP", "EVENTUALLY", "ALWAYS", "NEXT", "UNTIL", "RELEASE", 
+  "DT_AND", "SEP", "EVENTUALLY", "ALWAYS", "NEXT", "UNTIL", "RELEASE", 
   "DOTS", "IMPL", "IMPL2", "IFF", "XOR", "BIND1", "BIND2", "SEREIMPL1", 
   "SEREIMPL2", "ASS", "DELAY", "SCOL", "COL", "FIRST_MATCH", "SIGN", "LGPAREN", 
   "RGPAREN", "LCPAREN", "RCPAREN", "LPAREN", "RPAREN", "VARIABLE", "VALID_ID_START", 
@@ -90,7 +90,7 @@ std::vector<std::string> temporalLexer::_literalNames = {
 };
 
 std::vector<std::string> temporalLexer::_symbolicNames = {
-  "", "", "", "", "", "", "", "", "", "", "BDT_AND", "SEP", "EVENTUALLY", 
+  "", "", "", "", "", "", "", "", "", "", "DT_AND", "SEP", "EVENTUALLY", 
   "ALWAYS", "NEXT", "UNTIL", "RELEASE", "DOTS", "IMPL", "IMPL2", "IFF", 
   "XOR", "BIND1", "BIND2", "SEREIMPL1", "SEREIMPL2", "ASS", "DELAY", "SCOL", 
   "COL", "FIRST_MATCH", "SIGN", "LGPAREN", "RGPAREN", "LCPAREN", "RCPAREN", 

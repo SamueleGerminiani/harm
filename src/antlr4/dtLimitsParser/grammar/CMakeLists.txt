@@ -2,13 +2,13 @@
 # Configuration.
 #############################################
 
-SET(NAME antlr4BdtLimitsParserGrammar)
+SET(NAME antlr4DtLimitsParserGrammar)
 
 
 #############################################
 # Sources.
 #############################################
-SET (ANTLR4_BDTLIMITS_PARSER_GRAMMAR
+SET (ANTLR4_DTLIMITS_PARSER_GRAMMAR
      src/limitsLexer.cpp
      src/limitsParser.cpp
      src/limitsListener.cpp
@@ -16,7 +16,7 @@ SET (ANTLR4_BDTLIMITS_PARSER_GRAMMAR
      )
 
  set_source_files_properties(
-     ${ANTLR4_BDTLIMITS_PARSER_GRAMMAR}
+     ${ANTLR4_DTLIMITS_PARSER_GRAMMAR}
      PROPERTIES
      COMPILE_FLAGS "-w"
      )
@@ -24,7 +24,7 @@ SET (ANTLR4_BDTLIMITS_PARSER_GRAMMAR
 #############################################
 # Targets.
 #############################################
-add_library(${NAME} ${ANTLR4_BDTLIMITS_PARSER_GRAMMAR})
+add_library(${NAME} ${ANTLR4_DTLIMITS_PARSER_GRAMMAR})
 target_include_directories(${NAME} PUBLIC
     include/
     ${ANTLR4CPP_INCLUDE_DIRS}  

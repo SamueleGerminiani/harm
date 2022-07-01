@@ -31,14 +31,14 @@ public:
   virtual void enterPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
   virtual void exitPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
 
-  virtual void enterBdt_next(spotParser::Bdt_nextContext * /*ctx*/) override { }
-  virtual void exitBdt_next(spotParser::Bdt_nextContext * /*ctx*/) override { }
+  virtual void enterDt_next(spotParser::Dt_nextContext * /*ctx*/) override { }
+  virtual void exitDt_next(spotParser::Dt_nextContext * /*ctx*/) override { }
 
-  virtual void enterBdt_next_and(spotParser::Bdt_next_andContext * /*ctx*/) override { }
-  virtual void exitBdt_next_and(spotParser::Bdt_next_andContext * /*ctx*/) override { }
+  virtual void enterDt_next_and(spotParser::Dt_next_andContext * /*ctx*/) override { }
+  virtual void exitDt_next_and(spotParser::Dt_next_andContext * /*ctx*/) override { }
 
-  virtual void enterBdt_NCReps(spotParser::Bdt_NCRepsContext * /*ctx*/) override { }
-  virtual void exitBdt_NCReps(spotParser::Bdt_NCRepsContext * /*ctx*/) override { }
+  virtual void enterDt_NCReps(spotParser::Dt_NCRepsContext * /*ctx*/) override { }
+  virtual void exitDt_NCReps(spotParser::Dt_NCRepsContext * /*ctx*/) override { }
 
   virtual void enterBoolean(spotParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(spotParser::BooleanContext * /*ctx*/) override { }

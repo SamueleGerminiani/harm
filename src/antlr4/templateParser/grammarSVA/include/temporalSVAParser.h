@@ -13,7 +13,7 @@ class  temporalSVAParser : public antlr4::Parser {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, BDT_AND = 10, SEP = 11, EVENTUALLY = 12, ALWAYS = 13, 
+    T__7 = 8, T__8 = 9, DT_AND = 10, SEP = 11, EVENTUALLY = 12, ALWAYS = 13, 
     NEXT = 14, UNTIL = 15, RELEASE = 16, DOTS = 17, IMPL = 18, IMPL2 = 19, 
     IFF = 20, XOR = 21, BIND1 = 22, BIND2 = 23, ASS = 24, DELAY = 25, SCOL = 26, 
     COL = 27, FIRST_MATCH = 28, SIGN = 29, LGPAREN = 30, RGPAREN = 31, LCPAREN = 32, 
@@ -26,7 +26,7 @@ public:
 
   enum {
     RuleFile = 0, RuleFormula = 1, RuleSere = 2, RuleTformula = 3, RulePlaceholder = 4, 
-    RuleBdt_next = 5, RuleBdt_next_and = 6, RuleBdt_NCReps = 7, RuleBoolean = 8, 
+    RuleDt_next = 5, RuleDt_next_and = 6, RuleDt_NCReps = 7, RuleBoolean = 8, 
     RuleBooleanAtom = 9, RuleBooleanConstant = 10, RuleBooleanVariable = 11, 
     RuleLogic = 12, RuleLogicAtom = 13, RuleLogicConstant = 14, RuleLogicVariable = 15, 
     RuleNumeric = 16, RuleNumericAtom = 17, RuleNumericConstant = 18, RuleNumericVariable = 19, 
@@ -48,9 +48,9 @@ public:
   class SereContext;
   class TformulaContext;
   class PlaceholderContext;
-  class Bdt_nextContext;
-  class Bdt_next_andContext;
-  class Bdt_NCRepsContext;
+  class Dt_nextContext;
+  class Dt_next_andContext;
+  class Dt_NCRepsContext;
   class BooleanContext;
   class BooleanAtomContext;
   class BooleanConstantContext;
@@ -113,7 +113,7 @@ public:
     BooleanContext *boolean();
     PlaceholderContext *placeholder();
     antlr4::tree::TerminalNode *NOT();
-    antlr4::tree::TerminalNode *BDT_AND();
+    antlr4::tree::TerminalNode *DT_AND();
     antlr4::tree::TerminalNode *LPAREN();
     std::vector<SereContext *> sere();
     SereContext* sere(size_t i);
@@ -126,9 +126,9 @@ public:
     antlr4::tree::TerminalNode *LCPAREN();
     antlr4::tree::TerminalNode *DOTS();
     antlr4::tree::TerminalNode *RCPAREN();
-    Bdt_nextContext *bdt_next();
-    Bdt_next_andContext *bdt_next_and();
-    Bdt_NCRepsContext *bdt_NCReps();
+    Dt_nextContext *dt_next();
+    Dt_next_andContext *dt_next_and();
+    Dt_NCRepsContext *dt_NCReps();
     antlr4::tree::TerminalNode *BOR();
     antlr4::tree::TerminalNode *BAND();
     antlr4::tree::TerminalNode *AND();
@@ -152,7 +152,7 @@ public:
     virtual size_t getRuleIndex() const override;
     BooleanContext *boolean();
     PlaceholderContext *placeholder();
-    antlr4::tree::TerminalNode *BDT_AND();
+    antlr4::tree::TerminalNode *DT_AND();
     antlr4::tree::TerminalNode *LPAREN();
     std::vector<TformulaContext *> tformula();
     TformulaContext* tformula(size_t i);
@@ -191,9 +191,9 @@ public:
 
   PlaceholderContext* placeholder();
 
-  class  Bdt_nextContext : public antlr4::ParserRuleContext {
+  class  Dt_nextContext : public antlr4::ParserRuleContext {
   public:
-    Bdt_nextContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    Dt_nextContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMERIC();
     antlr4::tree::TerminalNode *DOTS();
@@ -203,11 +203,11 @@ public:
    
   };
 
-  Bdt_nextContext* bdt_next();
+  Dt_nextContext* dt_next();
 
-  class  Bdt_next_andContext : public antlr4::ParserRuleContext {
+  class  Dt_next_andContext : public antlr4::ParserRuleContext {
   public:
-    Bdt_next_andContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    Dt_next_andContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMERIC();
     antlr4::tree::TerminalNode *BAND();
@@ -218,11 +218,11 @@ public:
    
   };
 
-  Bdt_next_andContext* bdt_next_and();
+  Dt_next_andContext* dt_next_and();
 
-  class  Bdt_NCRepsContext : public antlr4::ParserRuleContext {
+  class  Dt_NCRepsContext : public antlr4::ParserRuleContext {
   public:
-    Bdt_NCRepsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    Dt_NCRepsContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *NUMERIC();
     antlr4::tree::TerminalNode *RCPAREN();
@@ -234,7 +234,7 @@ public:
    
   };
 
-  Bdt_NCRepsContext* bdt_NCReps();
+  Dt_NCRepsContext* dt_NCReps();
 
   class  BooleanContext : public antlr4::ParserRuleContext {
   public:

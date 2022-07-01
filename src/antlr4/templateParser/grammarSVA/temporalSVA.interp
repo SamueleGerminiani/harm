@@ -74,7 +74,7 @@ null
 null
 null
 null
-BDT_AND
+DT_AND
 SEP
 EVENTUALLY
 ALWAYS
@@ -134,9 +134,9 @@ formula
 sere
 tformula
 placeholder
-bdt_next
-bdt_next_and
-bdt_NCReps
+dt_next
+dt_next_and
+dt_NCReps
 boolean
 booleanAtom
 booleanConstant

@@ -1,5 +1,5 @@
 #include "AntecedentGenerator.hh"
-#include "BDTOperator.hh"
+#include "DTOperator.hh"
 #include "KDE.hh"
 #include "supportMethods.hh"
 
@@ -155,15 +155,15 @@ inline void AntecedentGenerator::findCandidates(
 
   // the 2 propositions of X
   std::vector<Proposition *> propPtr;
-  BDTOperator *template_bdt = t->getBDT();
+  DTOperator *template_dt = t->getDT();
   propPtr.push_back(dcVariables[candidate].first);
   propPtr.push_back(dcVariables[candidate].second);
 
   // for each proposition that belongs to a unused variable
   for (size_t propI = 0;
-       propI < (template_bdt->getLimits()._useNegatedProps ? 2 : 1); ++propI) {
+       propI < (template_dt->getLimits()._useNegatedProps ? 2 : 1); ++propI) {
 
-    if (template_bdt->isTaken(candidate, propI, depth))
+    if (template_dt->isTaken(candidate, propI, depth))
       continue;
 
     Proposition *prop = propPtr[propI];
@@ -177,13 +177,13 @@ inline void AntecedentGenerator::findCandidates(
 
     // add the new proposition of a unused variable in the current
     // antecedent
-    template_bdt->addItem(prop, depth);
+    template_dt->addItem(prop, depth);
 
     // ignore this prop if the template contains a known solution
-    if ((template_bdt->isRandomConstructed() ||
-         template_bdt->isMultiDimensional()) &&
-        isKnownSolution(template_bdt->getItems(), template_bdt, 1)) {
-      template_bdt->popItem(depth);
+    if ((template_dt->isRandomConstructed() ||
+         template_dt->isMultiDimensional()) &&
+        isKnownSolution(template_dt->getItems(), template_dt, 1)) {
+      template_dt->popItem(depth);
       continue;
     }
 
@@ -197,7 +197,7 @@ inline void AntecedentGenerator::findCandidates(
 
       if (res.occGoal == 0 || res.occGoal == res.occProposition) {
 
-        template_bdt->addLeaf(prop, candidate, propI, depth);
+        template_dt->addLeaf(prop, candidate, propI, depth);
         discLeaves.push_back(DiscoveredLeaf(candidate, propI, depth));
 
         _store(t, res.occGoal != 0);
@@ -214,7 +214,7 @@ inline void AntecedentGenerator::findCandidates(
       }
     }
 
-    template_bdt->popItem(depth);
+    template_dt->popItem(depth);
   }
 
   // debug
@@ -297,9 +297,9 @@ inline void AntecedentGenerator::findCandidatesNumeric(
     std::vector<DiscoveredLeaf> &discLeaves, std::vector<CandidateDec> &igs,
     int depth, std::vector<Proposition *> &genProps, double currEntropy) {
 
-  BDTOperator *template_bdt = t->getBDT();
+  DTOperator *template_dt = t->getDT();
 
-  if (template_bdt->isTaken(candidate + numLeavesOffset, 0, depth)) {
+  if (template_dt->isTaken(candidate + numLeavesOffset, 0, depth)) {
     return;
   }
   bool discLeaf = 0;
@@ -313,13 +313,13 @@ inline void AntecedentGenerator::findCandidatesNumeric(
 
     // add the new proposition of a unused variable in the current
     // antecedent
-    template_bdt->addItem(prop, depth);
+    template_dt->addItem(prop, depth);
 
     // ignore this prop if the template contains a known solution
-    if ((template_bdt->isRandomConstructed() ||
-         template_bdt->isMultiDimensional()) &&
-        isKnownSolution(template_bdt->getItems(), template_bdt, 1)) {
-      template_bdt->popItem(depth);
+    if ((template_dt->isRandomConstructed() ||
+         template_dt->isMultiDimensional()) &&
+        isKnownSolution(template_dt->getItems(), template_dt, 1)) {
+      template_dt->popItem(depth);
       continue;
     }
 
@@ -347,22 +347,22 @@ inline void AntecedentGenerator::findCandidatesNumeric(
         }
       }
     }
-    template_bdt->popItem(depth);
+    template_dt->popItem(depth);
   }
 
   if (discLeaf) {
-    template_bdt->addLeaf(nullptr, candidate + numLeavesOffset, 0, depth);
+    template_dt->addLeaf(nullptr, candidate + numLeavesOffset, 0, depth);
     discLeaves.push_back(DiscoveredLeaf(candidate + numLeavesOffset, 0, depth));
   }
 }
 bool AntecedentGenerator::isKnownSolution(
-    const std::vector<Proposition *> &items, BDTOperator *template_bdt,
+    const std::vector<Proposition *> &items, DTOperator *template_dt,
     bool checkOnly) {
 
   std::stringstream ss;
-  if (template_bdt->isMultiDimensional()) {
+  if (template_dt->isMultiDimensional()) {
     for (auto &pack : items) {
-      for (auto &p : template_bdt->unpack(pack)) {
+      for (auto &p : template_dt->unpack(pack)) {
         ss << p << "$";
       }
       ss << "$";
@@ -387,7 +387,7 @@ void AntecedentGenerator::_runDecisionTree(
     std::set<size_t> &unusedNumerics, NumericDecTreeExp &numericCandidates,
     Template *t, std::vector<Proposition *> &genProps, double currEntropy) {
 
-  BDTOperator *template_bdt = t->getBDT();
+  DTOperator *template_dt = t->getDT();
 
   std::vector<DiscoveredLeaf> discLeaves;
   // getting the relative information gain (RIG) for each unused variable X
@@ -397,13 +397,13 @@ void AntecedentGenerator::_runDecisionTree(
 
   std::vector<CandidateDec> igs;
 
-  if (template_bdt->getNChoices() < template_bdt->getLimits()._maxAll) {
+  if (template_dt->getNChoices() < template_dt->getLimits()._maxAll) {
     for (; candidate != unusedVars.end() ||
            candidateNumeric != unusedNumerics.end();) {
-      if (template_bdt->isRandomConstructed()) {
+      if (template_dt->isRandomConstructed()) {
         //..#&.. ..##..
-        for (size_t i = 0; i < template_bdt->getLimits()._maxDepth; i++) {
-          if (template_bdt->canInsertAtDepth(i)) {
+        for (size_t i = 0; i < template_dt->getLimits()._maxDepth; i++) {
+          if (template_dt->canInsertAtDepth(i)) {
             if (candidate != unusedVars.end())
               findCandidates(*candidate, dcVariables, t, discLeaves, igs, i,
                              currEntropy);
@@ -415,32 +415,32 @@ void AntecedentGenerator::_runDecisionTree(
         }
       } else {
         //..#&.. ..##.. ..&&..
-        if (template_bdt->isMultiDimensional()) {
+        if (template_dt->isMultiDimensional()) {
           //..#&..
-          if (template_bdt->canInsertAtDepth(template_bdt->getCurrentDepth())) {
+          if (template_dt->canInsertAtDepth(template_dt->getCurrentDepth())) {
             if (candidate != unusedVars.end())
               findCandidates(*candidate, dcVariables, t, discLeaves, igs,
-                             template_bdt->getCurrentDepth(), currEntropy);
+                             template_dt->getCurrentDepth(), currEntropy);
 
             if (candidateNumeric != unusedNumerics.end())
               findCandidatesNumeric(
                   *candidateNumeric, numericCandidates, t, discLeaves, igs,
-                  template_bdt->getCurrentDepth(), genProps, currEntropy);
+                  template_dt->getCurrentDepth(), genProps, currEntropy);
           }
-          if (template_bdt->canInsertAtDepth(template_bdt->getCurrentDepth() +
+          if (template_dt->canInsertAtDepth(template_dt->getCurrentDepth() +
                                              1)) {
             if (candidate != unusedVars.end())
               findCandidates(*candidate, dcVariables, t, discLeaves, igs,
-                             template_bdt->getCurrentDepth() + 1, currEntropy);
+                             template_dt->getCurrentDepth() + 1, currEntropy);
 
             if (candidateNumeric != unusedNumerics.end())
               findCandidatesNumeric(
                   *candidateNumeric, numericCandidates, t, discLeaves, igs,
-                  template_bdt->getCurrentDepth() + 1, genProps, currEntropy);
+                  template_dt->getCurrentDepth() + 1, genProps, currEntropy);
           }
         } else {
           //..##.. ..&&..
-          if (template_bdt->canInsertAtDepth(-1)) {
+          if (template_dt->canInsertAtDepth(-1)) {
             if (candidate != unusedVars.end())
               findCandidates(*candidate, dcVariables, t, discLeaves, igs, -1,
                              currEntropy);
@@ -467,7 +467,7 @@ void AntecedentGenerator::_runDecisionTree(
               return e1._ig > e2._ig;
             });
 
-  if (igs.size() > 1 && template_bdt->getLimits()._bdtRange < 0.f) {
+  if (igs.size() > 1 && template_dt->getLimits()._dtRange < 0.f) {
     igs.erase(begin(igs) + 1, end(igs));
   }
   //    std::cout << "---------start--------"
@@ -481,31 +481,31 @@ void AntecedentGenerator::_runDecisionTree(
   //              << "\n";
 
   double lowerBound =
-      igs.empty() ? 0 : igs[0]._ig - template_bdt->getLimits()._bdtRange;
+      igs.empty() ? 0 : igs[0]._ig - template_dt->getLimits()._dtRange;
 
 #if printTree
   size_t currState = nStates;
 #endif
   for (const auto &c_ig : igs) {
-    if (template_bdt->getLimits()._bdtRange < 0.f || c_ig._ig >= lowerBound) {
+    if (template_dt->getLimits()._dtRange < 0.f || c_ig._ig >= lowerBound) {
 
       messageErrorIf(c_ig._props.size() > 1, "");
 
       Proposition *prop = c_ig._props[0].first;
       size_t pos = c_ig._props[0].second;
 
-      template_bdt->addItem(prop, c_ig._depth);
-      template_bdt->addLeaf(prop, c_ig._id, pos, c_ig._depth);
+      template_dt->addItem(prop, c_ig._depth);
+      template_dt->addLeaf(prop, c_ig._id, pos, c_ig._depth);
       discLeaves.push_back(DiscoveredLeaf(c_ig._id, pos, c_ig._depth));
 
 #if printTree
       tree << currState << " -> " << ++nStates << "[label= \""
            << prop2String(*prop) << " \\["
-           << (c_ig._depth == -1 ? template_bdt->getCurrentDepth()
+           << (c_ig._depth == -1 ? template_dt->getCurrentDepth()
                                  : c_ig._depth)
            << ", "
            //             << t->getAssertion() << " \\[" <<
-           //             (c_ig._depth==-1?template_bdt->getCurrentDepth():
+           //             (c_ig._depth==-1?template_dt->getCurrentDepth():
            //             c_ig._depth) << ", "
            << c_ig._ig << "\\]"
            << "\"];\n";
@@ -513,37 +513,37 @@ void AntecedentGenerator::_runDecisionTree(
 
       _runDecisionTree(unusedVars, dcVariables, unusedNumerics,
                        numericCandidates, t, genProps, c_ig._entropy);
-      template_bdt->popItem(c_ig._depth);
+      template_dt->popItem(c_ig._depth);
     }
   } // for igs
 
   for (auto &dl : discLeaves) {
-    template_bdt->removeLeaf(dl._id, dl._second, dl._depth);
+    template_dt->removeLeaf(dl._id, dl._second, dl._depth);
   }
 }
 void AntecedentGenerator::_store(Template *t, bool value) {
 
-  BDTOperator *template_bdt = t->getBDT();
+  DTOperator *template_dt = t->getDT();
 
   if (!value && !saveOffset) {
     return;
   }
 
   // Let's save the current propositions
-  std::vector<Proposition *> items = template_bdt->minimize(!value);
+  std::vector<Proposition *> items = template_dt->minimize(!value);
 
-  if (isKnownSolution(items, template_bdt)) {
-    if (template_bdt->isMultiDimensional()) {
+  if (isKnownSolution(items, template_dt)) {
+    if (template_dt->isMultiDimensional()) {
       // delete the minimized container propositions
       for (auto p : items) {
-        template_bdt->clearPack(p);
+        template_dt->clearPack(p);
         delete p;
       }
     }
     return;
   }
 
-  if (template_bdt->isSolutionInconsequential(items)) {
+  if (template_dt->isSolutionInconsequential(items)) {
     return;
   }
 

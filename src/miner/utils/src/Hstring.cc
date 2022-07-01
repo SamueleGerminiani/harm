@@ -41,14 +41,14 @@ std::string Hstring::toColoredString(bool sub) {
     case Stype::Ph:
       ret += VAR((sub ? prop2ColoredString(**e._pp) : e._s));
       break;
-    case Stype::BDTAnd:
+    case Stype::DTAnd:
       if (!sub || dynamic_cast<expression::PropositionAnd *>(*e._pp)->empty()) {
         ret += BOOL("..&&..");
       } else {
         ret += prop2ColoredString(**e._pp);
       }
       break;
-    case Stype::BDTNext:
+    case Stype::DTNext:
       if (sub) {
         if (e._offset > 0) {
           ret += TEMP(" ##" + std::to_string(e._offset) + " ");
@@ -60,7 +60,7 @@ std::string Hstring::toColoredString(bool sub) {
         ret += TEMP("..##..");
       }
       break;
-    case Stype::BDTNCReps:
+    case Stype::DTNCReps:
       if (sub) {
         ret += prop2ColoredString(**e._pp);
         if (e._offset > 0) {
@@ -73,7 +73,7 @@ std::string Hstring::toColoredString(bool sub) {
         ret += TEMP("..[->]" + e._sep + "..");
       }
       break;
-    case Stype::BDTNextAnd:
+    case Stype::DTNextAnd:
       if (sub) {
         if (e._offset > 0) {
           ret += TEMP(" ##" + std::to_string(e._offset) + " ");
@@ -110,14 +110,14 @@ std::string Hstring::toString(bool sub) {
     case Stype::Ph:
       ret += (sub ? prop2String(**e._pp) : e._s);
       break;
-    case Stype::BDTAnd:
+    case Stype::DTAnd:
       if (!sub || dynamic_cast<expression::PropositionAnd *>(*e._pp)->empty()) {
         ret += "..&&..";
       } else {
         ret += prop2String(**e._pp);
       }
       break;
-    case Stype::BDTNext:
+    case Stype::DTNext:
       if (sub) {
         if (e._offset > 0) {
           ret += (" ##" + std::to_string(e._offset) + " ");
@@ -129,7 +129,7 @@ std::string Hstring::toString(bool sub) {
         ret += ("..##..");
       }
       break;
-    case Stype::BDTNCReps:
+    case Stype::DTNCReps:
       if (sub) {
         ret += prop2String(**e._pp);
         if (e._offset > 0) {
@@ -141,7 +141,7 @@ std::string Hstring::toString(bool sub) {
         ret += ("..[->]" + e._sep + "..");
       }
       break;
-    case Stype::BDTNextAnd:
+    case Stype::DTNextAnd:
       if (sub) {
         if (e._offset > 0) {
           ret += (" ##" + std::to_string(e._offset) + " ");
@@ -179,22 +179,22 @@ std::string Hstring::toSpotString() {
     case Stype::Ph:
       ret += e._s;
       break;
-    case Stype::BDTAnd:
+    case Stype::DTAnd:
       ret += e._s;
       break;
-    case Stype::BDTNext:
+    case Stype::DTNext:
       if (e._offset > 0) {
         ret += " ##" + std::to_string(e._offset) + " ";
       }
       ret += e._s;
       break;
-    case Stype::BDTNCReps:
+    case Stype::DTNCReps:
       ret += e._s;
       if (e._offset > 0) {
         ret += " [->" + std::to_string(e._offset) + "]; ";
       }
       break;
-    case Stype::BDTNextAnd:
+    case Stype::DTNextAnd:
       if (e._offset > 0) {
         ret += " ##" + std::to_string(e._offset) + " ";
       }

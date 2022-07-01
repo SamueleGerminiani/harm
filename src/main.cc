@@ -280,7 +280,7 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
       ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
       ofs << std::get<0>(dec);
       ofs << "\"";
-      ofs << " loc=\"bdt\"/>"
+      ofs << " loc=\"dt\"/>"
           << "\n";
     }
   }
@@ -315,19 +315,19 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
 
   ofs << "\n\n"
       << "\n";
-  ofs << "\t\t<template bdtLimits=\"3A,-0.1E\" exp=\"G({..&&..}|-> "
+  ofs << "\t\t<template dtLimits=\"3A,-0.1E\" exp=\"G({..&&..}|-> "
          "X(P0))\" /> "
       << "\n";
-  ofs << "\t\t<template bdtLimits=\"3D,3W,3A,-0.1E,R\" "
+  ofs << "\t\t<template dtLimits=\"3D,3W,3A,-0.1E,R\" "
          "exp=\"G({..#1&..}|-> X(P0))\" /> "
       << "\n";
-  ofs << "\t\t<template bdtLimits=\"3A,-0.1E,R\" "
+  ofs << "\t\t<template dtLimits=\"3A,-0.1E,R\" "
          "exp=\"G({..##1..}|-> X(P0))\" /> "
       << "\n";
-  ofs << "\t\t<template bdtLimits=\"3D,3W,3A,-0.1E,S\" "
+  ofs << "\t\t<template dtLimits=\"3D,3W,3A,-0.1E,S\" "
          "exp=\"G({..#1&..}|-> X(P0))\" /> "
       << "\n";
-  ofs << "\t\t<template bdtLimits=\"3A,-0.1E,S\" "
+  ofs << "\t\t<template dtLimits=\"3A,-0.1E,S\" "
          "exp=\"G({..##1..}|-> X(P0))\" /> "
       << "\n";
   ofs << "\n\n"

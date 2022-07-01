@@ -83,7 +83,7 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
 #endif
   for (size_t i = start; i < start + n && i < assStrs.size(); i++) {
     Template *ass =
-        hparser::parseTemplate(assStrs[i], trace, "Spot", BDTLimits(), 0);
+        hparser::parseTemplate(assStrs[i], trace, "Spot", DTLimits(), 0);
     // parallelize eval function with 2 threads
     ass->setL1Threads(2);
     // save

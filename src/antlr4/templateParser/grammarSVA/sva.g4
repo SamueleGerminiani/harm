@@ -14,7 +14,7 @@ formula : tformula IMPL tformula
 	    | LGPAREN sere RGPAREN BIND2 tformula
 	;
 
-sere : boolean | (NOT)? placeholder | BDT_AND 
+sere : boolean | (NOT)? placeholder | DT_AND 
 	 | LPAREN sere RPAREN
 	 | LGPAREN sere RGPAREN
 	 | sere BOR sere
@@ -28,10 +28,10 @@ sere : boolean | (NOT)? placeholder | BDT_AND
 	 | sere LCPAREN IMPL NUMERIC DOTS? NUMERIC? RCPAREN
 	 | DELAY LCPAREN? NUMERIC DOTS? NUMERIC? RCPAREN? sere
 	 | sere DELAY LCPAREN? NUMERIC? DOTS? NUMERIC? RCPAREN? sere
-     | bdt_next | bdt_next_and | bdt_NCReps
+     | dt_next | dt_next_and | dt_NCReps
 	 ;
 
-tformula: boolean | placeholder | BDT_AND
+tformula: boolean | placeholder | DT_AND
 	| LPAREN tformula RPAREN 
 	| NOT tformula 
 	| tformula AND tformula 
@@ -46,18 +46,18 @@ tformula: boolean | placeholder | BDT_AND
 
 placeholder: 'P' NUMERIC ;
 
-BDT_AND
+DT_AND
     : '..&&..'
     ;
 
-bdt_next
+dt_next
     : '..##' NUMERIC '..'
     ;
 
-bdt_next_and
+dt_next_and
     : '..#' NUMERIC '&' '..'
     ;
-bdt_NCReps
+dt_NCReps
     : '..[->' NUMERIC ']' SEP '..';
 
 SEP:'@:' | '@;';

@@ -75,7 +75,7 @@ null
 null
 null
 null
-BDT_AND
+DT_AND
 SEP
 EVENTUALLY
 ALWAYS
@@ -140,7 +140,7 @@ T__5
 T__6
 T__7
 T__8
-BDT_AND
+DT_AND
 SEP
 EVENTUALLY
 ALWAYS

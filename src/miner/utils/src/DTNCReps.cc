@@ -1,5 +1,5 @@
-#include "BDTNCReps.hh"
-#include "BDTUtils.hh"
+#include "DTNCReps.hh"
+#include "DTUtils.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "message.hh"
@@ -10,22 +10,22 @@
 #include <unordered_set>
 #include <utility>
 namespace harm {
-//--BDTNCReps---------------------------------------
+//--DTNCReps---------------------------------------
 
-BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
-                     const BDTLimits &limits)
+DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
+                     const DTLimits &limits)
     : _t(t), _shift(shift), _tc(p) {
 
   _limits = limits;
   _limits._maxWidth = -1;
   // The base case automata were already generated in the template
-  _tokens.push_back("bdtNCReps0");
+  _tokens.push_back("dtNCReps0");
   _ant.push_back(_t->_ant);
   // storing depths
   _antDepth.push_back(_t->getDepth(_ant.back()));
 
   for (size_t j = 0; j < t->_templateFormula.size(); j++) {
-    if (t->_templateFormula[j]._t == Hstring::Stype::BDTNCReps) {
+    if (t->_templateFormula[j]._t == Hstring::Stype::DTNCReps) {
       t->_templateFormula[j]._offset = -1 * _shift;
     }
   }
@@ -38,15 +38,15 @@ BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
             _tokens.back(),
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening before the bdt operator when using "
+        "Can't have events happening before the dt operator when using "
         "|-> ");
   } else {
     messageErrorIf(
         !nothingAfter(
-            "bdtMock",
+            "dtMock",
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening after the bdt operator when not using "
+        "Can't have events happening after the dt operator when not using "
         "|-> ");
   }
 
@@ -64,14 +64,14 @@ BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
     auto hant = _formulas[i - 1].getAnt();
 
     if (_t->_applyDynamicShift) {
-      // bdtNCRepsM ##N bdtNCRepsM-1 ##N ... ##N bdtNCReps0
+      // dtNCRepsM ##N dtNCRepsM-1 ##N ... ##N dtNCReps0
       // find the last operand and append a new one
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNCReps) {
+        if (hant[j]._t == Hstring::Stype::DTNCReps) {
           Proposition **pp = new Proposition *(nullptr);
-          std::string token = "bdtNCReps" + std::to_string(i);
+          std::string token = "dtNCReps" + std::to_string(i);
           hant.insert(hant.begin() + j,
-                      Hstring(token, Hstring::Stype::BDTNCReps, pp));
+                      Hstring(token, Hstring::Stype::DTNCReps, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -83,14 +83,14 @@ BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
       }
     } else {
 
-      // bdtNext1 ##N bdtNext2 ##N ... ##N bdtNextM
+      // dtNext1 ##N dtNext2 ##N ... ##N dtNextM
       // find the last operand and append a new one
       for (int j = hant.size() - 1; j >= 0; j--) {
-        if (hant[j]._t == Hstring::Stype::BDTNCReps) {
+        if (hant[j]._t == Hstring::Stype::DTNCReps) {
           Proposition **pp = new Proposition *(nullptr);
-          std::string token = "bdtNCReps" + std::to_string(i);
+          std::string token = "dtNCReps" + std::to_string(i);
           hant.insert(hant.begin() + j + 1,
-                      Hstring(token, Hstring::Stype::BDTNCReps, pp));
+                      Hstring(token, Hstring::Stype::DTNCReps, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -100,7 +100,7 @@ BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
         }
       }
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNCReps) {
+        if (hant[j]._t == Hstring::Stype::DTNCReps) {
           hant[j]._offset = _shift;
         }
       }
@@ -144,14 +144,14 @@ BDTNCReps::BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
     messageErrorIf(depth != 0, " parallel depth is not allowed");
   }
 }
-BDTNCReps::~BDTNCReps() {
+DTNCReps::~DTNCReps() {
   for (size_t i = 0; i < _tokens.size(); i++) {
     delete _ant[i];
   }
   delete _tc;
 }
 
-std::vector<Proposition *> BDTNCReps::minimize(bool isOffset) {
+std::vector<Proposition *> DTNCReps::minimize(bool isOffset) {
 
   std::vector<std::vector<size_t>> c;
   std::vector<Proposition *> propList;
@@ -202,7 +202,7 @@ end:;
   }
   return ret;
 }
-void BDTNCReps::removeItems() {
+void DTNCReps::removeItems() {
 
   _t->_ant = _ant[0];
   _t->_templateFormula = _formulas[0];
@@ -212,7 +212,7 @@ void BDTNCReps::removeItems() {
   _order.clear();
   _currDepth = 0;
 }
-void BDTNCReps::popItem(int depth) {
+void DTNCReps::popItem(int depth) {
   if (depth == -1) {
     depth = _currDepth;
   }
@@ -232,7 +232,7 @@ void BDTNCReps::popItem(int depth) {
   _order.pop_back();
   assert(_choices.size() == _order.size());
 }
-void BDTNCReps::addItem(Proposition *p, int depth) {
+void DTNCReps::addItem(Proposition *p, int depth) {
 
   if (depth == -1) {
     if (!_choices.empty()) {
@@ -267,15 +267,15 @@ void BDTNCReps::addItem(Proposition *p, int depth) {
   }
   assert(_choices.size() == _order.size());
 }
-std::vector<Proposition *> BDTNCReps::getItems() {
+std::vector<Proposition *> DTNCReps::getItems() {
   std::vector<Proposition *> ret;
   for (size_t i = 0; i <= _currDepth; i++) {
     ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
   }
   return ret;
 }
-bool BDTNCReps::isMultiDimensional() { return 0; }
-bool BDTNCReps::canInsertAtDepth(int depth) {
+bool DTNCReps::isMultiDimensional() { return 0; }
+bool DTNCReps::canInsertAtDepth(int depth) {
   if (depth == -1) {
     return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
   } else {
@@ -283,14 +283,14 @@ bool BDTNCReps::canInsertAtDepth(int depth) {
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }
-bool BDTNCReps::isRandomConstructed() { return _limits._isRandomConstructed; }
-size_t BDTNCReps::getNChoices() { return _choices.size(); }
-bool BDTNCReps::isTaken(size_t id, bool second, int depth) { return false; }
-void BDTNCReps::removeLeaf(size_t id, bool second, int depth) {}
-void BDTNCReps::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
-const BDTLimits &BDTNCReps::getLimits() { return _limits; }
-size_t BDTNCReps::getCurrentDepth() { return _currDepth; }
-std::pair<std::string, std::string> BDTNCReps::prettyPrint(bool offset) {
+bool DTNCReps::isRandomConstructed() { return _limits._isRandomConstructed; }
+size_t DTNCReps::getNChoices() { return _choices.size(); }
+bool DTNCReps::isTaken(size_t id, bool second, int depth) { return false; }
+void DTNCReps::removeLeaf(size_t id, bool second, int depth) {}
+void DTNCReps::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
+const DTLimits &DTNCReps::getLimits() { return _limits; }
+size_t DTNCReps::getCurrentDepth() { return _currDepth; }
+std::pair<std::string, std::string> DTNCReps::prettyPrint(bool offset) {
 
   auto reducedTemplate = _formulas[_currDepth];
 
@@ -311,30 +311,30 @@ std::pair<std::string, std::string> BDTNCReps::prettyPrint(bool offset) {
   return ret;
 }
 
-std::vector<Proposition *> BDTNCReps::unpack() {
+std::vector<Proposition *> DTNCReps::unpack() {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 };
-std::vector<Proposition *> BDTNCReps::unpack(Proposition *pack) {
+std::vector<Proposition *> DTNCReps::unpack(Proposition *pack) {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 };
-std::vector<Proposition *> BDTNCReps::unpack(std::vector<Proposition *> &pack) {
+std::vector<Proposition *> DTNCReps::unpack(std::vector<Proposition *> &pack) {
   messageError("Can't unpack in unidimensional operator'");
   return std::vector<Proposition *>();
 }
 
-void BDTNCReps::clearPack(Proposition *pack) {
+void DTNCReps::clearPack(Proposition *pack) {
   messageError("Can't clear pack in unidimensional operator'");
 }
-bool BDTNCReps::isSolutionInconsequential(std::vector<Proposition *> &sol) {
+bool DTNCReps::isSolutionInconsequential(std::vector<Proposition *> &sol) {
   if (_applyDynamicShift) {
     return sol.empty() || sol.back() == _tc;
   } else {
     return sol.empty() || sol.front() == _tc;
   }
 }
-void BDTNCReps::substitute(int depth, int width, Proposition *&sub) {
+void DTNCReps::substitute(int depth, int width, Proposition *&sub) {
   if (depth == -1) {
     depth = _currDepth;
   }

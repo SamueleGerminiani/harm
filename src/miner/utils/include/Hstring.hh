@@ -13,10 +13,10 @@ public:
     Ph,
     Inst,
     Imp,
-    BDTAnd,
-    BDTNext,
-    BDTNCReps,
-    BDTNextAnd,
+    DTAnd,
+    DTNext,
+    DTNCReps,
+    DTNextAnd,
     G
   };
 

@@ -1,14 +1,13 @@
 #pragma once
-
-#include "BDTOperator.hh"
+#include "DTOperator.hh"
 
 namespace harm {
-class BDTNCReps : public BDTOperator {
+class DTNext : public DTOperator {
 public:
-  BDTNCReps(BooleanConstant *p, size_t shift, Template *t,
-          const BDTLimits &limits);
+  DTNext(BooleanConstant *p, size_t shift, Template *t,
+          const DTLimits &limits);
 
-  ~BDTNCReps() override;
+  ~DTNext() override;
   bool isMultiDimensional() override;
   bool canInsertAtDepth(int depth) override;
   bool isRandomConstructed() override;
@@ -16,7 +15,7 @@ public:
 
   size_t getNChoices() override;
   size_t getCurrentDepth() override;
-  const BDTLimits &getLimits() override;
+  const DTLimits &getLimits() override;
 
   void addItem(Proposition *p, int depth) override;
   void popItem(int depth) override;
@@ -35,7 +34,8 @@ public:
   void addLeaf(Proposition *p, size_t id, bool second, int depth) override;
 
   virtual std::pair<std::string, std::string> prettyPrint(bool offset) override;
-  void substitute(int depth, int width, Proposition *&sub)override;
+
+  void substitute(int depth, int width, Proposition *&sub) override ;
 
 private:
   std::unordered_map<size_t, Proposition *> _choices;

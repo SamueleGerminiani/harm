@@ -14,10 +14,10 @@
 #include <unordered_map>
 
 #include "Automaton.hh"
-#include "BDTAnd.hh"
-#include "BDTNCReps.hh"
-#include "BDTNext.hh"
-#include "BDTNextAnd.hh"
+#include "DTAnd.hh"
+#include "DTNCReps.hh"
+#include "DTNext.hh"
+#include "DTNextAnd.hh"
 #include "EdgeProposition.hh"
 #include "Hstring.hh"
 #include "Location.hh"
@@ -47,7 +47,7 @@ public:
    * \param templateFormula representation of a template as a PSL formula
    * \param max_length length of the trace
    */
-  Template(Hstring &templateFormula, harm::Trace *trace, BDTLimits limits);
+  Template(Hstring &templateFormula, harm::Trace *trace, DTLimits limits);
 
   Template(const Template &original);
 
@@ -91,7 +91,7 @@ public:
    */
   std::string getSpotFormula();
 
-  BDTOperator *getBDT();
+  DTOperator *getDT();
   std::map<std::string, Proposition **> &get_aphToProp();
   std::map<std::string, Proposition **> &get_cphToProp();
   std::map<std::string, Proposition **> &get_acphToProp();
@@ -197,7 +197,7 @@ public:
   void setL1Threads(size_t n);
   size_t getL1Threads();
 
-  void setBDTLimits(const BDTLimits &l);
+  void setDTLimits(const DTLimits &l);
   bool saveOffset();
   bool isFullyInstantiated();
   void printContingency();
@@ -245,8 +245,8 @@ private:
   /// link of all user instantiated placeholders to their respective
   /// propositions
   std::unordered_map<std::string, Proposition **> _iToProp;
-  /// link of all bdt operators to their respective propositions
-  std::pair<std::string, BDTOperator *> _bdtOp = {"", nullptr};
+  /// link of all dt operators to their respective propositions
+  std::pair<std::string, DTOperator *> _dtOp = {"", nullptr};
 
   //_aphToProp + _cphToProp + _acphToProp == _phToProp
   std::map<std::string, Proposition **> _aphToProp;
@@ -290,7 +290,7 @@ public:
   size_t _permShift = 0;
 
 private:
-  BDTLimits _limits;
+  DTLimits _limits;
 
   // cached values are used to avoid recalculating each time the truth values of
   // the current assertion
@@ -312,9 +312,9 @@ private:
 
   size_t _availThreads = 1;
 
-  friend BDTNext;
-  friend BDTNCReps;
-  friend BDTNextAnd;
-  friend BDTAnd;
+  friend DTNext;
+  friend DTNCReps;
+  friend DTNextAnd;
+  friend DTAnd;
 };
 } // namespace harm

@@ -26,7 +26,7 @@
 namespace harm {
 
 Template::Template(Hstring &templateFormula, harm::Trace *trace,
-                   BDTLimits limits)
+                   DTLimits limits)
     : _templateFormula(templateFormula), _buildTemplateFormula(templateFormula),
       _max_length(trace->getLength()), _limits(limits), _trace(trace)
       {
@@ -62,8 +62,8 @@ Template::Template(const Template &original) {
 }
 
 Template::~Template() {
-  if (_bdtOp.second != nullptr) {
-    delete _bdtOp.second;
+  if (_dtOp.second != nullptr) {
+    delete _dtOp.second;
   } else {
     delete _ant;
   }
@@ -108,7 +108,7 @@ std::string Template::getColoredTemplate() {
   return _templateFormula.toColoredString(false);
 }
 
-BDTOperator *Template::getBDT() { return _bdtOp.second; }
+DTOperator *Template::getDT() { return _dtOp.second; }
 
 std::map<std::string, Proposition **> &Template::get_aphToProp() {
   return _aphToProp;
@@ -127,7 +127,7 @@ std::string Template::getSpotFormula() {
 bool Template::nextPerm() {
 
   if (_iToProp.size() ==
-      (_tokenToProp.size() - (_bdtOp.second == nullptr ? 0 : 1))) {
+      (_tokenToProp.size() - (_dtOp.second == nullptr ? 0 : 1))) {
     return false;
   }
   messageErrorIf(_permIndex < 0, "No permutations available!");
@@ -490,26 +490,26 @@ void Template::build() {
   _acphToProp.clear();
   _cphToProp.clear();
   _iToProp.clear();
-  _bdtOp.first = "";
-  _bdtOp.second = nullptr;
+  _dtOp.first = "";
+  _dtOp.second = nullptr;
   _constShift = 0;
   _applyDynamicShift = 0;
 
-  // init bdt prop
+  // init dt prop
   for (auto &s : _templateFormula) {
-    if (s._t == Hstring::Stype::BDTNextAnd) {
+    if (s._t == Hstring::Stype::DTNextAnd) {
       s._pp = new Proposition *(makeExpression<PropositionAnd>());
       break;
     }
-    if (s._t == Hstring::Stype::BDTNext) {
+    if (s._t == Hstring::Stype::DTNext) {
       s._pp = new Proposition *(new BooleanConstant(true, VarType::Bool, 1, 0));
       break;
     }
-    if (s._t == Hstring::Stype::BDTNCReps) {
+    if (s._t == Hstring::Stype::DTNCReps) {
       s._pp = new Proposition *(new BooleanConstant(true, VarType::Bool, 1, 0));
       break;
     }
-    if (s._t == Hstring::Stype::BDTAnd) {
+    if (s._t == Hstring::Stype::DTAnd) {
       s._pp = new Proposition *(makeExpression<PropositionAnd>());
       break;
     }
@@ -532,18 +532,18 @@ void Template::build() {
     } else if (e._t == Hstring::Stype::Inst) {
       _tokenToProp[e._s] = e._pp;
       _iToProp[e._s] = e._pp;
-    } else if (e._t == Hstring::Stype::BDTAnd) {
+    } else if (e._t == Hstring::Stype::DTAnd) {
       _tokenToProp[e._s] = e._pp;
-      _bdtOp = std::make_pair(
+      _dtOp = std::make_pair(
           e._s,
-          new BDTAnd(dynamic_cast<PropositionAnd *>(*e._pp), this, _limits));
-    } else if (e._t == Hstring::Stype::BDTNext ||
-               e._t == Hstring::Stype::BDTNextAnd) {
+          new DTAnd(dynamic_cast<PropositionAnd *>(*e._pp), this, _limits));
+    } else if (e._t == Hstring::Stype::DTNext ||
+               e._t == Hstring::Stype::DTNextAnd) {
       _tokenToProp[e._s] = e._pp;
       e._offset = 0;
-    } else if (e._t == Hstring::Stype::BDTNCReps) {
-      _tokenToProp["bdtNCReps0"] = e._pp;
-      _tokenToProp["bdtMock"] = new expression::Proposition *(
+    } else if (e._t == Hstring::Stype::DTNCReps) {
+      _tokenToProp["dtNCReps0"] = e._pp;
+      _tokenToProp["dtMock"] = new expression::Proposition *(
           new BooleanConstant(true, VarType::Bool, 1, 0));
       e._offset = 0;
     }
@@ -565,10 +565,10 @@ void Template::build() {
     } else if (e._t == Hstring::Stype::Inst) {
       _tokenToProp[e._s] = e._pp;
       _iToProp[e._s] = e._pp;
-    } else if (e._t == Hstring::Stype::BDTAnd ||
-               e._t == Hstring::Stype::BDTNext ||
-               e._t == Hstring::Stype::BDTNextAnd ||
-               e._t == Hstring::Stype::BDTNCReps) {
+    } else if (e._t == Hstring::Stype::DTAnd ||
+               e._t == Hstring::Stype::DTNext ||
+               e._t == Hstring::Stype::DTNextAnd ||
+               e._t == Hstring::Stype::DTNCReps) {
       messageError(
           "Binary decision tree operator is not allowed in consequent");
     }
@@ -631,19 +631,19 @@ void Template::build() {
 
   // get a new ant
   hant = _templateFormula.getAnt();
-  // build the bdt operators
+  // build the dt operators
   for (size_t i = 0; i < hant.size(); i++) {
     auto &e = hant[i];
-    if (e._t == Hstring::Stype::BDTNext) {
-      _bdtOp = std::make_pair(
-          e._s, new BDTNext(dynamic_cast<BooleanConstant *>(*e._pp), e._offset,
+    if (e._t == Hstring::Stype::DTNext) {
+      _dtOp = std::make_pair(
+          e._s, new DTNext(dynamic_cast<BooleanConstant *>(*e._pp), e._offset,
                             this, _limits));
-    } else if (e._t == Hstring::Stype::BDTNCReps) {
-      _bdtOp = std::make_pair(
-          e._s, new BDTNCReps(dynamic_cast<BooleanConstant *>(*e._pp),
+    } else if (e._t == Hstring::Stype::DTNCReps) {
+      _dtOp = std::make_pair(
+          e._s, new DTNCReps(dynamic_cast<BooleanConstant *>(*e._pp),
                               e._offset, this, _limits));
-    } else if (e._t == Hstring::Stype::BDTNextAnd) {
-      _bdtOp = std::make_pair(e._s, new BDTNextAnd(e._offset, this, _limits));
+    } else if (e._t == Hstring::Stype::DTNextAnd) {
+      _dtOp = std::make_pair(e._s, new DTNextAnd(e._offset, this, _limits));
     }
   }
 
@@ -733,11 +733,11 @@ std::string Template::printAutomaton(Automaton *aut) {
 
 size_t Template::gatherInterestingValue(size_t time, int depth, int width) {
 
-  BDTOperator *template_bdt = _bdtOp.second;
+  DTOperator *template_dt = _dtOp.second;
 
   Proposition *tc = new BooleanConstant(true, VarType::Bool, 1, 0);
   Proposition *fc = new BooleanConstant(false, VarType::Bool, 1, 0);
-  template_bdt->addItem(tc, depth);
+  template_dt->addItem(tc, depth);
   size_t ret = -1;
 
   Automaton::Node *cn = _ant->_root;
@@ -750,15 +750,15 @@ size_t Template::gatherInterestingValue(size_t time, int depth, int width) {
         if (edge->_toNode->_type == 0) {
           goto antFalse;
         } else {
-          template_bdt->substitute(depth, width, fc);
+          template_dt->substitute(depth, width, fc);
           if (!edge->_prop->evaluate(currTime)) {
             ret = currTime;
           }
           if (edge->_toNode->_type == 1) {
-            template_bdt->substitute(depth, width, fc);
+            template_dt->substitute(depth, width, fc);
             goto antTrue;
           }
-          template_bdt->substitute(depth, width, fc);
+          template_dt->substitute(depth, width, fc);
         }
         // go to the next state
         cn = edge->_toNode;
@@ -779,7 +779,7 @@ antTrue:;
 
 antFalse:;
 antUnknown:;
-  template_bdt->popItem(depth);
+  template_dt->popItem(depth);
 
   delete tc;
   delete fc;
@@ -1129,12 +1129,12 @@ std::vector<Proposition *> Template::getLoadedPropositions() {
       ret.push_back(*s._pp);
     }
   }
-  if (_bdtOp.second != nullptr) {
-    if (_bdtOp.second->isMultiDimensional()) {
-      std::vector<Proposition *> items = _bdtOp.second->unpack();
+  if (_dtOp.second != nullptr) {
+    if (_dtOp.second->isMultiDimensional()) {
+      std::vector<Proposition *> items = _dtOp.second->unpack();
       ret.insert(ret.end(), items.begin(), items.end());
     } else {
-      std::vector<Proposition *> items = _bdtOp.second->getItems();
+      std::vector<Proposition *> items = _dtOp.second->getItems();
       ret.insert(ret.end(), items.begin(), items.end());
     }
   }
@@ -1198,13 +1198,13 @@ size_t Template::getL1Threads() {
   return _availThreads;
 }
 
-void Template::setBDTLimits(const BDTLimits &l) { _limits = l; }
+void Template::setDTLimits(const DTLimits &l) { _limits = l; }
 bool Template::saveOffset() { return _limits._saveOffset; }
 bool Template::isFullyInstantiated() {
   return (getNumPlaceholders(harm::Location::Ant) +
           getNumPlaceholders(harm::Location::Con) +
           getNumPlaceholders(harm::Location::AntCon)) == 0 &&
-         _bdtOp.second == nullptr;
+         _dtOp.second == nullptr;
 }
 Proposition *Template::getPropByToken(const std::string &token) {
   if (_tokenToProp.count(token)) {

@@ -1,5 +1,5 @@
-#include "BDTNextAnd.hh"
-#include "BDTUtils.hh"
+#include "DTNextAnd.hh"
+#include "DTUtils.hh"
 #include "Template.hh"
 #include "message.hh"
 #include "minerUtils.hh"
@@ -10,18 +10,18 @@
 #include <utility>
 
 namespace harm {
-//--BDTNextAnd---------------------------------------
+//--DTNextAnd---------------------------------------
 
-BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
+DTNextAnd::DTNextAnd(size_t shift, Template *t, const DTLimits &limits)
     : _t(t), _shift(shift) {
 
   _limits = limits;
   _tc = new BooleanConstant(true, VarType::Bool, 1, t->_max_length);
   // The base case automata were already generated in the template
-  _tokens.push_back("bdtNextAnd0");
+  _tokens.push_back("dtNextAnd0");
   _leaves.emplace_back();
   _op.push_back(
-      dynamic_cast<PropositionAnd *>(*_t->_tokenToProp.at("bdtNextAnd0")));
+      dynamic_cast<PropositionAnd *>(*_t->_tokenToProp.at("dtNextAnd0")));
   _ant.push_back(_t->_ant);
   // storing depths
   _antDepth.push_back(_t->getDepth(_ant.back()));
@@ -29,7 +29,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
   // adjust offset:  we shouldn't have any delaying when we have only one
   // operand
   for (size_t j = 0; j < t->_templateFormula.size(); j++) {
-    if (t->_templateFormula[j]._t == Hstring::Stype::BDTNextAnd) {
+    if (t->_templateFormula[j]._t == Hstring::Stype::DTNextAnd) {
       t->_templateFormula[j]._offset = 0;
     }
   }
@@ -42,7 +42,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
             _tokens.back(),
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening before the bdtNext operator when using "
+        "Can't have events happening before the dtNext operator when using "
         "|-> ");
   } else {
     messageErrorIf(
@@ -50,7 +50,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
             _tokens.back(),
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
-        "Can't have events happening after the bdtNext operator when not using "
+        "Can't have events happening after the dtNext operator when not using "
         "|-> ");
   }
 
@@ -68,17 +68,17 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
     auto hant = _formulas[i - 1].getAnt();
 
     if (_t->_applyDynamicShift) {
-      // bdtNextM ##N bdtNextM-1 ##N ... ##N bdtNext0
+      // dtNextM ##N dtNextM-1 ##N ... ##N dtNext0
       // last insertion point
       size_t lastIP = -1;
       // find the last operand and append a new one
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNextAnd) {
+        if (hant[j]._t == Hstring::Stype::DTNextAnd) {
           Proposition **pp =
               new Proposition *(makeExpression<PropositionAnd>());
-          std::string token = "bdtNextAnd" + std::to_string(i);
+          std::string token = "dtNextAnd" + std::to_string(i);
           hant.insert(hant.begin() + j,
-                      Hstring(token, Hstring::Stype::BDTNextAnd, pp));
+                      Hstring(token, Hstring::Stype::DTNextAnd, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -93,21 +93,21 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
       // adjust offset: only the last operand should have delay equal to 0
       hant[lastIP]._offset = 0;
       for (size_t j = lastIP + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNextAnd) {
+        if (hant[j]._t == Hstring::Stype::DTNextAnd) {
           hant[j]._offset = _shift;
         }
       }
     } else {
 
-      // bdtNext1 ##N bdtNext2 ##N ... ##N bdtNextM
+      // dtNext1 ##N dtNext2 ##N ... ##N dtNextM
       // find the last operand and append a new one
       for (int j = hant.size() - 1; j >= 0; j--) {
-        if (hant[j]._t == Hstring::Stype::BDTNextAnd) {
+        if (hant[j]._t == Hstring::Stype::DTNextAnd) {
           Proposition **pp =
               new Proposition *(makeExpression<PropositionAnd>());
-          std::string token = "bdtNextAnd" + std::to_string(i);
+          std::string token = "dtNextAnd" + std::to_string(i);
           hant.insert(hant.begin() + j + 1,
-                      Hstring(token, Hstring::Stype::BDTNextAnd, pp));
+                      Hstring(token, Hstring::Stype::DTNextAnd, pp));
           hant[j]._offset = _shift;
           // the relation between token name and proposition is kept in the
           // template
@@ -119,16 +119,16 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
         }
       }
       // adjust offset: only the first operand should have delay equal to 0
-      size_t firstBDT = 0;
+      size_t firstDT = 0;
       for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNextAnd) {
-          firstBDT = j;
+        if (hant[j]._t == Hstring::Stype::DTNextAnd) {
+          firstDT = j;
           break;
         }
       }
-      hant[firstBDT]._offset = 0;
-      for (size_t j = firstBDT + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::BDTNextAnd) {
+      hant[firstDT]._offset = 0;
+      for (size_t j = firstDT + 1; j < hant.size(); j++) {
+        if (hant[j]._t == Hstring::Stype::DTNextAnd) {
           hant[j]._offset = _shift;
         }
       }
@@ -178,7 +178,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
       messageErrorIf(depth == -1, " parallel depth is unknown");
       baseDepth = (baseDepth == -1 ? depth : baseDepth);
       if (depth == 0) {
-        if (!onlyToken("bdtNextAnd0", portionFormula.f)) {
+        if (!onlyToken("dtNextAnd0", portionFormula.f)) {
           _parallelDepth++;
         }
         delete pAnt;
@@ -193,7 +193,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
   if (_parallelDepth != 0) {
     _limits._maxDepth =
         _parallelDepth < _limits._maxDepth ? _parallelDepth : _limits._maxDepth;
-    //    messageWarning(" Max bdt operands reduced to " +
+    //    messageWarning(" Max dt operands reduced to " +
     //    std::to_string(_parallelDepth) + " due to parallel depth");
     _t->_ant = _ant[_limits._maxDepth - 1];
     _t->_templateFormula = _formulas[_limits._maxDepth - 1];
@@ -203,7 +203,7 @@ BDTNextAnd::BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits)
   }
 }
 
-BDTNextAnd::~BDTNextAnd() {
+DTNextAnd::~DTNextAnd() {
   for (size_t i = 0; i < _tokens.size(); i++) {
     delete _ant[i];
   }
@@ -213,7 +213,7 @@ BDTNextAnd::~BDTNextAnd() {
   }
   delete _tc;
 }
-std::vector<Proposition *> BDTNextAnd::minimize(bool isOffset) {
+std::vector<Proposition *> DTNextAnd::minimize(bool isOffset) {
   std::vector<std::pair<Proposition *, size_t>> propList;
 
   for (size_t i = 0; i <= _currDepth; i++) {
@@ -284,7 +284,7 @@ end:;
 
   return ret;
 }
-void BDTNextAnd::removeItems() {
+void DTNextAnd::removeItems() {
 
   if (_parallelDepth) {
     for (size_t i = 0; i <= _currDepth; i++) {
@@ -302,7 +302,7 @@ void BDTNextAnd::removeItems() {
   _order.clear();
   _currDepth = 0;
 }
-void BDTNextAnd::popItem(int depth) {
+void DTNextAnd::popItem(int depth) {
   assert(depth != -1);
   if (_parallelDepth) {
     _op[depth]->popItem();
@@ -325,7 +325,7 @@ void BDTNextAnd::popItem(int depth) {
                          [](int &a, auto &e) { return a + e.second.size(); }) ==
          _order.size());
 }
-void BDTNextAnd::addItem(Proposition *p, int depth) {
+void DTNextAnd::addItem(Proposition *p, int depth) {
 
   assert(depth != -1);
   _order.push_back(depth);
@@ -346,22 +346,22 @@ void BDTNextAnd::addItem(Proposition *p, int depth) {
                          [](int &a, auto &e) { return a + e.second.size(); }) ==
          _order.size());
 }
-std::vector<Proposition *> BDTNextAnd::getItems() {
+std::vector<Proposition *> DTNextAnd::getItems() {
   std::vector<Proposition *> ret;
   for (size_t i = 0; i <= _currDepth; i++) {
     ret.push_back(_op[i]);
   }
   return ret;
 }
-bool BDTNextAnd::isMultiDimensional() { return 1; }
-bool BDTNextAnd::canInsertAtDepth(int depth) {
+bool DTNextAnd::isMultiDimensional() { return 1; }
+bool DTNextAnd::canInsertAtDepth(int depth) {
   assert(depth != -1);
   return (_choices[depth].size() < _limits._maxWidth &&
           depth < _limits._maxDepth);
 }
-bool BDTNextAnd::isRandomConstructed() { return _limits._isRandomConstructed; }
-size_t BDTNextAnd::getNChoices() { return _order.size(); }
-bool BDTNextAnd::isTaken(size_t id, bool second, int depth) {
+bool DTNextAnd::isRandomConstructed() { return _limits._isRandomConstructed; }
+size_t DTNextAnd::getNChoices() { return _order.size(); }
+bool DTNextAnd::isTaken(size_t id, bool second, int depth) {
   assert(depth != -1);
   if (second) {
     return _leaves[depth].count(id) && _leaves[depth].at(id).second != nullptr;
@@ -369,7 +369,7 @@ bool BDTNextAnd::isTaken(size_t id, bool second, int depth) {
     return _leaves[depth].count(id) && _leaves[depth].at(id).first != nullptr;
   }
 }
-void BDTNextAnd::removeLeaf(size_t id, bool second, int depth) {
+void DTNextAnd::removeLeaf(size_t id, bool second, int depth) {
   assert(depth != -1);
   if (second) {
     _leaves[depth].at(id).second = nullptr;
@@ -377,7 +377,7 @@ void BDTNextAnd::removeLeaf(size_t id, bool second, int depth) {
     _leaves[depth].at(id).first = nullptr;
   }
 }
-void BDTNextAnd::addLeaf(Proposition *p, size_t id, bool second, int depth) {
+void DTNextAnd::addLeaf(Proposition *p, size_t id, bool second, int depth) {
   assert(depth != -1);
   if (second) {
     _leaves[depth][id].second = p;
@@ -385,13 +385,13 @@ void BDTNextAnd::addLeaf(Proposition *p, size_t id, bool second, int depth) {
     _leaves[depth][id].first = p;
   }
 }
-const BDTLimits &BDTNextAnd::getLimits() { return _limits; }
-size_t BDTNextAnd::getCurrentDepth() { return _currDepth; }
+const DTLimits &DTNextAnd::getLimits() { return _limits; }
+size_t DTNextAnd::getCurrentDepth() { return _currDepth; }
 
-void BDTNextAnd::clearPack(Proposition *pack) {
+void DTNextAnd::clearPack(Proposition *pack) {
   dynamic_cast<PropositionAnd *>(pack)->removeItems();
 }
-std::vector<Proposition *> BDTNextAnd::unpack() {
+std::vector<Proposition *> DTNextAnd::unpack() {
   std::vector<Proposition *> ret;
   for (auto &pack : getItems()) {
     std::vector<Proposition *> sorted = unpack(pack);
@@ -399,7 +399,7 @@ std::vector<Proposition *> BDTNextAnd::unpack() {
   }
   return ret;
 }
-std::vector<Proposition *> BDTNextAnd::unpack(Proposition *pack) {
+std::vector<Proposition *> DTNextAnd::unpack(Proposition *pack) {
   std::vector<Proposition *> ret;
   if (dynamic_cast<PropositionAnd *>(pack)->empty()) {
     ret.push_back(_tc);
@@ -413,7 +413,7 @@ std::vector<Proposition *> BDTNextAnd::unpack(Proposition *pack) {
   return ret;
 }
 std::vector<Proposition *>
-BDTNextAnd::unpack(std::vector<Proposition *> &pack) {
+DTNextAnd::unpack(std::vector<Proposition *> &pack) {
   std::vector<Proposition *> ret;
   for (auto &p : pack) {
     std::vector<Proposition *> sorted = unpack(p);
@@ -422,7 +422,7 @@ BDTNextAnd::unpack(std::vector<Proposition *> &pack) {
   return ret;
 }
 
-std::pair<std::string, std::string> BDTNextAnd::prettyPrint(bool offset) {
+std::pair<std::string, std::string> DTNextAnd::prettyPrint(bool offset) {
 
   std::vector<std::vector<Proposition *>> original;
   for (size_t i = 0; i <= _currDepth; i++) {
@@ -434,7 +434,7 @@ std::pair<std::string, std::string> BDTNextAnd::prettyPrint(bool offset) {
 
   auto solTemplate = _formulas[_currDepth];
 
-  size_t bdtIndex = _t->_applyDynamicShift ? 0 : _currDepth;
+  size_t dtIndex = _t->_applyDynamicShift ? 0 : _currDepth;
   size_t comulativeShift = 0;
   size_t lastCandidate = 0;
   std::unordered_set<size_t> toDelete;
@@ -442,35 +442,35 @@ std::pair<std::string, std::string> BDTNextAnd::prettyPrint(bool offset) {
 
   // slide bw
   for (int j = solTemplate.size() - 1; j >= 0; j--) {
-    if (solTemplate[j]._t == Hstring::Stype::BDTNextAnd) {
-      PropositionAnd *p = dynamic_cast<PropositionAnd *>(_op[bdtIndex]);
+    if (solTemplate[j]._t == Hstring::Stype::DTNextAnd) {
+      PropositionAnd *p = dynamic_cast<PropositionAnd *>(_op[dtIndex]);
       // base case
-      if (_t->_applyDynamicShift ? (bdtIndex == 0) : (bdtIndex == _currDepth)) {
+      if (_t->_applyDynamicShift ? (dtIndex == 0) : (dtIndex == _currDepth)) {
         toUpdate.insert(
-            {{bdtIndex, std::pair(p, _currDepth == 0 ? 0 : _shift)}});
-        lastCandidate = bdtIndex;
-        bdtIndex = _t->_applyDynamicShift ? bdtIndex + 1 : bdtIndex - 1;
+            {{dtIndex, std::pair(p, _currDepth == 0 ? 0 : _shift)}});
+        lastCandidate = dtIndex;
+        dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
         continue;
       }
       assert(!p->empty());
-      if (p->getItems().size() == 1 && (bdtIndex <= _currDepth) &&
+      if (p->getItems().size() == 1 && (dtIndex <= _currDepth) &&
           dynamic_cast<BooleanConstant *>(p->getItems().back()) != nullptr) {
         comulativeShift += _shift;
-        toDelete.insert(bdtIndex);
+        toDelete.insert(dtIndex);
         //        std::cout << "toD:" << prop2String(*p) << "\n";
       } else {
         toUpdate.at(lastCandidate).second += comulativeShift;
         //        std::cout << "toU:" <<
         //        prop2String(*toUpdate.at(lastCandidate).first)
         //                  << "," << toUpdate.at(lastCandidate).second << "\n";
-        lastCandidate = bdtIndex;
-        toUpdate.insert({{bdtIndex, std::pair(p, solTemplate[j]._offset)}});
+        lastCandidate = dtIndex;
+        toUpdate.insert({{dtIndex, std::pair(p, solTemplate[j]._offset)}});
         comulativeShift = 0;
       }
-      bdtIndex = _t->_applyDynamicShift ? bdtIndex + 1 : bdtIndex - 1;
+      dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
     }
   }
-  if (toDelete.count(_t->_applyDynamicShift ? bdtIndex - 1 : bdtIndex + 1)) {
+  if (toDelete.count(_t->_applyDynamicShift ? dtIndex - 1 : dtIndex + 1)) {
     toUpdate.at(lastCandidate).second += (comulativeShift - _shift);
   }
 
@@ -480,7 +480,7 @@ std::pair<std::string, std::string> BDTNextAnd::prettyPrint(bool offset) {
 
   auto reducedTemplate = _formulas[_currDepth - toDelete.size()];
   for (int j = reducedTemplate.size() - 1; j >= 0; j--) {
-    if (reducedTemplate[j]._t == Hstring::Stype::BDTNextAnd) {
+    if (reducedTemplate[j]._t == Hstring::Stype::DTNextAnd) {
       size_t adjustedIndex = _t->_applyDynamicShift ? toUpdate.begin()->first
                                                     : toUpdate.rbegin()->first;
       reducedTemplate[j]._offset = toUpdate.at(adjustedIndex).second;
@@ -517,7 +517,7 @@ std::pair<std::string, std::string> BDTNextAnd::prettyPrint(bool offset) {
   }
   return ret;
 }
-void BDTNextAnd::substitute(int depth, int width, Proposition *&sub) {
+void DTNextAnd::substitute(int depth, int width, Proposition *&sub) {
   if (depth == -1) {
     depth = _currDepth;
   }

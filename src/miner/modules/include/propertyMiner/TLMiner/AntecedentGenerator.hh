@@ -131,7 +131,7 @@ private:
                                     std::vector<Proposition *> &genProps,
                                     double currEntropy);
 
-  bool isKnownSolution(const std::vector<Proposition *> &items, BDTOperator *template_bdt, bool checkOnly=false);
+  bool isKnownSolution(const std::vector<Proposition *> &items, DTOperator *template_dt, bool checkOnly=false);
   void _store(Template *t, bool value);
 
   void _getCoverage(Template *t, bool value);

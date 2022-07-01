@@ -34,7 +34,7 @@ private:
   Hstring _convertedFormula;
   std::unordered_map<std::string, expression::Proposition **> _phToProp;
   std::unordered_map<std::string, std::string> _propStrToInst;
-  size_t bdtCount = 0;
+  size_t dtCount = 0;
   size_t instCount = 0;
   std::vector<std::string> _errorMessages;
   std::string printErrorMessage();

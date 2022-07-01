@@ -16,7 +16,7 @@
 
             -->
 
-        <template bdtLimits="2D,2W,3A,0E,R,O" exp="G({..#1&.. ;P0}|-> X(P1 R P2))" /> 
+        <template dtLimits="2D,2W,3A,0E,R,O" exp="G({..#1&.. ;P0}|-> X(P1 R P2))" /> 
         <template exp="G(((P0 && P1) || (P2 && P3)) -> X(v7 > 5))" /> 
 
                   <filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "BDTLimits.hh"
+#include "DTLimits.hh"
 #include "limitsBaseListener.h"
 
 #include <cmath>
@@ -11,14 +11,14 @@
 namespace hparser {
 using namespace antlr4;
 
-class BDTLimitsParserHandler : public limitsBaseListener {
+class DTLimitsParserHandler : public limitsBaseListener {
 
 public:
-  explicit BDTLimitsParserHandler();
+  explicit DTLimitsParserHandler();
 
-  ~BDTLimitsParserHandler() override = default;
+  ~DTLimitsParserHandler() override = default;
 
-  harm::BDTLimits getLimits() ;
+  harm::DTLimits getLimits() ;
   std::unordered_set<std::string> getSetOptions();
   void addErrorMessage(const std::string &msg);
 
@@ -53,7 +53,7 @@ private:
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;
 
-  harm::BDTLimits _limits;
+  harm::DTLimits _limits;
   std::unordered_set<std::string> _setOptions;
 };
 } // namespace hparser

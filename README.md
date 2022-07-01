@@ -131,7 +131,7 @@ For csv:
 		<prop exp="!var5 || !var6" loc="c"/>
 		<prop exp="var8" loc="c"/>
 		
-		<template bdtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
+		<template dtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
 		<sort name="causality" exp="1-afct/traceLength"/>
 		<sort name="frequency" exp="atct/traceLength"/>
@@ -154,7 +154,7 @@ For csv:
 
  These placeholders can only be used once in the antecedent.
  
- A template using Decision Tree Operator (BDTO) is associated with a configuration (defined in the 'bdtLimits' attribute of 'template') involving several adjustable parameters:
+ A template using Decision Tree Operator (DTO) is associated with a configuration (defined in the 'dtLimits' attribute of 'template') involving several adjustable parameters:
  * <uint>A : the maximum number of operands to be added to the DT operator.
  * <uint>D : the maximum number of temporal operands to be added to the DT operator. Adding a temporal operands increases the temporal depth of the DT operator.
  * <uint>W : the maximum number of propositions to be added at a certain depth in the dt operator

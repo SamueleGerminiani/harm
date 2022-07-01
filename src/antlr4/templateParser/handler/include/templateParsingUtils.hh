@@ -1,5 +1,5 @@
 #pragma once
-#include "BDTLimits.hh"
+#include "DTLimits.hh"
 #include "Hstring.hh"
 #include "Trace.hh"
 
@@ -13,7 +13,7 @@ void addTypeToTemplate(std::string &formula,
 
 harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
                               const std::string &language = "Spot",
-                              const harm::BDTLimits &limits = harm::BDTLimits(),
+                              const harm::DTLimits &limits = harm::DTLimits(),
                               bool useCache = true);
 Hstring spotToSVA(std::string spotFormula, harm::Trace *trace);
 } // namespace hparser

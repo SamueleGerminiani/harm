@@ -32,15 +32,15 @@
 
 
         <!--
-		<numeric clsEffort="0.1" exp="wb_dat_i" loc="bdt"/>
-		<numeric clsEffort="0.1" exp="wb_sel" loc="bdt"/>
+		<numeric clsEffort="0.1" exp="wb_dat_i" loc="dt"/>
+		<numeric clsEffort="0.1" exp="wb_sel" loc="dt"/>
         -->
-        <template bdtLimits="3A,-0.1E,S" exp="G({..[->1]@;..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,S,O" exp="G({..&&..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,S,O" exp="G({..##1..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" /> 
+        <template dtLimits="3A,-0.1E,S" exp="G({..[->1]@;..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,S,O" exp="G({..&&..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,S,O" exp="G({..##1..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" /> 
 
 
 

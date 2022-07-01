@@ -1,14 +1,14 @@
-#include "BDTLimitsParserHandler.hh"
+#include "DTLimitsParserHandler.hh"
 #include "limitsLexer.h"
 using namespace harm;
 
 namespace hparser{
-BDTLimits parseLimits(const std::string &formula){
+DTLimits parseLimits(const std::string &formula){
 
 
   // parse typed propositions
-  hparser::BDTLimitsParserHandler listener;
-  listener.addErrorMessage("\t\t\tIn bdtLimits: "+formula);
+  hparser::DTLimitsParserHandler listener;
+  listener.addErrorMessage("\t\t\tIn dtLimits: "+formula);
   antlr4::ANTLRInputStream input(formula);
   limitsLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
@@ -20,7 +20,7 @@ BDTLimits parseLimits(const std::string &formula){
   exit(0);
   std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
   */
-  BDTLimits limits= listener.getLimits();
+  DTLimits limits= listener.getLimits();
 
   //handle special cases of missing options
   auto setOptions= listener.getSetOptions();

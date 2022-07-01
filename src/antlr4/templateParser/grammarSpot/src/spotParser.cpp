@@ -371,8 +371,8 @@ tree::TerminalNode* spotParser::SereContext::NOT() {
   return getToken(spotParser::NOT, 0);
 }
 
-tree::TerminalNode* spotParser::SereContext::BDT_AND() {
-  return getToken(spotParser::BDT_AND, 0);
+tree::TerminalNode* spotParser::SereContext::DT_AND() {
+  return getToken(spotParser::DT_AND, 0);
 }
 
 tree::TerminalNode* spotParser::SereContext::LPAREN() {
@@ -423,16 +423,16 @@ tree::TerminalNode* spotParser::SereContext::RCPAREN() {
   return getToken(spotParser::RCPAREN, 0);
 }
 
-spotParser::Bdt_nextContext* spotParser::SereContext::bdt_next() {
-  return getRuleContext<spotParser::Bdt_nextContext>(0);
+spotParser::Dt_nextContext* spotParser::SereContext::dt_next() {
+  return getRuleContext<spotParser::Dt_nextContext>(0);
 }
 
-spotParser::Bdt_next_andContext* spotParser::SereContext::bdt_next_and() {
-  return getRuleContext<spotParser::Bdt_next_andContext>(0);
+spotParser::Dt_next_andContext* spotParser::SereContext::dt_next_and() {
+  return getRuleContext<spotParser::Dt_next_andContext>(0);
 }
 
-spotParser::Bdt_NCRepsContext* spotParser::SereContext::bdt_NCReps() {
-  return getRuleContext<spotParser::Bdt_NCRepsContext>(0);
+spotParser::Dt_NCRepsContext* spotParser::SereContext::dt_NCReps() {
+  return getRuleContext<spotParser::Dt_NCRepsContext>(0);
 }
 
 tree::TerminalNode* spotParser::SereContext::BOR() {
@@ -539,7 +539,7 @@ spotParser::SereContext* spotParser::sere(int precedence) {
 
     case 3: {
       setState(114);
-      match(spotParser::BDT_AND);
+      match(spotParser::DT_AND);
       break;
     }
 
@@ -612,19 +612,19 @@ spotParser::SereContext* spotParser::sere(int precedence) {
 
     case 7: {
       setState(138);
-      bdt_next();
+      dt_next();
       break;
     }
 
     case 8: {
       setState(139);
-      bdt_next_and();
+      dt_next_and();
       break;
     }
 
     case 9: {
       setState(140);
-      bdt_NCReps();
+      dt_NCReps();
       break;
     }
 
@@ -927,8 +927,8 @@ spotParser::PlaceholderContext* spotParser::TformulaContext::placeholder() {
   return getRuleContext<spotParser::PlaceholderContext>(0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::BDT_AND() {
-  return getToken(spotParser::BDT_AND, 0);
+tree::TerminalNode* spotParser::TformulaContext::DT_AND() {
+  return getToken(spotParser::DT_AND, 0);
 }
 
 tree::TerminalNode* spotParser::TformulaContext::LPAREN() {
@@ -1059,7 +1059,7 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
 
     case 3: {
       setState(223);
-      match(spotParser::BDT_AND);
+      match(spotParser::DT_AND);
       break;
     }
 
@@ -1265,40 +1265,40 @@ spotParser::PlaceholderContext* spotParser::placeholder() {
   return _localctx;
 }
 
-//----------------- Bdt_nextContext ------------------------------------------------------------------
+//----------------- Dt_nextContext ------------------------------------------------------------------
 
-spotParser::Bdt_nextContext::Bdt_nextContext(ParserRuleContext *parent, size_t invokingState)
+spotParser::Dt_nextContext::Dt_nextContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* spotParser::Bdt_nextContext::NUMERIC() {
+tree::TerminalNode* spotParser::Dt_nextContext::NUMERIC() {
   return getToken(spotParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_nextContext::DOTS() {
+tree::TerminalNode* spotParser::Dt_nextContext::DOTS() {
   return getToken(spotParser::DOTS, 0);
 }
 
 
-size_t spotParser::Bdt_nextContext::getRuleIndex() const {
-  return spotParser::RuleBdt_next;
+size_t spotParser::Dt_nextContext::getRuleIndex() const {
+  return spotParser::RuleDt_next;
 }
 
-void spotParser::Bdt_nextContext::enterRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_nextContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_next(this);
+    parserListener->enterDt_next(this);
 }
 
-void spotParser::Bdt_nextContext::exitRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_nextContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_next(this);
+    parserListener->exitDt_next(this);
 }
 
-spotParser::Bdt_nextContext* spotParser::bdt_next() {
-  Bdt_nextContext *_localctx = _tracker.createInstance<Bdt_nextContext>(_ctx, getState());
-  enterRule(_localctx, 10, spotParser::RuleBdt_next);
+spotParser::Dt_nextContext* spotParser::dt_next() {
+  Dt_nextContext *_localctx = _tracker.createInstance<Dt_nextContext>(_ctx, getState());
+  enterRule(_localctx, 10, spotParser::RuleDt_next);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1326,44 +1326,44 @@ spotParser::Bdt_nextContext* spotParser::bdt_next() {
   return _localctx;
 }
 
-//----------------- Bdt_next_andContext ------------------------------------------------------------------
+//----------------- Dt_next_andContext ------------------------------------------------------------------
 
-spotParser::Bdt_next_andContext::Bdt_next_andContext(ParserRuleContext *parent, size_t invokingState)
+spotParser::Dt_next_andContext::Dt_next_andContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* spotParser::Bdt_next_andContext::NUMERIC() {
+tree::TerminalNode* spotParser::Dt_next_andContext::NUMERIC() {
   return getToken(spotParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_next_andContext::BAND() {
+tree::TerminalNode* spotParser::Dt_next_andContext::BAND() {
   return getToken(spotParser::BAND, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_next_andContext::DOTS() {
+tree::TerminalNode* spotParser::Dt_next_andContext::DOTS() {
   return getToken(spotParser::DOTS, 0);
 }
 
 
-size_t spotParser::Bdt_next_andContext::getRuleIndex() const {
-  return spotParser::RuleBdt_next_and;
+size_t spotParser::Dt_next_andContext::getRuleIndex() const {
+  return spotParser::RuleDt_next_and;
 }
 
-void spotParser::Bdt_next_andContext::enterRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_next_andContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_next_and(this);
+    parserListener->enterDt_next_and(this);
 }
 
-void spotParser::Bdt_next_andContext::exitRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_next_andContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_next_and(this);
+    parserListener->exitDt_next_and(this);
 }
 
-spotParser::Bdt_next_andContext* spotParser::bdt_next_and() {
-  Bdt_next_andContext *_localctx = _tracker.createInstance<Bdt_next_andContext>(_ctx, getState());
-  enterRule(_localctx, 12, spotParser::RuleBdt_next_and);
+spotParser::Dt_next_andContext* spotParser::dt_next_and() {
+  Dt_next_andContext *_localctx = _tracker.createInstance<Dt_next_andContext>(_ctx, getState());
+  enterRule(_localctx, 12, spotParser::RuleDt_next_and);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1393,48 +1393,48 @@ spotParser::Bdt_next_andContext* spotParser::bdt_next_and() {
   return _localctx;
 }
 
-//----------------- Bdt_NCRepsContext ------------------------------------------------------------------
+//----------------- Dt_NCRepsContext ------------------------------------------------------------------
 
-spotParser::Bdt_NCRepsContext::Bdt_NCRepsContext(ParserRuleContext *parent, size_t invokingState)
+spotParser::Dt_NCRepsContext::Dt_NCRepsContext(ParserRuleContext *parent, size_t invokingState)
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* spotParser::Bdt_NCRepsContext::NUMERIC() {
+tree::TerminalNode* spotParser::Dt_NCRepsContext::NUMERIC() {
   return getToken(spotParser::NUMERIC, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_NCRepsContext::RCPAREN() {
+tree::TerminalNode* spotParser::Dt_NCRepsContext::RCPAREN() {
   return getToken(spotParser::RCPAREN, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_NCRepsContext::SEP() {
+tree::TerminalNode* spotParser::Dt_NCRepsContext::SEP() {
   return getToken(spotParser::SEP, 0);
 }
 
-tree::TerminalNode* spotParser::Bdt_NCRepsContext::DOTS() {
+tree::TerminalNode* spotParser::Dt_NCRepsContext::DOTS() {
   return getToken(spotParser::DOTS, 0);
 }
 
 
-size_t spotParser::Bdt_NCRepsContext::getRuleIndex() const {
-  return spotParser::RuleBdt_NCReps;
+size_t spotParser::Dt_NCRepsContext::getRuleIndex() const {
+  return spotParser::RuleDt_NCReps;
 }
 
-void spotParser::Bdt_NCRepsContext::enterRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_NCRepsContext::enterRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->enterBdt_NCReps(this);
+    parserListener->enterDt_NCReps(this);
 }
 
-void spotParser::Bdt_NCRepsContext::exitRule(tree::ParseTreeListener *listener) {
+void spotParser::Dt_NCRepsContext::exitRule(tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<spotListener *>(listener);
   if (parserListener != nullptr)
-    parserListener->exitBdt_NCReps(this);
+    parserListener->exitDt_NCReps(this);
 }
 
-spotParser::Bdt_NCRepsContext* spotParser::bdt_NCReps() {
-  Bdt_NCRepsContext *_localctx = _tracker.createInstance<Bdt_NCRepsContext>(_ctx, getState());
-  enterRule(_localctx, 14, spotParser::RuleBdt_NCReps);
+spotParser::Dt_NCRepsContext* spotParser::dt_NCReps() {
+  Dt_NCRepsContext *_localctx = _tracker.createInstance<Dt_NCRepsContext>(_ctx, getState());
+  enterRule(_localctx, 14, spotParser::RuleDt_NCReps);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -3174,8 +3174,8 @@ atn::ATN spotParser::_atn;
 std::vector<uint16_t> spotParser::_serializedATN;
 
 std::vector<std::string> spotParser::_ruleNames = {
-  "file", "formula", "sere", "tformula", "placeholder", "bdt_next", "bdt_next_and", 
-  "bdt_NCReps", "boolean", "booleanAtom", "booleanConstant", "booleanVariable", 
+  "file", "formula", "sere", "tformula", "placeholder", "dt_next", "dt_next_and", 
+  "dt_NCReps", "boolean", "booleanAtom", "booleanConstant", "booleanVariable", 
   "logic", "bitSelect", "logicAtom", "logicConstant", "logicVariable", "numeric", 
   "numericAtom", "numericConstant", "numericVariable", "variable", "relop"
 };
@@ -3191,7 +3191,7 @@ std::vector<std::string> spotParser::_literalNames = {
 };
 
 std::vector<std::string> spotParser::_symbolicNames = {
-  "", "", "", "", "", "", "", "", "", "", "BDT_AND", "SEP", "EVENTUALLY", 
+  "", "", "", "", "", "", "", "", "", "", "DT_AND", "SEP", "EVENTUALLY", 
   "ALWAYS", "NEXT", "UNTIL", "RELEASE", "DOTS", "IMPL", "IMPL2", "IFF", 
   "XOR", "BIND1", "BIND2", "SEREIMPL1", "SEREIMPL2", "ASS", "DELAY", "SCOL", 
   "COL", "FIRST_MATCH", "SIGN", "LGPAREN", "RGPAREN", "LCPAREN", "RCPAREN", 

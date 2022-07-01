@@ -18,8 +18,8 @@
                   <prop exp="wb_we"    loc="c" />
                   <prop exp="ready_from_bus" loc="c" />
 
-                  <template bdtLimits="3D,3W,3A,0E,R" exp="G({..#1&.. ;P9}|-> X((P0 && P1) || (P2 && P3)))" />
-                  <template bdtLimits="3D,3W,3A,0E,R" exp="G({..#1&.. ;P9}|-> X((P0 U P1) || (P2 U P3)))" />
+                  <template dtLimits="3D,3W,3A,0E,R" exp="G({..#1&.. ;P9}|-> X((P0 && P1) || (P2 && P3)))" />
+                  <template dtLimits="3D,3W,3A,0E,R" exp="G({..#1&.. ;P9}|-> X((P0 U P1) || (P2 U P3)))" />
 
 	</context>
 </harm>

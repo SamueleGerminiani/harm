@@ -1,12 +1,12 @@
 #pragma once
-#include "BDTOperator.hh"
+#include "DTOperator.hh"
 
 namespace harm {
-class BDTAnd : public BDTOperator {
+class DTAnd : public DTOperator {
 public:
-  BDTAnd(PropositionAnd *p, Template *t, const BDTLimits &limits);
+  DTAnd(PropositionAnd *p, Template *t, const DTLimits &limits);
 
-  ~BDTAnd();
+  ~DTAnd();
   bool isMultiDimensional() override;
   size_t getCurrentDepth() override;
   bool canInsertAtDepth(int depth) override;
@@ -38,7 +38,7 @@ public:
     sub = tmp;
   }
 
-  virtual const BDTLimits &getLimits() override;
+  virtual const DTLimits &getLimits() override;
 
 private:
   PropositionAnd *_choices;

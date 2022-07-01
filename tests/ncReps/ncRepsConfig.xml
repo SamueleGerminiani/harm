@@ -5,7 +5,7 @@
 		<prop exp="c" loc="a"/>
 		<prop exp="con" loc="c"/>
 
-        <template bdtLimits="3A,1E,R" exp="G({..[->1]@;..}|-> X{con})" />
+        <template dtLimits="3A,1E,R" exp="G({..[->1]@;..}|-> X{con})" />
         <!--
         -->
         <template check="1" exp="G({a[->1];b[->1];c[->1]:1}|-> X{con})" />

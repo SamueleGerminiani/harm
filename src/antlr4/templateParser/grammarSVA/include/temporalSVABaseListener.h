@@ -31,14 +31,14 @@ public:
   virtual void enterPlaceholder(temporalSVAParser::PlaceholderContext * /*ctx*/) override { }
   virtual void exitPlaceholder(temporalSVAParser::PlaceholderContext * /*ctx*/) override { }
 
-  virtual void enterBdt_next(temporalSVAParser::Bdt_nextContext * /*ctx*/) override { }
-  virtual void exitBdt_next(temporalSVAParser::Bdt_nextContext * /*ctx*/) override { }
+  virtual void enterDt_next(temporalSVAParser::Dt_nextContext * /*ctx*/) override { }
+  virtual void exitDt_next(temporalSVAParser::Dt_nextContext * /*ctx*/) override { }
 
-  virtual void enterBdt_next_and(temporalSVAParser::Bdt_next_andContext * /*ctx*/) override { }
-  virtual void exitBdt_next_and(temporalSVAParser::Bdt_next_andContext * /*ctx*/) override { }
+  virtual void enterDt_next_and(temporalSVAParser::Dt_next_andContext * /*ctx*/) override { }
+  virtual void exitDt_next_and(temporalSVAParser::Dt_next_andContext * /*ctx*/) override { }
 
-  virtual void enterBdt_NCReps(temporalSVAParser::Bdt_NCRepsContext * /*ctx*/) override { }
-  virtual void exitBdt_NCReps(temporalSVAParser::Bdt_NCRepsContext * /*ctx*/) override { }
+  virtual void enterDt_NCReps(temporalSVAParser::Dt_NCRepsContext * /*ctx*/) override { }
+  virtual void exitDt_NCReps(temporalSVAParser::Dt_NCRepsContext * /*ctx*/) override { }
 
   virtual void enterBoolean(temporalSVAParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(temporalSVAParser::BooleanContext * /*ctx*/) override { }

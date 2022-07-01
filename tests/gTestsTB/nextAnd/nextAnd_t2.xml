@@ -18,7 +18,7 @@
                   <prop exp="wb_we"    loc="c" />
                   <prop exp="ready_from_bus" loc="c" />
 
-                  <template bdtLimits="3D,3W,3A,0E,R" exp="G({..#1&..}|-> X(P0))" />
+                  <template dtLimits="3D,3W,3A,0E,R" exp="G({..#1&..}|-> X(P0))" />
 
 	</context>
 </harm>

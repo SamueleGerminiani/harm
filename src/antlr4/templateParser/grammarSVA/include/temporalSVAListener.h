@@ -29,14 +29,14 @@ public:
   virtual void enterPlaceholder(temporalSVAParser::PlaceholderContext *ctx) = 0;
   virtual void exitPlaceholder(temporalSVAParser::PlaceholderContext *ctx) = 0;
 
-  virtual void enterBdt_next(temporalSVAParser::Bdt_nextContext *ctx) = 0;
-  virtual void exitBdt_next(temporalSVAParser::Bdt_nextContext *ctx) = 0;
+  virtual void enterDt_next(temporalSVAParser::Dt_nextContext *ctx) = 0;
+  virtual void exitDt_next(temporalSVAParser::Dt_nextContext *ctx) = 0;
 
-  virtual void enterBdt_next_and(temporalSVAParser::Bdt_next_andContext *ctx) = 0;
-  virtual void exitBdt_next_and(temporalSVAParser::Bdt_next_andContext *ctx) = 0;
+  virtual void enterDt_next_and(temporalSVAParser::Dt_next_andContext *ctx) = 0;
+  virtual void exitDt_next_and(temporalSVAParser::Dt_next_andContext *ctx) = 0;
 
-  virtual void enterBdt_NCReps(temporalSVAParser::Bdt_NCRepsContext *ctx) = 0;
-  virtual void exitBdt_NCReps(temporalSVAParser::Bdt_NCRepsContext *ctx) = 0;
+  virtual void enterDt_NCReps(temporalSVAParser::Dt_NCRepsContext *ctx) = 0;
+  virtual void exitDt_NCReps(temporalSVAParser::Dt_NCRepsContext *ctx) = 0;
 
   virtual void enterBoolean(temporalSVAParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(temporalSVAParser::BooleanContext *ctx) = 0;

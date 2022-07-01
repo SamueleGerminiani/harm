@@ -22,23 +22,23 @@
                   <prop exp="byte_sel==0" loc="c" />
 
 
-                  <template bdtLimits="3W,-0.1E,O" exp="G({..&&..}|-> X(P0))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0))" />
-                  <template bdtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0))" />
-                  <template bdtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0))" />
+                  <template dtLimits="3W,-0.1E,O" exp="G({..&&..}|-> X(P0))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0))" />
+                  <template dtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0))" />
+                  <template dtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0))" />
 
-                  <template bdtLimits="3W,-0.1E" exp="G({..&&..}|-> X(P0 && P1))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0 && P1))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0 && P1))" />
-                  <template bdtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0 && P1))" />
-                  <template bdtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0 && P1))" />
+                  <template dtLimits="3W,-0.1E" exp="G({..&&..}|-> X(P0 && P1))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0 && P1))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0 && P1))" />
+                  <template dtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0 && P1))" />
+                  <template dtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0 && P1))" />
 
-                  <template bdtLimits="3W,-0.1E" exp="G({..&&..}|-> X(P0 U P1))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0 U P1))" />
-                  <template bdtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0 U P1))" />
-                  <template bdtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0 U P1))" />
-                  <template bdtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0 U P1))" />
+                  <template dtLimits="3W,-0.1E" exp="G({..&&..}|-> X(P0 U P1))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0 U P1))" />
+                  <template dtLimits="3D,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0 U P1))" />
+                  <template dtLimits="3D,-0.2E,S" exp="G({..##1..}|-> X(P0 U P1))" />
+                  <template dtLimits="3D,-0.2E,R" exp="G({..##1..}|-> X(P0 U P1))" />
 
                   <template exp="G({(P0 & P1);P2}|-> XP3)" />
                   <template exp="G({(P0 & P1);(P2 & P3)}|-> XP4)" />

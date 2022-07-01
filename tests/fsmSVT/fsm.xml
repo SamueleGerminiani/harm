@@ -8,7 +8,7 @@
 
         <numeric exp="DUT::state"/>
 
-		<template bdtLimits="3D,2W,3A,0.1E,R,N" exp="G({..#1&..}|-> (P0))" /> 
+		<template dtLimits="3D,2W,3A,0.1E,R,N" exp="G({..#1&..}|-> (P0))" /> 
 
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BDTLimits.hh"
-#include "BDTUtils.hh"
+#include "DTLimits.hh"
+#include "DTUtils.hh"
 #include "Hstring.hh"
 #include "exp.hh"
 #include <map>
@@ -19,9 +19,9 @@ using namespace expression;
 using DecTreeVariables =
     std::map<size_t, std::pair<Proposition *, Proposition *>>;
 
-class BDTOperator {
+class DTOperator {
 public:
-  virtual ~BDTOperator() {}
+  virtual ~DTOperator() {}
   virtual void addItem(Proposition *p, int depth) = 0;
   virtual void popItem(int depth) = 0;
   virtual void removeItems() = 0;
@@ -46,13 +46,13 @@ public:
   virtual std::vector<Proposition *> getItems() = 0;
   virtual size_t getNChoices() = 0;
   virtual size_t getCurrentDepth() = 0;
-  virtual const BDTLimits &getLimits() = 0;
+  virtual const DTLimits &getLimits() = 0;
 
   virtual std::pair<std::string, std::string> prettyPrint(bool offset) = 0;
 
 protected:
   std::vector<Proposition *> _items;
-  BDTLimits _limits;
+  DTLimits _limits;
 };
 
 }

@@ -130,7 +130,7 @@ add_subdirectory(src/antlr4/varDeclarationParser)
 add_subdirectory(src/antlr4/propositionParser)
 add_subdirectory(src/antlr4/templateParser)
 add_subdirectory(src/antlr4/metricParser)
-add_subdirectory(src/antlr4/bdtLimitsParser)
+add_subdirectory(src/antlr4/dtLimitsParser)
 
 
 #spotLTL

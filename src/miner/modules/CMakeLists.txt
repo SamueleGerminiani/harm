@@ -26,7 +26,7 @@ add_library(contextMiner ${CR_SRC} )
 target_include_directories(contextMiner PUBLIC include/contextMiner/interface/
 	include/contextMiner/manualDefinition/ ../../rapidxml/include)
 
-target_link_libraries(contextMiner templateParser propositionParser metricParser bdtLimitsParser)
+target_link_libraries(contextMiner templateParser propositionParser metricParser dtLimitsParser)
 
 
 

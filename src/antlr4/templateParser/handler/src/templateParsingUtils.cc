@@ -11,7 +11,7 @@ namespace hparser {
 using namespace expression;
 harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
                               const std::string &language,
-                              const harm::BDTLimits &limits, bool useCache) {
+                              const harm::DTLimits &limits, bool useCache) {
 
   auto decls = trace->getDeclarations();
   addTypeToTemplate(formula, decls);

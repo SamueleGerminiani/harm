@@ -1,19 +1,19 @@
 #pragma once
-#include "BDTOperator.hh"
+#include "DTOperator.hh"
 
 namespace harm {
-class BDTNextAnd : public BDTOperator {
+class DTNextAnd : public DTOperator {
 public:
-  BDTNextAnd(size_t shift, Template *t, const BDTLimits &limits);
+  DTNextAnd(size_t shift, Template *t, const DTLimits &limits);
 
-  ~BDTNextAnd() override;
+  ~DTNextAnd() override;
   bool isMultiDimensional() override;
   bool canInsertAtDepth(int depth) override;
   bool isRandomConstructed() override;
   bool isTaken(size_t id, bool second, int depth) override;
 
   size_t getNChoices() override;
-  const BDTLimits &getLimits() override;
+  const DTLimits &getLimits() override;
   size_t getCurrentDepth() override;
 
   void addItem(Proposition *p, int depth) override;

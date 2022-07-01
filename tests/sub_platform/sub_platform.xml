@@ -1,21 +1,21 @@
 <harm>
 	<context name="default">
 
-		<numeric clsEffort="0.3" exp="round" loc="bdt"/>
-		<numeric clsEffort="0.3" exp="ka" loc="bdt"/>
-		<numeric clsEffort="0.3" exp="kl" loc="bdt"/>
+		<numeric clsEffort="0.3" exp="round" loc="dt"/>
+		<numeric clsEffort="0.3" exp="ka" loc="dt"/>
+		<numeric clsEffort="0.3" exp="kl" loc="dt"/>
 		<prop exp="Kvld_reg" loc="a"/>
 		<prop exp="EncDec" loc="a"/>
 		<prop exp="Drdy" loc="a"/>
-		<numeric clsEffort="0.3" exp="state" loc="bdt"/>
+		<numeric clsEffort="0.3" exp="state" loc="dt"/>
 		<prop exp="Krdy" loc="a"/>
-		<numeric clsEffort="0.3" exp="ka_in" loc="bdt"/>
-		<numeric clsEffort="0.3" exp="Din" loc="bdt"/>
+		<numeric clsEffort="0.3" exp="ka_in" loc="dt"/>
+		<numeric clsEffort="0.3" exp="Din" loc="dt"/>
 		<prop exp="Dvld" loc="a"/>
 		<prop exp="EN" loc="a"/>
-		<numeric clsEffort="0.3" exp="Dout" loc="bdt"/>
+		<numeric clsEffort="0.3" exp="Dout" loc="dt"/>
 		<prop exp="RSTn" loc="a"/>
-		<numeric clsEffort="0.3" exp="Kin" loc="bdt"/>
+		<numeric clsEffort="0.3" exp="Kin" loc="dt"/>
 		<prop exp="BSY" loc="a"/>
 		<prop exp="Kvld" loc="a"/>
 		<prop exp="Dvld_reg" loc="a"/>
@@ -40,11 +40,11 @@
 
 
 
-		<template bdtLimits="3A,-0.1E" exp="G({..&&..}|-> X(P0))" /> 
-		<template bdtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,R" exp="G({..##1..}|-> X(P0))" /> 
-		<template bdtLimits="3W,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0))" /> 
-		<template bdtLimits="3A,-0.1E,S" exp="G({..##1..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E" exp="G({..&&..}|-> X(P0))" /> 
+		<template dtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,R" exp="G({..##1..}|-> X(P0))" /> 
+		<template dtLimits="3W,3W,3A,-0.1E,S" exp="G({..#1&..}|-> X(P0))" /> 
+		<template dtLimits="3A,-0.1E,S" exp="G({..##1..}|-> X(P0))" /> 
 
 
 
