@@ -7,6 +7,24 @@
 
 namespace harm {
 
+std::ostream &operator<<(std::ostream &os, ClsOp op) {
+  switch (op) {
+  case ClsOp::Range:
+    os << "r";
+    break;
+  case ClsOp::E:
+    os << "e";
+    break;
+  case ClsOp::GE:
+    os << "ge";
+    break;
+  case ClsOp::LE:
+    os << "le";
+    break;
+  }
+  return os;
+}
+
 std::pair<VarType, uint8_t> variableTypeFromString(const std::string &type,
                                                    uint8_t size) {
   if (type == "bool") {
@@ -75,22 +93,36 @@ std::vector<Proposition *> inline makeLogicRange(
   std::vector<Proposition *> ret;
   for (auto &c : clusters) {
     if (c.first != c.second) {
-      LogicExpression *ll =
-          new LogicConstant(c.first, type.first, type.second, cn->getMaxTime());
-      LogicExpression *rl = new LogicConstant(c.second, type.first, type.second,
-                                              cn->getMaxTime());
-      LogicExpression *l1 = copy(*cn->get()._le);
-      LogicExpression *l2 = copy(*cn->get()._le);
-      ret.push_back(
-          makeExpression<PropositionAnd>(makeExpression<LogicGreaterEq>(l1, ll),
-                                         makeExpression<LogicLessEq>(l2, rl)));
-      //ret.push_back(makeExpression<LogicGreaterEq>(copy(*l1), copy(*ll)));
-      //ret.push_back(makeExpression<LogicLessEq>(copy(*l2), copy(*rl)));
+      if (cn->_clsOps.count(ClsOp::Range)) {
+        LogicExpression *ll = new LogicConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        LogicExpression *rl = new LogicConstant(c.second, type.first,
+                                                type.second, cn->getMaxTime());
+        LogicExpression *l1 = copy(*cn->get()._le);
+        LogicExpression *l2 = copy(*cn->get()._le);
+        ret.push_back(makeExpression<PropositionAnd>(
+            makeExpression<LogicGreaterEq>(l1, ll),
+            makeExpression<LogicLessEq>(l2, rl)));
+      }
+      if (cn->_clsOps.count(ClsOp::GE)) {
+        LogicExpression *l1 = copy(*cn->get()._le);
+        LogicExpression *ll = new LogicConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        ret.push_back(makeExpression<LogicGreaterEq>(l1, ll));
+      }
+      if (cn->_clsOps.count(ClsOp::LE)) {
+        LogicExpression *l2 = copy(*cn->get()._le);
+        LogicExpression *rl = new LogicConstant(c.second, type.first,
+                                                type.second, cn->getMaxTime());
+        ret.push_back(makeExpression<LogicLessEq>(l2, rl));
+      }
     } else {
-      LogicExpression *lc =
-          new LogicConstant(c.first, type.first, type.second, cn->getMaxTime());
-      LogicExpression *le = copy(*cn->get()._le);
-      ret.push_back(makeExpression<LogicEq>(le, lc));
+      if (cn->_clsOps.count(ClsOp::E)) {
+        LogicExpression *lc = new LogicConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        LogicExpression *le = copy(*cn->get()._le);
+        ret.push_back(makeExpression<LogicEq>(le, lc));
+      }
     }
   }
   return ret;
@@ -104,22 +136,36 @@ std::vector<Proposition *> inline makeNumericRange(
   std::vector<Proposition *> ret;
   for (auto &c : clusters) {
     if (c.first != c.second) {
-      NumericExpression *ll = new NumericConstant(
-          c.first, type.first, type.second, cn->getMaxTime());
-      NumericExpression *rl = new NumericConstant(
-          c.second, type.first, type.second, cn->getMaxTime());
-      NumericExpression *l1 = copy(*cn->get()._ne);
-      NumericExpression *l2 = copy(*cn->get()._ne);
-      ret.push_back(makeExpression<PropositionAnd>(
-          makeExpression<NumericGreaterEq>(l1, ll),
-          makeExpression<NumericLessEq>(l2, rl)));
-      //ret.push_back(makeExpression<NumericGreaterEq>(copy(*l1), copy(*ll)));
-      //ret.push_back(makeExpression<NumericLessEq>(copy(*l2), copy(*rl)));
+      if (cn->_clsOps.count(ClsOp::Range)) {
+        NumericExpression *ll = new NumericConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        NumericExpression *rl = new NumericConstant(c.second, type.first,
+                                                type.second, cn->getMaxTime());
+        NumericExpression *l1 = copy(*cn->get()._ne);
+        NumericExpression *l2 = copy(*cn->get()._ne);
+        ret.push_back(makeExpression<PropositionAnd>(
+            makeExpression<NumericGreaterEq>(l1, ll),
+            makeExpression<NumericLessEq>(l2, rl)));
+      }
+      if (cn->_clsOps.count(ClsOp::GE)) {
+        NumericExpression *l1 = copy(*cn->get()._ne);
+        NumericExpression *ll = new NumericConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        ret.push_back(makeExpression<NumericGreaterEq>(l1, ll));
+      }
+      if (cn->_clsOps.count(ClsOp::LE)) {
+        NumericExpression *l2 = copy(*cn->get()._ne);
+        NumericExpression *rl = new NumericConstant(c.second, type.first,
+                                                type.second, cn->getMaxTime());
+        ret.push_back(makeExpression<NumericLessEq>(l2, rl));
+      }
     } else {
-      NumericExpression *lc = new NumericConstant(
-          c.first, type.first, type.second, cn->getMaxTime());
-      NumericExpression *le = copy(*cn->get()._ne);
-      ret.push_back(makeExpression<NumericEq>(le, lc));
+      if (cn->_clsOps.count(ClsOp::E)) {
+        NumericExpression *lc = new NumericConstant(c.first, type.first,
+                                                type.second, cn->getMaxTime());
+        NumericExpression *le = copy(*cn->get()._ne);
+        ret.push_back(makeExpression<NumericEq>(le, lc));
+      }
     }
   }
   return ret;

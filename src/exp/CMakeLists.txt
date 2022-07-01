@@ -24,4 +24,4 @@ list(APPEND EXP_SRCS src/visitors/ExpToZ3Visitor.cc)
 
 add_library(exp ${EXP_SRCS})
 
-target_include_directories(exp PUBLIC include ${Z3_INCLUDE_DIRS})
+target_include_directories(exp PUBLIC include ../miner/utils/include/ ${Z3_INCLUDE_DIRS})

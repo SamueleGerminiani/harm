@@ -15,7 +15,7 @@ add_test(NAME vendingMachine COMMAND harm --vcd vendingMachine/vendingMachine.vc
 add_test(NAME fsm COMMAND harm --vcd fsmSVT/fsm.vcd --clk clk -c fsmSVT/fsm.xml WORKING_DIRECTORY ${WORD_DIR})
 add_test(NAME ncReps COMMAND harm --csv ncReps/ncReps.csv -c ncReps/ncRepsConfig.xml WORKING_DIRECTORY ${WORD_DIR})
 add_test(NAME multiTrace COMMAND harm --csv_dir multiTrace/csv/ -c multiTrace/multiTrace.xml WORKING_DIRECTORY ${WORD_DIR})
-add_test(NAME nonBoolBDT COMMAND harm --csv nonBoolBDT/nonBooleanBDT.csv -c nonBoolBDT/nonBooleanBDT.xml WORKING_DIRECTORY ${WORD_DIR})
+add_test(NAME nonBoolDT COMMAND harm --csv nonBoolDT/nonBooleanDT.csv -c nonBoolDT/nonBooleanDT.xml WORKING_DIRECTORY ${WORD_DIR})
 add_test(NAME paperRE COMMAND harm --csv paperRE/re.csv -c paperRE/reConfig.xml WORKING_DIRECTORY ${WORD_DIR})
 add_test(NAME faultCov COMMAND harm --csv faultCov/fc.csv -c faultCov/fcConfig.xml --fd faultCov/faultyTraces WORKING_DIRECTORY ${WORD_DIR})
 add_test(NAME csvCheck COMMAND harm --csv csvCheck/harm_test_data.csv -c csvCheck/csvCheckConfig.xml --dumpTo ${CMAKE_BINARY_DIR} WORKING_DIRECTORY ${WORD_DIR})

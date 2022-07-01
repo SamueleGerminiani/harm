@@ -1,8 +1,8 @@
-#include "Template.hh"
 #include "ManualDefinition.hh"
 #include "ProgressBar.hpp"
-#include "dtLimitsParser.hh"
+#include "Template.hh"
 #include "classes/atom/Atom.hh"
+#include "dtLimitsParser.hh"
 #include "metricParser.hh"
 #include "metricParsingUtils.hh"
 #include "minerUtils.hh"
@@ -13,6 +13,7 @@
 #include <cassert>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #define enPB 1
 
@@ -22,8 +23,40 @@ using namespace rapidxml;
 ManualDefinition::ManualDefinition(std::string &configFile)
     : ContextMiner(configFile) {}
 
+std::unordered_set<ClsOp> parseClsOp(std::string op) {
+  std::unordered_set<ClsOp> ret;
+  op.erase(remove_if(op.begin(), op.end(), isspace), op.end());
+  std::string word = "";
+  for (size_t i = 0; i < op.size(); i++) {
+    char c = op[i];
+    messageErrorIf(c != ',' && c != 'r' && c != 'e' && c != 'g' && c != 'l' &&
+                       c != ' ' && c != '<' && c != '>',
+                   "Unrecognized token '" + std::string({c}) + "' in op");
+    word += c;
+    if (c == ',' || i == op.size() - 1) {
+      if (c == ',')
+        word.pop_back();
+
+      if (word == "r") {
+        ret.insert(ClsOp::Range);
+      } else if (word == "ge") {
+        ret.insert(ClsOp::GE);
+      } else if (word == "le") {
+        ret.insert(ClsOp::LE);
+      } else if (word == "e") {
+        ret.insert(ClsOp::E);
+      } else {
+        messageError("Unknown operator in '" + op +
+                     "', available operators are 'r' (range), 'ge' (>=) 'le' "
+                     "(<=), 'e' (==)");
+      }
+      word = "";
+    }
+  }
+  return ret;
+}
 void ManualDefinition::mineContexts(Trace *trace,
-                                    std::vector<Context*> &contexts) {
+                                    std::vector<Context *> &contexts) {
 
   std::vector<rapidxml::xml_node<> *> contextsTag;
   getNodesFromName(_configuration, "context", contextsTag);
@@ -78,7 +111,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       auto name = getAttributeValue(filterTag, "name", "default");
       auto th = getAttributeValue(filterTag, "threshold", "0");
       context->_filter.emplace_back(hparser::parseMetric(name, exp, trace),
-                                   std::stod(th));
+                                    std::stod(th));
     }
 
     // propositions
@@ -108,30 +141,35 @@ void ManualDefinition::mineContexts(Trace *trace,
     if (!numsTag.empty()) {
 #if enPB
       progresscpp::ParallelProgressBar pb;
-      pb.addInstance(0, "Elaborating numerics ("+contextName+")", numsTag.size(), 70);
+      pb.addInstance(0, "Elaborating numerics (" + contextName + ")",
+                     numsTag.size(), 70);
 #endif
       for (auto &numTag : numsTag) {
+        CachedAllNumeric *nn;
+
         auto exp = getAttributeValue(numTag, "exp", "");
         auto loc = getAttributeValue(numTag, "loc", "dt");
         double clsEffort =
             std::stod(getAttributeValue(numTag, "clsEffort", "0.3"));
+        std::unordered_set<ClsOp> clsop =
+            parseClsOp(getAttributeValue(numTag, "op", "r, e"));
+
         // convert to proposition to avoid having multiple parsers for similar
         // things
         Proposition *np = hparser::parseProposition(exp, trace);
-        CachedAllNumeric *nn;
         messageErrorIf(dynamic_cast<LogicToBool *>(np) == nullptr &&
                            dynamic_cast<NumericToBool *>(np) == nullptr,
                        "Exp " + exp + " is not of numeric or logic type");
         if (dynamic_cast<LogicToBool *>(np) != nullptr) {
           nn = new expression::CachedAllNumeric(
-              &dynamic_cast<LogicToBool *>(np)->getItem(), clsEffort);
+              &dynamic_cast<LogicToBool *>(np)->getItem(), clsEffort, clsop);
           dynamic_cast<LogicToBool *>(np)->popItem();
-        } else if(dynamic_cast<NumericToBool *>(np) != nullptr) {
+        } else if (dynamic_cast<NumericToBool *>(np) != nullptr) {
           nn = new expression::CachedAllNumeric(
-              &dynamic_cast<NumericToBool *>(np)->getItem(), clsEffort);
+              &dynamic_cast<NumericToBool *>(np)->getItem(), clsEffort, clsop);
           dynamic_cast<NumericToBool *>(np)->popItem();
-        }else{
-            messageError("Bad type in CachedAllNumeric");
+        } else {
+          messageError("Bad type in CachedAllNumeric");
         }
 
         if (loc == "c") {

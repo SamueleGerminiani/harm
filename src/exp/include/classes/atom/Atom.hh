@@ -1,13 +1,15 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <cassert>
-#include <type_traits>
 #include <iostream>
+#include <type_traits>
+#include <unordered_set>
 
-#include "message.hh"
+#include "ClsOp.hh"
 #include "expUtils/VarType.hh"
+#include "message.hh"
 
 namespace expression {
 
@@ -77,7 +79,7 @@ public:
   /// @brief Returns the largest simulation time that can be provided to
   /// the method evaluate.
   virtual size_t getMaxTime() { return _prop->getMaxTime(); }
-  virtual Proposition* getItem() { return _prop; }
+  virtual Proposition *getItem() { return _prop; }
 
   void setType(VarType type, uint8_t size) { _prop->setType(type, size); }
 
@@ -85,8 +87,8 @@ public:
   Proposition *get() { return _prop; }
 
 private:
-  Proposition *_prop=nullptr;
-  bool *_cached=nullptr;
+  Proposition *_prop = nullptr;
+  bool *_cached = nullptr;
 };
 
 class CachedAllNumeric {
@@ -102,7 +104,11 @@ class CachedAllNumeric {
   };
 
 public:
-  CachedAllNumeric(NumericExpression *nume,double clsEffort=1.0f) : _nume(nume), _clsEffort(clsEffort) {
+  CachedAllNumeric(NumericExpression *nume, double clsEffort = 1.0f,
+                   const std::unordered_set<harm::ClsOp> &clsOps =
+                       std::unordered_set<harm::ClsOp>({harm::ClsOp::Range,
+                                                        harm::ClsOp::E}))
+      : _nume(nume), _clsEffort(clsEffort), _clsOps(clsOps) {
     if (nume->getType().second == 32) {
       _cachedf = new float[nume->getMaxTime()];
       for (size_t i = 0; i < nume->getMaxTime(); i++) {
@@ -116,7 +122,11 @@ public:
     }
     _loge = nullptr;
   }
-  CachedAllNumeric(LogicExpression *loge,double clsEffort=1.0f) : _loge(loge), _clsEffort(clsEffort) {
+  CachedAllNumeric(LogicExpression *loge, double clsEffort = 1.0f,
+                   const std::unordered_set<harm::ClsOp> &clsOps =
+                       std::unordered_set<harm::ClsOp>({harm::ClsOp::Range,
+                                                        harm::ClsOp::E}))
+      : _loge(loge), _clsEffort(clsEffort) , _clsOps(clsOps) {
     if (loge->getType().first == VarType::ULogic) {
       _cachedul = new uint64_t[loge->getMaxTime()];
       for (size_t i = 0; i < loge->getMaxTime(); i++) {
@@ -220,8 +230,10 @@ private:
   float *_cachedf;
   uint64_t *_cachedul;
   int64_t *_cachedsl;
+
 public:
-  double _clsEffort=0.3f;
+  std::unordered_set<harm::ClsOp> _clsOps;
+  double _clsEffort = 0.3f;
 };
 
 } // namespace expression

@@ -8,6 +8,7 @@
 
 namespace harm {
 class Template;
+std::ostream & operator<<(std::ostream &os,ClsOp op) ;
 
 
 std::pair<expression::VarType, uint8_t> variableTypeFromString( const std::string &type, uint8_t size = 1);
