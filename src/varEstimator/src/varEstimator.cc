@@ -35,6 +35,7 @@ std::string ve_tracePath = "";
 std::string ftPath = "";
 bool ve_consecutive = 0;
 bool ve_inAnt = 0;
+bool ve_oo = 0;
 size_t ve_sa = 0;
 size_t ve_cluster = 1;
 // number of assertions processed each time
@@ -619,12 +620,12 @@ converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
   std::vector<std::pair<std::string, double>> scores;
   if (normalize) {
     for (auto &[var, diff] : varToDiff) {
-      scores.emplace_back(var, (double)(diff._atct + diff._atcf) /
+      scores.emplace_back(var, (double)(/*diff._atct +*/ diff._atcf) /
                                    (double)diff._nAssertions);
     }
   } else {
     for (auto &[var, diff] : varToDiff) {
-      scores.emplace_back(var, (double)(diff._atct + diff._atcf));
+      scores.emplace_back(var, (double)(/*diff._atct +*/ diff._atcf));
     }
   }
 
@@ -667,13 +668,20 @@ void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
                                                             v_s.second);
   }
   for (auto &b : buckets) {
-    std::cout << "===================[" << b.first << "]===================="
-              << "\n";
-    out << "===================[" << b.first << "]===================="
-        << "\n";
+    if (!normalize) {
+      std::cout << "===================[" << b.first << "]===================="
+                << "\n";
+    }
+      out << "===================[" << b.first << "]===================="
+          << "\n";
     for (auto &v_s : b.second) {
-      std::cout << v_s.first << ": " << (int)v_s.second << "\n";
-      out << v_s.first << ": " << (int)v_s.second << "\n";
+      if (!normalize) {
+        std::cout << v_s.first << ": " << (int)v_s.second << "\n";
+        out << v_s.first << ": " << (int)v_s.second << "\n";
+      } else {
+        out << v_s.first << ": " << std::fixed << std::setprecision(4)
+            << (double)v_s.second << "\n";
+      }
     }
   }
 

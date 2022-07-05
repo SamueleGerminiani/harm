@@ -132,14 +132,15 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
         "cs", "", cxxopts::value<std::string>(),
         "chunkSize (depends on the available memory) ")(
         "consec", "insert faults consecutively in the variables")(
-        "ant", "insert faults in ant variables")(
-        "con", "insert faults in ant variables")(
-        "technique", "", cxxopts::value<std::string>(),
+        "ant", "insert faults in ant variables")
+        ("con", "insert faults in ant variables")
+        ( "technique", "", cxxopts::value<std::string>(),
         "technique used to perform the estimation")(
         "clk", "clk signal", cxxopts::value<std::string>(),
         "<String>")
         ("fd", "path to the directory containing faulty traces", cxxopts::value<std::string>(), "<DIRECTORY>")
         ( "max_threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+        ("oo", "assertions contain only outputs in the consequent")
             ("help", "Show options");
 
     auto result = options.parse(argc, argv);

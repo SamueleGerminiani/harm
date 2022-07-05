@@ -38,8 +38,15 @@ int main(int arg, char *argv[]) {
     std::vector<Template *> assertions = parseAssertions(
         assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
 
-    std::unordered_map<std::string, std::vector<Template *>> varToAss =
-        discardAssertionsGroupBy(assertions, clc::ve_inAnt ? 0 : 1);
+    std::unordered_map<std::string, std::vector<Template *>> varToAss;
+    if (clc::ve_oo && !clc::faultyTraceFiles.empty()) {
+      auto vars = trace->getVariables();
+      for (auto &v : vars) {
+        varToAss[v.getName()] = assertions;
+      }
+    } else {
+      varToAss = discardAssertionsGroupBy(assertions, clc::ve_inAnt ? 0 : 1);
+    }
 
     if (clc::faultyTraceFiles.empty()) {
       getDiff(varToDiff, varToAss, trace, clc::ve_inAnt ? 0 : 1);
@@ -70,14 +77,17 @@ void parseCommandLineArguments(int argc, char *args[]) {
   auto result = parseVarEstimator(argc, args);
 
   if (result.count("fd")) {
-      clc::ftPath=result["fd"].as<std::string>();
+    clc::ftPath = result["fd"].as<std::string>();
     for (const auto &entry :
          std::filesystem::directory_iterator(result["fd"].as<std::string>())) {
       if (entry.path().extension() == ".vcd") {
         clc::faultyTraceFiles.push_back(entry.path().u8string());
       }
     }
-    messageErrorIf(clc::faultyTraceFiles.empty(),"No ft found!");
+    messageErrorIf(clc::faultyTraceFiles.empty(), "No ft found!");
+  }
+  if (result.count("oo")) {
+    clc::ve_oo = 1;
   }
 
   if (result.count("path")) {

@@ -17,6 +17,7 @@ extern size_t ve_cluster;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
+extern bool ve_oo;
 } // namespace clc
 
 struct Diff {
