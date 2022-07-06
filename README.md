@@ -39,7 +39,7 @@ HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (L
 
 # Quick start
 
-For now, we support only Linux and Mac Os with gcc/clang (c++17) and cmake 3.14+.
+For now, we support only Linux and Mac OS (both x86 and arm64) with gcc (c++17) and cmake 3.14+.
 
 ## Dependencies
 * [spotLTL](https://spot.lrde.epita.fr/install.html)
@@ -48,33 +48,42 @@ For now, we support only Linux and Mac Os with gcc/clang (c++17) and cmake 3.14+
 
   
 
-Skip this step if you already have the required dependencies on the path.
-Install all the dependencies manually or simply run the commands below;
+(skip this step if you already have the required dependencies on the path)
+
+* Install all the dependencies manually or simply run the commands below.
+
+
 ```
 sudo apt-get install -y uuid-dev pkg-config
 ```
 
-Run:
+* Install all dependencies in the local repository (all the dependencies will be compiled from source);
 
 ```
 cd third_party
 bash install_all.sh
 ```
 
-to install all dependencies in the local repository (must be repeated each time you clone the repository);
-or Run:
-```
-cd third_party
-sudo bash install_all.sh /usr/local
-```
-to install all dependencies on your system
 
 ## Build the project
 
 ```
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
+```
+(you can use option -DCMAKE_INSTALL_PREFIX=/path/to/install/directory/ of cmake to specify where to install harm and its dependencies)
+```
 make
+```
+
+### Mac OS only
+* Install the libraries (specify a proper path usig cmake) 
+```
+make install
+```
+* Add the libraries to the runtime library path
+```
+export DYLD_LIBRARY_PATH=/path/to/install/directory/harm/lib:$DYLD_LIBRARY_PATH
 ```
 
 ## Run default tests
@@ -87,7 +96,7 @@ ctest -V -R
 # How to use the miner  
 HARM has two main inputs, a trace in the form of a vcd/csv file and a set of hints.
 Hints consist of a set of propositions, templates and metrics; they are defined in a separate xml configuration file. 
-The user can find many working examples in the "tests" directory .
+The user can find several working examples in the "tests" directory .
 
 ## Run with a vcd trace
 
@@ -97,7 +106,7 @@ The user can find many working examples in the "tests" directory .
 
 * clock is the signal used to sample time (every posedge).
 * config.xml is the configuration file containing propositions and templates.
-*  use --vcd_dir <DIRECTORY>  to give as input a set of .vcd traces
+* use --vcd_dir <DIRECTORY>  to give as input a set of .vcd traces
 
 ## Run with a csv trace
 
@@ -107,7 +116,7 @@ The user can find many working examples in the "tests" directory .
 *  use --csv_dir <DIRECTORY>  to give as input a set of .csv traces
 
 ## Automatically generating a configuration file
-To simplify the creation of a new test, HARM is capable of generating a sample configuration file using the variables found in the trace.  The user might want to modify the generated configuration file to adapt  it to her/his needs.
+To simplify the creation of a new test, HARM is capable of generating a sample configuration file using the variables found in the trace.  The user might want to modify the generated configuration file to adapt it to her/his needs.
 
 For vcd:
 ```
@@ -121,7 +130,7 @@ For csv:
  HARM will create the configuration file on the path given as argument.
 
 #  The configuration file
- It is recommended to always start  from an automatically generated configuration file (using the --generate_config option).
+ It is recommended to always start from an automatically generated configuration file (using the --generate_config option).
  Hints are organised in contexts, each context contains three types of expressions: propositions, templates and metrics (see the configuration file below).  
  ```xml
 <harm>
@@ -181,6 +190,7 @@ The template expression has an additional parameter "check", if it is set to "1"
 * \-\-find_min_subset : find the minimum number of assertions covering all faults (must be used with --fd)
 * \-\-dumpTo <DIRECTORY> : dump assertions to file on given path
 * \-\-dumpTo-no-data <DIRECTORY> : dump assertions to file on given path without contingency tables
+* \-\-maxAss <uint> : the maximum number of assertions to keep after the ranking
 * \-\-dont-fill-ass : do not populate assertions with values (saves memory)
 * \-\-dumpStat : dump statistics to file
 * \-\-interactive : enable interactive assertion ranking
@@ -209,7 +219,7 @@ make install
 #### Integrate HARM in you project using cmake
 1. Clone HARM into your project
 ```
-git clone https://gitlab.com/SamueleGerminiani/harm.git
+git clone https://github.com/SamueleGerminiani/harm.git
 ```
 2. Use cmake to compile the source code: 
 ```
