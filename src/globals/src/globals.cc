@@ -1,4 +1,5 @@
 #include "globals.hh"
+#include <limits>
 #include <thread>
 namespace l3Constants {
 size_t MAX_THREADS = std::thread::hardware_concurrency();
@@ -20,9 +21,10 @@ std::string parserType = "";
 std::string clk = "";
 std::string outputLang = "Spot";
 bool genTemp;
-size_t maxThreads=std::thread::hardware_concurrency();
+size_t maxThreads = std::thread::hardware_concurrency();
 bool findMinSubset = false;
 bool dumpAssToFile = false;
+size_t maxAss = std::numeric_limits<size_t>().max();
 bool noData = false;
 std::string dumpPath = "";
 bool intMode = false;

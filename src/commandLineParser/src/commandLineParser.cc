@@ -28,14 +28,11 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         ("generate_config", "generate template xml configuration")
         ("find_min_subset","find the minimum number of assertions covering all faults")
         ( "dump", "dump assertions to file")
-        ( "dumpStat", "dump statistics to file")
-            ( "dump-no-data", "dump assertions to file without contingency")(
+        ( "dumpStat", "dump statistics to file") ( "dump-no-data", "dump assertions to file without contingency")(
         "dumpTo", "dump assertions to file with given path",
-        cxxopts::value<std::string>(), "<DIRECTORY>")(
-        "dumpTo-no-data",
-        "dump assertions to file with given path without contingency",
-        cxxopts::value<std::string>(),
-        "<DIRECTORY>")("dont-fill-ass",
+        cxxopts::value<std::string>(), "<DIRECTORY>")( "dumpTo-no-data", "dump assertions to file with given path without contingency", cxxopts::value<std::string>(), "<DIRECTORY>")
+        ( "maxAss", "maximum number of assertions to keep after the ranking", cxxopts::value<size_t>(), "<uint>")
+        ("dont-fill-ass",
                        "do not populate assertions with values (saves memory)")(
         "interactive", "enable interactive assertion ranking")(
         "splitLogic", "split bitvectors into boolean variabes")(

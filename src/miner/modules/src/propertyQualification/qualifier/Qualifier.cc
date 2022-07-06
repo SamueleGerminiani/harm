@@ -836,6 +836,14 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
   messageInfo("Filtered " + std::to_string(filtered) + " assertions");
 
   sortAssertions(context, trace, assertions);
+
+  if (assertions.size() > clc::maxAss) {
+    messageInfo("Keeping only the top " + std::to_string(clc::maxAss) +
+                " assertions");
+
+    assertions.erase(assertions.begin() + clc::maxAss, assertions.end());
+  }
+
   return assertions;
 }
 

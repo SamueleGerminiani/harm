@@ -123,6 +123,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   clc::configFile = result["c"].as<std::string>();
   messageErrorIf(!clc::genTemp && !std::filesystem::exists(clc::configFile),
                  "Can not find '" + clc::configFile + "'");
+  if (result.count("maxAss")) {
+    clc::maxAss = result["maxAss"].as<size_t>();
+  }
 
   if (result.count("max_threads")) {
     size_t nt = result["max_threads"].as<size_t>();
