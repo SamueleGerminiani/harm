@@ -25,8 +25,8 @@ std::ostream &operator<<(std::ostream &os, ClsOp op) {
   return os;
 }
 
-std::pair<VarType, uint8_t> variableTypeFromString(const std::string &type,
-                                                   uint8_t size) {
+std::pair<VarType, size_t> variableTypeFromString(const std::string &type,
+                                                   size_t size) {
   if (type == "bool") {
     return std::make_pair(VarType::Bool, 1);
   } else if (type == "char") {
@@ -190,7 +190,7 @@ std::vector<Proposition *> genPropsThroughClustering(std::vector<size_t> &ivs,
                                                      size_t max_length) {
 
   std::vector<Proposition *> ret;
-  std::pair<VarType, uint8_t> type = cn->getType();
+  std::pair<VarType, size_t> type = cn->getType();
 
   if (cn->getType().first == VarType::Numeric) {
     if (cn->getType().second == 32) {

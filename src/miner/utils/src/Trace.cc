@@ -182,8 +182,7 @@ void Trace::_allocateTrace(std::vector<DataType> &variables) {
     }
     default: {
       // number of values in a Logic
-      size_t val4Logic = 64;
-      size_t _valuesInside = val4Logic / var.getSize();
+      size_t _valuesInside = _val4Logic / var.getSize();
       // number of 64 bits integers to represent all
       // the values of this variable
       size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
@@ -222,8 +221,7 @@ void Trace::_allocatePointers(std::vector<DataType> &variables) {
           reinterpret_cast<uintptr_t>(&_logicTrace[logVarAccu]);
 
       // number of values in a Logic
-      size_t val4Logic = 64;
-      size_t _valuesInside = val4Logic / var.getSize();
+      size_t _valuesInside = _val4Logic / var.getSize();
       // number of 64 bits integers to represent all
       // the values of this variable
       size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
@@ -241,7 +239,7 @@ Trace::getBooleanVariable(const std::string &name) const {
                      (_varName2Type.at(name) != expression::VarType::Bool),
                  "Can't find boolean variable with name: " + name);
 
-  uint8_t size = _name2size.at(name);
+  size_t size = _name2size.at(name);
   return new expression::BooleanVariable(
       reinterpret_cast<unsigned int *>(_varName2varValues.at(name)), name,
       _length);
@@ -254,7 +252,7 @@ Trace::getLogicVariable(const std::string &name) const {
                       _varName2Type.at(name) != expression::VarType::SLogic),
                  "Can't find logic variable with name: " + name);
 
-  uint8_t size = _name2size.at(name);
+  size_t size = _name2size.at(name);
   return new expression::LogicVariable(
       reinterpret_cast<uint64_t *>(_varName2varValues.at(name)), name,
       _varName2Type.at(name), size, _length);
@@ -266,7 +264,7 @@ Trace::getNumericVariable(const std::string &name) const {
                      (_varName2Type.at(name) != expression::VarType::Numeric),
                  "Can't find numeric variable with name: " + name);
 
-  uint8_t size = _name2size.at(name);
+  size_t size = _name2size.at(name);
   return new expression::NumericVariable(
       reinterpret_cast<expression::Numeric *>(_varName2varValues.at(name)),
       name, _varName2Type.at(name), size, _length);

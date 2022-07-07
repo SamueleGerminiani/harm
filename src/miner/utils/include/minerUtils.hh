@@ -11,7 +11,7 @@ class Template;
 std::ostream & operator<<(std::ostream &os,ClsOp op) ;
 
 
-std::pair<expression::VarType, uint8_t> variableTypeFromString( const std::string &type, uint8_t size = 1);
+std::pair<expression::VarType, size_t> variableTypeFromString( const std::string &type, size_t size = 1);
 
 std::vector<expression::Proposition *> genPropsThroughClustering(std::vector<size_t> &ivs, expression::CachedAllNumeric *cn, size_t max_length);
 

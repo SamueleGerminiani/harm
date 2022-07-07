@@ -8,11 +8,11 @@
 #include <utility>
 
 namespace expression {
-inline std::pair<VarType, uint8_t>
-applyCStandardConversion(const std::pair<VarType, uint8_t> &e1,
-                         const std::pair<VarType, uint8_t> &e2) {
-  std::pair<VarType, uint8_t> curr_e1 = e1;
-  std::pair<VarType, uint8_t> curr_e2 = e2;
+inline std::pair<VarType, size_t>
+applyCStandardConversion(const std::pair<VarType, size_t> &e1,
+                         const std::pair<VarType, size_t> &e2) {
+  std::pair<VarType, size_t> curr_e1 = e1;
+  std::pair<VarType, size_t> curr_e2 = e2;
 
   // DEBUG
   /*

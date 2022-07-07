@@ -68,7 +68,7 @@ void MetricParserHandler::enterLogicConstant(
       std::cout << value << "\n";
       auto *c =
           new LogicConstant(value, VarType::SLogic,
-                            (uint8_t)(value != 0 ? std::log2(value) + 2 : 1),
+                            (size_t)(value != 0 ? std::log2(value) + 2 : 1),
                             _trace->getLength());
       _logicExpressions.push(c);
     } else {
@@ -76,7 +76,7 @@ void MetricParserHandler::enterLogicConstant(
       Logic value = std::stoull(conStr);
       auto *c =
           new LogicConstant(value, VarType::ULogic,
-                            (uint8_t)(value != 0 ? std::log2(value) + 1 : 1),
+                            (size_t)(value != 0 ? std::log2(value) + 1 : 1),
                             _trace->getLength());
       _logicExpressions.push(c);
     }
@@ -118,7 +118,7 @@ void MetricParserHandler::enterNumericVariable(
   // //std::cout << __func__ << ": " << varName << std::endl;
 
   if (ctx->NUMERIC() != nullptr) {
-    uint8_t size = std::stoul(ctx->NUMERIC()->toString());
+    size_t size = std::stoul(ctx->NUMERIC()->toString());
     NumericConstant *newVar =
         new NumericConstant(99, VarType::ULogic, size, _trace->getLength());
     _metric->_nameToNumericVarInMetric[varName] = newVar;

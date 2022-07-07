@@ -22,17 +22,17 @@ template <> void Constant<Logic>::acceptVisitor(ExpVisitor &vis) {
 }
 
 template <>
-Constant<Logic>::Constant(Logic value,VarType type,uint8_t size, size_t max_time)
+Constant<Logic>::Constant(Logic value,VarType type,size_t size, size_t max_time)
     : Atom<Logic>(type,size,max_time), _value(value) {
     // ntd
 }
 template <>
-Constant<Numeric>::Constant(Numeric value,VarType type,uint8_t size, size_t max_time)
+Constant<Numeric>::Constant(Numeric value,VarType type,size_t size, size_t max_time)
     : Atom<Numeric>(type,size,max_time), _value(value) {
     // ntd
 }
 template <>
-Constant<bool>::Constant(bool value,VarType type,uint8_t size, size_t max_time)
+Constant<bool>::Constant(bool value,VarType type,size_t size, size_t max_time)
     : Atom<bool>(type,size,max_time), _value(value) {
     // ntd
 }

@@ -3,7 +3,7 @@
 
 namespace expression {
 
-NumericVariable::NumericVariable(Numeric *v, const std::string &name, VarType type, uint8_t size, size_t max_time) : Atom<Numeric>(type, size, max_time), _v(v), _name(name){
+NumericVariable::NumericVariable(Numeric *v, const std::string &name, VarType type, size_t size, size_t max_time) : Atom<Numeric>(type, size, max_time), _v(v), _name(name){
     // ntd
      }
 

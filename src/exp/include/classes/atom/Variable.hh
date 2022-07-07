@@ -2,6 +2,7 @@
 
 #include "Atom.hh"
 #include <string>
+#include <climits>
 
 namespace expression {
 
@@ -18,7 +19,7 @@ class LogicVariable : public Atom<Logic> {
     /// @param name the name of the variable.
     /// @param max_time the largest simulation time that can be provided to
     /// the method evaluate.
-	  LogicVariable(uint64_t *v,const std::string &name,VarType type, uint8_t size, size_t max_time);
+	  LogicVariable(uint64_t *v,const std::string &name,VarType type, size_t size, size_t max_time);
 
     /// @brief copy Constructor.
     /// @param other The other variable to be copied.
@@ -62,10 +63,9 @@ class LogicVariable : public Atom<Logic> {
     uint64_t _mask;
 
     // number of values stored in uint64_t.
-    uint8_t _valuesInside;
+    size_t _valuesInside;
 
-    // Logic are stored in a uint64_t array
-    const uint8_t _bits4Logic = static_cast<uint8_t>(sizeof(uint64_t));
+    size_t _val4Logic = sizeof(expression::Logic) * CHAR_BIT;
 };
 
 class NumericVariable : public Atom<Numeric> {
@@ -75,7 +75,7 @@ class NumericVariable : public Atom<Numeric> {
     /// @param name the name of the variable
     /// @param max_time the largest simulation time that can be provided to
     /// the method evaluate.
-	  NumericVariable(Numeric *v, const std::string &name, VarType type, uint8_t size, size_t max_time) ;
+	  NumericVariable(Numeric *v, const std::string &name, VarType type, size_t size, size_t max_time) ;
 
     /// @brief copy Constructor.
     /// @param other The other variable to be copied.

@@ -27,7 +27,7 @@ VCDtraceReader::VCDtraceReader(const std::vector<std::string> &files,
 VCDtraceReader::VCDtraceReader(const std::string &file, const std::string &clk)
     : TraceReader(std::vector<std::string>({file}), clk) {}
 
-static DataType toDataType(std::string name, std::string type, uint8_t size) {
+static DataType toDataType(std::string name, std::string type, size_t size) {
   DataType ret;
   ret.setName(name);
   auto type_size = variableTypeFromString(type, size);

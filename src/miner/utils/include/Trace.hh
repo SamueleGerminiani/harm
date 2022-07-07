@@ -3,6 +3,7 @@
 #include "DataType.hh"
 #include "exp.hh"
 
+#include <climits>
 #include <map>
 #include <string>
 #include <tuple>
@@ -10,7 +11,7 @@
 
 namespace harm {
 
-using VarDeclaration = std::tuple<std::string, expression::VarType, uint8_t>;
+using VarDeclaration = std::tuple<std::string, expression::VarType, size_t>;
 
 /// @brief Trace declaration.
 /// This class represents a simulation trace.
@@ -71,8 +72,8 @@ public:
                    "Did not find variable '" + varName + "'");
     return _name2size.at(varName);
   }
-  expression::VarType getVarType(const std::string &name){
-      return _varName2Type.at(name);
+  expression::VarType getVarType(const std::string &name) {
+    return _varName2Type.at(name);
   }
 
   std::string printTrace(size_t start, size_t n);
@@ -96,7 +97,7 @@ private:
 
   std::vector<size_t> _cuts;
 
-  std::map<std::string, uint8_t> _name2size;
+  std::map<std::string, size_t> _name2size;
 
   /// @brief The mapping between variable's name and values
   std::map<std::string, uintptr_t> _varName2varValues;
@@ -106,6 +107,9 @@ private:
 
   void _allocateTrace(std::vector<DataType> &variables);
   void _allocatePointers(std::vector<DataType> &variables);
+
+  static_assert(CHAR_BIT == 8, "A byte does not contain 8 bits!");
+  size_t _val4Logic = sizeof(expression::Logic) * CHAR_BIT;
 };
 
 } // namespace harm

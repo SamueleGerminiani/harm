@@ -150,7 +150,7 @@ void PropositionParserHandler::enterNumericVariable(
   // //std::cout << __func__ << ": " << varName << std::endl;
 
   if (ctx->NUMERIC() != nullptr) {
-    uint8_t size = std::stoul(ctx->NUMERIC()->toString());
+    size_t size = std::stoul(ctx->NUMERIC()->toString());
     _numericExpressions.push(_trace->getNumericVariable(varName));
   }
 }

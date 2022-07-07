@@ -9,9 +9,9 @@ static double double_precision = 0.01;
 static double double_limit = std::pow(2, 30);
 
 #define EXTEND_LOGIC(O, OE1, OE2, E1, E2)                                      \
-  uint8_t TO_EXTEND[2];                                                        \
-  TO_EXTEND[0] = std::abs(OE1->getType().second - O.getType().second);         \
-  TO_EXTEND[1] = std::abs(OE2->getType().second - O.getType().second);         \
+  size_t TO_EXTEND[2];                                                        \
+  TO_EXTEND[0] = std::abs((int)OE1->getType().second - (int)O.getType().second);         \
+  TO_EXTEND[1] = std::abs((int)OE2->getType().second - (int)O.getType().second);         \
   if (TO_EXTEND[0] > 0) {                                                      \
     /*If the operand is going from unsigned to signed, add a zero to           \
     avoid errors with z3::sext*/                                               \
@@ -33,9 +33,9 @@ static double double_limit = std::pow(2, 30);
   auto conversionResult = applyCStandardConversion(                            \
       std::make_pair(OE1->getType().first, OE1->getType().second),             \
       std::make_pair(OE2->getType().first, OE2->getType().second));            \
-  uint8_t TO_EXTEND[2];                                                        \
-  TO_EXTEND[0] = std::abs(OE1->getType().second - conversionResult.second);    \
-  TO_EXTEND[1] = std::abs(OE2->getType().second - conversionResult.second);    \
+  size_t TO_EXTEND[2];                                                        \
+  TO_EXTEND[0] = std::abs((int)OE1->getType().second - (int)conversionResult.second);    \
+  TO_EXTEND[1] = std::abs((int)OE2->getType().second - (int)conversionResult.second);    \
   if (TO_EXTEND[0] > 0) {                                                      \
     /*If the operand is going from unsigned to signed, add a zero to           \
     avoid errors with z3::sext*/                                               \

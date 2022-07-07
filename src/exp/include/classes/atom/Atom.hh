@@ -36,18 +36,18 @@ public:
   /// the method evaluate.
   virtual size_t getMaxTime();
 
-  void setType(VarType type, uint8_t size);
+  void setType(VarType type, size_t size);
 
-  std::pair<VarType, uint8_t> getType();
+  std::pair<VarType, size_t> getType();
 
 protected:
   /// @brief Constructor of an Atom
   /// @param max_time the largest simulation time that can be provided to
   /// the method evaluate.
-  Atom(VarType type = VarType::Bool, uint8_t size = 1, size_t max_time = 0);
+  Atom(VarType type = VarType::Bool, size_t size = 1, size_t max_time = 0);
 
   VarType _type;
-  uint8_t _size;
+  size_t _size;
   size_t _max_time;
 };
 
@@ -81,9 +81,9 @@ public:
   virtual size_t getMaxTime() { return _prop->getMaxTime(); }
   virtual Proposition *getItem() { return _prop; }
 
-  void setType(VarType type, uint8_t size) { _prop->setType(type, size); }
+  void setType(VarType type, size_t size) { _prop->setType(type, size); }
 
-  std::pair<VarType, uint8_t> getType() { return _prop->getType(); }
+  std::pair<VarType, size_t> getType() { return _prop->getType(); }
   Proposition *get() { return _prop; }
 
 private:
@@ -198,7 +198,7 @@ public:
     }
   }
 
-  void setType(VarType type, uint8_t size) {
+  void setType(VarType type, size_t size) {
     if (_nume != nullptr) {
       return _nume->setType(type, size);
     } else {
@@ -206,7 +206,7 @@ public:
     }
   }
 
-  std::pair<VarType, uint8_t> getType() {
+  std::pair<VarType, size_t> getType() {
     if (_nume != nullptr) {
       return _nume->getType();
     } else {

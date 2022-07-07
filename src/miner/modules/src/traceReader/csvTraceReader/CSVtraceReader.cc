@@ -20,7 +20,7 @@ CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files)
 
 CSVtraceReader::CSVtraceReader(const std::string &file)
     : TraceReader(std::vector<std::string>({file}), "") {}
-DataType toDataType(std::string name, std::string type, uint8_t size) {
+DataType toDataType(std::string name, std::string type, size_t size) {
   DataType ret;
 
   auto type_size = variableTypeFromString(type, size);
@@ -29,7 +29,7 @@ DataType toDataType(std::string name, std::string type, uint8_t size) {
 
   return ret;
 }
-std::pair<std::string, std::pair<std::string, uint8_t>>
+std::pair<std::string, std::pair<std::string, size_t>>
 parseVariable(std::string varDecl) {
   hparser::VarDeclarationParserHandler listenerLocDec;
   listenerLocDec.addErrorMessage("\t\t\tIn declaration: " + varDecl);

@@ -33,7 +33,7 @@ class DataType {
     /// @brief Sets the type of the variable
     /// @param type The enum type value to be set.
     /// @param size The size of the variable.
-    void setType(expression::VarType type, uint8_t size = 1);
+    void setType(expression::VarType type, size_t size = 1);
 
     /// @brief Returns the type of the variable.
     /// @returns The enum type value.
@@ -41,7 +41,7 @@ class DataType {
 
     /// @brief Returns the size of the variable.
     /// @returns The size value.
-    uint8_t getSize() const;
+    size_t getSize() const;
 
     /// @brief Sets the direction of the variable
     /// @param dir The enum direction value to be set.
@@ -59,7 +59,7 @@ class DataType {
     expression::VarType _type;
 
     /// @brief Stores the size of the variable.
-    uint8_t _size;
+    size_t _size;
 
     /// @brief Stores the direction of the variable.
     Location _location;

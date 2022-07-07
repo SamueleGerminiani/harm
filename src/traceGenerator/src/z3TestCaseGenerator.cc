@@ -157,7 +157,7 @@ Z3TestCaseGenerator::generateTestCase(expression::Proposition &p, size_t n,
           uint64_t v = model.get_const_interp(model[j]).get_numeral_uint64();
 
           assert(_converter._varToTypeSize.count(varName));
-          std::pair<expression::VarType, uint8_t> &varTypeSize =
+          std::pair<expression::VarType, size_t> &varTypeSize =
               _converter._varToTypeSize.at(varName);
           // SLOGIC(signed integers)
           if (varTypeSize.first == expression::VarType::SLogic) {

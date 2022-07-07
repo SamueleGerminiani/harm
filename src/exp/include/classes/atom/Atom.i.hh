@@ -3,7 +3,7 @@
 namespace expression {
 
 template <typename T>
-Atom<T>::Atom(VarType type, uint8_t size, size_t max_time)
+Atom<T>::Atom(VarType type, size_t size, size_t max_time)
     : _type(type),_size(size) , _max_time(max_time) {
 	// ntd
 }
@@ -14,12 +14,12 @@ size_t Atom<T>::getMaxTime() {
 }
 
 template <typename T>
-void Atom<T>::setType(VarType type, uint8_t size) {
+void Atom<T>::setType(VarType type, size_t size) {
 	_type = type;
 	_size = size;
 }
 template <typename T>
-std::pair<VarType,uint8_t> Atom<T>::getType(){
+std::pair<VarType,size_t> Atom<T>::getType(){
 	return std::make_pair(_type,_size);
 }
 }  // namespace expression

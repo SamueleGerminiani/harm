@@ -12,7 +12,7 @@ private:
   virtual Trace *readTrace(const std::string file) override;
   /* data */
 };
-std::pair<std::string, std::pair<std::string, uint8_t>>
+std::pair<std::string, std::pair<std::string, size_t>>
 parseVariable(std::string varDecl);
-DataType toDataType(std::string name, std::string type, uint8_t size);
+DataType toDataType(std::string name, std::string type, size_t size);
 } // namespace harm

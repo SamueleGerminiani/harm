@@ -13,7 +13,7 @@ template <typename T> class Constant : public Atom<T> {
     /// @param value a constant value.
     /// @param max_time the largest simulation time that can be provided to
     /// the method evaluate.
-    explicit Constant(T value,VarType type,uint8_t size, size_t max_time);
+    explicit Constant(T value,VarType type,size_t size, size_t max_time);
 
 
     /// @brief Destructor.

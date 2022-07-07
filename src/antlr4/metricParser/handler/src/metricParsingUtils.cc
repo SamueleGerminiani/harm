@@ -8,7 +8,7 @@
 
 using namespace expression;
 namespace metrics {
-using VarDeclaration = std::tuple<std::string, VarType, uint8_t>;
+using VarDeclaration = std::tuple<std::string, VarType, size_t>;
 extern std::vector<VarDeclaration> _availableVars;
 
 } // namespace metrics
