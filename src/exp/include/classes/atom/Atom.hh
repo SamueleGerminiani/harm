@@ -95,8 +95,8 @@ class CachedAllNumeric {
   union EvalRet {
     double _d;
     float _f;
-    uint64_t _u;
-    int64_t _s;
+    ULogic _u;
+    SLogic _s;
   };
   union GetRet {
     NumericExpression *_ne;
@@ -128,12 +128,12 @@ public:
                                                         harm::ClsOp::E}))
       : _loge(loge), _clsEffort(clsEffort) , _clsOps(clsOps) {
     if (loge->getType().first == VarType::ULogic) {
-      _cachedul = new uint64_t[loge->getMaxTime()];
+      _cachedul = new ULogic[loge->getMaxTime()];
       for (size_t i = 0; i < loge->getMaxTime(); i++) {
         _cachedul[i] = loge->evaluate(i);
       }
     } else {
-      _cachedsl = new int64_t[loge->getMaxTime()];
+      _cachedsl = new SLogic[loge->getMaxTime()];
       for (size_t i = 0; i < loge->getMaxTime(); i++) {
         _cachedsl[i] = loge->evaluate(i);
       }
@@ -228,8 +228,8 @@ private:
   LogicExpression *_loge = nullptr;
   double *_cachedd;
   float *_cachedf;
-  uint64_t *_cachedul;
-  int64_t *_cachedsl;
+  ULogic *_cachedul;
+  SLogic *_cachedsl;
 
 public:
   std::unordered_set<harm::ClsOp> _clsOps;

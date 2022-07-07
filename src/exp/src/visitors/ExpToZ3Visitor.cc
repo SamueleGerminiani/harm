@@ -465,7 +465,7 @@ void ExpToZ3Visitor::visit(expression::LogicVariable &o) {
 }
 
 void ExpToZ3Visitor::visit(expression::LogicConstant &o) {
-  _z3Expressions.push(_c.bv_val(o.evaluate(0), o.getType().second));
+  _z3Expressions.push(_c.bv_val((uint64_t)o.evaluate(0), o.getType().second));
 }
 void ExpToZ3Visitor::visit(expression::LogicSum &o) {
   assert(o.getItems().size() > 1);

@@ -19,7 +19,7 @@ class LogicVariable : public Atom<ULogic> {
     /// @param name the name of the variable.
     /// @param max_time the largest simulation time that can be provided to
     /// the method evaluate.
-	  LogicVariable(uint64_t *v,const std::string &name,VarType type, size_t size, size_t max_time);
+	  LogicVariable(ULogic *v,const std::string &name,VarType type, size_t size, size_t max_time);
 
     /// @brief copy Constructor.
     /// @param other The other variable to be copied.
@@ -55,14 +55,14 @@ class LogicVariable : public Atom<ULogic> {
   private:
     // A pointer to variable's values
     // This pointer must not be deallocated as values are stored in a Trace!
-    uint64_t *_v;
+    ULogic *_v;
 
     std::string _name;
 
-    // mask to get a Logic value from a uint64_t value.
-    uint64_t _mask;
+    // mask to get a Logic value from a ULogic value.
+    ULogic _mask;
 
-    // number of values stored in uint64_t.
+    // number of values stored in ULogic.
     size_t _valuesInside;
 
     size_t _val4Logic = sizeof(expression::ULogic) * CHAR_BIT;

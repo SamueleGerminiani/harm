@@ -223,11 +223,11 @@ Expression<BinaryOperator::SUM, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) +
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) +
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) +
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) +
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -239,11 +239,11 @@ Expression<BinaryOperator::SUB, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) -
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) -
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) -
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) -
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -255,11 +255,11 @@ Expression<BinaryOperator::MUL, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) *
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) *
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) *
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) *
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -271,11 +271,11 @@ Expression<BinaryOperator::DIV, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) /
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) /
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) /
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) /
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -287,11 +287,11 @@ Expression<BinaryOperator::BAND, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) &
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) &
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) &
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) &
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -303,11 +303,11 @@ Expression<BinaryOperator::BOR, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) |
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) |
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) |
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) |
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -319,11 +319,11 @@ Expression<BinaryOperator::BXOR, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) ^
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) ^
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) ^
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) ^
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 template <>
@@ -333,11 +333,11 @@ bool Expression<BinaryOperator::EQ, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) ==
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) ==
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) ==
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) ==
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -348,11 +348,11 @@ bool Expression<BinaryOperator::NEQ, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) !=
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) !=
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) !=
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) !=
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -363,11 +363,11 @@ bool Expression<BinaryOperator::GT, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) >
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) >
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) >
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) >
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -378,11 +378,11 @@ bool Expression<BinaryOperator::GE, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) >=
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) >=
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) >=
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) >=
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -393,11 +393,11 @@ bool Expression<BinaryOperator::LT, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) <
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) <
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) <
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) <
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -408,11 +408,11 @@ bool Expression<BinaryOperator::LE, LogicExpression, Proposition>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) <=
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) <=
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) <=
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) <=
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 
@@ -432,11 +432,11 @@ Expression<BinaryOperator::LS, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time)
-           << (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time)
+           << (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time)
-           << (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time)
+           << (ULogic)_items[1]->evaluate(time);
   }
 }
 template <>
@@ -447,11 +447,11 @@ Expression<BinaryOperator::RS, LogicExpression, LogicExpression>::evaluate(
 
   if (applyCStandardConversion(_items[0]->getType(), _items[1]->getType())
           .first == VarType::SLogic) {
-    return (int64_t)_items[0]->evaluate(time) >>
-           (int64_t)_items[1]->evaluate(time);
+    return (SLogic)_items[0]->evaluate(time) >>
+           (SLogic)_items[1]->evaluate(time);
   } else {
-    return (uint64_t)_items[0]->evaluate(time) >>
-           (uint64_t)_items[1]->evaluate(time);
+    return (ULogic)_items[0]->evaluate(time) >>
+           (ULogic)_items[1]->evaluate(time);
   }
 }
 //------------------------------------------------------------------------------

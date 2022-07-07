@@ -209,20 +209,20 @@ std::vector<Proposition *> genPropsThroughClustering(std::vector<size_t> &ivs,
       return makeNumericRange<double>(clusters, type, cn);
     }
   } else if (cn->getType().first == VarType::SLogic) {
-    std::vector<int64_t> elements;
+    std::vector<SLogic> elements;
     for (auto &iv : ivs) {
       elements.push_back(cn->evaluate(iv)._s);
     }
-    auto clusters = clsElbow<int64_t>(elements, cn->_clsEffort);
-    return makeLogicRange<int64_t>(clusters, type, cn);
+    auto clusters = clsElbow<SLogic>(elements, cn->_clsEffort);
+    return makeLogicRange<SLogic>(clusters, type, cn);
   } else if (cn->getType().first == VarType::ULogic) {
-    std::vector<int64_t> elements;
+    std::vector<SLogic> elements;
     for (auto &iv : ivs) {
       elements.push_back(cn->evaluate(iv)._u);
     }
-    std::vector<std::pair<int64_t, int64_t>> clusters =
-        clsElbow<int64_t>(elements, cn->_clsEffort);
-    return makeLogicRange<int64_t>(clusters, type, cn);
+    std::vector<std::pair<SLogic, SLogic>> clusters =
+        clsElbow<SLogic>(elements, cn->_clsEffort);
+    return makeLogicRange<SLogic>(clusters, type, cn);
   } else {
     messageError("Unknown type in CachedAllNumeric");
   }

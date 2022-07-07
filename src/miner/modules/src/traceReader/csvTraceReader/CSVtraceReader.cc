@@ -114,9 +114,9 @@ Trace *CSVtraceReader::readTrace(const std::string file) {
         }
       } else {
         if (logVars[lfieldIndex]->getType().first == VarType::SLogic) {
-          logVars[lfieldIndex++]->assign(time, field.get<int64_t>());
+          logVars[lfieldIndex++]->assign(time, field.get<SLogic>());
         } else {
-          logVars[lfieldIndex++]->assign(time, field.get<uint64_t>());
+          logVars[lfieldIndex++]->assign(time, field.get<ULogic>());
         }
       }
       fieldIndex++;

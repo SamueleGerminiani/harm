@@ -2,6 +2,7 @@
 
 #include "DataType.hh"
 #include "exp.hh"
+#include "Logic.hh"
 
 #include <climits>
 #include <map>
@@ -90,7 +91,7 @@ private:
   unsigned int *_booleanTrace;
 
   /// @brief The logic sub-trace containing the values of each Logic variable
-  uint64_t *_logicTrace;
+  expression::ULogic *_logicTrace;
 
   /// @brief The length of the trace
   size_t _length;

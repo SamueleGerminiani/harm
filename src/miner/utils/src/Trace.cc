@@ -91,7 +91,7 @@ std::vector<Trace *> Trace::newTracesWithSAFault(const std::string &varName) {
         auto original = flv->evaluate(randPos);
 
         // sa 0
-        auto withsa = (original & (~((uint64_t)(1ULL << ft_i)) << 1) >> 1);
+        auto withsa = (original & (~((ULogic)(1ULL << ft_i)) << 1) >> 1);
         if (original != withsa) {
           flv->assign(randPos, withsa);
           delete flv;
@@ -147,14 +147,14 @@ std::string Trace::printTrace(size_t start, size_t n) {
     } else if (t == VarType::ULogic) {
       auto v = getLogicVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
-        ss << (uint64_t)v->evaluate(i) << " ";
+        ss << (ULogic)v->evaluate(i) << " ";
       }
       ss << "\n";
       delete v;
     } else if (t == VarType::SLogic) {
       auto v = getLogicVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
-        ss << (int64_t)v->evaluate(i) << " ";
+        ss << (SLogic)v->evaluate(i) << " ";
       }
       ss << "\n";
       delete v;
@@ -194,7 +194,7 @@ void Trace::_allocateTrace(std::vector<DataType> &variables) {
 
   _numeriTrace = new double[_length * numVarCounter]{};
   _booleanTrace = new unsigned[((_length + 31) >> 5) * bolVarCounter]{};
-  _logicTrace = new uint64_t[logVarCounter]{};
+  _logicTrace = new ULogic[logVarCounter]{};
 }
 
 void Trace::_allocatePointers(std::vector<DataType> &variables) {
@@ -254,7 +254,7 @@ Trace::getLogicVariable(const std::string &name) const {
 
   size_t size = _name2size.at(name);
   return new expression::LogicVariable(
-      reinterpret_cast<uint64_t *>(_varName2varValues.at(name)), name,
+      reinterpret_cast<ULogic *>(_varName2varValues.at(name)), name,
       _varName2Type.at(name), size, _length);
 }
 

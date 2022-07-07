@@ -5,7 +5,7 @@
 #include <bitset>
 namespace expression {
 
-LogicVariable::LogicVariable(uint64_t *v, const std::string &name,
+LogicVariable::LogicVariable(ULogic *v, const std::string &name,
                               VarType type, size_t size, size_t max_time)
     : Atom<ULogic>(type, size, max_time), _v(v), _name(name) {
   messageErrorIf(size > 64, "Not supported size for Logic");
@@ -21,9 +21,9 @@ ULogic LogicVariable::evaluate(size_t time) {
 
   size_t tPos = time / _valuesInside;
   size_t shift = _size * (time % _valuesInside);
-  uint64_t value = _v[tPos] & (_mask << shift);
+  ULogic value = _v[tPos] & (_mask << shift);
 
-  uint64_t ret = value >> shift;
+  ULogic ret = value >> shift;
   if (_type == VarType::SLogic && ((1 << (_size - 1)) & ret))
     return ret | ~_mask;
 
@@ -37,7 +37,7 @@ void LogicVariable::assign(size_t time, ULogic value) {
   }
 
   size_t tPos = time / _valuesInside;
-  uint64_t traceValue = _v[tPos];
+  ULogic traceValue = _v[tPos];
 
   size_t shift = _size * (time % _valuesInside);
   value = value << shift;
