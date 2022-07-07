@@ -10,6 +10,7 @@
 #include "ClsOp.hh"
 #include "expUtils/VarType.hh"
 #include "message.hh"
+#include "Logic.hh"
 
 namespace expression {
 
@@ -52,10 +53,9 @@ protected:
 };
 
 using Numeric = double;
-using Logic = uint64_t;
 
 using NumericExpression = Atom<Numeric>;
-using LogicExpression = Atom<Logic>;
+using LogicExpression = Atom<ULogic>;
 using Proposition = Atom<bool>;
 
 class CachedProposition : public Proposition {

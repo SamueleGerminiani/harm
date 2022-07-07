@@ -62,7 +62,7 @@ void PropositionParserHandler::enterLogicConstant(
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits" +
                        printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
     auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -72,7 +72,7 @@ void PropositionParserHandler::enterLogicConstant(
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits" +
                        printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
     auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -82,7 +82,7 @@ void PropositionParserHandler::enterLogicConstant(
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits" +
                        printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
     auto *c = new LogicConstant(value, VarType::ULogic, (conStr.size() - 2) * 4,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -96,13 +96,13 @@ void PropositionParserHandler::enterLogicConstant(
 
     if (conStr.front()=='-') {
       // Store the logic as 2s complement int
-      Logic value = std::stoll(conStr);
+      ULogic value = std::stoll(conStr);
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       _logicExpressions.push(c);
     } else {
       // Store the logic as classic unsigned binary
-      Logic value = std::stoull(conStr);
+      ULogic value = std::stoull(conStr);
       auto *c =
           new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
       _logicExpressions.push(c);

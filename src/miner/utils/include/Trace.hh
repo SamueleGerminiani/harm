@@ -109,7 +109,7 @@ private:
   void _allocatePointers(std::vector<DataType> &variables);
 
   static_assert(CHAR_BIT == 8, "A byte does not contain 8 bits!");
-  size_t _val4Logic = sizeof(expression::Logic) * CHAR_BIT;
+  size_t _val4Logic = sizeof(expression::ULogic) * CHAR_BIT;
 };
 
 } // namespace harm

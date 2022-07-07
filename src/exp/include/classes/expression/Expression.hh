@@ -38,7 +38,7 @@ class Expression : public ET {
 
   using ReturnType = typename std::conditional<
       std::is_same<ET, NumericExpression>::value, Numeric,
-      typename std::conditional<std::is_same<ET, LogicExpression>::value, Logic,
+      typename std::conditional<std::is_same<ET, LogicExpression>::value, ULogic,
                                 bool>::type>::type;
 
 public:

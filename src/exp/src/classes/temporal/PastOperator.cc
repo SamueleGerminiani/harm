@@ -25,7 +25,7 @@ template <> Numeric PastOperator<NumericExpression>::evaluate(size_t time) {
     }
 }
 
-template <> Logic PastOperator<LogicExpression>::evaluate(size_t time) {
+template <> ULogic PastOperator<LogicExpression>::evaluate(size_t time) {
     if (time < _offset) {
         return _e->evaluate(0);
     } else {

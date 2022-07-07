@@ -32,7 +32,7 @@ void MetricParserHandler::enterLogicConstant(
     messageErrorIf(conStr.size() - 2 > 64,
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits"+printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
     auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -41,7 +41,7 @@ void MetricParserHandler::enterLogicConstant(
     messageErrorIf(conStr.size() - 2 > 64,
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits"+printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
     auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -50,7 +50,7 @@ void MetricParserHandler::enterLogicConstant(
     messageErrorIf((conStr.size() - 2) * 4 > 64,
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits"+printErrorMessage());
-    Logic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
     auto *c = new LogicConstant(value, VarType::ULogic, (conStr.size() - 2) * 4,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -64,7 +64,7 @@ void MetricParserHandler::enterLogicConstant(
 
     if (std::stoll(conStr) < 0) {
       // Store the logic as 2s complement int
-      Logic value = std::stoll(conStr);
+      ULogic value = std::stoll(conStr);
       std::cout << value << "\n";
       auto *c =
           new LogicConstant(value, VarType::SLogic,
@@ -73,7 +73,7 @@ void MetricParserHandler::enterLogicConstant(
       _logicExpressions.push(c);
     } else {
       // Store the logic as classic unsigned binary
-      Logic value = std::stoull(conStr);
+      ULogic value = std::stoull(conStr);
       auto *c =
           new LogicConstant(value, VarType::ULogic,
                             (size_t)(value != 0 ? std::log2(value) + 1 : 1),

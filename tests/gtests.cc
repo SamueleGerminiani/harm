@@ -277,7 +277,7 @@ TEST_F(StuckAtTest, t1) {
   std::cout << "\n";
   if (sa == 0) {
     if (con) {
-      Logic value = ~(((1ULL << (index + 1)) - 1) << 1) >> 1;
+      ULogic value = ~(((1ULL << (index + 1)) - 1) << 1) >> 1;
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       wsa = makeExpression<LogicBAnd>(le, c);
@@ -288,7 +288,7 @@ TEST_F(StuckAtTest, t1) {
       wsa2 = &dynamic_cast<LogicToBool *>(p)->getItem();
 
     } else {
-      Logic value = (~((uint64_t)(1ULL << index)) << 1) >> 1;
+      ULogic value = (~((uint64_t)(1ULL << index)) << 1) >> 1;
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       wsa = makeExpression<LogicBAnd>(le, c);
@@ -301,7 +301,7 @@ TEST_F(StuckAtTest, t1) {
 
   } else {
     if (con) {
-      Logic value = (1ULL << (index + 1)) - 1;
+      ULogic value = (1ULL << (index + 1)) - 1;
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       wsa = makeExpression<LogicBOr>(le, c);
@@ -311,7 +311,7 @@ TEST_F(StuckAtTest, t1) {
           _trace);
       wsa2 = &dynamic_cast<LogicToBool *>(p)->getItem();
     } else {
-      Logic value = 1ULL << index;
+      ULogic value = 1ULL << index;
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       wsa = makeExpression<LogicBOr>(le, c);

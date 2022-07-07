@@ -37,7 +37,7 @@ template <typename T> class Constant : public Atom<T> {
 };
 
 using NumericConstant = Constant<Numeric>;
-using LogicConstant   = Constant<Logic>;
+using LogicConstant   = Constant<ULogic>;
 using BooleanConstant = Constant<bool>;
 
 } // namespace oden

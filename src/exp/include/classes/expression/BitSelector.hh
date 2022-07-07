@@ -12,7 +12,7 @@ template <typename ET,typename RT> class BitSelector : public RT {
   public:
     BitSelector(ET *e, size_t upper_bound, size_t lower_bound);
 
-    using ReturnType = typename std::conditional<std::is_same<RT, LogicExpression>::value, Logic, bool>::type;
+    using ReturnType = typename std::conditional<std::is_same<RT, LogicExpression>::value, ULogic, bool>::type;
     /// @brief Copy constructor.
     BitSelector(const BitSelector &other) = delete;
 

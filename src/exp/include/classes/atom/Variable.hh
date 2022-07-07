@@ -9,9 +9,9 @@ namespace expression {
 // Forwards declaration
 class PeTraceChanger;
 
-/// @brief ExpressionVariable<Logic> declaration.
+/// @brief ExpressionVariable<ULogic> declaration.
 /// This class represents a Logic variable.
-class LogicVariable : public Atom<Logic> {
+class LogicVariable : public Atom<ULogic> {
   public:
     /// @brief Constructor for Logic.
     /// @param v A pointer to the variable's values.
@@ -36,12 +36,12 @@ class LogicVariable : public Atom<Logic> {
     /// @brief Returns the value of the variable in the given simulation time.
     /// @param time The simulation time.
     /// @return The value of the variable.
-    Logic evaluate(size_t time) override;
+    ULogic evaluate(size_t time) override;
 
     /// @brief Sets the value of the variable in a given simulation time.
     /// @param time The simulation time.
     /// @param value The value set for the variable.
-    void assign(size_t time, Logic value);
+    void assign(size_t time, ULogic value);
 
 
     /// @brief Accepts a visitor to visit the current object.
@@ -65,7 +65,7 @@ class LogicVariable : public Atom<Logic> {
     // number of values stored in uint64_t.
     size_t _valuesInside;
 
-    size_t _val4Logic = sizeof(expression::Logic) * CHAR_BIT;
+    size_t _val4Logic = sizeof(expression::ULogic) * CHAR_BIT;
 };
 
 class NumericVariable : public Atom<Numeric> {

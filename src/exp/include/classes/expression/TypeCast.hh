@@ -16,7 +16,7 @@ template <typename ET,typename RT> class TypeCast : public RT {
     using ReturnType = typename std::conditional<
         std::is_same<RT, NumericExpression>::value, Numeric,
         typename std::conditional<std::is_same<RT, LogicExpression>::value,
-                                  Logic, bool>::type>::type;
+                                  ULogic, bool>::type>::type;
     /// @brief Copy constructor.
     TypeCast(const TypeCast &other) = delete;
 

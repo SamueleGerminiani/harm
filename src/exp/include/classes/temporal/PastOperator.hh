@@ -12,7 +12,7 @@ template <typename ET> class PastOperator : public ET {
     using ReturnType = typename std::conditional<
         std::is_same<ET, NumericExpression>::value, Numeric,
         typename std::conditional<std::is_same<ET, LogicExpression>::value,
-                                  Logic, bool>::type>::type;
+                                  ULogic, bool>::type>::type;
 
   public:
     /// @brief Given an expression e, and a temporal offset t, the constructor
