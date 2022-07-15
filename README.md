@@ -142,18 +142,21 @@ For csv:
 		
 		<template dtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
-		<sort name="causality" exp="1-afct/traceLength"/>
+	
+		<filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
+		<sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
 		<sort name="frequency" exp="atct/traceLength"/>
 	</context>
 </harm>
 ```
+#### Proposition
  Propositions are non-temporal boolean expressions used to fill the empty spots (placeholders) of the templates;  metrics are used to perform the final ranking of assertions. Propositions can be written using all boolean, relational an arithmetic operators of the C/C++ language.
-  For the full grammar of propositions, check "src/antl4/propositionParser/grammar/proposition.g4".
-  
- Templates can be written using all LTL operators, they must follow the form "G(antecedente -> consequent)"; all variables (inside the template) of the form P\<N\> are considered  placeholders. For instance, template "G(P0 && P1 -> P2 U P3)" has 4 placeholders.
-  For the full grammar of templates, check "src/antl4/templateParser/grammar/temporal.g4".
-  
- Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c" or "ac"; "a" ("c") propositions will be used only in the antecedent (consequent) of the template, "ac" are used only in placeholders appearing in both the antecedent and the consequent.
+For the full grammar of propositions, check "src/antl4/propositionParser/grammar/proposition.g4".
+Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c" or "ac"; "a" ("c") propositions will be used only in the antecedent (consequent) of the template, "ac" are used only in placeholders appearing in both the antecedent and the consequent.
+
+#### Template
+Templates can be written using all LTL operators, they must follow the form "G(antecedente -> consequent)"; all variables (inside the template) of the form P\<N\> are considered  placeholders. For instance, template "G(P0 && P1 -> P2 U P3)" has 4 placeholders.
+For the full grammar of templates, check "src/antl4/templateParser/grammar/temporal.g4".
  
  There are three special placeholders: ..&&.., ..##\<N>.. and ..#\<N>&..;  when  employed, the miner will try to replace them with a corresponding expression using a decision tree (DT) algorithm.
  
@@ -163,16 +166,37 @@ For csv:
 
  These placeholders can only be used once in the antecedent.
  
- A template using Decision Tree Operator (DTO) is associated with a configuration (defined in the 'dtLimits' attribute of 'template') involving several adjustable parameters:
- * <uint>A : the maximum number of operands to be added to the DT operator.
- * <uint>D : the maximum number of temporal operands to be added to the DT operator. Adding a temporal operands increases the temporal depth of the DT operator.
- * <uint>W : the maximum number of propositions to be added at a certain depth in the dt operator
+ A template using a Decision Tree Operator (DTO) is associated with a configuration (defined in the 'dtLimits' attribute of 'template') involving several adjustable parameters:
+ * \<uint\>A : the maximum number of operands to be added to the DT operator.
+ * \<uint\>D : the maximum number of temporal operands to be added to the DT operator. Adding a temporal operands increases the temporal depth of the DT operator.
+ * \<uint\>W : the maximum number of propositions to be added at a certain depth in the dt operator
 * S, R: this parameter states if a DT operator with a temporal dimension must construct expressions following a sequential (S) or an unordered (R, random) approach. To understand this, consider a DTO ..##2.. with parameter 3D, the resulting expression must follow the implicit template o_1 ##2 o_2 ##2 o_3; however, the order in which o_1, o_2, o_3 are substituted greatly changes the outcome of the DT algorithm. A sequential DTO adds the operands in order from o_1 to o_3 while an unordered DTO can add operands in any order. The first one can only generate the expressions "o_1", "o_1 ##2 o_2", "o_1 ##2 o_2 ##2 o_3" while the latter can generate expressions such as "o_1 ##4 o_3" or "##4 o_3".
-* <int>E is used to adjust the computational effort of the DT algorithm, in practice, it is used to decide the number of candidates selected by the DT algorithm to split the search space. If E is associated with a negative value, then the algorithm will put in the least possible effort to mine assertions.
+* <float>E is used to adjust the computational effort of the DT algorithm, in practice, it is used to decide the number of candidates selected by the DT algorithm to split the search space. Legal values: from 0 to 1. If E is associated with a negative value, then the algorithm will put in the least possible effort to mine assertions.
 * O: this parameter states that the DT algorithm must return the assertions belonging to the offset; such assertions are obtained by negating the consequent of an implication that is false each time the antecedent is true (G(ant -> !con)), making the implication always T on the trace.
 
- #   How to check an assertion
-The template expression has an additional parameter "check", if it is set to "1" then the miner will analyse the corresponding assertion on the given trace and dump the contingency table.  Example:
+#### Metric
+A metric is a numeric formula measuring the impact of an assertion's feature in the assertion ranking. 
+The more prominent the feature, the higher its impact on the final ranking of the assertion. The elements of the contingency table are examples of features of an assertion. Metrics can be used either to filter or sort the assertions.
+* Filtering metrics are associated with a threshold; assertions with a score below the threshold of any filtering metric are directly discarded. 
+* Sorting metrics are used to perform the ranking. The ranking is computed according to an overall score.
+
+Currently available assertion features (more will be added):
+
+* atct : number of time units in which antecedent true implies consequent true
+* afct : antecedent false and consequent true
+* auct : antecedent uknown and consequent true
+* atcf 
+* afcf
+* aucf
+* atcu
+* afcu
+* aucu
+* traceLength : length of the trace (the sum of lengths in case of multiple input traces)
+* complexity : number of propositions in the assertion
+* pRepetition : number of repeated propositions in the assertion
+
+#   How to check an assertion
+The template expression has an additional parameter "check", if it is set to "1" then the miner analyses the corresponding assertion on the given trace, if the assertion does not hold on the input traces, it reports the cause of failure.  Example:
 ```
 <template check="1" exp="G({v1} |-> {(v2<10 && v3) && (v4==8 && v5)})" />
 ``` 
@@ -205,7 +229,8 @@ The template expression has an additional parameter "check", if it is set to "1"
 
 
 ## API
-#### Install headers and binaries
+### Integrate HARM in your project
+#### Manually
 * Specify the install path using cmake
 ```
 cmake -DCMAKE_INSTALL_PREFIX=/path/to/install/directory ..
@@ -216,7 +241,7 @@ cmake -DCMAKE_INSTALL_PREFIX=/path/to/install/directory ..
 make install
 ``` 
 
-#### Integrate HARM in you project using cmake
+#### Using cmake
 1. Clone HARM into your project
 ```
 git clone https://github.com/SamueleGerminiani/harm.git
@@ -260,5 +285,6 @@ int main() {
 * "p.configFile" specifies the configuration file with the hints
 * "p.selectedScope" specifies the scope of the VCD input files to be considered in the mining
 * "p.clk" specifies the clock signal used to sample time
-See harm.hh for the whole list of available parameters
+* See harm.hh for the whole list of available parameters (they are equivalent to the command-line arguments)
+
 * "harm::mine(p)" is the only available API (for now). Given a set of parameters p as input, it returns a map [contextName] -> [vector<Assertions>], where vector<Assertions> is a list of Assertions ranked according to the specified metrics.
