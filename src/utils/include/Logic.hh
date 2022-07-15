@@ -1,6 +1,4 @@
 #pragma once
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/integer.hpp>
 #include <cstdint>
 #include <sstream>
 #include <string>
