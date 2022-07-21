@@ -1,0 +1,27 @@
+#Download base image ubuntu 20.04
+FROM ubuntu:20.04
+# Update Ubuntu Software repository
+RUN apt update
+
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt install -y git
+RUN git clone https://github.com/SamueleGerminiani/harm.git
+RUN apt-get install -y uuid-dev pkg-config
+RUN apt install -y build-essential
+RUN apt install -y wget unzip cmake python3 python3-distutils python3-apt
+ENV PYTHON=python3
+WORKDIR "/harm/third_party"
+RUN sh ./install_all.sh
+WORKDIR "/harm"
+RUN mkdir build
+WORKDIR "/harm/build"
+RUN cmake -DCMAKE_BUILD_TYPE=Release ..
+RUN make -j16 && make install
+
+
+
+
+
+# run the command
+CMD ["bash"]
+
