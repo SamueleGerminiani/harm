@@ -33,6 +33,8 @@ The official repo of the Hint-Based AsseRtion Miner
 
 [API](#api)
 
+[Docker](#docker)
+
 ## Project info
 
 HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (LTL) assertions starting from a set of user-defined hints and the simulation traces of the design under verification (DUV). The tool is agnostic with respect to the design from which the trace was generated, thus the DUV source code is not necessary. The user-defined hints involve LTL templates, propositions and ranking metrics that are exploited by the assertion miner to reduce the search space and improve the quality of the generated assertions. This way, the tool supports the work of the verification engineer by including his/her insights in the process of automatically generating assertions.
@@ -288,3 +290,17 @@ int main() {
 * See harm.hh for the whole list of available parameters (they are equivalent to the command-line arguments)
 
 * "harm::mine(p)" is the only available API (for now). Given a set of parameters p as input, it returns a map [contextName] -> [vector<Assertions>], where vector<Assertions> is a list of Assertions ranked according to the specified metrics.
+
+# Docker
+
+Download the docker image:
+```
+docker pull samger/harm:latest
+```
+
+Run it:
+```
+docker run -it samger/harm:latest
+```
+
+
