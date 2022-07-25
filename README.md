@@ -154,9 +154,23 @@ For csv:
 #### Proposition
  Propositions are non-temporal boolean expressions used to fill the empty spots (placeholders) of the templates;  metrics are used to perform the final ranking of assertions. Propositions can be written using all boolean, relational an arithmetic operators of the C/C++ language.
 For the full grammar of propositions, check "src/antl4/propositionParser/grammar/proposition.g4".
-Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c" or "ac"; "a" ("c") propositions will be used only in the antecedent (consequent) of the template, "ac" are used only in placeholders appearing in both the antecedent and the consequent.
+Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c", "ac" and "dt"
+* "a" propositions will be used only to fill antecedent's placeholders (not the dt operator)
+* "c" propositions will be used only to fill consequent's placeholders (not the decision tree operators)
+* "ac" propositions will be used only in placeholders appearing in both the antecedent and the consequent.
+* "dt" propositions will be used only to fill decision tree operators 
+
+#### Numerics
+The user can specify a set of tuples N = \{(ne\_i, loc\_i, th\_i) | i =1, ..., k\} to automatically generate propositions (using a clustering algorithm) predicating over arithmetic expressions, like c==ne, c>= ne, c<= ne, c\_l<= ne <= c\_r, with c, c\_l, c\_r representing constants of numeric type, and ne indicating numerical expressions involving DUV  variables.
+* ne\_i is a numeric expression ("exp" attribute)
+* loc\_i is a location label (among 'a', 'c', 'ac', and 'dt', following the same meaning as in a proposition, "loc" attribute). 
+* th\_i is a numeric threshold (from 0 to 1, "clsEffort" attribute) that is used to specify how much effort the tool must put in to generate propositions including the numeric expression ne\_i.
+
+
 
 #### Template
+
+
 Templates can be written using all LTL operators, they must follow the form "G(antecedente -> consequent)"; all variables (inside the template) of the form P\<N\> are considered  placeholders. For instance, template "G(P0 && P1 -> P2 U P3)" has 4 placeholders.
 For the full grammar of templates, check "src/antl4/templateParser/grammar/temporal.g4".
  
