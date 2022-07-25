@@ -1,9 +1,9 @@
 <harm>
 	<context name="default">
 
-		<prop exp="Krdy" loc="a"/>
-		<prop exp="Drdy" loc="a"/>
-		<prop exp="EncDec" loc="a"/>
+		<prop exp="Krdy" loc="a, dt"/>
+		<prop exp="Drdy" loc="a, dt"/>
+		<prop exp="EncDec" loc="a, dt"/>
 
 		<prop exp="RSTn" loc="c"/>
 		<prop exp="EncDec" loc="c"/>

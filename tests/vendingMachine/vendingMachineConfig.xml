@@ -1,8 +1,8 @@
 <harm>
 	<context name="default"> 
-		<prop exp="nickel && !quarter && !dime " loc="a"/>
-		<prop exp="quarter  && !nickel && !dime " loc="a"/>
-		<prop exp="dime && !quarter && !nickel " loc="a"/>
+		<prop exp="nickel && !quarter && !dime " loc="a, dt"/>
+		<prop exp="quarter  && !nickel && !dime " loc="a, dt"/>
+		<prop exp="dime && !quarter && !nickel " loc="a, dt"/>
 
 		<prop exp="diet && give_diet" loc="c"/>
 		<prop exp="soda && give_soda" loc="c"/>

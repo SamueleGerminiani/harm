@@ -1,17 +1,17 @@
 <harm>
 	<context name="default">
-                  <prop exp="busy"   loc="a" />
-                  <prop exp="wb_ack"   loc="a" />
-                  <prop exp="wb_err"   loc="a" />
-                  <prop exp="wb_stall" loc="a" />
-                  <prop exp="request"  loc="a" />
-                  <prop exp="write"    loc="a" />
-                  <prop exp="busy"   loc="a" />
-                  <prop exp="wb_ack"   loc="a" />
-                  <prop exp="wb_err"   loc="a" />
-                  <prop exp="wb_stall" loc="a" />
-                  <prop exp="request"  loc="a" />
-                  <prop exp="write"    loc="a" />
+                  <prop exp="busy"   loc="a, dt" />
+                  <prop exp="wb_ack"   loc="a, dt" />
+                  <prop exp="wb_err"   loc="a, dt" />
+                  <prop exp="wb_stall" loc="a, dt" />
+                  <prop exp="request"  loc="a, dt" />
+                  <prop exp="write"    loc="a, dt" />
+                  <prop exp="busy"   loc="a, dt" />
+                  <prop exp="wb_ack"   loc="a, dt" />
+                  <prop exp="wb_err"   loc="a, dt" />
+                  <prop exp="wb_stall" loc="a, dt" />
+                  <prop exp="request"  loc="a, dt" />
+                  <prop exp="write"    loc="a, dt" />
                   <prop exp="busy"     loc="c" />
                   <prop exp="write"    loc="c" />
                   <prop exp="wb_stb"   loc="c" />

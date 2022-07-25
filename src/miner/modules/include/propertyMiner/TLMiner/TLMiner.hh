@@ -56,6 +56,7 @@ private:
   std::vector<Proposition *> _propsCon;
   std::vector<Proposition *> _propsAnt;
   std::vector<Proposition *> _propsAntCon;
+  std::vector<Proposition *> _propsDT;
   std::vector<CachedAllNumeric *> _numerics;
   // @brief trace length
   size_t _traceLength;

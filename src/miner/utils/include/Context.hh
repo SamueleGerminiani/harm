@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "exp.hh"
 #include "Location.hh"
 #include "Metric.hh"
+#include "exp.hh"
 #include "globals.hh"
 
 #include <unordered_map>

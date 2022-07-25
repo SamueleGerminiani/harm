@@ -1,8 +1,8 @@
 <harm>
 	<context name="default"> 
-		<prop exp="a" loc="a"/>
-		<prop exp="b" loc="a"/>
-		<prop exp="c" loc="a"/>
+		<prop exp="a" loc="a, dt"/>
+		<prop exp="b" loc="a, dt"/>
+		<prop exp="c" loc="a, dt"/>
 		<prop exp="con" loc="c"/>
 
         <!--

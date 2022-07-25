@@ -14,6 +14,8 @@
 #include <set>
 #include <string>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #define enPB 1
 
@@ -49,6 +51,39 @@ std::unordered_set<ClsOp> parseClsOp(std::string op) {
         messageError("Unknown operator in '" + op +
                      "', available operators are 'r' (range), 'ge' (>=) 'le' "
                      "(<=), 'e' (==)");
+      }
+      word = "";
+    }
+  }
+  return ret;
+}
+std::vector<Location> parseLocation(std::string loc) {
+  std::vector<Location> ret;
+  loc.erase(remove_if(loc.begin(), loc.end(), isspace), loc.end());
+  std::string word = "";
+  for (size_t i = 0; i < loc.size(); i++) {
+    char c = loc[i];
+    messageErrorIf(c != ',' && c != 'a' && c != 'c' && c != 'd' && c != 't' &&
+                       c != ' ',
+                   "Unrecognized token '" + std::string({c}) + "' in loc");
+    word += c;
+    if (c == ',' || i == loc.size() - 1) {
+      if (c == ',')
+        word.pop_back();
+
+      if (word == "a") {
+        ret.push_back(Location::Ant);
+      } else if (word == "c") {
+        ret.push_back(Location::Con);
+      } else if (word == "ac") {
+        ret.push_back(Location::AntCon);
+      } else if (word == "dt") {
+        ret.push_back(Location::DecTree);
+      } else {
+        messageError(
+            "Unknown option in '" + loc +
+            "', available option are 'a' (antecedent), 'c' (consequent), 'ac' "
+            "both antecedent and consequent, 'dt' (decision tree)");
       }
       word = "";
     }
@@ -119,19 +154,19 @@ void ManualDefinition::mineContexts(Trace *trace,
     getNodesFromName(contextTag, "prop", propsTag);
     for (auto &propTag : propsTag) {
       auto exp = getAttributeValue(propTag, "exp", "");
+      messageErrorIf(exp == "", "exp attribute is empty");
       auto locStr = getAttributeValue(propTag, "loc", "");
-      harm::Location loc;
-      if (locStr == "a") {
-        loc = harm::Location::Ant;
-      } else if (locStr == "c") {
-        loc = harm::Location::Con;
-      } else if (locStr == "ac") {
-        loc = harm::Location::AntCon;
-      } else {
-        messageError("Unknown location for proposition " + exp);
+      if (locStr == "") {
+        messageWarning("loc is empty in exp '" + exp +
+                       "', using 'a, c, ac, dt'");
+        locStr = "a, c, ac, dt";
       }
-      context->_props.emplace_back(
-          new CachedProposition(hparser::parseProposition(exp, trace)), loc);
+
+      auto locs = parseLocation(locStr);
+      for (auto loc : locs) {
+        context->_props.push_back(std::make_pair(
+            new CachedProposition(hparser::parseProposition(exp, trace)), loc));
+      }
     }
 
     // numerics for dt
@@ -146,9 +181,15 @@ void ManualDefinition::mineContexts(Trace *trace,
 #endif
       for (auto &numTag : numsTag) {
         CachedAllNumeric *nn;
-
         auto exp = getAttributeValue(numTag, "exp", "");
-        auto loc = getAttributeValue(numTag, "loc", "dt");
+        messageErrorIf(exp == "", "exp attribute is empty in numeric exp");
+        auto locStr = getAttributeValue(numTag, "loc", "");
+        if (locStr == "") {
+          messageWarning("loc is empty in numeric exp '" + exp +
+                         "', using 'a, c, ac, dt'\n\n");
+          locStr = "a, c, ac, dt";
+        }
+        auto locs = parseLocation(locStr);
         double clsEffort =
             std::stod(getAttributeValue(numTag, "clsEffort", "0.3"));
         std::unordered_set<ClsOp> clsop =
@@ -160,6 +201,7 @@ void ManualDefinition::mineContexts(Trace *trace,
         messageErrorIf(dynamic_cast<LogicToBool *>(np) == nullptr &&
                            dynamic_cast<NumericToBool *>(np) == nullptr,
                        "Exp " + exp + " is not of numeric or logic type");
+        // retrieve the numeric expression
         if (dynamic_cast<LogicToBool *>(np) != nullptr) {
           nn = new expression::CachedAllNumeric(
               &dynamic_cast<LogicToBool *>(np)->getItem(), clsEffort, clsop);
@@ -172,47 +214,24 @@ void ManualDefinition::mineContexts(Trace *trace,
           messageError("Bad type in CachedAllNumeric");
         }
 
-        if (loc == "c") {
-          std::vector<size_t> ivs;
-          for (size_t i = 0; i < trace->getLength(); i++) {
-            ivs.push_back(i);
-          }
-
-          auto props = genPropsThroughClustering(ivs, nn, trace->getLength());
-          for (auto p : props) {
-            context->_props.emplace_back(p, Location::Con);
-          }
-          delete nn;
-        } else if (loc == "a") {
-          std::vector<size_t> ivs;
-          for (size_t i = 0; i < trace->getLength(); i++) {
-            ivs.push_back(i);
-          }
-
-          auto props = genPropsThroughClustering(ivs, nn, trace->getLength());
-          for (auto p : props) {
-            context->_props.emplace_back(p, Location::Ant);
-          }
-          delete nn;
-        } else if (loc == "ac") {
-          std::vector<size_t> ivs;
-          for (size_t i = 0; i < trace->getLength(); i++) {
-            ivs.push_back(i);
-          }
-
-          auto props = genPropsThroughClustering(ivs, nn, trace->getLength());
-          for (auto p : props) {
-            context->_props.emplace_back(p, Location::AntCon);
-          }
-          delete nn;
-        } else if (loc == "dt") {
-          context->_numerics.push_back(nn);
-        } else {
-          messageError("Unsopported attribute '" + loc + "'");
-        }
-
         delete np;
 
+        for (auto &loc : locs) {
+          if (loc != Location::DecTree) {
+            std::vector<size_t> ivs;
+            for (size_t i = 0; i < trace->getLength(); i++) {
+              ivs.push_back(i);
+            }
+            auto props = genPropsThroughClustering(ivs, nn, trace->getLength());
+            for (auto p : props) {
+              context->_props.emplace_back(p, loc);
+            }
+          } else {
+            context->_numerics.push_back(nn);
+          }
+        }
+        if (std::find(begin(locs), end(locs), Location::DecTree) == locs.end())
+          delete nn;
 #if enPB
         pb.increment(0);
         pb.display();

@@ -1,9 +1,9 @@
 <harm>
 	<context name="default"> 
-		<prop exp="v1" loc="a"/>
-		<prop exp="v2" loc="a"/>
-		<prop exp="v3" loc="a"/>
-		<prop exp="v4" loc="a"/>
+		<prop exp="v1" loc="a, dt"/>
+		<prop exp="v2" loc="a, dt"/>
+		<prop exp="v3" loc="a, dt"/>
+		<prop exp="v4" loc="a, dt"/>
 		<prop exp="v5" loc="c"/>
 		<prop exp="v6" loc="c"/>
         <!-- 

@@ -56,6 +56,9 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
     case Location::AntCon:
       _propsAntCon.push_back(pl.first);
       break;
+    case Location::DecTree:
+      _propsDT.push_back(pl.first);
+      break;
     case harm::Location::None:
       break;
     }
@@ -77,6 +80,7 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
   _propsAnt.clear();
   _propsCon.clear();
   _propsAntCon.clear();
+  _propsDT.clear();
   _numerics.clear();
   _collectedAssertions.clear();
 }
@@ -94,7 +98,8 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
     l3avThreads.wait();
     std::lock_guard<std::mutex> lock{l3InstancesGuard};
 
-    if (toBeServed < context._templates.size() && l3Instances.size() < l3Constants::MAX_THREADS) {
+    if (toBeServed < context._templates.size() &&
+        l3Instances.size() < l3Constants::MAX_THREADS) {
       l3InstToNumThreads[toBeServed] = 1;
       l3Instances[toBeServed] = new Semaphore(1);
       Template *t = context._templates[toBeServed];
@@ -157,7 +162,8 @@ void TLMiner::l2Handler(
   while (1) {
     l2avThreads->wait();
     std::lock_guard<std::mutex> lock{l2InstancesGuard};
-    if (toBeServed < t->nPermsGenerated() && l2Instances.size() < l2Constants::MAX_THREADS) {
+    if (toBeServed < t->nPermsGenerated() &&
+        l2Instances.size() < l2Constants::MAX_THREADS) {
 
       l2Instances[toBeServed] = 1;
 
@@ -212,20 +218,20 @@ void TLMiner::l2Handler(
       break;
     }
     // Debug
-//    #if enPB
-//          _progressBar.changeMessage(
-//              l3InstId, std::to_string(l3InstToNumThreads.at(l3InstId)));
-//    #endif
+    //    #if enPB
+    //          _progressBar.changeMessage(
+    //              l3InstId, std::to_string(l3InstToNumThreads.at(l3InstId)));
+    //    #endif
   }
 
   for (size_t i = 0; i < templs.size(); i++) {
     delete templs[i];
   }
 
-//#if enPB
-//    _progressBar.changeMessage(l3InstId, std::to_string(0));
+  //#if enPB
+  //    _progressBar.changeMessage(l3InstId, std::to_string(0));
   _progressBar.done(l3InstId);
-//#endif
+  //#endif
 
   std::lock_guard<std::mutex> lock{l3InstancesGuard};
   size_t nThreads = l3Instances.at(l3InstId)->getAvailable() + 1;
@@ -245,10 +251,10 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
   if (t->getDT() != nullptr) {
 
     DecTreeVariables candidateVariables;
-    for (size_t i = 0; i < _propsAnt.size(); i++) {
-      candidateVariables[i].first = _propsAnt[i];
+    for (size_t i = 0; i < _propsDT.size(); i++) {
+      candidateVariables[i].first = _propsDT[i];
       candidateVariables[i].second =
-          makeExpression<PropositionNot>(_propsAnt[i]);
+          makeExpression<PropositionNot>(_propsDT[i]);
     }
 
     if (t->isVacuous(harm::Location::AntCon)) {
@@ -383,7 +389,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     _progressBar.display();
 #endif
 
-    for (size_t i = 0; i < _propsAnt.size(); i++) {
+    for (size_t i = 0; i < _propsDT.size(); i++) {
       dynamic_cast<PropositionNot *>(candidateVariables[i].second)->popItem();
       delete candidateVariables[i].second;
     }
@@ -449,6 +455,7 @@ void TLMiner::clear() {
   _propsCon.clear();
   _propsAnt.clear();
   _propsAntCon.clear();
+  _propsDT.clear();
   _collectedAssertions.clear();
 }
 } // namespace harm

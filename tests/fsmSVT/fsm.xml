@@ -1,7 +1,7 @@
 <harm>
 	<context name="default">
 
-		<prop exp="intf::a" loc="a"/>
+		<prop exp="intf::a" loc="a, dt"/>
 		<prop exp="intf::out3" loc="c"/>
 		<prop exp="intf::out2" loc="c"/>
 		<prop exp="intf::out1" loc="c"/>
