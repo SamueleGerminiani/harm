@@ -131,7 +131,7 @@ bool Template::nextPerm() {
     return false;
   }
   messageErrorIf(_permIndex < 0, "No permutations available!");
-  if (_permIndex >= _pg._size.first) {
+  if ((size_t)_permIndex >= _pg._size.first) {
     _permIndex = 0;
     return false;
   }
@@ -292,7 +292,7 @@ void Template::maxDepth(int &max, Automaton::Node *cn, size_t currDepth,
     if (max == -1) {
       return;
     } else if (i->_toNode->_type != -1) {
-      max = currDepth > max ? currDepth : max;
+      max = currDepth > (size_t)max ? currDepth : max;
 
     } else if (marked.count(i->_toNode->_id)) {
       max = -1;
@@ -317,24 +317,24 @@ void Template::fillContingency(size_t (&ct)[3][3], bool offset) {
           _constShift;
       auto ant = _antCachedValues[time];
       auto con = (shift >= _max_length) ? Trinary::U : _conCachedValues[shift];
-      if (ant == Trinary::T && !con == Trinary::T) {
+      if (ant == Trinary::T && (!con) == Trinary::T) {
         ct[0][0]++;
-      } else if (ant == Trinary::T && !con == Trinary::F) {
+      } else if (ant == Trinary::T && (!con) == Trinary::F) {
         assert(0);
         ct[0][1]++;
-      } else if (ant == Trinary::T && !con == Trinary::U) {
+      } else if (ant == Trinary::T && (!con) == Trinary::U) {
         ct[0][2]++;
-      } else if (ant == Trinary::F && !con == Trinary::T) {
+      } else if (ant == Trinary::F && (!con) == Trinary::T) {
         ct[1][0]++;
-      } else if (ant == Trinary::F && !con == Trinary::F) {
+      } else if (ant == Trinary::F && (!con) == Trinary::F) {
         ct[1][1]++;
-      } else if (ant == Trinary::F && !con == Trinary::U) {
+      } else if (ant == Trinary::F && (!con) == Trinary::U) {
         ct[1][2]++;
-      } else if (ant == Trinary::U && !con == Trinary::T) {
+      } else if (ant == Trinary::U && (!con) == Trinary::T) {
         ct[2][0]++;
-      } else if (ant == Trinary::U && !con == Trinary::F) {
+      } else if (ant == Trinary::U && (!con) == Trinary::F) {
         ct[2][1]++;
-      } else if (ant == Trinary::U && !con == Trinary::U) {
+      } else if (ant == Trinary::U && (!con) == Trinary::U) {
         ct[2][2]++;
       }
     }

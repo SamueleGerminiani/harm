@@ -308,7 +308,7 @@ void DTNextAnd::popItem(int depth) {
     _op[depth]->popItem();
   } else {
     _op[depth]->popItem();
-    if (depth == _currDepth) {
+    if ((size_t)depth == _currDepth) {
       while (_currDepth > 0 && _op[_currDepth]->empty()) {
         _currDepth--;
       }
@@ -321,8 +321,8 @@ void DTNextAnd::popItem(int depth) {
   assert(!_choices.at(depth).empty());
   _choices.at(depth).pop_back();
   _order.pop_back();
-  assert(std::accumulate(_choices.begin(), _choices.end(), 0,
-                         [](int &a, auto &e) { return a + e.second.size(); }) ==
+  assert(std::accumulate(_choices.begin(), _choices.end(), 0ul,
+                         [](size_t &a, auto &e) { return a + e.second.size(); }) ==
          _order.size());
 }
 void DTNextAnd::addItem(Proposition *p, int depth) {
@@ -335,15 +335,15 @@ void DTNextAnd::addItem(Proposition *p, int depth) {
   } else {
     _op[depth]->addItem(p);
     _choices[depth].push_back(p);
-    if (depth > _currDepth) {
+    if ((size_t)depth > _currDepth) {
       _currDepth = depth;
       _t->_ant = _ant[_currDepth];
       _t->_templateFormula = _formulas[_currDepth];
       _t->_antDepth = _antDepth[_currDepth];
     }
   }
-  assert(std::accumulate(_choices.begin(), _choices.end(), 0,
-                         [](int &a, auto &e) { return a + e.second.size(); }) ==
+  assert(std::accumulate(_choices.begin(), _choices.end(), 0ul,
+                         [](size_t &a, auto &e) { return a + e.second.size(); }) ==
          _order.size());
 }
 std::vector<Proposition *> DTNextAnd::getItems() {
@@ -357,7 +357,7 @@ bool DTNextAnd::isMultiDimensional() { return 1; }
 bool DTNextAnd::canInsertAtDepth(int depth) {
   assert(depth != -1);
   return (_choices[depth].size() < _limits._maxWidth &&
-          depth < _limits._maxDepth);
+          (size_t)depth < _limits._maxDepth);
 }
 bool DTNextAnd::isRandomConstructed() { return _limits._isRandomConstructed; }
 size_t DTNextAnd::getNChoices() { return _order.size(); }

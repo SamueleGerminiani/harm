@@ -4,6 +4,7 @@
 #include "classes/atom/Atom.hh"
 #include "exp.hh"
 #include "VarType.hh"
+#include "classes/atom/CachedAllNumeric.hh"
 
 std::ostream &operator<<(std::ostream &os, expression::Proposition &p);
 std::string prop2String(expression::Proposition &p);

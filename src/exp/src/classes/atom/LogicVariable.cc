@@ -1,8 +1,9 @@
 #include "classes/atom/Variable.hh"
 #include "visitors/ExpVisitor.hh"
+#include "message.hh"
 #include <iostream>
-
 #include <bitset>
+
 namespace expression {
 
 LogicVariable::LogicVariable(ULogic *v, const std::string &name,

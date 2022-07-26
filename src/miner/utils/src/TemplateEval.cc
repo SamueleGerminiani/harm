@@ -358,8 +358,8 @@ inline void Template::evalWithCut(Automaton *aut, Trinary *cachedValues) {
                     traceRange, threadsRange, std::ref(threadsPool));
       t.detach();
 
-      //t.join();
-      //          
+      // t.join();
+      //
       prevCut = cut + 1;
     }
 
@@ -367,10 +367,10 @@ inline void Template::evalWithCut(Automaton *aut, Trinary *cachedValues) {
       threadsPool.pop();
     }
   } else {
-    linearEval<Dynamic>(aut, cachedValues, Range(0, _trace->getLength()),
-                        Range(0, _max_length < 5000 /*heuristic optimization*/ ? 1
-                                     : avThreads),
-                        threadsPool);
+    linearEval<Dynamic>(
+        aut, cachedValues, Range(0, _trace->getLength()),
+        Range(0, _max_length < 5000 /*heuristic optimization*/ ? 1 : avThreads),
+        threadsPool);
   }
 }
 
@@ -417,6 +417,9 @@ void Template::linearEval(harm::Location what) {
     break;
   case harm::Location::None:
     break;
+  default:
+    messageError("Illegal use of Location operator");
+    break;
   }
 }
 void Template::quadraticEval(harm::Location what) {
@@ -460,6 +463,9 @@ void Template::quadraticEval(harm::Location what) {
     }
     break;
   case harm::Location::None:
+    break;
+  default:
+    messageError("Illegal use of Location operator");
     break;
   }
 }
@@ -634,8 +640,6 @@ Trinary Template::evalAutomatonDyShift(size_t time, Automaton *root,
 bool Template::assHoldsOnTrace(harm::Location update) {
 
   switch (update) {
-  case harm::Location::None:
-    break;
   case harm::Location::Ant:
     setCacheAntFalse();
     break;
@@ -645,6 +649,11 @@ bool Template::assHoldsOnTrace(harm::Location update) {
   case harm::Location::AntCon:
     setCacheAntFalse();
     setCacheConFalse();
+    break;
+  case harm::Location::None:
+    break;
+  default:
+    messageError("Illegal use of Location operator");
     break;
   }
 
@@ -658,8 +667,6 @@ bool Template::assHoldsOnTrace(harm::Location update) {
 bool Template::assHoldsOnTraceOffset(harm::Location update) {
 
   switch (update) {
-  case harm::Location::None:
-    break;
   case harm::Location::Ant:
     setCacheAntFalse();
     break;
@@ -669,6 +676,11 @@ bool Template::assHoldsOnTraceOffset(harm::Location update) {
   case harm::Location::AntCon:
     setCacheAntFalse();
     setCacheConFalse();
+    break;
+  case harm::Location::None:
+    break;
+  default:
+    messageError("Illegal use of Location operator");
     break;
   }
 
@@ -681,8 +693,6 @@ bool Template::assHoldsOnTraceOffset(harm::Location update) {
 }
 bool Template::isVacuous(harm::Location update) {
   switch (update) {
-  case harm::Location::None:
-    break;
   case harm::Location::Ant:
     setCacheAntFalse();
     break;
@@ -692,6 +702,11 @@ bool Template::isVacuous(harm::Location update) {
   case harm::Location::AntCon:
     setCacheAntFalse();
     setCacheConFalse();
+    break;
+  case harm::Location::None:
+    break;
+  default:
+    messageError("Illegal use of Location operator");
     break;
   }
 
@@ -712,8 +727,6 @@ nextCondition:;
 }
 bool Template::isVacuousOffset(harm::Location update) {
   switch (update) {
-  case harm::Location::None:
-    break;
   case harm::Location::Ant:
     setCacheAntFalse();
     break;
@@ -723,6 +736,11 @@ bool Template::isVacuousOffset(harm::Location update) {
   case harm::Location::AntCon:
     setCacheAntFalse();
     setCacheConFalse();
+    break;
+  case harm::Location::None:
+    break;
+  default:
+    messageError("Illegal use of Location operator");
     break;
   }
 

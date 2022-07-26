@@ -127,7 +127,6 @@ DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
 
   //   Check for parallel depth
   if (_t->_applyDynamicShift) {
-    int baseDepth = -1;
     auto f = _formulas.front();
     auto portionBare =
         selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
@@ -218,7 +217,7 @@ void DTNCReps::popItem(int depth) {
   }
   assert(_order.back() == depth);
   (*_t->_tokenToProp[_tokens[depth]]) = _tc;
-  if (depth == _currDepth) {
+  if ((size_t)depth == _currDepth) {
     while (_currDepth > 0 &&
            (*_t->_tokenToProp.at(_tokens[_currDepth])) == _tc) {
       _currDepth--;
@@ -252,7 +251,7 @@ void DTNCReps::addItem(Proposition *p, int depth) {
     } else {
       (*_t->_tokenToProp.at(_tokens[depth])) = p;
       _choices[depth] = p;
-      if (depth > _currDepth) {
+      if ((size_t)depth > _currDepth) {
         // fill gap with tc
         int tmp = _currDepth + 1;
         while (tmp < depth) {
@@ -279,7 +278,7 @@ bool DTNCReps::canInsertAtDepth(int depth) {
   if (depth == -1) {
     return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
   } else {
-    return depth < _limits._maxDepth &&
+    return (size_t)depth < _limits._maxDepth &&
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }

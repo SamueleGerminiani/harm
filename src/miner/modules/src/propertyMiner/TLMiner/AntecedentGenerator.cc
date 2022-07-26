@@ -230,7 +230,7 @@ AntecedentGenerator::gatherInterestingValues(Template *t, CachedAllNumeric *cn,
   std::vector<size_t> ivs;
   for (size_t i = 0; i < t->_max_length; i++) {
     size_t iv = t->gatherInterestingValue(i, depth, -1);
-    if (iv != -1) {
+    if (iv != (size_t)-1) {
       ivs.push_back(iv);
     }
   }

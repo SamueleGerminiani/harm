@@ -25,10 +25,11 @@ public:
           const std::string &language = "Spot");
 
   std::string _name;
-  std::string _language;
   std::vector<std::pair<expression::Proposition *, Location>> _props;
-  std::vector<expression::CachedAllNumeric *> _numerics;
   std::vector<Template *> _templates;
+  std::string _language;
+
+  std::vector<expression::CachedAllNumeric *> _numerics;
   std::vector<Assertion *> _assertions;
   std::vector<Metric *> _sort;
   std::vector<std::pair<Metric *, double>> _filter;

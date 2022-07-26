@@ -270,7 +270,7 @@ void DTNext::popItem(int depth) {
     _currDepth = (_currDepth > 0 ? _currDepth - 1 : _currDepth);
   } else {
     (*_t->_tokenToProp[_tokens[depth]]) = _tc;
-    if (depth == _currDepth) {
+    if ((size_t)depth == _currDepth) {
       while (_currDepth > 0 &&
              (*_t->_tokenToProp.at(_tokens[_currDepth])) == _tc) {
         _currDepth--;
@@ -309,7 +309,7 @@ void DTNext::addItem(Proposition *p, int depth) {
     } else {
       (*_t->_tokenToProp.at(_tokens[depth])) = p;
       _choices[depth] = p;
-      if (depth > _currDepth) {
+      if ((size_t)depth > _currDepth) {
         // fill gap with tc
         int tmp = _currDepth + 1;
         while (tmp < depth) {
@@ -336,7 +336,7 @@ bool DTNext::canInsertAtDepth(int depth) {
   if (depth == -1) {
     return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
   } else {
-    return depth < _limits._maxDepth &&
+    return (size_t)depth < _limits._maxDepth &&
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }

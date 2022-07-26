@@ -196,7 +196,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("silent")) {
     clc::silent = true;
     // disable cout
-    streambuf *orig_buf = cout.rdbuf();
     cout.rdbuf(NULL);
   }
   if (result.count("isilent")) {

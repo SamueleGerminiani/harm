@@ -1,5 +1,5 @@
 
-#pragma one
+#pragma once
 
 #include "Hierarchical.hh"
 #include "utils.hh"

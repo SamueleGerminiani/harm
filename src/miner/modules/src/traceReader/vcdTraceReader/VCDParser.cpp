@@ -90,7 +90,9 @@ VCDTime current_time = 0;
 #endif
 
 // Suppress unused-variable warnings by "using" E.
+#ifndef YYUSE
 #define YYUSE(E) ((void)(E))
+#endif /* ifndef SYMBOL */
 
 // Enable debugging if requested.
 #if YYDEBUG

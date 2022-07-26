@@ -43,7 +43,7 @@ size_t Expression<O, OT, ET>::getMaxTime() {
         return 0;
 
     size_t min = _items[0]->getMaxTime();
-    for (int i = 1; i < _items.size(); ++i) {
+    for (size_t i = 1; i < _items.size(); ++i) {
         size_t i_min = _items[i]->getMaxTime();
         if (min > i_min)
             min = i_min;

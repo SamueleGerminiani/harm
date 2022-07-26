@@ -99,7 +99,6 @@ void generateHistogram(const std::map<T, double> &ivTosup,
 
   double bw = default_bandwidth(ivTosup);
   // this sets the precision of the final histogram
-  size_t nSamples = ivTosup.size() * samplesPerIV;
   Kernel kernel = Kernel::Epan;
 
   std::vector<T> listOfIV;
@@ -107,7 +106,6 @@ void generateHistogram(const std::map<T, double> &ivTosup,
     listOfIV.push_back(vs.first);
   }
 
-  size_t indexIV = 0;
   for (size_t i = 0; i < listOfIV.size() - 1; i++) {
     double x = listOfIV[i];
     double inc_x =

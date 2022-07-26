@@ -1,6 +1,8 @@
 project(exp)
 
 SET(EXP_SRCS
+    src/classes/atom/CachedProposition.cc
+    src/classes/atom/CachedAllNumeric.cc
     src/classes/atom/Constant.cc
     src/classes/atom/BooleanVariable.cc
     src/classes/atom/NumericVariable.cc

@@ -239,7 +239,6 @@ Trace::getBooleanVariable(const std::string &name) const {
                      (_varName2Type.at(name) != expression::VarType::Bool),
                  "Can't find boolean variable with name: " + name);
 
-  size_t size = _name2size.at(name);
   return new expression::BooleanVariable(
       reinterpret_cast<unsigned int *>(_varName2varValues.at(name)), name,
       _length);

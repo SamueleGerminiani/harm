@@ -50,8 +50,8 @@ struct CandidateDec {
   }
   size_t _id;
   double _ig;
-  double _entropy;
   int _depth;
+  double _entropy;
   std::vector<std::pair<Proposition *, size_t>> _props;
 };
 class AntecedentGenerator {
@@ -74,14 +74,15 @@ public:
   /// generated antecedent
   size_t maxPropositions;
 
-  /// @brief saveOffset defines if
-  bool saveOffset;
-
   /// the algorithm's result:
   ////set<set<Proposition *>> onSets;
   ////set<set<Proposition *>> offSets;
   vector<vector<Proposition *>> onSets;
   vector<vector<Proposition *>> offSets;
+
+  /// @brief saveOffset defines if
+  bool saveOffset;
+
   unordered_set<std::string> knownSolutions;
 
   /// @brief makeAntecedents

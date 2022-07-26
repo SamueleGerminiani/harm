@@ -267,6 +267,11 @@ private:
 public:
   // length of the trace
   size_t _max_length;
+
+private:
+  DTLimits _limits;
+
+public:
   harm::Trace *_trace;
 
 private:
@@ -289,8 +294,6 @@ public:
   size_t *_dynamicShiftCachedValues = nullptr;
   size_t _permShift = 0;
 
-private:
-  DTLimits _limits;
 
   // cached values are used to avoid recalculating each time the truth values of
   // the current assertion

@@ -60,7 +60,7 @@ public:
   bool isFinished() { return _finished; }
   void display() const {
     float progress = (float)ticks / total_ticks;
-    int pos = (int)(bar_width * progress);
+    size_t pos = (int)(bar_width * progress);
 
     std::chrono::steady_clock::time_point now =
         std::chrono::steady_clock::now();
@@ -70,7 +70,7 @@ public:
 
     std::cout << "[";
 
-    for (int i = 0; i < bar_width; ++i) {
+    for (size_t i = 0; i < bar_width; ++i) {
       if (i < pos)
         std::cout << complete_char;
       else if (i == pos)
@@ -126,7 +126,7 @@ public:
   }
   void display() {
     std::lock_guard<std::mutex> lock{_pbGuard};
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(
+    if ((size_t)std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - _prevDisplayTime)
             .count() > _displayPrintDelay) {
       print();
