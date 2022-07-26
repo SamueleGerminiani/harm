@@ -1,3 +1,4 @@
+doc/html/
 build/*
 install/*
 *.swp
@@ -21,4 +22,4 @@ third_party/spot
 third_party/antlr4
 third_party/z3/
 tests/bl_master/bl_master100k.vcd
-
+.DS_Store

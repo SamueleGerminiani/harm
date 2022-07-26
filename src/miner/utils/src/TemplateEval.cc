@@ -13,52 +13,7 @@
 #include <thread>
 #include <utility>
 
-#define enableQuadraticEval 0
-
 namespace harm {
-
-size_t lf = 0;
-size_t te = 0;
-double getQuadFasterScore() { return (double)lf / (double)te; }
-bool Template::quadFaster() {
-  using std::chrono::duration;
-  using std::chrono::duration_cast;
-  using std::chrono::high_resolution_clock;
-  using std::chrono::milliseconds;
-
-  auto t1 = high_resolution_clock::now();
-  auto t2 = high_resolution_clock::now();
-
-  setCacheConFalse();
-  setCacheAntFalse();
-  quadraticEval(harm::Location::Ant);
-  quadraticEval(harm::Location::Con);
-  evaluate_ant(0);
-  evaluate_con(0);
-  t2 = high_resolution_clock::now();
-
-  duration<double, std::milli> quadTime = t2 - t1;
-
-  setCacheConFalse();
-  setCacheAntFalse();
-  t1 = high_resolution_clock::now();
-  linearEval(harm::Location::Ant);
-  linearEval(harm::Location::Con);
-  t2 = high_resolution_clock::now();
-  duration<double, std::milli> linearTime = t2 - t1;
-
-  if ((double)quadTime.count() > ((double)linearTime.count())) {
-    std::cout << "!QuadTime:" << quadTime.count() << "\n";
-    std::cout << "LinearTime:" << linearTime.count() << "\n";
-    std::cout << "--------------------"
-              << "\n";
-  }
-  if (quadTime > linearTime) {
-    lf++;
-  }
-  te++;
-  return 0;
-}
 
 struct LinkedEntry {
   LinkedEntry(size_t id) : _id(id), _nextEntry(nullptr) {
@@ -422,126 +377,10 @@ void Template::linearEval(harm::Location what) {
     break;
   }
 }
-void Template::quadraticEval(harm::Location what) {
-  switch (what) {
-  case harm::Location::Ant:
-#if printl
-    std::cout << "ANTECEDENT"
-              << "\n";
-#endif
-    if (!_antInCache) {
-      if (_applyDynamicShift) {
-        quadraticEvalDynamic(_ant, _antCachedValues);
-      } else {
-        quadraticEval(_ant, _antCachedValues);
-      }
-      _antInCache = true;
-    }
-    break;
-  case harm::Location::Con:
-#if printl
-    std::cout << "CONSEQUENT"
-              << "\n";
-#endif
-    if (!_conInCache) {
-      quadraticEval(_con, _conCachedValues);
-      _conInCache = true;
-    }
-    break;
-  case harm::Location::AntCon:
-    if (!_antInCache) {
-      if (_applyDynamicShift) {
-        quadraticEvalDynamic(_ant, _antCachedValues);
-      } else {
-        quadraticEval(_ant, _antCachedValues);
-      }
-      _antInCache = true;
-    }
-    if (!_conInCache) {
-      quadraticEval(_con, _conCachedValues);
-      _conInCache = true;
-    }
-    break;
-  case harm::Location::None:
-    break;
-  default:
-    messageError("Illegal use of Location operator");
-    break;
-  }
-}
-void Template::quadraticEvalDynamic(Automaton *aut, Trinary *cachedValues) {
-
-  _l1Guard.lock();
-  size_t feasThreads = std::min(_availThreads, l1Constants::MAX_THREADS);
-  _l1Guard.unlock();
-
-  std::thread threadArray[feasThreads];
-
-  size_t length = _max_length;
-
-  for (size_t nThread = 0; nThread < feasThreads; ++nThread) {
-    threadArray[nThread] =
-        std::thread([this, nThread, length, aut, feasThreads]() {
-          size_t j = 0;
-          size_t dShift;
-          for (size_t i = nThread; i < length; i += feasThreads) {
-            _cachedValuesP[nThread][j] = evalAutomatonDyShift(i, aut, dShift);
-            _cachedDynShiftsP[nThread][j] = dShift - i;
-            j++;
-          }
-        });
-  }
-  // join threads
-  for (size_t i = 0; i < feasThreads; ++i)
-    threadArray[i].join();
-
-  size_t j = 0;
-  for (size_t i = 0; i < _max_length; i += feasThreads) {
-    for (size_t ti = 0; ti < feasThreads && (i + ti) < _max_length; ti++) {
-      cachedValues[i + ti] = _cachedValuesP[ti][j];
-      _dynamicShiftCachedValues[i + ti] = _cachedDynShiftsP[ti][j];
-    }
-    j++;
-  }
-}
-void Template::quadraticEval(Automaton *aut, Trinary *cachedValues) {
-
-  _l1Guard.lock();
-  size_t feasThreads = std::min(_availThreads, l1Constants::MAX_THREADS);
-  _l1Guard.unlock();
-  std::thread threadArray[feasThreads];
-
-  size_t length = _max_length;
-
-  for (size_t nThread = 0; nThread < feasThreads; ++nThread) {
-    threadArray[nThread] =
-        std::thread([this, nThread, length, aut, feasThreads]() {
-          size_t j = 0;
-          for (size_t i = nThread; i < length; i += feasThreads) {
-            _cachedValuesP[nThread][j] = evalAutomaton(i, aut);
-            j++;
-          }
-        });
-  }
-  // join threads
-  for (size_t i = 0; i < feasThreads; ++i)
-    threadArray[i].join();
-
-  size_t j = 0;
-  for (size_t i = 0; i < _max_length; i += feasThreads) {
-    for (size_t ti = 0; ti < feasThreads && (i + ti) < _max_length; ti++) {
-      cachedValues[i + ti] = _cachedValuesP[ti][j];
-    }
-    j++;
-  }
-}
 Trinary Template::evaluateOffset(size_t time) {
 
-#if enableQuadraticEval
-  quadraticEval(harm::Location::AntCon);
-#else
   linearEval(harm::Location::AntCon);
-#endif
+
   size_t shift = time +
                  (_applyDynamicShift ? _dynamicShiftCachedValues[time] : 0) +
                  _constShift;
@@ -551,11 +390,8 @@ Trinary Template::evaluateOffset(size_t time) {
 
 Trinary Template::evaluate(size_t time) {
 
-#if enableQuadraticEval
-  quadraticEval(harm::Location::AntCon);
-#else
   linearEval(harm::Location::AntCon);
-#endif
+
   size_t shift = time +
                  (_applyDynamicShift ? _dynamicShiftCachedValues[time] : 0) +
                  _constShift;
@@ -566,20 +402,12 @@ Trinary Template::evaluateAntNoChache(size_t time) {
   return evalAutomaton(time, _ant);
 }
 Trinary Template::evaluate_ant(size_t time) {
-#if enableQuadraticEval
-  quadraticEval(harm::Location::Ant);
-#else
   linearEval(harm::Location::Ant);
-#endif
 
   return _antCachedValues[time];
 }
 Trinary Template::evaluate_con(size_t time) {
-#if enableQuadraticEval
-  quadraticEval(harm::Location::Con);
-#else
   linearEval(harm::Location::Con);
-#endif
 
   return _conCachedValues[time];
 }

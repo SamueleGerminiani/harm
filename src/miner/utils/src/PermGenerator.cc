@@ -375,7 +375,7 @@ void PermGenerator::genPermutations(size_t antP, size_t conP, size_t antConP,
   // print_spin_ltl(std::cout, wholeForm, false) << '\n';
   messageErrorIf(wholeForm.is_constant(), "The template is a constant!");
 
-  // find the dimensions and structure of the permutation
+  // find the dimensions and structure of the permutations
   PermUnit *pu = generatePermUnit(wholeForm);
   //    debug
   // printPermUnit(pu);

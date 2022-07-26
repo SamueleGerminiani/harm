@@ -74,7 +74,7 @@ find_program(DOXYGEN_FOUND doxygen)
 if (DOXYGEN_FOUND)
     set(current_targets ${current_targets} "docHarm\n")
     message(STATUS "${Blue}doxygen found!${Reset}")
-    add_custom_target(docHarm COMMAND doxygen ${PROJECT_SOURCE_DIR}/doxygen.cfg)
+    add_custom_target(docHarm COMMAND doxygen ${PROJECT_SOURCE_DIR}/doc/doxygen.cfg)
 endif()
 
 

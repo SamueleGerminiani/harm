@@ -258,7 +258,7 @@ void Qualifier::qualify(Context &context, Trace *trace) {
 
   _traceLength = trace->getLength();
   std::vector<Assertion *> assertions = rankAssertions(context, trace);
-  hs::nAssertions = assertions.size();
+  hs::nAssertions += assertions.size();
 
   // print
   if (!clc::dontPrintAss && !assertions.empty()) {

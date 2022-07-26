@@ -38,6 +38,7 @@ Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
   for (auto &s : _templateFormula) {
+      //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template
     if (s._pp != nullptr) {
       if (s._t == Hstring::Stype::Inst) {
         s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
@@ -51,10 +52,16 @@ Template::Template(const Template &original) {
   _limits = original._limits;
   _check = original._check;
 
+  //rebuild the template
   build();
 
+  //shallow copy, need to configure and copy the data
   _pg = original._pg;
+
+  //only to bring _pg to the starting point, no permutations generated here
   genPermutations(original._aProps, original._cProps, original._acProps);
+
+  //if the original contains permutations we simply copy the permutation matrix to _pg
   if (original._pg._perms != nullptr) {
     _pg._perms = copy_matrix(original._pg._perms, original._pg._size.first,
                              original._pg._size.second);
@@ -62,7 +69,9 @@ Template::Template(const Template &original) {
 }
 
 Template::~Template() {
+    
   if (_dtOp.second != nullptr) {
+      //if the template uses a dt operator, the responsability of freeing _ant falls on the dt operator
     delete _dtOp.second;
   } else {
     delete _ant;
@@ -86,7 +95,7 @@ Template::~Template() {
     delete[] _cachedDynShiftsP;
   }
 
-  // inst props are used only in a specific template
+  // inst props are used only in a specific template: must be deleted in all instances of a template
   for (auto &ph_pp : _iToProp) {
     delete *ph_pp.second;
   }
@@ -104,7 +113,6 @@ std::string Template::getColoredAssertion() {
 }
 std::string Template::getTemplate() { return _templateFormula.toString(false); }
 std::string Template::getColoredTemplate() {
-
   return _templateFormula.toColoredString(false);
 }
 
@@ -136,8 +144,8 @@ bool Template::nextPerm() {
     return false;
   }
   /* load the next permutation
-   FIXME:  this can be heavily optimised by loading only the propositions
-   that change from the previous permutation*/
+   FIXME:  this culd be heavily optimised by loading only the propositions
+   changing from the previous permutation*/
   _conInCache = false;
   _antInCache = false;
   for (auto &e : _pg._phToIndex) {
@@ -147,7 +155,7 @@ bool Template::nextPerm() {
      * _permIndex is the row of the permutation's table
      */
     if (where == harm::Location::Ant) {
-      /*feel the placeholder with the correct proposition
+      /*fill the placeholder with the correct proposition
       _pg._perms[_permIndex][e.second] contains the index of the
        proposition to be inserted
       */
@@ -203,6 +211,7 @@ EdgeProposition *Template::edgeToProposition(const spot::formula &f) {
   }
 
   // Constants
+  
   if (f.is_tt()) {
     return new EdgeTrue();
   }
@@ -472,13 +481,19 @@ Template::generateDeterministicSpotAutomaton(spot::formula &formula) {
 }
 void Template::build() {
 
+    //allocate memory for truth values of the template on the trace
+    //note that due to parallelism, we allocate N times the required memory where N is the maximum number of threads at level 1 (l1Constants::MAX_THREADS)
+
+    //working memory: used by linearEval
   _cachedValuesP = new Trinary *[l1Constants::MAX_THREADS];
 
   for (size_t i = 0; i < l1Constants::MAX_THREADS; i++) {
     _cachedValuesP[i] = new Trinary[_max_length];
+    //init
     std::fill_n(_cachedValuesP[i], _max_length, Trinary::U);
   }
 
+  //final truth values memory: final result of linearEval
   _antCachedValues = new Trinary[_max_length];
   std::fill_n(_antCachedValues, _max_length, Trinary::U);
   _conCachedValues = new Trinary[_max_length];
@@ -495,7 +510,7 @@ void Template::build() {
   _constShift = 0;
   _applyDynamicShift = 0;
 
-  // init dt prop
+  // init the dt operators
   for (auto &s : _templateFormula) {
     if (s._t == Hstring::Stype::DTNextAnd) {
       s._pp = new Proposition *(makeExpression<PropositionAnd>());
@@ -520,6 +535,7 @@ void Template::build() {
   auto himpl = _templateFormula.getImp();
   auto hcon = _templateFormula.getCon();
 
+  //ant placeholders
   std::unordered_set<std::string> antPhs;
 
   // fill utility variables for the antecedent
@@ -548,6 +564,7 @@ void Template::build() {
       e._offset = 0;
     }
   }
+
   // fill utility variables for the consequent
   for (size_t i = 0; i < hcon.size(); i++) {
     auto &e = hcon[i];
@@ -570,10 +587,11 @@ void Template::build() {
                e._t == Hstring::Stype::DTNextAnd ||
                e._t == Hstring::Stype::DTNCReps) {
       messageError(
-          "Binary decision tree operator is not allowed in consequent");
+          "Binary decision tree operator is not allowed in the consequent");
     }
   }
 
+  //retreive the implication of the template
   std::string imp = himpl._s;
   // remove unwanted spaces in the string representation of the implication
   imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
@@ -595,6 +613,7 @@ void Template::build() {
   }
 
   if (_applyDynamicShift) {
+      //allocate more memory to keep track of dynamic shitfs
     _dynamicShiftCachedValues = new size_t[_max_length];
     std::fill_n(_dynamicShiftCachedValues, _max_length, 0);
     _cachedDynShiftsP = new size_t *[l1Constants::MAX_THREADS];
@@ -615,12 +634,13 @@ void Template::build() {
                  "SpotLTL: Syntax errors in consequent of assertion:\n" +
                      hcon.toSpotString());
 
+  //  debug
   //  print_spin_ltl(std::cout, ant.f, false) << '\n';
   //  print_spin_ltl(std::cout, con.f, false) << '\n';
   auto antAutomaton = generateDeterministicSpotAutomaton(ant.f);
   auto conAutomaton = generateDeterministicSpotAutomaton(con.f);
 
-  // DEBUG
+  // debug
   // print_hoa(std::cout, antAutomaton) << '\n';
   // print_hoa(std::cout, conAutomaton) << '\n';
 
@@ -629,7 +649,7 @@ void Template::build() {
   _ant = buildAutomaton(antAutomaton);
   _con = buildAutomaton(conAutomaton);
 
-  // get a new ant
+  // get a new antecedent 
   hant = _templateFormula.getAnt();
   // build the dt operators
   for (size_t i = 0; i < hant.size(); i++) {
@@ -647,6 +667,7 @@ void Template::build() {
     }
   }
 
+  //retreive the depth of the automata
   _antDepth = getDepth(_ant);
   _conDepth = getDepth(_con);
 }

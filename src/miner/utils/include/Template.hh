@@ -304,8 +304,8 @@ public:
 
   size_t **_cachedDynShiftsP = nullptr;
 
-  /// index to the current permutatian, -1 if no permutations are generated
 public:
+  /// index to the current permutatian, -1 if no permutations are generated
   int _permIndex = -1;
   bool _check = 0;
 
@@ -315,9 +315,9 @@ private:
 
   size_t _availThreads = 1;
 
-  friend DTNext;
-  friend DTNCReps;
-  friend DTNextAnd;
   friend DTAnd;
+  friend DTNext;
+  friend DTNextAnd;
+  friend DTNCReps;
 };
 } // namespace harm

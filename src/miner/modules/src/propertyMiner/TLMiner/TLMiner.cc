@@ -37,12 +37,10 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
   vacFile.close();
 #endif
 
-  // free old state
 
   _traceLength = trace->getLength();
   messageInfo("CONTEXT: " + context._name);
 
-  // Step 1)
   // fill vector of ant, con, antcon
   for (auto pl : context._props) {
     messageInfo("PROP: " + prop2String(*pl.first));
@@ -64,6 +62,7 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
     }
   }
 
+  // fill numerics (clustering)
   for (CachedAllNumeric *ne : context._numerics) {
     _numerics.push_back(ne);
     messageInfo("NUMERIC: " + allNum2String(*ne));
@@ -71,38 +70,45 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
 
   l3Handler(context, clc::maxThreads);
 
+  //store all the generated assertions into the context
   for (auto &pack : _collectedAssertions) {
     for (Assertion *ass : pack) {
       context._assertions.push_back(ass);
     }
   }
 
-  _propsAnt.clear();
-  _propsCon.clear();
-  _propsAntCon.clear();
-  _propsDT.clear();
-  _numerics.clear();
-  _collectedAssertions.clear();
+  //clear: necessary if TLMiner is reused (multiple contexts)
+  clear();
 }
 
 void TLMiner::l3Handler(Context &context, size_t nThread) {
 
+  //spot does not suppoty multithreading: need guard
   std::mutex spotStupidity;
+  //threads for l3
   Semaphore l3avThreads(nThread);
+  //active l3 instances (template being mined)
   std::unordered_map<size_t, Semaphore *> l3Instances;
   std::mutex l3InstancesGuard;
+
   size_t toBeServed = 0;
+  //keep track of how many threads are currently allocated for each active template
   size_t l3MaxThread = 2;
+  //simple mapping  Instance -> Number of threads
   std::unordered_map<size_t, size_t> l3InstToNumThreads;
   while (1) {
+    //consume a thread
     l3avThreads.wait();
+    //allocate the thread
     std::lock_guard<std::mutex> lock{l3InstancesGuard};
 
     if (toBeServed < context._templates.size() &&
         l3Instances.size() < l3Constants::MAX_THREADS) {
+        //mine a new template and give it the thread
       l3InstToNumThreads[toBeServed] = 1;
       l3Instances[toBeServed] = new Semaphore(1);
       Template *t = context._templates[toBeServed];
+      //start a new l2Instance (new permutation of the current template)
       std::thread(&TLMiner::l2Handler, this, t, toBeServed,
                   std::ref(l3Instances), std::ref(l3avThreads),
                   std::ref(spotStupidity), std::ref(l3InstancesGuard),
@@ -110,6 +116,8 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
           .detach();
       toBeServed++;
     } else if (!l3Instances.empty()) {
+        //all templates are being mined: give the thread to an active template
+        //this code is to balance the number of threads among the active template, it searches for an l3Instance that is using less threads than the current max
       for (auto &e : l3Instances) {
         if (l3InstToNumThreads.at(e.first) < l3MaxThread) {
           e.second->notify();
@@ -117,6 +125,7 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
           goto found;
         }
       }
+      //all l3Instance are using the same number of threads
       l3Instances.begin()->second->notify();
       l3MaxThread++;
       l3InstToNumThreads.at(l3Instances.begin()->first)++;
@@ -137,6 +146,7 @@ void TLMiner::l2Handler(
     Semaphore &l3avThreads, std::mutex &spotStupidity,
     std::mutex &l3InstancesGuard,
     std::unordered_map<size_t, size_t> &l3InstToNumThreads) {
+    //this function follows the same princle of l3Handler; however, we create a new Template instance for each permutation to avoid as much as possible sharing memory 
 
   Semaphore *l2avThreads = atGuard(l3Instances, l3InstId, l3InstancesGuard);
   std::unordered_map<size_t, size_t> l2Instances;
@@ -269,10 +279,8 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
     antGen.saveOffset = t->saveOffset();
 
-    // filling template ..&&.. with binary decision tree
-    /* creating a copy of candidateVariables to pass as parameter to
-     * decision tree*/
     DecTreeVariables candidateVariables_copy;
+    //creating a copy of candidateVariables to pass as parameter to decision tree algorithm
     candidateVariables_copy = candidateVariables;
 
     NumericDecTreeExp numericCandidates;
@@ -287,6 +295,8 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
     // Onset
     for (std::vector<Proposition *> &props : antGen.onSets) {
+
+        //rebulding the assertion starting from a list propositions (the operands of a dt operator)
       if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
           for (auto prop : t->getDT()->unpack(props[i])) {
@@ -300,10 +310,12 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       }
 
       assert(!t->getDT()->getItems().empty());
+
+      //check for vacuity
       if (!t->isVacuous(Location::Ant)) {
 
+          //create a new assertion
         auto prettyAss = t->getDT()->prettyPrint(0);
-
         Assertion *ass = new Assertion();
         t->fillContingency(ass->_ct, 0);
         ass->_toString = prettyAss;
@@ -326,7 +338,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         vacLock.unlock();
       }
 #endif
-      // clear
+      // clear the template of the current dt operands
       t->getDT()->removeItems();
       if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
@@ -336,7 +348,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       }
     }
 
-    // Offset
+    // Offset, same as onset but the consequent is negated
     for (const std::vector<Proposition *> &props : antGen.offSets) {
       if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
@@ -389,11 +401,13 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     _progressBar.display();
 #endif
 
+    //deallocate memory for negated candidate variables
     for (size_t i = 0; i < _propsDT.size(); i++) {
       dynamic_cast<PropositionNot *>(candidateVariables[i].second)->popItem();
       delete candidateVariables[i].second;
     }
     candidateVariables.clear();
+    //delete all generated propositions from numeric expressions and clustering
     for (auto p : genProps) {
       delete p;
     }
@@ -401,7 +415,6 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
   } // dt
   else {
-    // Step 2.2)
     // If the template does not have a dt
 
     if (!t->isVacuous(harm::Location::AntCon) &&
@@ -437,6 +450,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
   } // else
 
 end:;
+    //store the assertions collected in the current permutation
   if (!assp.empty()) {
     std::lock_guard<std::mutex> lock{_collectedAssertionsGuard};
     _collectedAssertions.push_back(assp);
@@ -445,6 +459,7 @@ end:;
   _progressBar.incrementCounter(l3InstId, assp.size());
 #endif
 
+  //delete this instance and notify the upper level
   std::lock_guard<std::mutex> lock{l2InstancesGuard};
   size_t nThreads = l2Instances.at(l2InstId);
   l2Instances.erase(l2InstId);
@@ -452,10 +467,11 @@ end:;
 }
 
 void TLMiner::clear() {
-  _propsCon.clear();
   _propsAnt.clear();
+  _propsCon.clear();
   _propsAntCon.clear();
   _propsDT.clear();
+  _numerics.clear();
   _collectedAssertions.clear();
 }
 } // namespace harm
