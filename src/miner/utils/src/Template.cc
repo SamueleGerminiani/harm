@@ -1031,6 +1031,7 @@ void Template::check() {
     std::cout << "Failing sub-traces:\n";
     for (size_t i = 0; i < _max_length; i++) {
       if (evaluate(i) == Trinary::F) {
+          std::cout << "====================================" << "\n";
         size_t shift = 0;
         if (_applyDynamicShift) {
           evalAutomatonDyShift(i, _ant, shift);
@@ -1044,6 +1045,7 @@ void Template::check() {
         std::cout << "[" << i << "," << shift << "]"
                   << ")\n";
         std::cout << _trace->printTrace(i, (shift - i) + 1) << "\n";
+          std::cout << "====================================" << "\n";
       }
     }
   } else {
