@@ -137,8 +137,7 @@ public:
   bool quadFaster();
 
 private:
-  // set of technical methods, they implement the generation and the evaluation
-  // of the template
+  // set of technical methods, they implement the generation and the evaluation of the template
 
   /** \brief initialises the template and builds all the necessary parts. To be
    * called only in the constructor!
@@ -226,11 +225,13 @@ public:
   std::string printAutomaton(Automaton *aut);
 
 private:
+  ///mutex for level 1 changes of available threads (see setL1Threads)
   std::mutex _l1Guard;
 
-  /// PSL representation of the template
+  /// current employed templated
   Hstring _templateFormula;
 
+  /// original templated with the dt operator uninstantiated
   Hstring _buildTemplateFormula;
 
   /// used to generate the permutations
@@ -245,10 +246,10 @@ private:
   /// link of all user instantiated placeholders to their respective
   /// propositions
   std::unordered_map<std::string, Proposition **> _iToProp;
-  /// link of all dt operators to their respective propositions
+  /// links all the dt operators to their respective propositions
   std::pair<std::string, DTOperator *> _dtOp = {"", nullptr};
 
-  //_aphToProp + _cphToProp + _acphToProp == _phToProp
+  ///_aphToProp + _cphToProp + _acphToProp == _phToProp
   std::map<std::string, Proposition **> _aphToProp;
   std::map<std::string, Proposition **> _cphToProp;
   std::map<std::string, Proposition **> _acphToProp;
@@ -257,62 +258,64 @@ private:
     the generator of permutations will use the following propositions to
     generate the permutations
     */
+  ///used by the generator of permutations to generate the permutations
   std::vector<Proposition *> _aProps;
   std::vector<Proposition *> _cProps;
   std::vector<Proposition *> _acProps;
 
-  Automaton *_con;
+  ///automaton representation of the antecedent
   Automaton *_ant;
+  Automaton *_con;
 
 public:
-  // length of the trace
+  /// length of the trace
   size_t _max_length;
 
 private:
+  /// dt operator configuration
   DTLimits _limits;
 
 public:
+  /// pointer to the input trace
   harm::Trace *_trace;
 
 private:
-  /*
-   the constant temporal shift that must be applied to evaluate the consequent
-   ex. if the template is Ant => Con the constant shift will be equal to 1
-       if the template is Ant -> Con the constant shift will be equal to 0
-   */
+  /// The constant temporal shift that must be applied to evaluate the consequent ex. If the template is Ant => Con the constant shift will be equal to 1. If the template is Ant -> Con the constant shift will be equal to 0
   size_t _constShift;
 
-  // if true, we must apply a dynamic shift before evaluating the consequent
+  /// if true, we must apply a dynamic shift before evaluating the consequent
   bool _applyDynamicShift;
 
-  // if true, the current values stored in the cash for the decedent/consequent
-  // are valid
+  /// if true, the current values stored in the antecedent are valid
   bool _antInCache = false;
   bool _conInCache = false;
 
 public:
+  ///dynamic shift for every truth value of the antecedent
   size_t *_dynamicShiftCachedValues = nullptr;
-  size_t _permShift = 0;
 
-
-  // cached values are used to avoid recalculating each time the truth values of
-  // the current assertion
+  /// cached values are used to avoid recalculating each time the truth values of the current assertion
   Trinary *_antCachedValues = nullptr;
   Trinary *_conCachedValues = nullptr;
 
+  ///additional cached values to enable parallelism
   Trinary **_cachedValuesP = nullptr;
 
+  ///additional cached values to enable parallelism
   size_t **_cachedDynShiftsP = nullptr;
 
 public:
   /// index to the current permutatian, -1 if no permutations are generated
   int _permIndex = -1;
+  /// the template is an assertion that must be checked on the trace
   bool _check = 0;
 
 private:
+  /// maximium non-cyclic reachable distance from the root of the automaton representation of the antecedent
   int _antDepth = 0;
   int _conDepth = 0;
 
+  /// available threads to implement level1 parallelism
   size_t _availThreads = 1;
 
   friend DTAnd;

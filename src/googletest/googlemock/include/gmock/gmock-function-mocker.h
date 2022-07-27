@@ -166,7 +166,7 @@ using internal::FunctionMocker;
             GMOCK_INTERNAL_A_MATCHER_ARGUMENT, _Signature, _N));               \
   }                                                                            \
   mutable ::testing::FunctionMocker<GMOCK_PP_REMOVE_PARENS(_Signature)>        \
-      GMOCK_MOCKER_(_N, _Constness, _MethodName)
+  GMOCK_MOCKER_(_N, _Constness, _MethodName)
 
 #define GMOCK_INTERNAL_EXPAND(...) __VA_ARGS__
 
@@ -254,8 +254,7 @@ using internal::FunctionMocker;
 #define GMOCK_INTERNAL_GET_VALUE_CALLTYPE(_arg) \
   GMOCK_INTERNAL_GET_VALUE_CALLTYPE_I(          \
       GMOCK_PP_CAT(GMOCK_INTERNAL_IS_CALLTYPE_HELPER_, _arg))
-#define GMOCK_INTERNAL_GET_VALUE_CALLTYPE_I(_arg) \
-  GMOCK_PP_IDENTITY _arg
+#define GMOCK_INTERNAL_GET_VALUE_CALLTYPE_I(_arg) GMOCK_PP_IDENTITY _arg
 
 #define GMOCK_INTERNAL_IS_CALLTYPE_HELPER_Calltype
 

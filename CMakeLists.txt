@@ -77,6 +77,13 @@ if (DOXYGEN_FOUND)
     add_custom_target(docHarm COMMAND doxygen ${PROJECT_SOURCE_DIR}/doc/doxygen.cfg)
 endif()
 
+find_program(CLANG_FORMAT clang-format)
+if (CLANG_FORMAT)
+    set(current_targets ${current_targets} "format\n")
+    message(STATUS "${Blue}clang_format found!${Reset}")
+    add_custom_target(format COMMAND find ${PROJECT_SOURCE_DIR}/src/ -iname *.h -iname *.hh -iname *.cc -o -iname *.cpp | xargs clang-format -style=file -i)
+endif()
+
 
 
 #############################################################################

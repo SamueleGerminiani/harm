@@ -28,8 +28,7 @@ namespace harm {
 Template::Template(Hstring &templateFormula, harm::Trace *trace,
                    DTLimits limits)
     : _templateFormula(templateFormula), _buildTemplateFormula(templateFormula),
-      _max_length(trace->getLength()), _limits(limits), _trace(trace)
-      {
+      _max_length(trace->getLength()), _limits(limits), _trace(trace) {
 
   build();
 }
@@ -38,7 +37,7 @@ Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
   for (auto &s : _templateFormula) {
-      //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template
+    //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template
     if (s._pp != nullptr) {
       if (s._t == Hstring::Stype::Inst) {
         s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
@@ -69,9 +68,9 @@ Template::Template(const Template &original) {
 }
 
 Template::~Template() {
-    
+
   if (_dtOp.second != nullptr) {
-      //if the template uses a dt operator, the responsability of freeing _ant falls on the dt operator
+    //if the template uses a dt operator, the responsability of freeing _ant falls on the dt operator
     delete _dtOp.second;
   } else {
     delete _ant;
@@ -143,22 +142,16 @@ bool Template::nextPerm() {
     _permIndex = 0;
     return false;
   }
-  /* load the next permutation
-   FIXME:  this culd be heavily optimised by loading only the propositions
-   changing from the previous permutation*/
+  //load the next permutation FIXME:  this culd be heavily optimised by loading only the propositions changing from the previous permutation
   _conInCache = false;
   _antInCache = false;
   for (auto &e : _pg._phToIndex) {
     harm::Location where = _pg._phToLoc.at(e.first);
-    /* e.first is the string representation of a placeholder
-     * e.second is the column of the permutation's table
-     * _permIndex is the row of the permutation's table
-     */
+    // e.first is the string representation of a placeholder e.second is the column of the permutation's table _permIndex is the row of the permutation's table
+
     if (where == harm::Location::Ant) {
-      /*fill the placeholder with the correct proposition
-      _pg._perms[_permIndex][e.second] contains the index of the
-       proposition to be inserted
-      */
+      //fill the placeholder with the correct proposition _pg._perms[_permIndex][e.second] contains the index of the proposition to be inserted
+
       (*_aphToProp.at(e.first)) = _aProps[_pg._perms[_permIndex][e.second]];
     } else if (where == harm::Location::Con) {
       (*_cphToProp.at(e.first)) = _cProps[_pg._perms[_permIndex][e.second]];
@@ -166,9 +159,8 @@ bool Template::nextPerm() {
       (*_acphToProp.at(e.first)) = _acProps[_pg._perms[_permIndex][e.second]];
     }
   }
-  // return to the first permutation if we have reached the end of the
-  // available permutations
-  _permIndex += _permShift;
+  //go to the next permutation
+  _permIndex++;
   return true;
 }
 std::string Template::printAutomatons() {
@@ -211,7 +203,7 @@ EdgeProposition *Template::edgeToProposition(const spot::formula &f) {
   }
 
   // Constants
-  
+
   if (f.is_tt()) {
     return new EdgeTrue();
   }
@@ -259,8 +251,7 @@ void Template::loadPropositions(std::vector<Proposition *> &props,
 
   //-----------------------------------------
 
-  // Warning: the given propositions are inserted following the alphabetic
-  // order of the placeholders
+  // Warning: the given propositions are inserted following the alphabetic order of the placeholders
   size_t i = 0;
   if (where == harm::Location::Ant) {
     if (_applyDynamicShift) {
@@ -405,8 +396,7 @@ Automaton *Template::buildAutomaton(spot::twa_graph_ptr &automata) {
     fringe.pop_back();
 
     if (hashToId.count(currState->hash()) == 0) {
-      /*create a link to retrieve the Node ( only if it doesn't exist
-      already) */
+      //create a link to retrieve the Node ( only if it doesn't exist already)
       hashToId[currState->hash()] = stateCount++;
       retA->_idToNode[hashToId.at(currState->hash())] =
           new Automaton::Node(hashToId.at(currState->hash()), -1);
@@ -421,7 +411,7 @@ Automaton *Template::buildAutomaton(spot::twa_graph_ptr &automata) {
         retA->_idToNode.at(hashToId.at(currState->hash()))->_type = 1;
         retA->_accepting = retA->_idToNode.at(hashToId.at(currState->hash()));
       } else {
-        //  rejecting state:  the evaluation returns false
+        // rejecting state:  the evaluation returns false
         retA->_idToNode.at(hashToId.at(currState->hash()))->_type = 0;
         retA->_rejecting = retA->_idToNode.at(hashToId.at(currState->hash()));
       }
@@ -442,8 +432,7 @@ Automaton *Template::buildAutomaton(spot::twa_graph_ptr &automata) {
           spot::parse_formula(spot::bdd_format_formula(bddDict, s->cond()));
 
       if (hashToId.count(s->dst()->hash()) == 0) {
-        /*Again: create a link to retrieve the Node ( only if it doesn't exist
-        already) */
+        //Again: create a link to retrieve the Node ( only if it doesn't exist already)
         hashToId[s->dst()->hash()] = stateCount++;
         retA->_idToNode[hashToId.at(s->dst()->hash())] =
             new Automaton::Node(hashToId.at(s->dst()->hash()), -1);
@@ -481,10 +470,9 @@ Template::generateDeterministicSpotAutomaton(spot::formula &formula) {
 }
 void Template::build() {
 
-    //allocate memory for truth values of the template on the trace
-    //note that due to parallelism, we allocate N times the required memory where N is the maximum number of threads at level 1 (l1Constants::MAX_THREADS)
+  //allocate memory for truth values of the template on the trace note that due to parallelism, we allocate N times the required memory where N is the maximum number of threads at level 1 (l1Constants::MAX_THREADS)
 
-    //working memory: used by linearEval
+  //working memory: used by linearEval
   _cachedValuesP = new Trinary *[l1Constants::MAX_THREADS];
 
   for (size_t i = 0; i < l1Constants::MAX_THREADS; i++) {
@@ -550,9 +538,9 @@ void Template::build() {
       _iToProp[e._s] = e._pp;
     } else if (e._t == Hstring::Stype::DTAnd) {
       _tokenToProp[e._s] = e._pp;
-      _dtOp = std::make_pair(
-          e._s,
-          new DTAnd(dynamic_cast<PropositionAnd *>(*e._pp), this, _limits));
+      _dtOp =
+          std::make_pair(e._s, new DTAnd(dynamic_cast<PropositionAnd *>(*e._pp),
+                                         this, _limits));
     } else if (e._t == Hstring::Stype::DTNext ||
                e._t == Hstring::Stype::DTNextAnd) {
       _tokenToProp[e._s] = e._pp;
@@ -571,9 +559,7 @@ void Template::build() {
     if (e._t == Hstring::Stype::Ph) {
       _tokenToProp[e._s] = e._pp;
       if (antPhs.count(e._s)) {
-        /* if a placeholder is found in both the antecedent and consequent
-          than it is of type 'ac'
-         */
+        // if a placeholder is found in both the antecedent and consequent than it is of type 'ac'
         _aphToProp.erase(e._s);
         _acphToProp.insert({{e._s, e._pp}});
       } else {
@@ -613,7 +599,7 @@ void Template::build() {
   }
 
   if (_applyDynamicShift) {
-      //allocate more memory to keep track of dynamic shitfs
+    //allocate more memory to keep track of dynamic shitfs
     _dynamicShiftCachedValues = new size_t[_max_length];
     std::fill_n(_dynamicShiftCachedValues, _max_length, 0);
     _cachedDynShiftsP = new size_t *[l1Constants::MAX_THREADS];
@@ -644,24 +630,23 @@ void Template::build() {
   // print_hoa(std::cout, antAutomaton) << '\n';
   // print_hoa(std::cout, conAutomaton) << '\n';
 
-  /* generare a custom automata to implement the evaluation function of the
-   template*/
+  // generare a custom automata to implement the evaluation function of the template
   _ant = buildAutomaton(antAutomaton);
   _con = buildAutomaton(conAutomaton);
 
-  // get a new antecedent 
+  // get a new antecedent
   hant = _templateFormula.getAnt();
   // build the dt operators
   for (size_t i = 0; i < hant.size(); i++) {
     auto &e = hant[i];
     if (e._t == Hstring::Stype::DTNext) {
-      _dtOp = std::make_pair(
-          e._s, new DTNext(dynamic_cast<BooleanConstant *>(*e._pp), e._offset,
-                            this, _limits));
+      _dtOp = std::make_pair(e._s,
+                             new DTNext(dynamic_cast<BooleanConstant *>(*e._pp),
+                                        e._offset, this, _limits));
     } else if (e._t == Hstring::Stype::DTNCReps) {
       _dtOp = std::make_pair(
-          e._s, new DTNCReps(dynamic_cast<BooleanConstant *>(*e._pp),
-                              e._offset, this, _limits));
+          e._s, new DTNCReps(dynamic_cast<BooleanConstant *>(*e._pp), e._offset,
+                             this, _limits));
     } else if (e._t == Hstring::Stype::DTNextAnd) {
       _dtOp = std::make_pair(e._s, new DTNextAnd(e._offset, this, _limits));
     }
@@ -675,7 +660,7 @@ void Template::build() {
 void Template::genPermutations(const std::vector<Proposition *> &antP,
                                const std::vector<Proposition *> &conP,
                                const std::vector<Proposition *> &antConP) {
-    //fully instantiated
+  //fully instantiated
   if (getNumPlaceholders() == 0) {
     _pg._size.first = 1;
     _pg._size.second = 0;
@@ -688,9 +673,12 @@ void Template::genPermutations(const std::vector<Proposition *> &antP,
   _cProps = conP;
   _acProps = antConP;
 
-  messageErrorIf(_aProps.size()<_aphToProp.size(), "Not enough 'a' propositions!");
-  messageErrorIf(_cProps.size()<_cphToProp.size(), "Not enough 'c' propositions!");
-  messageErrorIf(_acProps.size()<_acphToProp.size(), "Not enough 'ac' propositions!");
+  messageErrorIf(_aProps.size() < _aphToProp.size(),
+                 "Not enough 'a' propositions!");
+  messageErrorIf(_cProps.size() < _cphToProp.size(),
+                 "Not enough 'c' propositions!");
+  messageErrorIf(_acProps.size() < _acphToProp.size(),
+                 "Not enough 'ac' propositions!");
 
   if (_pg._perms == nullptr) {
     _pg.genPermutations(_aProps.size(), _cProps.size(), _acProps.size(),
@@ -732,7 +720,7 @@ std::string Template::printAutomaton(Automaton *aut) {
 
   while (!fringe.empty()) {
     // add to fringe all states reachable from this state
-    // out edges a state can be added to fringe only once
+    // out edges can be added to fringe only once
     // add new states to fringe
     auto currState = fringe.back();
     fringe.pop_back();
@@ -762,8 +750,8 @@ size_t Template::gatherInterestingValue(size_t time, int depth, int width) {
   size_t ret = -1;
 
   Automaton::Node *cn = _ant->_root;
-  /* visit the automaton by evaluating the edges (which are propositions)
-   */
+  //visit the automaton by evaluating the edges (which are propositions)
+
   size_t currTime = time;
   while (currTime < _max_length) {
     for (const auto &edge : cn->_outEdges) {
@@ -941,8 +929,8 @@ std::string Template::findCauseInEdgeProposition(EdgeProposition *ep,
 }
 std::string Template::findCauseOfFailure(size_t time) {
   Automaton::Node *cn = _con->_root;
-  /* visit the automaton by evaluating the edges (which are propositions)
-   */
+  // visit the automaton by evaluating the edges (which are propositions)
+
   while (time < _max_length) {
     for (const auto &edge : cn->_outEdges) {
       // if "the current cn->_outEdges[i] is true at instant 'time'"
@@ -1006,9 +994,9 @@ void Template::printContingency() {
   std::cout << table.to_string() << std::endl;
 }
 void Template::check() {
-  messageErrorIf(
-      !isFullyInstantiated(),
-      "Checking is available only for fully instantiated templates (assertions)!");
+  messageErrorIf(!isFullyInstantiated(),
+                 "Checking is available only for fully instantiated templates "
+                 "(assertions)!");
   std::cout << "==============================================================="
                "==========="
             << "\n";
@@ -1122,15 +1110,11 @@ void Template::loadPerm(size_t n) {
   _antInCache = false;
   for (auto &e : _pg._phToIndex) {
     harm::Location where = _pg._phToLoc.at(e.first);
-    /* e.first is the string representation of a placeholder
-     * e.second is the column of the permutation's table
-     * _permIndex is the row of the permutation's table
-     */
+    //e.first is the string representation of a placeholder e.second is the column of the permutation's table _permIndex is the row of the permutation's table
+
     if (where == harm::Location::Ant) {
-      /*feel the placeholder with the correct proposition
-      _pg._perms[_permIndex][e.second] contains the index of the
-       proposition to be inserted
-      */
+      //feel the placeholder with the correct proposition _pg._perms[_permIndex][e.second] contains the index of the proposition to be inserted
+
       (*_aphToProp.at(e.first)) = _aProps[_pg._perms[n][e.second]];
     } else if (where == harm::Location::Con) {
       (*_cphToProp.at(e.first)) = _cProps[_pg._perms[n][e.second]];

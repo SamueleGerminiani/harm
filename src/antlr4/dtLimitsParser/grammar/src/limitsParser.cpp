@@ -1,50 +1,41 @@
 
 // Generated from limits.g4 by ANTLR 4.9.2
 
-
 #include "limitsListener.h"
 
 #include "limitsParser.h"
-
 
 using namespace antlrcpp;
 using namespace antlr4;
 
 limitsParser::limitsParser(TokenStream *input) : Parser(input) {
-  _interpreter = new atn::ParserATNSimulator(this, _atn, _decisionToDFA, _sharedContextCache);
+  _interpreter = new atn::ParserATNSimulator(this, _atn, _decisionToDFA,
+                                             _sharedContextCache);
 }
 
-limitsParser::~limitsParser() {
-  delete _interpreter;
-}
+limitsParser::~limitsParser() { delete _interpreter; }
 
-std::string limitsParser::getGrammarFileName() const {
-  return "limits.g4";
-}
+std::string limitsParser::getGrammarFileName() const { return "limits.g4"; }
 
-const std::vector<std::string>& limitsParser::getRuleNames() const {
+const std::vector<std::string> &limitsParser::getRuleNames() const {
   return _ruleNames;
 }
 
-dfa::Vocabulary& limitsParser::getVocabulary() const {
-  return _vocabulary;
-}
-
+dfa::Vocabulary &limitsParser::getVocabulary() const { return _vocabulary; }
 
 //----------------- FileContext ------------------------------------------------------------------
 
-limitsParser::FileContext::FileContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::FileContext::FileContext(ParserRuleContext *parent,
+                                       size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-limitsParser::ParameterContext* limitsParser::FileContext::parameter() {
+limitsParser::ParameterContext *limitsParser::FileContext::parameter() {
   return getRuleContext<limitsParser::ParameterContext>(0);
 }
 
-tree::TerminalNode* limitsParser::FileContext::EOF() {
+tree::TerminalNode *limitsParser::FileContext::EOF() {
   return getToken(limitsParser::EOF, 0);
 }
-
 
 size_t limitsParser::FileContext::getRuleIndex() const {
   return limitsParser::RuleFile;
@@ -62,8 +53,9 @@ void limitsParser::FileContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitFile(this);
 }
 
-limitsParser::FileContext* limitsParser::file() {
-  FileContext *_localctx = _tracker.createInstance<FileContext>(_ctx, getState());
+limitsParser::FileContext *limitsParser::file() {
+  FileContext *_localctx =
+      _tracker.createInstance<FileContext>(_ctx, getState());
   enterRule(_localctx, 0, limitsParser::RuleFile);
 
 #if __cplusplus > 201703L
@@ -79,9 +71,8 @@ limitsParser::FileContext* limitsParser::file() {
     parameter();
     setState(21);
     match(limitsParser::EOF);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -92,37 +83,39 @@ limitsParser::FileContext* limitsParser::file() {
 
 //----------------- ParameterContext ------------------------------------------------------------------
 
-limitsParser::ParameterContext::ParameterContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::ParameterContext::ParameterContext(ParserRuleContext *parent,
+                                                 size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-limitsParser::AtomContext* limitsParser::ParameterContext::atom() {
+limitsParser::AtomContext *limitsParser::ParameterContext::atom() {
   return getRuleContext<limitsParser::AtomContext>(0);
 }
 
-limitsParser::ParameterContext* limitsParser::ParameterContext::parameter() {
+limitsParser::ParameterContext *limitsParser::ParameterContext::parameter() {
   return getRuleContext<limitsParser::ParameterContext>(0);
 }
-
 
 size_t limitsParser::ParameterContext::getRuleIndex() const {
   return limitsParser::RuleParameter;
 }
 
-void limitsParser::ParameterContext::enterRule(tree::ParseTreeListener *listener) {
+void limitsParser::ParameterContext::enterRule(
+    tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<limitsListener *>(listener);
   if (parserListener != nullptr)
     parserListener->enterParameter(this);
 }
 
-void limitsParser::ParameterContext::exitRule(tree::ParseTreeListener *listener) {
+void limitsParser::ParameterContext::exitRule(
+    tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<limitsListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitParameter(this);
 }
 
-limitsParser::ParameterContext* limitsParser::parameter() {
-  ParameterContext *_localctx = _tracker.createInstance<ParameterContext>(_ctx, getState());
+limitsParser::ParameterContext *limitsParser::parameter() {
+  ParameterContext *_localctx =
+      _tracker.createInstance<ParameterContext>(_ctx, getState());
   enterRule(_localctx, 2, limitsParser::RuleParameter);
 
 #if __cplusplus > 201703L
@@ -135,7 +128,8 @@ limitsParser::ParameterContext* limitsParser::parameter() {
   try {
     setState(28);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 0, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(
+        _input, 0, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
       setState(23);
@@ -157,9 +151,8 @@ limitsParser::ParameterContext* limitsParser::parameter() {
     default:
       break;
     }
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -170,38 +163,37 @@ limitsParser::ParameterContext* limitsParser::parameter() {
 
 //----------------- AtomContext ------------------------------------------------------------------
 
-limitsParser::AtomContext::AtomContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::AtomContext::AtomContext(ParserRuleContext *parent,
+                                       size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-limitsParser::DepContext* limitsParser::AtomContext::dep() {
+limitsParser::DepContext *limitsParser::AtomContext::dep() {
   return getRuleContext<limitsParser::DepContext>(0);
 }
 
-limitsParser::WidthContext* limitsParser::AtomContext::width() {
+limitsParser::WidthContext *limitsParser::AtomContext::width() {
   return getRuleContext<limitsParser::WidthContext>(0);
 }
 
-limitsParser::AllContext* limitsParser::AtomContext::all() {
+limitsParser::AllContext *limitsParser::AtomContext::all() {
   return getRuleContext<limitsParser::AllContext>(0);
 }
 
-limitsParser::OffsetContext* limitsParser::AtomContext::offset() {
+limitsParser::OffsetContext *limitsParser::AtomContext::offset() {
   return getRuleContext<limitsParser::OffsetContext>(0);
 }
 
-limitsParser::EffortContext* limitsParser::AtomContext::effort() {
+limitsParser::EffortContext *limitsParser::AtomContext::effort() {
   return getRuleContext<limitsParser::EffortContext>(0);
 }
 
-limitsParser::StrategyContext* limitsParser::AtomContext::strategy() {
+limitsParser::StrategyContext *limitsParser::AtomContext::strategy() {
   return getRuleContext<limitsParser::StrategyContext>(0);
 }
 
-limitsParser::NegatedContext* limitsParser::AtomContext::negated() {
+limitsParser::NegatedContext *limitsParser::AtomContext::negated() {
   return getRuleContext<limitsParser::NegatedContext>(0);
 }
-
 
 size_t limitsParser::AtomContext::getRuleIndex() const {
   return limitsParser::RuleAtom;
@@ -219,8 +211,9 @@ void limitsParser::AtomContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitAtom(this);
 }
 
-limitsParser::AtomContext* limitsParser::atom() {
-  AtomContext *_localctx = _tracker.createInstance<AtomContext>(_ctx, getState());
+limitsParser::AtomContext *limitsParser::atom() {
+  AtomContext *_localctx =
+      _tracker.createInstance<AtomContext>(_ctx, getState());
   enterRule(_localctx, 4, limitsParser::RuleAtom);
 
 #if __cplusplus > 201703L
@@ -233,7 +226,8 @@ limitsParser::AtomContext* limitsParser::atom() {
   try {
     setState(37);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 1, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(
+        _input, 1, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
       setState(30);
@@ -286,9 +280,8 @@ limitsParser::AtomContext* limitsParser::atom() {
     default:
       break;
     }
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -299,14 +292,13 @@ limitsParser::AtomContext* limitsParser::atom() {
 
 //----------------- DepContext ------------------------------------------------------------------
 
-limitsParser::DepContext::DepContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::DepContext::DepContext(ParserRuleContext *parent,
+                                     size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::DepContext::NUMERIC() {
+tree::TerminalNode *limitsParser::DepContext::NUMERIC() {
   return getToken(limitsParser::NUMERIC, 0);
 }
-
 
 size_t limitsParser::DepContext::getRuleIndex() const {
   return limitsParser::RuleDep;
@@ -324,7 +316,7 @@ void limitsParser::DepContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitDep(this);
 }
 
-limitsParser::DepContext* limitsParser::dep() {
+limitsParser::DepContext *limitsParser::dep() {
   DepContext *_localctx = _tracker.createInstance<DepContext>(_ctx, getState());
   enterRule(_localctx, 6, limitsParser::RuleDep);
 
@@ -341,9 +333,8 @@ limitsParser::DepContext* limitsParser::dep() {
     match(limitsParser::NUMERIC);
     setState(40);
     match(limitsParser::T__1);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -354,14 +345,13 @@ limitsParser::DepContext* limitsParser::dep() {
 
 //----------------- WidthContext ------------------------------------------------------------------
 
-limitsParser::WidthContext::WidthContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::WidthContext::WidthContext(ParserRuleContext *parent,
+                                         size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::WidthContext::NUMERIC() {
+tree::TerminalNode *limitsParser::WidthContext::NUMERIC() {
   return getToken(limitsParser::NUMERIC, 0);
 }
-
 
 size_t limitsParser::WidthContext::getRuleIndex() const {
   return limitsParser::RuleWidth;
@@ -379,8 +369,9 @@ void limitsParser::WidthContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitWidth(this);
 }
 
-limitsParser::WidthContext* limitsParser::width() {
-  WidthContext *_localctx = _tracker.createInstance<WidthContext>(_ctx, getState());
+limitsParser::WidthContext *limitsParser::width() {
+  WidthContext *_localctx =
+      _tracker.createInstance<WidthContext>(_ctx, getState());
   enterRule(_localctx, 8, limitsParser::RuleWidth);
 
 #if __cplusplus > 201703L
@@ -396,9 +387,8 @@ limitsParser::WidthContext* limitsParser::width() {
     match(limitsParser::NUMERIC);
     setState(43);
     match(limitsParser::T__2);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -409,14 +399,13 @@ limitsParser::WidthContext* limitsParser::width() {
 
 //----------------- AllContext ------------------------------------------------------------------
 
-limitsParser::AllContext::AllContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::AllContext::AllContext(ParserRuleContext *parent,
+                                     size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::AllContext::NUMERIC() {
+tree::TerminalNode *limitsParser::AllContext::NUMERIC() {
   return getToken(limitsParser::NUMERIC, 0);
 }
-
 
 size_t limitsParser::AllContext::getRuleIndex() const {
   return limitsParser::RuleAll;
@@ -434,7 +423,7 @@ void limitsParser::AllContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitAll(this);
 }
 
-limitsParser::AllContext* limitsParser::all() {
+limitsParser::AllContext *limitsParser::all() {
   AllContext *_localctx = _tracker.createInstance<AllContext>(_ctx, getState());
   enterRule(_localctx, 10, limitsParser::RuleAll);
 
@@ -451,9 +440,8 @@ limitsParser::AllContext* limitsParser::all() {
     match(limitsParser::NUMERIC);
     setState(46);
     match(limitsParser::T__3);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -464,14 +452,13 @@ limitsParser::AllContext* limitsParser::all() {
 
 //----------------- OffsetContext ------------------------------------------------------------------
 
-limitsParser::OffsetContext::OffsetContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::OffsetContext::OffsetContext(ParserRuleContext *parent,
+                                           size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::OffsetContext::NOT() {
+tree::TerminalNode *limitsParser::OffsetContext::NOT() {
   return getToken(limitsParser::NOT, 0);
 }
-
 
 size_t limitsParser::OffsetContext::getRuleIndex() const {
   return limitsParser::RuleOffset;
@@ -489,8 +476,9 @@ void limitsParser::OffsetContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitOffset(this);
 }
 
-limitsParser::OffsetContext* limitsParser::offset() {
-  OffsetContext *_localctx = _tracker.createInstance<OffsetContext>(_ctx, getState());
+limitsParser::OffsetContext *limitsParser::offset() {
+  OffsetContext *_localctx =
+      _tracker.createInstance<OffsetContext>(_ctx, getState());
   enterRule(_localctx, 12, limitsParser::RuleOffset);
   size_t _la = 0;
 
@@ -513,9 +501,8 @@ limitsParser::OffsetContext* limitsParser::offset() {
     }
     setState(51);
     match(limitsParser::T__4);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -526,20 +513,20 @@ limitsParser::OffsetContext* limitsParser::offset() {
 
 //----------------- NegatedContext ------------------------------------------------------------------
 
-limitsParser::NegatedContext::NegatedContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::NegatedContext::NegatedContext(ParserRuleContext *parent,
+                                             size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::NegatedContext::NOT() {
+tree::TerminalNode *limitsParser::NegatedContext::NOT() {
   return getToken(limitsParser::NOT, 0);
 }
-
 
 size_t limitsParser::NegatedContext::getRuleIndex() const {
   return limitsParser::RuleNegated;
 }
 
-void limitsParser::NegatedContext::enterRule(tree::ParseTreeListener *listener) {
+void limitsParser::NegatedContext::enterRule(
+    tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<limitsListener *>(listener);
   if (parserListener != nullptr)
     parserListener->enterNegated(this);
@@ -551,8 +538,9 @@ void limitsParser::NegatedContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitNegated(this);
 }
 
-limitsParser::NegatedContext* limitsParser::negated() {
-  NegatedContext *_localctx = _tracker.createInstance<NegatedContext>(_ctx, getState());
+limitsParser::NegatedContext *limitsParser::negated() {
+  NegatedContext *_localctx =
+      _tracker.createInstance<NegatedContext>(_ctx, getState());
   enterRule(_localctx, 14, limitsParser::RuleNegated);
   size_t _la = 0;
 
@@ -575,9 +563,8 @@ limitsParser::NegatedContext* limitsParser::negated() {
     }
     setState(56);
     match(limitsParser::T__5);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -588,14 +575,13 @@ limitsParser::NegatedContext* limitsParser::negated() {
 
 //----------------- EffortContext ------------------------------------------------------------------
 
-limitsParser::EffortContext::EffortContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::EffortContext::EffortContext(ParserRuleContext *parent,
+                                           size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::EffortContext::NUMERIC() {
+tree::TerminalNode *limitsParser::EffortContext::NUMERIC() {
   return getToken(limitsParser::NUMERIC, 0);
 }
-
 
 size_t limitsParser::EffortContext::getRuleIndex() const {
   return limitsParser::RuleEffort;
@@ -613,8 +599,9 @@ void limitsParser::EffortContext::exitRule(tree::ParseTreeListener *listener) {
     parserListener->exitEffort(this);
 }
 
-limitsParser::EffortContext* limitsParser::effort() {
-  EffortContext *_localctx = _tracker.createInstance<EffortContext>(_ctx, getState());
+limitsParser::EffortContext *limitsParser::effort() {
+  EffortContext *_localctx =
+      _tracker.createInstance<EffortContext>(_ctx, getState());
   enterRule(_localctx, 16, limitsParser::RuleEffort);
 
 #if __cplusplus > 201703L
@@ -630,9 +617,8 @@ limitsParser::EffortContext* limitsParser::effort() {
     match(limitsParser::NUMERIC);
     setState(59);
     match(limitsParser::T__6);
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -643,37 +629,39 @@ limitsParser::EffortContext* limitsParser::effort() {
 
 //----------------- StrategyContext ------------------------------------------------------------------
 
-limitsParser::StrategyContext::StrategyContext(ParserRuleContext *parent, size_t invokingState)
-  : ParserRuleContext(parent, invokingState) {
-}
+limitsParser::StrategyContext::StrategyContext(ParserRuleContext *parent,
+                                               size_t invokingState)
+    : ParserRuleContext(parent, invokingState) {}
 
-tree::TerminalNode* limitsParser::StrategyContext::SEQ() {
+tree::TerminalNode *limitsParser::StrategyContext::SEQ() {
   return getToken(limitsParser::SEQ, 0);
 }
 
-tree::TerminalNode* limitsParser::StrategyContext::RAN() {
+tree::TerminalNode *limitsParser::StrategyContext::RAN() {
   return getToken(limitsParser::RAN, 0);
 }
-
 
 size_t limitsParser::StrategyContext::getRuleIndex() const {
   return limitsParser::RuleStrategy;
 }
 
-void limitsParser::StrategyContext::enterRule(tree::ParseTreeListener *listener) {
+void limitsParser::StrategyContext::enterRule(
+    tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<limitsListener *>(listener);
   if (parserListener != nullptr)
     parserListener->enterStrategy(this);
 }
 
-void limitsParser::StrategyContext::exitRule(tree::ParseTreeListener *listener) {
+void limitsParser::StrategyContext::exitRule(
+    tree::ParseTreeListener *listener) {
   auto parserListener = dynamic_cast<limitsListener *>(listener);
   if (parserListener != nullptr)
     parserListener->exitStrategy(this);
 }
 
-limitsParser::StrategyContext* limitsParser::strategy() {
-  StrategyContext *_localctx = _tracker.createInstance<StrategyContext>(_ctx, getState());
+limitsParser::StrategyContext *limitsParser::strategy() {
+  StrategyContext *_localctx =
+      _tracker.createInstance<StrategyContext>(_ctx, getState());
   enterRule(_localctx, 18, limitsParser::RuleStrategy);
   size_t _la = 0;
 
@@ -690,16 +678,14 @@ limitsParser::StrategyContext* limitsParser::strategy() {
     _la = _input->LA(1);
     if (!(_la == limitsParser::SEQ
 
-    || _la == limitsParser::RAN)) {
-    _errHandler->recoverInline(this);
-    }
-    else {
+          || _la == limitsParser::RAN)) {
+      _errHandler->recoverInline(this);
+    } else {
       _errHandler->reportMatch(this);
       consume();
     }
-   
-  }
-  catch (RecognitionException &e) {
+
+  } catch (RecognitionException &e) {
     _errHandler->reportError(this, e);
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
@@ -717,92 +703,108 @@ atn::ATN limitsParser::_atn;
 std::vector<uint16_t> limitsParser::_serializedATN;
 
 std::vector<std::string> limitsParser::_ruleNames = {
-  "file", "parameter", "atom", "dep", "width", "all", "offset", "negated", 
-  "effort", "strategy"
-};
+    "file", "parameter", "atom",    "dep",    "width",
+    "all",  "offset",    "negated", "effort", "strategy"};
 
 std::vector<std::string> limitsParser::_literalNames = {
-  "", "','", "'D'", "'W'", "'A'", "'O'", "'N'", "'E'", "'S'", "'R'", "'!'"
-};
+    "", "','", "'D'", "'W'", "'A'", "'O'", "'N'", "'E'", "'S'", "'R'", "'!'"};
 
 std::vector<std::string> limitsParser::_symbolicNames = {
-  "", "", "", "", "", "", "", "", "SEQ", "RAN", "NOT", "NUMERIC", "WS"
-};
+    "", "", "", "", "", "", "", "", "SEQ", "RAN", "NOT", "NUMERIC", "WS"};
 
 dfa::Vocabulary limitsParser::_vocabulary(_literalNames, _symbolicNames);
 
 std::vector<std::string> limitsParser::_tokenNames;
 
 limitsParser::Initializer::Initializer() {
-	for (size_t i = 0; i < _symbolicNames.size(); ++i) {
-		std::string name = _vocabulary.getLiteralName(i);
-		if (name.empty()) {
-			name = _vocabulary.getSymbolicName(i);
-		}
+  for (size_t i = 0; i < _symbolicNames.size(); ++i) {
+    std::string name = _vocabulary.getLiteralName(i);
+    if (name.empty()) {
+      name = _vocabulary.getSymbolicName(i);
+    }
 
-		if (name.empty()) {
-			_tokenNames.push_back("<INVALID>");
-		} else {
+    if (name.empty()) {
+      _tokenNames.push_back("<INVALID>");
+    } else {
       _tokenNames.push_back(name);
     }
-	}
+  }
 
   static const uint16_t serializedATNSegment0[] = {
-    0x3, 0x608b, 0xa72a, 0x8133, 0xb9ed, 0x417c, 0x3be7, 0x7786, 0x5964, 
-       0x3, 0xe, 0x42, 0x4, 0x2, 0x9, 0x2, 0x4, 0x3, 0x9, 0x3, 0x4, 0x4, 
-       0x9, 0x4, 0x4, 0x5, 0x9, 0x5, 0x4, 0x6, 0x9, 0x6, 0x4, 0x7, 0x9, 
-       0x7, 0x4, 0x8, 0x9, 0x8, 0x4, 0x9, 0x9, 0x9, 0x4, 0xa, 0x9, 0xa, 
-       0x4, 0xb, 0x9, 0xb, 0x3, 0x2, 0x3, 0x2, 0x3, 0x2, 0x3, 0x3, 0x3, 
-       0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x5, 0x3, 0x1f, 0xa, 0x3, 0x3, 
-       0x4, 0x3, 0x4, 0x3, 0x4, 0x3, 0x4, 0x3, 0x4, 0x3, 0x4, 0x3, 0x4, 
-       0x5, 0x4, 0x28, 0xa, 0x4, 0x3, 0x5, 0x3, 0x5, 0x3, 0x5, 0x3, 0x6, 
-       0x3, 0x6, 0x3, 0x6, 0x3, 0x7, 0x3, 0x7, 0x3, 0x7, 0x3, 0x8, 0x5, 
-       0x8, 0x34, 0xa, 0x8, 0x3, 0x8, 0x3, 0x8, 0x3, 0x9, 0x5, 0x9, 0x39, 
-       0xa, 0x9, 0x3, 0x9, 0x3, 0x9, 0x3, 0xa, 0x3, 0xa, 0x3, 0xa, 0x3, 
-       0xb, 0x3, 0xb, 0x3, 0xb, 0x2, 0x2, 0xc, 0x2, 0x4, 0x6, 0x8, 0xa, 
-       0xc, 0xe, 0x10, 0x12, 0x14, 0x2, 0x3, 0x3, 0x2, 0xa, 0xb, 0x2, 0x40, 
-       0x2, 0x16, 0x3, 0x2, 0x2, 0x2, 0x4, 0x1e, 0x3, 0x2, 0x2, 0x2, 0x6, 
-       0x27, 0x3, 0x2, 0x2, 0x2, 0x8, 0x29, 0x3, 0x2, 0x2, 0x2, 0xa, 0x2c, 
-       0x3, 0x2, 0x2, 0x2, 0xc, 0x2f, 0x3, 0x2, 0x2, 0x2, 0xe, 0x33, 0x3, 
-       0x2, 0x2, 0x2, 0x10, 0x38, 0x3, 0x2, 0x2, 0x2, 0x12, 0x3c, 0x3, 0x2, 
-       0x2, 0x2, 0x14, 0x3f, 0x3, 0x2, 0x2, 0x2, 0x16, 0x17, 0x5, 0x4, 0x3, 
-       0x2, 0x17, 0x18, 0x7, 0x2, 0x2, 0x3, 0x18, 0x3, 0x3, 0x2, 0x2, 0x2, 
-       0x19, 0x1a, 0x5, 0x6, 0x4, 0x2, 0x1a, 0x1b, 0x7, 0x3, 0x2, 0x2, 0x1b, 
-       0x1c, 0x5, 0x4, 0x3, 0x2, 0x1c, 0x1f, 0x3, 0x2, 0x2, 0x2, 0x1d, 0x1f, 
-       0x5, 0x6, 0x4, 0x2, 0x1e, 0x19, 0x3, 0x2, 0x2, 0x2, 0x1e, 0x1d, 0x3, 
-       0x2, 0x2, 0x2, 0x1f, 0x5, 0x3, 0x2, 0x2, 0x2, 0x20, 0x28, 0x5, 0x8, 
-       0x5, 0x2, 0x21, 0x28, 0x5, 0xa, 0x6, 0x2, 0x22, 0x28, 0x5, 0xc, 0x7, 
-       0x2, 0x23, 0x28, 0x5, 0xe, 0x8, 0x2, 0x24, 0x28, 0x5, 0x12, 0xa, 
-       0x2, 0x25, 0x28, 0x5, 0x14, 0xb, 0x2, 0x26, 0x28, 0x5, 0x10, 0x9, 
-       0x2, 0x27, 0x20, 0x3, 0x2, 0x2, 0x2, 0x27, 0x21, 0x3, 0x2, 0x2, 0x2, 
-       0x27, 0x22, 0x3, 0x2, 0x2, 0x2, 0x27, 0x23, 0x3, 0x2, 0x2, 0x2, 0x27, 
-       0x24, 0x3, 0x2, 0x2, 0x2, 0x27, 0x25, 0x3, 0x2, 0x2, 0x2, 0x27, 0x26, 
-       0x3, 0x2, 0x2, 0x2, 0x28, 0x7, 0x3, 0x2, 0x2, 0x2, 0x29, 0x2a, 0x7, 
-       0xd, 0x2, 0x2, 0x2a, 0x2b, 0x7, 0x4, 0x2, 0x2, 0x2b, 0x9, 0x3, 0x2, 
-       0x2, 0x2, 0x2c, 0x2d, 0x7, 0xd, 0x2, 0x2, 0x2d, 0x2e, 0x7, 0x5, 0x2, 
-       0x2, 0x2e, 0xb, 0x3, 0x2, 0x2, 0x2, 0x2f, 0x30, 0x7, 0xd, 0x2, 0x2, 
-       0x30, 0x31, 0x7, 0x6, 0x2, 0x2, 0x31, 0xd, 0x3, 0x2, 0x2, 0x2, 0x32, 
-       0x34, 0x7, 0xc, 0x2, 0x2, 0x33, 0x32, 0x3, 0x2, 0x2, 0x2, 0x33, 0x34, 
-       0x3, 0x2, 0x2, 0x2, 0x34, 0x35, 0x3, 0x2, 0x2, 0x2, 0x35, 0x36, 0x7, 
-       0x7, 0x2, 0x2, 0x36, 0xf, 0x3, 0x2, 0x2, 0x2, 0x37, 0x39, 0x7, 0xc, 
-       0x2, 0x2, 0x38, 0x37, 0x3, 0x2, 0x2, 0x2, 0x38, 0x39, 0x3, 0x2, 0x2, 
-       0x2, 0x39, 0x3a, 0x3, 0x2, 0x2, 0x2, 0x3a, 0x3b, 0x7, 0x8, 0x2, 0x2, 
-       0x3b, 0x11, 0x3, 0x2, 0x2, 0x2, 0x3c, 0x3d, 0x7, 0xd, 0x2, 0x2, 0x3d, 
-       0x3e, 0x7, 0x9, 0x2, 0x2, 0x3e, 0x13, 0x3, 0x2, 0x2, 0x2, 0x3f, 0x40, 
-       0x9, 0x2, 0x2, 0x2, 0x40, 0x15, 0x3, 0x2, 0x2, 0x2, 0x6, 0x1e, 0x27, 
-       0x33, 0x38, 
+      0x3,  0x608b, 0xa72a, 0x8133, 0xb9ed, 0x417c, 0x3be7, 0x7786, 0x5964,
+      0x3,  0xe,    0x42,   0x4,    0x2,    0x9,    0x2,    0x4,    0x3,
+      0x9,  0x3,    0x4,    0x4,    0x9,    0x4,    0x4,    0x5,    0x9,
+      0x5,  0x4,    0x6,    0x9,    0x6,    0x4,    0x7,    0x9,    0x7,
+      0x4,  0x8,    0x9,    0x8,    0x4,    0x9,    0x9,    0x9,    0x4,
+      0xa,  0x9,    0xa,    0x4,    0xb,    0x9,    0xb,    0x3,    0x2,
+      0x3,  0x2,    0x3,    0x2,    0x3,    0x3,    0x3,    0x3,    0x3,
+      0x3,  0x3,    0x3,    0x3,    0x3,    0x5,    0x3,    0x1f,   0xa,
+      0x3,  0x3,    0x4,    0x3,    0x4,    0x3,    0x4,    0x3,    0x4,
+      0x3,  0x4,    0x3,    0x4,    0x3,    0x4,    0x5,    0x4,    0x28,
+      0xa,  0x4,    0x3,    0x5,    0x3,    0x5,    0x3,    0x5,    0x3,
+      0x6,  0x3,    0x6,    0x3,    0x6,    0x3,    0x7,    0x3,    0x7,
+      0x3,  0x7,    0x3,    0x8,    0x5,    0x8,    0x34,   0xa,    0x8,
+      0x3,  0x8,    0x3,    0x8,    0x3,    0x9,    0x5,    0x9,    0x39,
+      0xa,  0x9,    0x3,    0x9,    0x3,    0x9,    0x3,    0xa,    0x3,
+      0xa,  0x3,    0xa,    0x3,    0xb,    0x3,    0xb,    0x3,    0xb,
+      0x2,  0x2,    0xc,    0x2,    0x4,    0x6,    0x8,    0xa,    0xc,
+      0xe,  0x10,   0x12,   0x14,   0x2,    0x3,    0x3,    0x2,    0xa,
+      0xb,  0x2,    0x40,   0x2,    0x16,   0x3,    0x2,    0x2,    0x2,
+      0x4,  0x1e,   0x3,    0x2,    0x2,    0x2,    0x6,    0x27,   0x3,
+      0x2,  0x2,    0x2,    0x8,    0x29,   0x3,    0x2,    0x2,    0x2,
+      0xa,  0x2c,   0x3,    0x2,    0x2,    0x2,    0xc,    0x2f,   0x3,
+      0x2,  0x2,    0x2,    0xe,    0x33,   0x3,    0x2,    0x2,    0x2,
+      0x10, 0x38,   0x3,    0x2,    0x2,    0x2,    0x12,   0x3c,   0x3,
+      0x2,  0x2,    0x2,    0x14,   0x3f,   0x3,    0x2,    0x2,    0x2,
+      0x16, 0x17,   0x5,    0x4,    0x3,    0x2,    0x17,   0x18,   0x7,
+      0x2,  0x2,    0x3,    0x18,   0x3,    0x3,    0x2,    0x2,    0x2,
+      0x19, 0x1a,   0x5,    0x6,    0x4,    0x2,    0x1a,   0x1b,   0x7,
+      0x3,  0x2,    0x2,    0x1b,   0x1c,   0x5,    0x4,    0x3,    0x2,
+      0x1c, 0x1f,   0x3,    0x2,    0x2,    0x2,    0x1d,   0x1f,   0x5,
+      0x6,  0x4,    0x2,    0x1e,   0x19,   0x3,    0x2,    0x2,    0x2,
+      0x1e, 0x1d,   0x3,    0x2,    0x2,    0x2,    0x1f,   0x5,    0x3,
+      0x2,  0x2,    0x2,    0x20,   0x28,   0x5,    0x8,    0x5,    0x2,
+      0x21, 0x28,   0x5,    0xa,    0x6,    0x2,    0x22,   0x28,   0x5,
+      0xc,  0x7,    0x2,    0x23,   0x28,   0x5,    0xe,    0x8,    0x2,
+      0x24, 0x28,   0x5,    0x12,   0xa,    0x2,    0x25,   0x28,   0x5,
+      0x14, 0xb,    0x2,    0x26,   0x28,   0x5,    0x10,   0x9,    0x2,
+      0x27, 0x20,   0x3,    0x2,    0x2,    0x2,    0x27,   0x21,   0x3,
+      0x2,  0x2,    0x2,    0x27,   0x22,   0x3,    0x2,    0x2,    0x2,
+      0x27, 0x23,   0x3,    0x2,    0x2,    0x2,    0x27,   0x24,   0x3,
+      0x2,  0x2,    0x2,    0x27,   0x25,   0x3,    0x2,    0x2,    0x2,
+      0x27, 0x26,   0x3,    0x2,    0x2,    0x2,    0x28,   0x7,    0x3,
+      0x2,  0x2,    0x2,    0x29,   0x2a,   0x7,    0xd,    0x2,    0x2,
+      0x2a, 0x2b,   0x7,    0x4,    0x2,    0x2,    0x2b,   0x9,    0x3,
+      0x2,  0x2,    0x2,    0x2c,   0x2d,   0x7,    0xd,    0x2,    0x2,
+      0x2d, 0x2e,   0x7,    0x5,    0x2,    0x2,    0x2e,   0xb,    0x3,
+      0x2,  0x2,    0x2,    0x2f,   0x30,   0x7,    0xd,    0x2,    0x2,
+      0x30, 0x31,   0x7,    0x6,    0x2,    0x2,    0x31,   0xd,    0x3,
+      0x2,  0x2,    0x2,    0x32,   0x34,   0x7,    0xc,    0x2,    0x2,
+      0x33, 0x32,   0x3,    0x2,    0x2,    0x2,    0x33,   0x34,   0x3,
+      0x2,  0x2,    0x2,    0x34,   0x35,   0x3,    0x2,    0x2,    0x2,
+      0x35, 0x36,   0x7,    0x7,    0x2,    0x2,    0x36,   0xf,    0x3,
+      0x2,  0x2,    0x2,    0x37,   0x39,   0x7,    0xc,    0x2,    0x2,
+      0x38, 0x37,   0x3,    0x2,    0x2,    0x2,    0x38,   0x39,   0x3,
+      0x2,  0x2,    0x2,    0x39,   0x3a,   0x3,    0x2,    0x2,    0x2,
+      0x3a, 0x3b,   0x7,    0x8,    0x2,    0x2,    0x3b,   0x11,   0x3,
+      0x2,  0x2,    0x2,    0x3c,   0x3d,   0x7,    0xd,    0x2,    0x2,
+      0x3d, 0x3e,   0x7,    0x9,    0x2,    0x2,    0x3e,   0x13,   0x3,
+      0x2,  0x2,    0x2,    0x3f,   0x40,   0x9,    0x2,    0x2,    0x2,
+      0x40, 0x15,   0x3,    0x2,    0x2,    0x2,    0x6,    0x1e,   0x27,
+      0x33, 0x38,
   };
 
   _serializedATN.insert(_serializedATN.end(), serializedATNSegment0,
-    serializedATNSegment0 + sizeof(serializedATNSegment0) / sizeof(serializedATNSegment0[0]));
-
+                        serializedATNSegment0 +
+                            sizeof(serializedATNSegment0) /
+                                sizeof(serializedATNSegment0[0]));
 
   atn::ATNDeserializer deserializer;
   _atn = deserializer.deserialize(_serializedATN);
 
   size_t count = _atn.getNumberOfDecisions();
   _decisionToDFA.reserve(count);
-  for (size_t i = 0; i < count; i++) { 
+  for (size_t i = 0; i < count; i++) {
     _decisionToDFA.emplace_back(_atn.getDecisionState(i), i);
   }
 }

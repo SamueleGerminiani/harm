@@ -3,17 +3,14 @@
 
 #pragma once
 
-
 #include "antlr4-runtime.h"
 #include "limitsParser.h"
-
 
 /**
  * This interface defines an abstract listener for a parse tree produced by limitsParser.
  */
-class  limitsListener : public antlr4::tree::ParseTreeListener {
+class limitsListener : public antlr4::tree::ParseTreeListener {
 public:
-
   virtual void enterFile(limitsParser::FileContext *ctx) = 0;
   virtual void exitFile(limitsParser::FileContext *ctx) = 0;
 
@@ -43,7 +40,4 @@ public:
 
   virtual void enterStrategy(limitsParser::StrategyContext *ctx) = 0;
   virtual void exitStrategy(limitsParser::StrategyContext *ctx) = 0;
-
-
 };
-
