@@ -188,7 +188,7 @@ private:
    */
   void build();
 
-  /** \brief builds a custom automaton from a spotLTL automaton
+  /** \brief builds a custom automaton (see class Automaton) from a spotLTL automaton
    */
   Automaton *buildAutomaton(spot::twa_graph_ptr &automata);
 

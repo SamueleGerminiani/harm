@@ -37,7 +37,7 @@ Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
   for (auto &s : _templateFormula) {
-    //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template
+    //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template, two instances of the same template should not have overlapping memory
     if (s._pp != nullptr) {
       if (s._t == Hstring::Stype::Inst) {
         s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
@@ -142,7 +142,7 @@ bool Template::nextPerm() {
     _permIndex = 0;
     return false;
   }
-  //load the next permutation FIXME:  this culd be heavily optimised by loading only the propositions changing from the previous permutation
+  //load the next permutation FIXME:  this could be heavily optimised by loading only the propositions changing from the previous permutation
   _conInCache = false;
   _antInCache = false;
   for (auto &e : _pg._phToIndex) {
@@ -163,6 +163,37 @@ bool Template::nextPerm() {
   _permIndex++;
   return true;
 }
+
+void Template::loadPerm(size_t n) {
+  if (getNumPlaceholders() == 0 && n != 0) {
+    messageError("Perm not available!");
+  }
+  messageErrorIf(_permIndex < 0, "No permutations available!");
+  if (n >= _pg._size.first) {
+    messageError("Perm not available!");
+  }
+
+  // load the next permutation
+  _conInCache = false;
+  _antInCache = false;
+  for (auto &e : _pg._phToIndex) {
+    harm::Location where = _pg._phToLoc.at(e.first);
+    //e.first is the string representation of a placeholder e.second is the column of the permutation's table _permIndex is the row of the permutation's table
+
+    if (where == harm::Location::Ant) {
+      //feel the placeholder with the correct proposition _pg._perms[_permIndex][e.second] contains the index of the proposition to be inserted
+
+      (*_aphToProp.at(e.first)) = _aProps[_pg._perms[n][e.second]];
+    } else if (where == harm::Location::Con) {
+      (*_cphToProp.at(e.first)) = _cProps[_pg._perms[n][e.second]];
+    } else {
+      (*_acphToProp.at(e.first)) = _acProps[_pg._perms[n][e.second]];
+    }
+  }
+  // return to the first permutation if we have reached the end of the
+  // available permutations
+}
+
 std::string Template::printAutomatons() {
   std::string ret;
   ret += "Ant:\n";
@@ -171,7 +202,10 @@ std::string Template::printAutomatons() {
   ret += printAutomaton(_con);
   return ret;
 }
+
 EdgeProposition *Template::edgeToProposition(const spot::formula &f) {
+    //visit the expression depending on the type of operator
+    
   // And
   if (f.is(spot::op::And)) {
     std::vector<EdgeProposition *> operands;
@@ -225,9 +259,11 @@ size_t Template::getNumPlaceholders(harm::Location where) {
     return _acphToProp.size();
   }
 }
+
 size_t Template::getNumPlaceholders() {
   return _aphToProp.size() + _cphToProp.size() + _acphToProp.size();
 }
+
 void Template::loadPropositions(std::vector<Proposition *> &props,
                                 harm::Location where) {
 
@@ -306,10 +342,11 @@ void Template::maxDepth(int &max, Automaton::Node *cn, size_t currDepth,
 
 void Template::fillContingency(size_t (&ct)[3][3], bool offset) {
 
-  // make sure the values are initialized
+  // make sure the chaced values are initialized
   evaluate(0);
 
   if (offset) {
+      //ant -> !con
 
     for (size_t time = 0; time < _max_length; time++) {
       size_t shift =
@@ -339,7 +376,8 @@ void Template::fillContingency(size_t (&ct)[3][3], bool offset) {
       }
     }
   } else {
-
+      //ant -> con
+      
     for (size_t time = 0; time < _max_length; time++) {
       size_t shift =
           time + (_applyDynamicShift ? _dynamicShiftCachedValues[time] : 0) +
@@ -396,7 +434,7 @@ Automaton *Template::buildAutomaton(spot::twa_graph_ptr &automata) {
     fringe.pop_back();
 
     if (hashToId.count(currState->hash()) == 0) {
-      //create a link to retrieve the Node ( only if it doesn't exist already)
+      //create a link to retrieve the Node ( only if it doesn't already exist)
       hashToId[currState->hash()] = stateCount++;
       retA->_idToNode[hashToId.at(currState->hash())] =
           new Automaton::Node(hashToId.at(currState->hash()), -1);
@@ -455,6 +493,7 @@ Automaton *Template::buildAutomaton(spot::twa_graph_ptr &automata) {
 
   return retA;
 }
+
 std::shared_ptr<spot::twa_graph>
 Template::generateDeterministicSpotAutomaton(spot::formula &formula) {
   spot::translator trans;
@@ -577,7 +616,7 @@ void Template::build() {
     }
   }
 
-  //retreive the implication of the template
+  //retrieve the implication of the template
   std::string imp = himpl._s;
   // remove unwanted spaces in the string representation of the implication
   imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
@@ -634,7 +673,7 @@ void Template::build() {
   _ant = buildAutomaton(antAutomaton);
   _con = buildAutomaton(conAutomaton);
 
-  // get a new antecedent
+  // get a new antecedent (hant might have been modified by the above code)
   hant = _templateFormula.getAnt();
   // build the dt operators
   for (size_t i = 0; i < hant.size(); i++) {
@@ -652,7 +691,7 @@ void Template::build() {
     }
   }
 
-  //retreive the depth of the automata
+  //retrieve the depth of the automata
   _antDepth = getDepth(_ant);
   _conDepth = getDepth(_con);
 }
@@ -660,7 +699,7 @@ void Template::build() {
 void Template::genPermutations(const std::vector<Proposition *> &antP,
                                const std::vector<Proposition *> &conP,
                                const std::vector<Proposition *> &antConP) {
-  //fully instantiated
+  //fully instantiated : only one permutation
   if (getNumPlaceholders() == 0) {
     _pg._size.first = 1;
     _pg._size.second = 0;
@@ -680,64 +719,13 @@ void Template::genPermutations(const std::vector<Proposition *> &antP,
   messageErrorIf(_acProps.size() < _acphToProp.size(),
                  "Not enough 'ac' propositions!");
 
+  //generate only if there are not any previously generated perms
   if (_pg._perms == nullptr) {
     _pg.genPermutations(_aProps.size(), _cProps.size(), _acProps.size(),
                         _templateFormula);
   }
+  //set to the first perm
   _permIndex = 0;
-}
-
-//---------------------------Node-Edge------------------------
-
-Automaton::Node::Node(size_t id, int type) : _id(id), _type(type) { // not todo
-}
-Automaton::Node::~Node() {
-  for (auto &edge : _outEdges) {
-    delete edge;
-  }
-}
-Automaton::Edge::Edge(EdgeProposition *prop, Node *toNode)
-    : _prop(prop), _toNode(toNode) {
-  // not todo
-}
-Automaton::Edge::Edge(EdgeProposition *prop, Node *toNode, Node *fromNode)
-    : _prop(prop), _toNode(toNode), _fromNode(fromNode) {
-  _id = "(" + std::to_string(_fromNode->_id) + ", " +
-        std::to_string(_toNode->_id) + ")";
-  // not todo
-}
-Automaton::Edge::~Edge() { delete _prop; }
-
-std::string Template::printAutomaton(Automaton *aut) {
-  Automaton::Node *root = aut->_root;
-  std::deque<Automaton::Node *> fringe;
-  std::unordered_set<Automaton::Node *> visited;
-  std::string ret;
-
-  // visit the automata starting from the initial state(BFS)
-  fringe.push_front(root);
-  visited.insert(root);
-
-  while (!fringe.empty()) {
-    // add to fringe all states reachable from this state
-    // out edges can be added to fringe only once
-    // add new states to fringe
-    auto currState = fringe.back();
-    fringe.pop_back();
-    ret += "[" + std::to_string(currState->_id) + "," +
-           std::to_string(currState->_type) + "]" + "\n";
-
-    for (auto edge : currState->_outEdges) {
-      ret += edge->_prop->toString() + "\n";
-      if (visited.count(edge->_toNode) == 0) {
-        // mark as visited
-        visited.insert({edge->_toNode});
-        fringe.push_back(edge->_toNode);
-      } // visited.count
-      ret += "\n";
-    }
-  }
-  return ret;
 }
 
 size_t Template::gatherInterestingValue(size_t time, int depth, int width) {
@@ -794,6 +782,7 @@ antUnknown:;
   delete fc;
   return ret;
 }
+
 std::string Template::findCauseInProposition(Proposition *ep, size_t time,
                                              bool goal) {
   std::string ret = "";
@@ -1098,35 +1087,6 @@ Hstring Template::getTemplateFormula() {
   ;
 }
 
-void Template::loadPerm(size_t n) {
-  if (getNumPlaceholders() == 0 && n != 0) {
-    messageError("Perm not available!");
-  }
-  messageErrorIf(_permIndex < 0, "No permutations available!");
-  if (n >= _pg._size.first) {
-    messageError("Perm not available!");
-  }
-
-  // load the next permutation
-  _conInCache = false;
-  _antInCache = false;
-  for (auto &e : _pg._phToIndex) {
-    harm::Location where = _pg._phToLoc.at(e.first);
-    //e.first is the string representation of a placeholder e.second is the column of the permutation's table _permIndex is the row of the permutation's table
-
-    if (where == harm::Location::Ant) {
-      //feel the placeholder with the correct proposition _pg._perms[_permIndex][e.second] contains the index of the proposition to be inserted
-
-      (*_aphToProp.at(e.first)) = _aProps[_pg._perms[n][e.second]];
-    } else if (where == harm::Location::Con) {
-      (*_cphToProp.at(e.first)) = _cProps[_pg._perms[n][e.second]];
-    } else {
-      (*_acphToProp.at(e.first)) = _acProps[_pg._perms[n][e.second]];
-    }
-  }
-  // return to the first permutation if we have reached the end of the
-  // available permutations
-}
 
 std::vector<Proposition *> Template::getLoadedPropositions() {
   std::vector<Proposition *> ret;
@@ -1261,6 +1221,38 @@ void Template::subPropInAssertion(Proposition *original, Proposition *newProp) {
   }
   messageErrorIf(!found, "Did not find proposition '" + prop2String(*original) +
                              "' in '" + getColoredAssertion() + "'");
+}
+
+std::string Template::printAutomaton(Automaton *aut) {
+  Automaton::Node *root = aut->_root;
+  std::deque<Automaton::Node *> fringe;
+  std::unordered_set<Automaton::Node *> visited;
+  std::string ret;
+
+  // visit the automata starting from the initial state(BFS)
+  fringe.push_front(root);
+  visited.insert(root);
+
+  while (!fringe.empty()) {
+    // add to fringe all states reachable from this state
+    // out edges can be added to fringe only once
+    // add new states to fringe
+    auto currState = fringe.back();
+    fringe.pop_back();
+    ret += "[" + std::to_string(currState->_id) + "," +
+           std::to_string(currState->_type) + "]" + "\n";
+
+    for (auto edge : currState->_outEdges) {
+      ret += edge->_prop->toString() + "\n";
+      if (visited.count(edge->_toNode) == 0) {
+        // mark as visited
+        visited.insert({edge->_toNode});
+        fringe.push_back(edge->_toNode);
+      } // visited.count
+      ret += "\n";
+    }
+  }
+  return ret;
 }
 
 } // namespace harm

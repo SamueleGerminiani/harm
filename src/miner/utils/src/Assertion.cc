@@ -3,7 +3,6 @@
 
 namespace harm {
 
-Assertion::Assertion() {}
 Assertion::~Assertion() {
   if (_values != nullptr) {
     delete[] _values;
@@ -20,6 +19,7 @@ void Assertion::fillValues(Template *t) {
     return;
   }
   if (_values == nullptr) {
+      //init _values
     _values = new Trinary[t->_max_length];
   }
   for (size_t i = 0; i < t->_max_length; i++) {

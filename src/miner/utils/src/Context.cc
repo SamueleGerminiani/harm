@@ -1,6 +1,7 @@
 #include "Context.hh"
-#include "Assertion.hh"
 #include "Template.hh"
+#include "Assertion.hh"
+#include "Metric.hh"
 
 namespace harm {
 

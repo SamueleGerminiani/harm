@@ -76,6 +76,15 @@ bool DTAnd::isSolutionInconsequential(std::vector<Proposition *> &sol) {
   return 0;
 }
 
+void DTAnd::substitute(int depth, int width, Proposition *&sub) {
+  if (width == -1) {
+    width = _choices->getItems().size() - 1;
+  }
+  Proposition *tmp = _choices->getItems()[width];
+  _choices->getItems()[width] = sub;
+  sub = tmp;
+}
+
 const DTLimits &DTAnd::getLimits() { return _limits; }
 
 std::vector<Proposition *> DTAnd::minimize(bool isOffset) {
