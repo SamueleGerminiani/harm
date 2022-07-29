@@ -23,8 +23,7 @@ public:
   Hstring(std::string s, Stype t, expression::Proposition **pp = nullptr);
   Hstring();
 
-  ~Hstring()=default;
-
+  ~Hstring() = default;
 
   Hstring operator+(const Hstring &right);
   Hstring getAnt();
@@ -36,6 +35,8 @@ public:
 
   std::vector<Hstring>::iterator begin();
   std::vector<Hstring>::iterator end();
+  std::vector<Hstring>::reverse_iterator rbegin();
+  std::vector<Hstring>::reverse_iterator rend();
   void insert(std::vector<Hstring>::iterator where, const Hstring &toInsert);
 
   bool exists(std::string toFind);

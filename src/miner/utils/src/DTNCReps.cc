@@ -13,7 +13,7 @@ namespace harm {
 //--DTNCReps---------------------------------------
 
 DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
-                     const DTLimits &limits)
+                   const DTLimits &limits)
     : _t(t), _shift(shift), _tc(p) {
 
   _limits = limits;
@@ -51,72 +51,62 @@ DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
   }
 
   //  messageInfo("Building automata...");
+  generateFormulas();
+  handleParallelDepth();
+}
 
+void DTNCReps::generateFormulas() {
   // retrieve the consequent and the implication of the formula
-  std::string imp = t->_templateFormula.getImp()._s;
-  auto hcon = t->_templateFormula.getCon();
+  std::string imp = _t->_templateFormula.getImp()._s;
+  auto hcon = _t->_templateFormula.getCon();
   // remove unwanted spaces in the string representation of the implication
   imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
 
-  // generate the rest of the automata
   for (size_t i = 1; i < _limits._maxDepth; i++) {
-    // we build on the previous automa
+    // we build on the previously generated antecedent
     auto hant = _formulas[i - 1].getAnt();
+    Proposition **pp = new Proposition *(nullptr);
+    std::string token = "dtNCReps" + std::to_string(i);
+    // the relation between token name and proposition is kept in the template
+    _t->_tokenToProp[token] = pp;
+    _tokens.push_back(token);
 
     if (_t->_applyDynamicShift) {
-      // dtNCRepsM ##N dtNCRepsM-1 ##N ... ##N dtNCReps0
-      // find the last operand and append a new one
-      for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNCReps) {
-          Proposition **pp = new Proposition *(nullptr);
-          std::string token = "dtNCReps" + std::to_string(i);
-          hant.insert(hant.begin() + j,
-                      Hstring(token, Hstring::Stype::DTNCReps, pp));
-          hant[j]._offset = _shift;
-          // the relation between token name and proposition is kept in the
-          // template
-          _t->_tokenToProp[token] = pp;
-          _tokens.push_back(token);
-          hant[j]._offset = _shift;
-          break;
-        }
-      }
-    } else {
+      // dtNextM ##N ... ##N dtNext2 ##N dtNext0
+      //find the last operand and append a new one
+      auto dth = std::find_if(
+          std::begin(hant), std::end(hant),
+          [](Hstring &e) { return e._t == Hstring::Stype::DTNCReps; }
 
-      // dtNext1 ##N dtNext2 ##N ... ##N dtNextM
+      );
+
+      messageErrorIf(dth == hant.end(), "Could not find the operand");
+      dth->_offset = _shift;
+      hant.insert(dth, Hstring(token, Hstring::Stype::DTNCReps, pp));
+    } else {
+      // dtNext0 ##N dtNext1 ##N ... ##N dtNextM
       // find the last operand and append a new one
-      for (int j = hant.size() - 1; j >= 0; j--) {
-        if (hant[j]._t == Hstring::Stype::DTNCReps) {
-          Proposition **pp = new Proposition *(nullptr);
-          std::string token = "dtNCReps" + std::to_string(i);
-          hant.insert(hant.begin() + j + 1,
-                      Hstring(token, Hstring::Stype::DTNCReps, pp));
-          hant[j]._offset = _shift;
-          // the relation between token name and proposition is kept in the
-          // template
-          _t->_tokenToProp[token] = pp;
-          _tokens.push_back(token);
-          break;
-        }
-      }
-      for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNCReps) {
-          hant[j]._offset = _shift;
-        }
-      }
+      auto dth = std::find_if(
+          std::rbegin(hant), std::rend(hant),
+          [](Hstring &e) { return e._t == Hstring::Stype::DTNCReps; }
+
+      );
+
+      messageErrorIf(dth == hant.rend(), "Could not find the operand");
+      auto newOperand = Hstring(token, Hstring::Stype::DTNCReps, pp);
+      newOperand._offset = _shift;
+      hant.insert(++((dth + 1).base()), newOperand);
     }
 
     _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant +
-                        Hstring(" " + imp + " ", Hstring::Stype::Imp, nullptr) +
-                        hcon + Hstring(")", Hstring::Stype::G));
-    // debug
-    // std::cout << _formulas.back().toSpotString() << "\n";
+                        Hstring(" " + imp + " ", Hstring::Stype::Imp) + hcon +
+                        Hstring(")", Hstring::Stype::G));
 
     // string to spot formula
     spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
 
     // Synthesising the automata
-    auto antAutomaton = t->generateDeterministicSpotAutomaton(ant.f);
+    auto antAutomaton = _t->generateDeterministicSpotAutomaton(ant.f);
 
     // building storing our custom automata
     _ant.push_back(_t->buildAutomaton(antAutomaton));
@@ -124,23 +114,46 @@ DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
     // storing depths
     _antDepth.push_back(_t->getDepth(_ant.back()));
   }
-
-  //   Check for parallel depth
+}
+void DTNCReps::handleParallelDepth() {
   if (_t->_applyDynamicShift) {
-    auto f = _formulas.front();
-    auto portionBare =
-        selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
-    std::stringstream ss;
-    print_spin_ltl(ss, portionBare, false) << '\n';
-    std::string portion = "{" + ss.str() + "}";
-    auto portionFormula = spot::parse_infix_psl(portion);
-    //      debug
-    //      print_spin_ltl(std::cout, portionFormula.f, false) << '\n';
-    auto antAutomaton = t->generateDeterministicSpotAutomaton(portionFormula.f);
-    Automaton *pAnt = _t->buildAutomaton(antAutomaton);
-    int depth = _t->getDepth(pAnt);
+    if (onlyToken(
+            "dtNCReps0",
+            selectFirstEvent(
+                spot::parse_infix_psl(_formulas.front().getAnt().toSpotString())
+                    .f))) {
+      //no parallel depth
+      return;
+    }
 
-    messageErrorIf(depth != 0, " parallel depth is not allowed");
+    int baseDepth = 0;
+    for (auto f : _formulas) {
+      //extract first temporal element from the left
+      auto portionBare =
+          selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
+
+      //create an automaton of the first event
+      std::stringstream ss;
+      print_spin_ltl(ss, portionBare, false) << '\n';
+      std::string portion = "{" + ss.str() + "}";
+      auto portionFormula = spot::parse_infix_psl(portion);
+      auto aut = _t->generateDeterministicSpotAutomaton(portionFormula.f);
+      Automaton *pAnt = _t->buildAutomaton(aut);
+      //get the max depth of the automaton from the root
+      int depth = _t->getDepth(pAnt);
+      //fails if the automaton has cycles
+      messageErrorIf(depth == -1, " parallel depth is unknown");
+      if (baseDepth == 0) {
+        //depth of the original template
+        baseDepth = depth;
+      } else if (depth > baseDepth) {
+        //cannot add any more operands without pushing things
+        delete pAnt;
+        break;
+      }
+      //adding an operand did not change the maximum depth of the automaton
+      messageError(" parallel depth is not allowed");
+    }
   }
 }
 DTNCReps::~DTNCReps() {

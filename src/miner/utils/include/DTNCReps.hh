@@ -6,7 +6,7 @@ namespace harm {
 class DTNCReps : public DTOperator {
 public:
   DTNCReps(BooleanConstant *p, size_t shift, Template *t,
-          const DTLimits &limits);
+           const DTLimits &limits);
 
   ~DTNCReps() override;
   bool isMultiDimensional() override;
@@ -24,18 +24,21 @@ public:
   std::vector<Proposition *> getItems() override;
 
   std::vector<Proposition *> minimize(bool isOffset) override;
-  virtual std::vector<Proposition *> unpack() override ;
+  virtual std::vector<Proposition *> unpack() override;
   virtual std::vector<Proposition *> unpack(Proposition *pack) override;
-  virtual std::vector<Proposition *> unpack(std::vector<Proposition *> &pack) override ;
+  virtual std::vector<Proposition *>
+  unpack(std::vector<Proposition *> &pack) override;
 
-  void clearPack(Proposition *pack) override ;
+  void clearPack(Proposition *pack) override;
   bool isSolutionInconsequential(std::vector<Proposition *> &sol) override;
 
   void removeLeaf(size_t id, bool second, int depth) override;
   void addLeaf(Proposition *p, size_t id, bool second, int depth) override;
 
   virtual std::pair<std::string, std::string> prettyPrint(bool offset) override;
-  void substitute(int depth, int width, Proposition *&sub)override;
+  void substitute(int depth, int width, Proposition *&sub) override;
+  void generateFormulas();
+  void handleParallelDepth();
 
 private:
   std::unordered_map<size_t, Proposition *> _choices;
@@ -49,7 +52,7 @@ private:
   Template *_t;
   size_t _shift;
   bool _randomConstruction;
-  bool _applyDynamicShift=false;
+  bool _applyDynamicShift = false;
 
   std::vector<Automaton *> _ant;
 
@@ -59,4 +62,4 @@ private:
   BooleanConstant *_tc;
   std::vector<DecTreeVariables> _leaves;
 };
-}
+} // namespace harm

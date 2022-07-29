@@ -7,8 +7,7 @@ namespace harm {
 */
 class DTNext : public DTOperator {
 public:
-  DTNext(BooleanConstant *p, size_t shift, Template *t,
-          const DTLimits &limits);
+  DTNext(BooleanConstant *p, size_t shift, Template *t, const DTLimits &limits);
 
   ~DTNext() override;
   bool isMultiDimensional() override;
@@ -26,11 +25,12 @@ public:
   std::vector<Proposition *> getItems() override;
 
   std::vector<Proposition *> minimize(bool isOffset) override;
-  virtual std::vector<Proposition *> unpack() override ;
+  virtual std::vector<Proposition *> unpack() override;
   virtual std::vector<Proposition *> unpack(Proposition *pack) override;
-  virtual std::vector<Proposition *> unpack(std::vector<Proposition *> &pack) override ;
+  virtual std::vector<Proposition *>
+  unpack(std::vector<Proposition *> &pack) override;
 
-  void clearPack(Proposition *pack) override ;
+  void clearPack(Proposition *pack) override;
   bool isSolutionInconsequential(std::vector<Proposition *> &sol) override;
 
   void removeLeaf(size_t id, bool second, int depth) override;
@@ -38,9 +38,12 @@ public:
 
   virtual std::pair<std::string, std::string> prettyPrint(bool offset) override;
 
-  void substitute(int depth, int width, Proposition *&sub) override ;
+  void substitute(int depth, int width, Proposition *&sub) override;
 
 private:
+  void generateFormulas();
+  void handleParallelDepth();
+
   ///list of operands <id -> prop>
   std::unordered_map<size_t, Proposition *> _choices;
   ///order in which the operands were added
@@ -62,7 +65,7 @@ private:
   ///True if the dt operator can be constructed in an unordered fashion
   bool _randomConstruction;
   ///True if the templates contains a dynamic shift
-  bool _applyDynamicShift=false;
+  bool _applyDynamicShift = false;
 
   ///list of automaton representation of the antecedent of each formula in _formulas
   std::vector<Automaton *> _ant;
@@ -74,5 +77,6 @@ private:
 
   BooleanConstant *_tc;
   std::vector<DecTreeVariables> _leaves;
+
 };
-}
+} // namespace harm

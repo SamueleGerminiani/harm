@@ -242,6 +242,14 @@ std::vector<Hstring>::iterator Hstring::begin() { return _append.begin(); }
 
 std::vector<Hstring>::iterator Hstring::end() { return _append.end(); }
 
+std::vector<Hstring>::reverse_iterator Hstring::rbegin() {
+  return _append.rbegin();
+}
+
+std::vector<Hstring>::reverse_iterator Hstring::rend() {
+  return _append.rend();
+}
+
 void Hstring::insert(std::vector<Hstring>::iterator where,
                      const Hstring &toInsert) {
   _append.insert(where, toInsert);

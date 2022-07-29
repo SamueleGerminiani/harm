@@ -1,5 +1,5 @@
-#include "DTNext.hh"
 #include "DTUtils.hh"
+#include "DTNext.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "message.hh"
@@ -13,7 +13,7 @@ namespace harm {
 //--DTNext---------------------------------------
 
 DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
-                 const DTLimits &limits)
+               const DTLimits &limits)
     : _t(t), _shift(shift), _tc(p) {
 
   _limits = limits;
@@ -39,7 +39,7 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
         "Can't have events happening before the dtNext operator when using "
-        "|-> ");
+        "|->, |=> ");
   } else {
     messageErrorIf(
         !nothingAfter(
@@ -47,82 +47,65 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
             spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
                 .f),
         "Can't have events happening after the dtNext operator when not using "
-        "|-> ");
+        "->, => ");
   }
 
   //  debug
   //  messageInfo("Building automata...");
 
+  // generate the rest of the automata
+  generateFormulas();
+
+  //  debug
+  //  for (auto &f : _formulas) {
+  //    std::cout << f.toSpotString() << "\n";
+  //  }
+
+  //   Check for parallel depth
+  handleParallelDepth();
+}
+
+void DTNext::generateFormulas() {
   // retrieve the consequent and the implication of the formula
-  std::string imp = t->_templateFormula.getImp()._s;
-  auto hcon = t->_templateFormula.getCon();
+  std::string imp = _t->_templateFormula.getImp()._s;
+  auto hcon = _t->_templateFormula.getCon();
   // remove unwanted spaces in the string representation of the implication
   imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
 
-  // generate the rest of the automata
   for (size_t i = 1; i < _limits._maxDepth; i++) {
-    // we build on the previous antecedent
+    // we build on the previously generated antecedent
     auto hant = _formulas[i - 1].getAnt();
+    Proposition **pp = new Proposition *(nullptr);
+    std::string token = "dtNext" + std::to_string(i);
+    // the relation between token name and proposition is kept in the template
+    _t->_tokenToProp[token] = pp;
+    _tokens.push_back(token);
 
     if (_t->_applyDynamicShift) {
-      // dtNextM ##N dtNextM-1 ##N ... ##N dtNext0
-      // last insertion point
-      size_t lastIP = -1;
-      // find the last operand and append a new one
-      for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNext) {
-          Proposition **pp = new Proposition *(nullptr);
-          std::string token = "dtNext" + std::to_string(i);
-          hant.insert(hant.begin() + j,
-                      Hstring(token, Hstring::Stype::DTNext, pp));
-          hant[j]._offset = _shift;
-          // the relation between token name and proposition is kept in the
-          // template
-          _t->_tokenToProp[token] = pp;
-          _tokens.push_back(token);
-          lastIP = j;
-          break;
-        }
-      }
-      // adjust offset: only the last operand should have delay equal to 0
-      hant[lastIP]._offset = 0;
-      for (size_t j = lastIP + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNext) {
-          hant[j]._offset = _shift;
-        }
-      }
-    } else {
+      // dtNextM ##N ... ##N dtNext2 ##N dtNext0
+      //find the last operand and append a new one
+      auto dth =
+          std::find_if(std::begin(hant), std::end(hant),
+                       [](Hstring &e) { return e._t == Hstring::Stype::DTNext; }
 
-      // dtNext1 ##N dtNext2 ##N ... ##N dtNextM
+          );
+
+      messageErrorIf(dth == hant.end(), "Could not find the operand");
+      dth->_offset = _shift;
+      hant.insert(dth, Hstring(token, Hstring::Stype::DTNext, pp));
+    } else {
+      // dtNext0 ##N dtNext1 ##N ... ##N dtNextM
       // find the last operand and append a new one
-      for (int j = hant.size() - 1; j >= 0; j--) {
-        if (hant[j]._t == Hstring::Stype::DTNext) {
-          Proposition **pp = new Proposition *(nullptr);
-          std::string token = "dtNext" + std::to_string(i);
-          hant.insert(hant.begin() + j + 1,
-                      Hstring(token, Hstring::Stype::DTNext, pp));
-          hant[j]._offset = _shift;
-          // the relation between token name and proposition is kept in the
-          // template
-          _t->_tokenToProp[token] = pp;
-          _tokens.push_back(token);
-          break;
-        }
-      }
-      // adjust offset: only the first operand should have delay equal to 0
-      size_t firstDT = 0;
-      for (size_t j = 0; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNext) {
-          firstDT = j;
-          break;
-        }
-      }
-      hant[firstDT]._offset = 0;
-      for (size_t j = firstDT + 1; j < hant.size(); j++) {
-        if (hant[j]._t == Hstring::Stype::DTNext) {
-          hant[j]._offset = _shift;
-        }
-      }
+      auto dth =
+          std::find_if(std::rbegin(hant), std::rend(hant),
+                       [](Hstring &e) { return e._t == Hstring::Stype::DTNext; }
+
+          );
+
+      messageErrorIf(dth == hant.rend(), "Could not find the operand");
+      auto newOperand = Hstring(token, Hstring::Stype::DTNext, pp);
+      newOperand._offset = _shift;
+      hant.insert(++((dth + 1).base()), newOperand);
     }
 
     _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant +
@@ -133,7 +116,7 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
     spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
 
     // Synthesising the automata
-    auto antAutomaton = t->generateDeterministicSpotAutomaton(ant.f);
+    auto antAutomaton = _t->generateDeterministicSpotAutomaton(ant.f);
 
     // building storing our custom automata
     _ant.push_back(_t->buildAutomaton(antAutomaton));
@@ -141,47 +124,57 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
     // storing depths
     _antDepth.push_back(_t->getDepth(_ant.back()));
   }
-  //  for (auto &f : _formulas) {
-  //    std::cout << f.toSpotString() << "\n";
-  //  }
+}
 
-  //   Check for parallel depth
+void DTNext::handleParallelDepth() {
   if (_t->_applyDynamicShift) {
-    int baseDepth = -1;
+    if (onlyToken("dtNext0", selectFirstEvent(
+                                 spot::parse_infix_psl(
+                                     _formulas.front().getAnt().toSpotString())
+                                     .f))) {
+      //no parallel depth
+      return;
+    }
+
+    int baseDepth = 0;
     for (auto f : _formulas) {
+      //extract first temporal element from the left
       auto portionBare =
           selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
+
+      //create an automaton of the first event
       std::stringstream ss;
       print_spin_ltl(ss, portionBare, false) << '\n';
       std::string portion = "{" + ss.str() + "}";
       auto portionFormula = spot::parse_infix_psl(portion);
-      //      debug
-      //      print_spin_ltl(std::cout, portionFormula.f, false) << '\n';
-      auto antAutomaton =
-          t->generateDeterministicSpotAutomaton(portionFormula.f);
-      Automaton *pAnt = _t->buildAutomaton(antAutomaton);
+      auto aut = _t->generateDeterministicSpotAutomaton(portionFormula.f);
+      Automaton *pAnt = _t->buildAutomaton(aut);
+      //get the max depth of the automaton from the root
       int depth = _t->getDepth(pAnt);
-
+      //fails if the automaton has cycles
       messageErrorIf(depth == -1, " parallel depth is unknown");
-      baseDepth = (baseDepth == -1 ? depth : baseDepth);
-      if (depth == 0) {
-        if (!onlyToken("dtNext0", portionFormula.f)) {
-          _parallelDepth++;
-        }
+      if (baseDepth == 0) {
+        //depth of the original template
+        baseDepth = depth;
+      } else if (depth > baseDepth) {
+        //cannot add any more operands without pushing things
         delete pAnt;
         break;
-      } else if (baseDepth == depth) {
-        _parallelDepth++;
       }
+      //adding an operand did not change the maximum depth of the automaton
+      _parallelDepth++;
       delete pAnt;
     }
   }
+
   if (_parallelDepth != 0) {
     _limits._maxDepth =
         _parallelDepth < _limits._maxDepth ? _parallelDepth : _limits._maxDepth;
+    //set the formula of the correct depth, from now on, the template will remain unchanged
     _t->_ant = _ant[_limits._maxDepth - 1];
     _t->_templateFormula = _formulas[_limits._maxDepth - 1];
     _t->_antDepth = _antDepth[_limits._maxDepth - 1];
+    //set all operands to the true constant
     removeItems();
   }
 }

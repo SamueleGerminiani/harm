@@ -533,6 +533,15 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     _subFormulas.push(newFormula);
     return;
   }
+  if (ctx->sere().size() == 1 && ctx->LGPAREN() != nullptr &&
+      ctx->RGPAREN() != nullptr) {
+    Hstring newFormula = Hstring("{", Hstring::Stype::Temp) +
+                         _subFormulas.top() +
+                         Hstring("}", Hstring::Stype::Temp);
+    _subFormulas.pop();
+    _subFormulas.push(newFormula);
+    return;
+  }
 
   if (ctx->sere().size() == 2 && ctx->COL() != nullptr) {
     Hstring newFormula =

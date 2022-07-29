@@ -5,6 +5,8 @@ namespace harm {
 class DTNextAnd : public DTOperator {
 public:
   DTNextAnd(size_t shift, Template *t, const DTLimits &limits);
+  void generateFormulas();
+void handleParallelDepth();
 
   ~DTNextAnd() override;
   bool isMultiDimensional() override;
@@ -63,4 +65,4 @@ private:
   std::vector<DecTreeVariables> _leaves;
   BooleanConstant *_tc;
 };
-}
+} // namespace harm

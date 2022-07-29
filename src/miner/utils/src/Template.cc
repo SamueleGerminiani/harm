@@ -316,12 +316,13 @@ void Template::loadPropositions(std::vector<Proposition *> &props,
 
 int Template::getDepth(Automaton *aut) {
   std::unordered_set<size_t> marked;
-  int depth = 0;
-  maxDepth(depth, aut->_root, 0, marked);
-  return depth;
+  int max = 0;
+  maxDepth(max, aut->_root, 1, marked);
+  return max;
 }
 void Template::maxDepth(int &max, Automaton::Node *cn, size_t currDepth,
                         std::unordered_set<size_t> &marked) {
+    //if the automaton contains cycles, the depth is unknown (-1)
 
   marked.insert(cn->_id);
   for (auto i : cn->_outEdges) {
@@ -329,7 +330,6 @@ void Template::maxDepth(int &max, Automaton::Node *cn, size_t currDepth,
       return;
     } else if (i->_toNode->_type != -1) {
       max = currDepth > (size_t)max ? currDepth : max;
-
     } else if (marked.count(i->_toNode->_id)) {
       max = -1;
       return;

@@ -18,6 +18,7 @@ SET(MINER_UTILS_SRC src/Trace.cc src/DataType.cc src/Template.cc
     src/minerUtils.cc
     src/Context.cc
     src/Assertion.cc
+    src/DTUtils.cc
     )
 
 #############################################

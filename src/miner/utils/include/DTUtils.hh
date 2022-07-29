@@ -1,9 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <string>
 #include <algorithm>
+#include <string>
+#include <vector>
 
+#include "DTUtils.hh"
+#include "Hstring.hh"
 #include <spot/tl/formula.hh>
 #include <spot/twaalgos/postproc.hh>
 
@@ -79,4 +81,5 @@ inline bool nothingAfter(const std::string &token, spot::formula f) {
     return nothingAfter(token, f[f.size() - 1]);
   }
 }
-}
+
+} // namespace harm
