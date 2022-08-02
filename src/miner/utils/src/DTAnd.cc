@@ -126,20 +126,21 @@ end:;
 }
 
 std::pair<std::string, std::string> DTAnd::prettyPrint(bool offset) {
-  auto modTemplate = _t->_templateFormula;
+
+  auto ant = _t->_templateFormula.getAnt();
+  auto imp = _t->_templateFormula.getImp();
+  auto con = _t->_templateFormula.getCon();
+
   if (offset) {
-    for (int j = modTemplate.size() - 1; j >= 0; j--) {
-      if (modTemplate[j]._t == Hstring::Stype::Imp) {
-        modTemplate.insert(modTemplate.begin() + j + 1,
-                           Hstring("!(", Hstring::Stype::Temp, nullptr));
-        modTemplate.insert(modTemplate.end() - 1,
-                           Hstring(")", Hstring::Stype::Temp, nullptr));
-        break;
-      }
-    }
+    //negate the consequent
+    con = Hstring("!(", Hstring::Stype::Temp, nullptr) + con +
+          Hstring(")", Hstring::Stype::Temp, nullptr);
   }
-  auto ret =
-      std::make_pair(modTemplate.toString(1), modTemplate.toColoredString(1));
-  return ret;
+
+  //compose the reduced template
+  auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + ant + imp + con +
+                         Hstring(")", Hstring::Stype::G);
+  return std::make_pair(reducedTemplate.toString(1),
+                        reducedTemplate.toColoredString(1));
 }
 } // namespace harm

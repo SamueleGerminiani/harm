@@ -57,10 +57,7 @@ DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
 
 void DTNCReps::generateFormulas() {
   // retrieve the consequent and the implication of the formula
-  std::string imp = _t->_templateFormula.getImp()._s;
   auto hcon = _t->_templateFormula.getCon();
-  // remove unwanted spaces in the string representation of the implication
-  imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
 
   for (size_t i = 1; i < _limits._maxDepth; i++) {
     // we build on the previously generated antecedent
@@ -98,8 +95,8 @@ void DTNCReps::generateFormulas() {
       hant.insert(++((dth + 1).base()), newOperand);
     }
 
-    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant +
-                        Hstring(" " + imp + " ", Hstring::Stype::Imp) + hcon +
+    Hstring imp = _t->_templateFormula.getImp();
+    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant + imp + hcon +
                         Hstring(")", Hstring::Stype::G));
 
     // string to spot formula
@@ -304,23 +301,21 @@ const DTLimits &DTNCReps::getLimits() { return _limits; }
 size_t DTNCReps::getCurrentDepth() { return _currDepth; }
 std::pair<std::string, std::string> DTNCReps::prettyPrint(bool offset) {
 
-  auto reducedTemplate = _formulas[_currDepth];
+  auto ant = _formulas[_currDepth].getAnt();
+  auto imp = _formulas[_currDepth].getImp();
+  auto con = _formulas[_currDepth].getCon();
 
   if (offset) {
-    for (int j = reducedTemplate.size() - 1; j >= 0; j--) {
-      if (reducedTemplate[j]._t == Hstring::Stype::Imp) {
-        reducedTemplate.insert(reducedTemplate.begin() + j + 1,
-                               Hstring("!(", Hstring::Stype::Temp, nullptr));
-        reducedTemplate.insert(reducedTemplate.end() - 1,
-                               Hstring(")", Hstring::Stype::Temp, nullptr));
-        break;
-      }
-    }
+    //negate the consequent
+    con = Hstring("!(", Hstring::Stype::Temp, nullptr) + con +
+          Hstring(")", Hstring::Stype::Temp, nullptr);
   }
 
-  auto ret = std::make_pair(reducedTemplate.toString(1),
-                            reducedTemplate.toColoredString(1));
-  return ret;
+  //compose the reduced template
+  auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + ant + imp + con +
+                         Hstring(")", Hstring::Stype::G);
+  return std::make_pair(reducedTemplate.toString(1),
+                        reducedTemplate.toColoredString(1));
 }
 
 std::vector<Proposition *> DTNCReps::unpack() {

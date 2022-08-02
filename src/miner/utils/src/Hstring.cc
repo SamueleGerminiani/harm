@@ -10,8 +10,14 @@ Hstring::Hstring() : _s(""), _t(Stype::Temp), _pp(nullptr), _offset(-1) {
 }
 Hstring Hstring::operator+(const Hstring &right) {
   auto left = *this;
-  for (const auto &i : right._append) {
-    left._append.push_back(i);
+  if (right._append.empty()) {
+      //single char
+    left._append.push_back(right);
+  } else {
+      //string
+    for (const auto &i : right._append) {
+      left._append.push_back(i);
+    }
   }
   return left;
 }
@@ -29,6 +35,7 @@ bool Hstring::exists(std::string toFind) {
 }
 
 std::string Hstring::toColoredString(bool sub) {
+    messageErrorIf(_append.empty(),"Attempted to print a char or an empty string");
   std::string ret = "";
   for (auto &e : _append) {
     switch (e._t) {
@@ -97,6 +104,7 @@ std::string Hstring::toColoredString(bool sub) {
   return ret;
 }
 std::string Hstring::toString(bool sub) {
+    messageErrorIf(_append.empty(),"Attempted to print a char or an empty string");
 
   std::string ret = "";
   for (auto &e : _append) {
@@ -159,6 +167,7 @@ std::string Hstring::toString(bool sub) {
     case Stype::Imp:
       ret += e._s;
       break;
+
     default:;
     }
   }
@@ -249,8 +258,69 @@ std::vector<Hstring>::reverse_iterator Hstring::rbegin() {
 std::vector<Hstring>::reverse_iterator Hstring::rend() {
   return _append.rend();
 }
+bool Hstring::isDT(const Hstring &e) {
+  switch (e._t) {
+  case Stype::DTAnd:
+    return 1;
+    break;
+  case Stype::DTNext:
+    return 1;
+    break;
+  case Stype::DTNCReps:
+    return 1;
+    break;
+  case Stype::DTNextAnd:
+    return 1;
+    break;
+  default:
+    return 0;
+  }
+}
+
+std::vector<Hstring> Hstring::getDTOperands() {
+  std::vector<Hstring> ret;
+  for (auto &e : _append) {
+    if (isDT(e)) {
+      ret.push_back(e);
+    }
+  }
+  return ret;
+}
 
 void Hstring::insert(std::vector<Hstring>::iterator where,
                      const Hstring &toInsert) {
   _append.insert(where, toInsert);
+}
+std::ostream &operator<<(std::ostream &os, const Hstring::Stype &t) {
+
+  switch (t) {
+  case Hstring::Stype::DTAnd:
+    os << "DTAnd";
+    break;
+  case Hstring::Stype::DTNext:
+    os << "DTNext";
+    break;
+  case Hstring::Stype::DTNCReps:
+    os << "DTNCReps";
+    break;
+  case Hstring::Stype::DTNextAnd:
+    os << "DTNextAnd";
+    break;
+  case Hstring::Stype::G:
+    os << "G";
+    break;
+  case Hstring::Stype::Temp:
+    os << "Temp";
+    break;
+  case Hstring::Stype::Imp:
+    os << "Imp";
+    break;
+  case Hstring::Stype::Inst:
+    os << "Inst";
+    break;
+  case Hstring::Stype::Ph:
+    os << "Ph";
+    break;
+  }
+  return os;
 }

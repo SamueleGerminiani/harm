@@ -31,7 +31,7 @@ public:
   virtual void clearPack(Proposition *pack) override;
   virtual std::pair<std::string, std::string> prettyPrint(bool offset) override;
   virtual bool isSolutionInconsequential(std::vector<Proposition *> &sol) override;
-  virtual void substitute(int depth, int width, Proposition *&sub);
+  virtual void substitute(int depth, int width, Proposition *&sub) override;
   virtual const DTLimits &getLimits() override;
 
 private:

@@ -204,8 +204,8 @@ std::string Template::printAutomatons() {
 }
 
 EdgeProposition *Template::edgeToProposition(const spot::formula &f) {
-    //visit the expression depending on the type of operator
-    
+  //visit the expression depending on the type of operator
+
   // And
   if (f.is(spot::op::And)) {
     std::vector<EdgeProposition *> operands;
@@ -322,7 +322,7 @@ int Template::getDepth(Automaton *aut) {
 }
 void Template::maxDepth(int &max, Automaton::Node *cn, size_t currDepth,
                         std::unordered_set<size_t> &marked) {
-    //if the automaton contains cycles, the depth is unknown (-1)
+  //if the automaton contains cycles, the depth is unknown (-1)
 
   marked.insert(cn->_id);
   for (auto i : cn->_outEdges) {
@@ -346,7 +346,7 @@ void Template::fillContingency(size_t (&ct)[3][3], bool offset) {
   evaluate(0);
 
   if (offset) {
-      //ant -> !con
+    //ant -> !con
 
     for (size_t time = 0; time < _max_length; time++) {
       size_t shift =
@@ -376,8 +376,8 @@ void Template::fillContingency(size_t (&ct)[3][3], bool offset) {
       }
     }
   } else {
-      //ant -> con
-      
+    //ant -> con
+
     for (size_t time = 0; time < _max_length; time++) {
       size_t shift =
           time + (_applyDynamicShift ? _dynamicShiftCachedValues[time] : 0) +
@@ -1020,7 +1020,8 @@ void Template::check() {
     std::cout << "Failing sub-traces:\n";
     for (size_t i = 0; i < _max_length; i++) {
       if (evaluate(i) == Trinary::F) {
-          std::cout << "====================================" << "\n";
+        std::cout << "===================================="
+                  << "\n";
         size_t shift = 0;
         if (_applyDynamicShift) {
           evalAutomatonDyShift(i, _ant, shift);
@@ -1034,7 +1035,8 @@ void Template::check() {
         std::cout << "[" << i << "," << shift << "]"
                   << ")\n";
         std::cout << _trace->printTrace(i, (shift - i) + 1) << "\n";
-          std::cout << "====================================" << "\n";
+        std::cout << "===================================="
+                  << "\n";
       }
     }
   } else {
@@ -1086,7 +1088,6 @@ Hstring Template::getTemplateFormula() {
   return _templateFormula;
   ;
 }
-
 
 std::vector<Proposition *> Template::getLoadedPropositions() {
   std::vector<Proposition *> ret;

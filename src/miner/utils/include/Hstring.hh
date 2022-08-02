@@ -45,6 +45,9 @@ public:
   std::string toString(bool sub = false);
   std::string toSpotString();
 
+  std::vector<Hstring> getDTOperands();
+  static bool isDT(const Hstring &e);
+
   std::string _s;
   Stype _t;
   expression::Proposition **_pp;
@@ -54,3 +57,4 @@ public:
 private:
   std::vector<Hstring> _append;
 };
+  std::ostream & operator<<(std::ostream &os,const Hstring::Stype &t);

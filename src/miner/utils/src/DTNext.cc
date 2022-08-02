@@ -1,5 +1,5 @@
-#include "DTUtils.hh"
 #include "DTNext.hh"
+#include "DTUtils.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "message.hh"
@@ -67,10 +67,8 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
 
 void DTNext::generateFormulas() {
   // retrieve the consequent and the implication of the formula
-  std::string imp = _t->_templateFormula.getImp()._s;
   auto hcon = _t->_templateFormula.getCon();
   // remove unwanted spaces in the string representation of the implication
-  imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
 
   for (size_t i = 1; i < _limits._maxDepth; i++) {
     // we build on the previously generated antecedent
@@ -108,8 +106,8 @@ void DTNext::generateFormulas() {
       hant.insert(++((dth + 1).base()), newOperand);
     }
 
-    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant +
-                        Hstring(" " + imp + " ", Hstring::Stype::Imp) + hcon +
+    Hstring imp = _t->_templateFormula.getImp();
+    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant + imp + hcon +
                         Hstring(")", Hstring::Stype::G));
 
     // string to spot formula
@@ -263,17 +261,20 @@ void DTNext::popItem(int depth) {
     _currDepth = (_currDepth > 0 ? _currDepth - 1 : _currDepth);
   } else {
     (*_t->_tokenToProp[_tokens[depth]]) = _tc;
+    //we need to adjust the depth of the operator in order to avoid unnecessery gaps, ex. {true ##1 true ##1 var1}->con is reduced to {var1}->con
     if ((size_t)depth == _currDepth) {
       while (_currDepth > 0 &&
              (*_t->_tokenToProp.at(_tokens[_currDepth])) == _tc) {
         _currDepth--;
       }
     }
+    //select the correct template for the current depth
     _t->_ant = _ant[_currDepth];
     _t->_templateFormula = _formulas[_currDepth];
     _t->_antDepth = _antDepth[_currDepth];
   }
 
+  //update utility variables
   _choices.erase(depth);
   _order.pop_back();
   assert(_choices.size() == _order.size());
@@ -281,6 +282,7 @@ void DTNext::popItem(int depth) {
 void DTNext::addItem(Proposition *p, int depth) {
 
   if (depth == -1) {
+    //insert at the back
     if (!_choices.empty()) {
       _currDepth++;
     }
@@ -295,6 +297,7 @@ void DTNext::addItem(Proposition *p, int depth) {
     _choices[_currDepth] = p;
     _order.push_back(_currDepth);
   } else {
+    //insert at depth 'depth'
     _order.push_back(depth);
     if (_parallelDepth) {
       (*_t->_tokenToProp.at(_tokens[depth])) = p;
@@ -303,7 +306,7 @@ void DTNext::addItem(Proposition *p, int depth) {
       (*_t->_tokenToProp.at(_tokens[depth])) = p;
       _choices[depth] = p;
       if ((size_t)depth > _currDepth) {
-        // fill gap with tc
+        // fill gap with tc, if we are using an unordered operator, inserting an element can create 'gaps' in the template, ex. insertion at depth 3 {prop1 ##1 ? ##1 ?}|->con, we must replace ? with a true constant
         int tmp = _currDepth + 1;
         while (tmp < depth) {
           (*_t->_tokenToProp.at(_tokens[tmp++])) = _tc;
@@ -342,86 +345,59 @@ const DTLimits &DTNext::getLimits() { return _limits; }
 size_t DTNext::getCurrentDepth() { return _currDepth; }
 std::pair<std::string, std::string> DTNext::prettyPrint(bool offset) {
 
-  std::vector<Proposition *> original;
-  for (size_t i = 0; i <= _currDepth; i++) {
-    original.emplace_back(*_t->_tokenToProp.at(_tokens[i]));
-  }
-  auto solTemplate = _formulas[_currDepth];
+  std::vector<Hstring> dtOperators =
+      _formulas[_currDepth].getAnt().getDTOperands();
 
-  size_t dtIndex = _t->_applyDynamicShift ? 0 : _currDepth;
-  size_t comulativeShift = 0;
-  size_t lastCandidate = 0;
-  std::unordered_set<size_t> toDelete;
-  std::map<size_t, std::pair<Proposition *, size_t>> toUpdate;
+  messageErrorIf(dtOperators.empty(), "No operands in dt to pretty print");
 
-  // slide bw
-  for (int j = solTemplate.size() - 1; j >= 0; j--) {
-    if (solTemplate[j]._t == Hstring::Stype::DTNext) {
-      Proposition *p = *_t->_tokenToProp.at(_tokens[dtIndex]);
-      // base case
-      if (_t->_applyDynamicShift ? (dtIndex == 0) : (dtIndex == _currDepth)) {
-        toUpdate.insert(
-            {{dtIndex, std::pair(p, _currDepth == 0 ? 0 : _shift)}});
-        lastCandidate = dtIndex;
-        dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
-        continue;
-      }
-      if ((dtIndex <= _currDepth) &&
-          dynamic_cast<BooleanConstant *>(p) != nullptr) {
-        comulativeShift += _shift;
-        toDelete.insert(dtIndex);
-        //                          std::cout << "toD:" << prop2String(*p) <<
-        //                          "\n";
-      } else {
-        toUpdate.at(lastCandidate).second += comulativeShift;
-        //                   std::cout << "toU:" <<
-        //                   prop2String(*toUpdate.at(lastCandidate).first) <<
-        //                   "," << toUpdate.at(lastCandidate).second << "\n";
-        lastCandidate = dtIndex;
-        toUpdate.insert({{dtIndex, std::pair(p, solTemplate[j]._offset)}});
-        comulativeShift = 0;
-      }
-      dtIndex = _t->_applyDynamicShift ? dtIndex + 1 : dtIndex - 1;
+  std::vector<Hstring> reducedOperands;
+  //the first dto can never change
+  reducedOperands.emplace_back(dtOperators.front());
+
+  size_t shift = 0;
+  for (size_t i = 1; i < dtOperators.size() - 1; i++) {
+    Hstring &dto = dtOperators[i];
+    if (dynamic_cast<BooleanConstant *>(*dto._pp) == nullptr) {
+      //shifted operand
+      dto._offset += shift;
+      reducedOperands.emplace_back(dto);
+      shift = 0;
+    } else {
+      //simplify true constant
+      shift += dto._offset;
     }
   }
-  if (toDelete.count(_t->_applyDynamicShift ? dtIndex - 1 : dtIndex + 1)) {
-    toUpdate.at(lastCandidate).second += (comulativeShift - _shift);
+  //handle last dto, unless I've already done that (front, only one element)
+  if (dtOperators.size() > 1) {
+    auto last = dtOperators.back();
+    last._offset += shift;
+    reducedOperands.emplace_back(last);
   }
 
-  //       std::cout << "-------toU:" <<
-  //       prop2String(*toUpdate.at(lastCandidate).first) << "," <<
-  //       toUpdate.at(lastCandidate).second << "\n";
-
-  auto reducedTemplate = _formulas[_currDepth - toDelete.size()];
-
-  for (int j = reducedTemplate.size() - 1; j >= 0; j--) {
-    if (reducedTemplate[j]._t == Hstring::Stype::DTNext) {
-      size_t adjustedIndex = _t->_applyDynamicShift ? toUpdate.begin()->first
-                                                    : toUpdate.rbegin()->first;
-      reducedTemplate[j]._offset = toUpdate.at(adjustedIndex).second;
-      (*reducedTemplate[j]._pp) = toUpdate.at(adjustedIndex).first;
-      toUpdate.erase(adjustedIndex);
+  //prepare the canvas template
+  auto reducedTemplateAnt = _formulas[reducedOperands.size() - 1].getAnt();
+  auto imp = _formulas[reducedOperands.size() - 1].getImp();
+  auto con = _formulas[reducedOperands.size() - 1].getCon();
+  size_t rIndex = 0;
+  //paint the canvas
+  for (auto &e : reducedTemplateAnt) {
+    if (Hstring::isDT(e)) {
+      e = reducedOperands[rIndex++];
     }
   }
 
   if (offset) {
-    for (int j = reducedTemplate.size() - 1; j >= 0; j--) {
-      if (reducedTemplate[j]._t == Hstring::Stype::Imp) {
-        reducedTemplate.insert(reducedTemplate.begin() + j + 1,
-                               Hstring("!(", Hstring::Stype::Temp, nullptr));
-        reducedTemplate.insert(reducedTemplate.end() - 1,
-                               Hstring(")", Hstring::Stype::Temp, nullptr));
-        break;
-      }
-    }
+    //negate the consequent
+    con = Hstring("!(", Hstring::Stype::Temp, nullptr) + con +
+          Hstring(")", Hstring::Stype::Temp, nullptr);
   }
-  auto ret = std::make_pair(reducedTemplate.toString(1),
-                            reducedTemplate.toColoredString(1));
 
-  for (size_t i = 0; i < original.size(); i++) {
-    (*_t->_tokenToProp.at(_tokens[i])) = original[i];
-  }
-  return ret;
+  //compose the reduced template
+  auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + reducedTemplateAnt +
+                         imp + con + Hstring(")", Hstring::Stype::G);
+
+  return std::make_pair(reducedTemplate.toString(1),
+                        reducedTemplate.toColoredString(1));
 }
 
 std::vector<Proposition *> DTNext::unpack() {
