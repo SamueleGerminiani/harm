@@ -2,6 +2,8 @@
 
 #include <string>
 
+  /** \brief Get the string representation of the HARM icon
+   */
 inline std::string getIcon() {
   return 
          "[38;5;015m [38;5;015m [38;5;015m [38;5;015m [38;5;015m "

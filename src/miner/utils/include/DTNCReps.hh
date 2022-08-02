@@ -3,6 +3,9 @@
 #include "DTOperator.hh"
 
 namespace harm {
+/*! \class DTNext
+    \brief Decision tree operator class for ..[->N]@;.., see base class for the description of the methods
+*/
 class DTNCReps : public DTOperator {
 public:
   DTNCReps(BooleanConstant *p, size_t shift, Template *t,

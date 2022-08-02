@@ -282,20 +282,20 @@ double Qualifier::evaluate(Assertion &a, Metric &m) {
   for (auto &v : m._vars) {
     if (v == "atct") {
       m.assign(v, a._ct[0][0]);
-    } else if (v == "afct") {
-      m.assign(v, a._ct[1][0]);
-    } else if (v == "auct") {
-      m.assign(v, a._ct[2][0]);
     } else if (v == "atcf") {
       m.assign(v, a._ct[0][1]);
-    } else if (v == "afcf") {
-      m.assign(v, a._ct[1][1]);
-    } else if (v == "aucf") {
-      m.assign(v, a._ct[2][1]);
     } else if (v == "atcu") {
       m.assign(v, a._ct[0][2]);
+    } else if (v == "afct") {
+      m.assign(v, a._ct[1][0]);
+    } else if (v == "afcf") {
+      m.assign(v, a._ct[1][1]);
     } else if (v == "afcu") {
       m.assign(v, a._ct[1][2]);
+    } else if (v == "auct") {
+      m.assign(v, a._ct[2][0]);
+    } else if (v == "aucf") {
+      m.assign(v, a._ct[2][1]);
     } else if (v == "aucu") {
       m.assign(v, a._ct[2][2]);
     } else if (v == "traceLength") {

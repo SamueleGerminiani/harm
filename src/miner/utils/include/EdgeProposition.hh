@@ -2,6 +2,9 @@
 
 #include "exp.hh"
 
+/*! \class DTOperator
+    \brief Class representing an edge of Automaton
+*/
 class EdgeProposition {
 public:
   virtual bool evaluate(size_t time) = 0;

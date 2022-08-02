@@ -2,6 +2,9 @@
 #include "DTOperator.hh"
 
 namespace harm {
+/*! \class DTNextAnd
+    \brief Decision tree operator class for ..#N&.., see base class for the description of the methods
+*/
 class DTNextAnd : public DTOperator {
 public:
   DTNextAnd(size_t shift, Template *t, const DTLimits &limits);

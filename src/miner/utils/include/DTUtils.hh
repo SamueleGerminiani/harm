@@ -10,6 +10,8 @@
 #include <spot/twaalgos/postproc.hh>
 
 namespace harm {
+  /** \brief returns a vector of combinations, k permutations of n elements 
+   */
 inline void comb(int N, int K, std::vector<std::vector<size_t>> &ret) {
   std::string bitmask(K, 1); // K leading 1's
   bitmask.resize(N, 0);      // N-K trailing 0's
@@ -25,6 +27,8 @@ inline void comb(int N, int K, std::vector<std::vector<size_t>> &ret) {
   } while (std::prev_permutation(bitmask.begin(), bitmask.end()));
 }
 
+  /** \brief returns the first temporal element in the formula
+   */
 inline spot::formula selectFirstEvent(spot::formula f) {
   //  print_spin_ltl(std::cout, f, false) << '\n';
   if (f.is(spot::op::And) || f.is(spot::op::AndRat) || f.is(spot::op::AndNLM) ||
@@ -34,6 +38,8 @@ inline spot::formula selectFirstEvent(spot::formula f) {
     return selectFirstEvent(f[0]);
   }
 }
+  /** \brief returns true if token is the only element in formula f
+   */
 inline bool onlyToken(const std::string &token, spot::formula f) {
   //  print_spin_ltl(std::cout, f, false) << '\n';
   if (f.is(spot::op::ap)) {
@@ -47,6 +53,8 @@ inline bool onlyToken(const std::string &token, spot::formula f) {
     return true;
   }
 }
+  /** \brief returns true if token f does not have any previouse elements in the sequence
+   */
 inline bool nothingBefore(const std::string &token, spot::formula f) {
   //  print_spin_ltl(std::cout, f, false) << '\n';
   if (f.is(spot::op::And) || f.is(spot::op::AndRat) || f.is(spot::op::AndNLM) ||
@@ -64,6 +72,8 @@ inline bool nothingBefore(const std::string &token, spot::formula f) {
     return nothingBefore(token, f[0]);
   }
 }
+  /** \brief returns true if token f does not have any subsequent elements in the sequence
+   */
 inline bool nothingAfter(const std::string &token, spot::formula f) {
   //  print_spin_ltl(std::cout, f, false) << '\n';
   if (f.is(spot::op::And) || f.is(spot::op::AndRat) || f.is(spot::op::AndNLM) ||

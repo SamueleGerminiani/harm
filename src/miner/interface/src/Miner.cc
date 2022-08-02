@@ -40,10 +40,7 @@ void Miner::run() {
   Trace *trace = _config.traceReader->readTrace();
   hs::traceLength = trace->getLength();
 
-  ////--------------------------------------------------------------------------
-
-  //==== step 2) Define context of influences
-  //===================================
+  //==== step 2) Define contexts
   messageErrorIf(_config.contextMiner == nullptr,
                  "ContextMiner module has not been set!");
   _config.contextMiner->mineContexts(trace, contexts);
@@ -81,8 +78,6 @@ void Miner::run() {
     hs::timeToMine_ms +=
         std::chrono::duration_cast<std::chrono::milliseconds>(end - begin)
             .count();
-
-    //----------------------------------------------------------------------
 
     //==== step 4) Qualify the mined temporal assertions
     if (_config.propertyQualifier == nullptr)

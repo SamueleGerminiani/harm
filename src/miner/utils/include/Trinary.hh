@@ -3,6 +3,9 @@
 #include "colors.hh"
 #include <iostream>
 
+/** @enum Trinay
+ *  @brief Used to store the truth values of an assertion on the trace
+ */
 enum class Trinary { F = 0, T, U };
 
 inline std::ostream &operator<<(std::ostream &os, Trinary t) {
@@ -19,6 +22,8 @@ inline std::ostream &operator<<(std::ostream &os, Trinary t) {
   }
   return os;
 }
+
+//Boolean logic with Trinary operators
 
 inline Trinary operator!(Trinary t) {
   return (t == Trinary::U) ? Trinary::U

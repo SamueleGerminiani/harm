@@ -8,6 +8,9 @@
 
 namespace harm {
 class Template;
+
+  /** \brief To print a ClsOp
+   */
 std::ostream & operator<<(std::ostream &os,ClsOp op) ;
 
 

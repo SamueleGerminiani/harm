@@ -22,6 +22,9 @@ namespace harm {
 
 using Matrix = std::vector<std::vector<size_t>>;
 using Row = std::vector<size_t>;
+/*! \class PermGenerator
+    \brief Class to generate permutations of proposition for the placeholders
+*/
 class PermGenerator {
 
 public:
