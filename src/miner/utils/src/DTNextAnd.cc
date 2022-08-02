@@ -416,7 +416,7 @@ std::pair<std::string, std::string> DTNextAnd::prettyPrint(bool offset) {
   size_t shift = 0;
   for (size_t i = 1; i < dtOperators.size() - 1; i++) {
     Hstring &dto = dtOperators[i];
-    if (dynamic_cast<PropositionAnd *>(*dto._pp)->empty()) {
+    if (!dynamic_cast<PropositionAnd *>(*dto._pp)->empty()) {
       //shifted operand
       dto._offset += shift;
       reducedOperands.emplace_back(dto);
