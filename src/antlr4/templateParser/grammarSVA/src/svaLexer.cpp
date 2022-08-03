@@ -2,7 +2,7 @@
 // Generated from sva.g4 by ANTLR 4.10.1
 
 
-#include "temporalSVALexer.h"
+#include "svaLexer.h"
 
 
 using namespace antlr4;
@@ -13,8 +13,8 @@ using namespace antlr4;
 
 namespace {
 
-struct TemporalSVALexerStaticData final {
-  TemporalSVALexerStaticData(std::vector<std::string> ruleNames,
+struct SvaLexerStaticData final {
+  SvaLexerStaticData(std::vector<std::string> ruleNames,
                           std::vector<std::string> channelNames,
                           std::vector<std::string> modeNames,
                           std::vector<std::string> literalNames,
@@ -24,10 +24,10 @@ struct TemporalSVALexerStaticData final {
         symbolicNames(std::move(symbolicNames)),
         vocabulary(this->literalNames, this->symbolicNames) {}
 
-  TemporalSVALexerStaticData(const TemporalSVALexerStaticData&) = delete;
-  TemporalSVALexerStaticData(TemporalSVALexerStaticData&&) = delete;
-  TemporalSVALexerStaticData& operator=(const TemporalSVALexerStaticData&) = delete;
-  TemporalSVALexerStaticData& operator=(TemporalSVALexerStaticData&&) = delete;
+  SvaLexerStaticData(const SvaLexerStaticData&) = delete;
+  SvaLexerStaticData(SvaLexerStaticData&&) = delete;
+  SvaLexerStaticData& operator=(const SvaLexerStaticData&) = delete;
+  SvaLexerStaticData& operator=(SvaLexerStaticData&&) = delete;
 
   std::vector<antlr4::dfa::DFA> decisionToDFA;
   antlr4::atn::PredictionContextCache sharedContextCache;
@@ -41,12 +41,12 @@ struct TemporalSVALexerStaticData final {
   std::unique_ptr<antlr4::atn::ATN> atn;
 };
 
-std::once_flag temporalsvalexerLexerOnceFlag;
-TemporalSVALexerStaticData *temporalsvalexerLexerStaticData = nullptr;
+std::once_flag svalexerLexerOnceFlag;
+SvaLexerStaticData *svalexerLexerStaticData = nullptr;
 
-void temporalsvalexerLexerInitialize() {
-  assert(temporalsvalexerLexerStaticData == nullptr);
-  auto staticData = std::make_unique<TemporalSVALexerStaticData>(
+void svalexerLexerInitialize() {
+  assert(svalexerLexerStaticData == nullptr);
+  auto staticData = std::make_unique<SvaLexerStaticData>(
     std::vector<std::string>{
       "T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
       "DT_AND", "SEP", "EVENTUALLY", "ALWAYS", "NEXT", "UNTIL", "RELEASE", 
@@ -238,51 +238,51 @@ void temporalsvalexerLexerInitialize() {
   for (size_t i = 0; i < count; i++) { 
     staticData->decisionToDFA.emplace_back(staticData->atn->getDecisionState(i), i);
   }
-  temporalsvalexerLexerStaticData = staticData.release();
+  svalexerLexerStaticData = staticData.release();
 }
 
 }
 
-temporalSVALexer::temporalSVALexer(CharStream *input) : Lexer(input) {
-  temporalSVALexer::initialize();
-  _interpreter = new atn::LexerATNSimulator(this, *temporalsvalexerLexerStaticData->atn, temporalsvalexerLexerStaticData->decisionToDFA, temporalsvalexerLexerStaticData->sharedContextCache);
+svaLexer::svaLexer(CharStream *input) : Lexer(input) {
+  svaLexer::initialize();
+  _interpreter = new atn::LexerATNSimulator(this, *svalexerLexerStaticData->atn, svalexerLexerStaticData->decisionToDFA, svalexerLexerStaticData->sharedContextCache);
 }
 
-temporalSVALexer::~temporalSVALexer() {
+svaLexer::~svaLexer() {
   delete _interpreter;
 }
 
-std::string temporalSVALexer::getGrammarFileName() const {
+std::string svaLexer::getGrammarFileName() const {
   return "sva.g4";
 }
 
-const std::vector<std::string>& temporalSVALexer::getRuleNames() const {
-  return temporalsvalexerLexerStaticData->ruleNames;
+const std::vector<std::string>& svaLexer::getRuleNames() const {
+  return svalexerLexerStaticData->ruleNames;
 }
 
-const std::vector<std::string>& temporalSVALexer::getChannelNames() const {
-  return temporalsvalexerLexerStaticData->channelNames;
+const std::vector<std::string>& svaLexer::getChannelNames() const {
+  return svalexerLexerStaticData->channelNames;
 }
 
-const std::vector<std::string>& temporalSVALexer::getModeNames() const {
-  return temporalsvalexerLexerStaticData->modeNames;
+const std::vector<std::string>& svaLexer::getModeNames() const {
+  return svalexerLexerStaticData->modeNames;
 }
 
-const dfa::Vocabulary& temporalSVALexer::getVocabulary() const {
-  return temporalsvalexerLexerStaticData->vocabulary;
+const dfa::Vocabulary& svaLexer::getVocabulary() const {
+  return svalexerLexerStaticData->vocabulary;
 }
 
-antlr4::atn::SerializedATNView temporalSVALexer::getSerializedATN() const {
-  return temporalsvalexerLexerStaticData->serializedATN;
+antlr4::atn::SerializedATNView svaLexer::getSerializedATN() const {
+  return svalexerLexerStaticData->serializedATN;
 }
 
-const atn::ATN& temporalSVALexer::getATN() const {
-  return *temporalsvalexerLexerStaticData->atn;
+const atn::ATN& svaLexer::getATN() const {
+  return *svalexerLexerStaticData->atn;
 }
 
 
 
 
-void temporalSVALexer::initialize() {
-  std::call_once(temporalsvalexerLexerOnceFlag, temporalsvalexerLexerInitialize);
+void svaLexer::initialize() {
+  std::call_once(svalexerLexerOnceFlag, svalexerLexerInitialize);
 }

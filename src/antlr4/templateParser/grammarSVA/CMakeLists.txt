@@ -9,10 +9,10 @@ SET(NAME antlr4SVAParserGrammar)
 # Sources.
 #############################################
 SET (ANTLR4_SVA_PARSER_GRAMMAR
-     src/temporalSVALexer.cpp
-     src/temporalSVAParser.cpp
-     src/temporalSVAListener.cpp
-     src/temporalSVABaseListener.cpp
+     src/svaLexer.cpp
+     src/svaParser.cpp
+     src/svaListener.cpp
+     src/svaBaseListener.cpp
      )
 
  set_source_files_properties(

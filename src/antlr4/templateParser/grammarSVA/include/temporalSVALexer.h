@@ -1,112 +1,58 @@
 
-// Generated from temporalSVA.g4 by ANTLR 4.9.2
+// Generated from sva.g4 by ANTLR 4.10.1
 
 #pragma once
 
+
 #include "antlr4-runtime.h"
 
-class temporalSVALexer : public antlr4::Lexer {
+
+
+
+class  temporalSVALexer : public antlr4::Lexer {
 public:
   enum {
-    T__0 = 1,
-    T__1 = 2,
-    T__2 = 3,
-    T__3 = 4,
-    T__4 = 5,
-    T__5 = 6,
-    T__6 = 7,
-    T__7 = 8,
-    T__8 = 9,
-    DT_AND = 10,
-    SEP = 11,
-    EVENTUALLY = 12,
-    ALWAYS = 13,
-    NEXT = 14,
-    UNTIL = 15,
-    RELEASE = 16,
-    DOTS = 17,
-    IMPL = 18,
-    IMPL2 = 19,
-    IFF = 20,
-    XOR = 21,
-    BIND1 = 22,
-    BIND2 = 23,
-    ASS = 24,
-    DELAY = 25,
-    SCOL = 26,
-    COL = 27,
-    FIRST_MATCH = 28,
-    SIGN = 29,
-    LGPAREN = 30,
-    RGPAREN = 31,
-    LCPAREN = 32,
-    RCPAREN = 33,
-    LPAREN = 34,
-    RPAREN = 35,
-    VARIABLE = 36,
-    INDEX = 37,
-    NUMERIC = 38,
-    VERILOG_BINARY = 39,
-    GCC_BINARY = 40,
-    HEX = 41,
-    BOOLEAN = 42,
-    PLUS = 43,
-    MINUS = 44,
-    TIMES = 45,
-    DIV = 46,
-    GT = 47,
-    GE = 48,
-    LT = 49,
-    LE = 50,
-    EQ = 51,
-    NEQ = 52,
-    BAND = 53,
-    BOR = 54,
-    BXOR = 55,
-    NEG = 56,
-    LSHIFT = 57,
-    RSHIFT = 58,
-    AND = 59,
-    OR = 60,
-    NOT = 61,
-    WS = 62
+    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
+    T__7 = 8, T__8 = 9, DT_AND = 10, SEP = 11, EVENTUALLY = 12, ALWAYS = 13, 
+    NEXT = 14, UNTIL = 15, RELEASE = 16, DOTS = 17, IMPL = 18, IMPL2 = 19, 
+    IFF = 20, XOR = 21, BIND1 = 22, BIND2 = 23, ASS = 24, DELAY = 25, SCOL = 26, 
+    COL = 27, FIRST_MATCH = 28, SIGN = 29, LGPAREN = 30, RGPAREN = 31, LCPAREN = 32, 
+    RCPAREN = 33, LPAREN = 34, RPAREN = 35, VARIABLE = 36, NUMERIC = 37, 
+    VERILOG_BINARY = 38, GCC_BINARY = 39, HEX = 40, BOOLEAN = 41, PLUS = 42, 
+    MINUS = 43, TIMES = 44, DIV = 45, GT = 46, GE = 47, LT = 48, LE = 49, 
+    EQ = 50, NEQ = 51, BAND = 52, BOR = 53, BXOR = 54, NEG = 55, LSHIFT = 56, 
+    RSHIFT = 57, AND = 58, OR = 59, NOT = 60, WS = 61
   };
 
   explicit temporalSVALexer(antlr4::CharStream *input);
-  ~temporalSVALexer();
 
-  virtual std::string getGrammarFileName() const override;
-  virtual const std::vector<std::string> &getRuleNames() const override;
+  ~temporalSVALexer() override;
 
-  virtual const std::vector<std::string> &getChannelNames() const override;
-  virtual const std::vector<std::string> &getModeNames() const override;
-  virtual const std::vector<std::string> &
-  getTokenNames() const override; // deprecated, use vocabulary instead
-  virtual antlr4::dfa::Vocabulary &getVocabulary() const override;
 
-  virtual const std::vector<uint16_t> getSerializedATN() const override;
-  virtual const antlr4::atn::ATN &getATN() const override;
+  std::string getGrammarFileName() const override;
+
+  const std::vector<std::string>& getRuleNames() const override;
+
+  const std::vector<std::string>& getChannelNames() const override;
+
+  const std::vector<std::string>& getModeNames() const override;
+
+  const antlr4::dfa::Vocabulary& getVocabulary() const override;
+
+  antlr4::atn::SerializedATNView getSerializedATN() const override;
+
+  const antlr4::atn::ATN& getATN() const override;
+
+  // By default the static state used to implement the lexer is lazily initialized during the first
+  // call to the constructor. You can call this function if you wish to initialize the static state
+  // ahead of time.
+  static void initialize();
 
 private:
-  static std::vector<antlr4::dfa::DFA> _decisionToDFA;
-  static antlr4::atn::PredictionContextCache _sharedContextCache;
-  static std::vector<std::string> _ruleNames;
-  static std::vector<std::string> _tokenNames;
-  static std::vector<std::string> _channelNames;
-  static std::vector<std::string> _modeNames;
-
-  static std::vector<std::string> _literalNames;
-  static std::vector<std::string> _symbolicNames;
-  static antlr4::dfa::Vocabulary _vocabulary;
-  static antlr4::atn::ATN _atn;
-  static std::vector<uint16_t> _serializedATN;
 
   // Individual action functions triggered by action() above.
 
   // Individual semantic predicate functions triggered by sempred() above.
 
-  struct Initializer {
-    Initializer();
-  };
-  static Initializer _init;
 };
+

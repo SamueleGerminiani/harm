@@ -3,6 +3,7 @@
 #include "commandLineParser.hh"
 #include "globals.hh"
 #include "varEstimator.hh"
+#include "csv.hpp"
 #include <filesystem>
 #include <random>
 
@@ -39,11 +40,19 @@ int main(int arg, char *argv[]) {
         assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
 
     std::unordered_map<std::string, std::vector<Template *>> varToAss;
+    std::unordered_map<std::string, size_t> varToSize;
     if (clc::ve_oo && !clc::faultyTraceFiles.empty()) {
-      auto vars = trace->getVariables();
-      for (auto &v : vars) {
-        varToAss[v.getName()] = assertions;
-      }
+      //auto vars = trace->getVariables();
+        csv::CSVReader reader(clc::vars);
+        csv::CSVRow row;
+        std::vector<std::string> vars;
+        while (reader.read_row(row)) {
+//        std::cout << row[1].get() <<" "<<row[2].get()<< "\n";
+            varToAss[row[1].get()] = assertions;
+            varToSize[row[1].get()] = std::stoul(row[2].get());
+
+        }
+
     } else {
       varToAss = discardAssertionsGroupBy(assertions, clc::ve_inAnt ? 0 : 1);
     }
@@ -51,7 +60,7 @@ int main(int arg, char *argv[]) {
     if (clc::faultyTraceFiles.empty()) {
       getDiff(varToDiff, varToAss, trace, clc::ve_inAnt ? 0 : 1);
     } else {
-      getDiffFT(varToDiff, varToAss, trace);
+      getDiffFT(varToDiff,varToSize, varToAss, trace);
     }
 
     // delete processed assertions
@@ -85,6 +94,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
       }
     }
     messageErrorIf(clc::faultyTraceFiles.empty(), "No ft found!");
+  }
+  if (result.count("vars")) {
+    clc::vars = result["vars"].as<std::string>();
   }
   if (result.count("oo")) {
     clc::ve_oo = 1;

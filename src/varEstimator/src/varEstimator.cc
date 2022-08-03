@@ -33,6 +33,7 @@ std::string ve_assPath = "";
 std::string ve_technique = "";
 std::string ve_tracePath = "";
 std::string ftPath = "";
+std::string vars = "";
 bool ve_consecutive = 0;
 bool ve_inAnt = 0;
 bool ve_oo = 0;
@@ -298,14 +299,15 @@ inline void fillUtilityVars(
 }
 void getDiffFT(
     std::unordered_map<std::string, Diff> &varToDiff,
+    std::unordered_map<std::string, size_t> &varToSize,
     std::unordered_map<std::string, std::vector<Template *>> &varToAss,
     Trace *trace) {
 
-  std::unordered_map<std::string, size_t> varToSize;
-  // get the size of all variables
-  for (auto &vaa : varToAss) {
-    varToSize[vaa.first] = trace->getVarSize(vaa.first);
-  }
+//  std::unordered_map<std::string, size_t> varToSize;
+//  // get the size of all variables
+//  for (auto &vaa : varToAss) {
+//    varToSize[vaa.first] = trace->getVarSize(vaa.first);
+//  }
 
   progresscpp::ParallelProgressBar pb;
 #if enPB_ve

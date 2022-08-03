@@ -1,4 +1,4 @@
-grammar temporalSVA;
+grammar sva;
 import proposition;
 
 file : ALWAYS formula EOF

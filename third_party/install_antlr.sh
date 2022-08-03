@@ -18,13 +18,11 @@ else
 fi
 
 
-mkdir antlr4_tmp
-cd antlr4_tmp
-wget --no-check-certificate https://www.antlr.org/download/antlr4-cpp-runtime-4.9.3-source.zip
-unzip antlr4-cpp-runtime-4.9.3-source.zip
+git clone https://github.com/antlr/antlr4 --depth 1 antlr4_tmp
+cd antlr4_tmp/runtime/Cpp
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX="$installPrefix" -DCMAKE_CXX_STANDARD=17 ..
 make -j"$NThreads"
 make install
-cd ../../
+cd ../../../../
 rm -rf antlr4_tmp

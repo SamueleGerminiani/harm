@@ -10,6 +10,7 @@ extern std::string ve_assPath;
 extern std::string ve_technique;
 extern std::string ve_tracePath;
 extern std::string ftPath;
+extern std::string vars;
 extern bool ve_consecutive;
 extern bool ve_inAnt;
 extern size_t ve_sa;
@@ -41,10 +42,15 @@ void getDiff(
     std::unordered_map<std::string, Diff> &varToDiff,
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
     harm::Trace *trace, int where);
+
+
 void getDiffFT(
     std::unordered_map<std::string, Diff> &varToDiff,
+    std::unordered_map<std::string, size_t> &varToSize,
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
     harm::Trace *trace) ;
+
+
 void findFaultCoverageOnTrace(
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
     harm::Trace *trace, const std::unordered_set<std::string> outVars,
