@@ -86,8 +86,8 @@ public:
 };
 
 TEST_F(NextAndTest, t1) {
-  clc::configFile = "./gTestsTB/nextAnd/nextAnd_t1.xml";
-  clc::traceFiles.push_back("./gTestsTB/nextAnd/nextAnd_t1.csv");
+  clc::configFile = "../tests/gTestsTB/nextAnd/nextAnd_t1.xml";
+  clc::traceFiles.push_back("../tests/gTestsTB/nextAnd/nextAnd_t1.csv");
   clc::parserType = "csv";
   mineProperties();
   Context *c = _contexts[0];
@@ -97,8 +97,8 @@ TEST_F(NextAndTest, t1) {
 }
 
 TEST_F(NextAndTest, t2) {
-  clc::configFile = "./gTestsTB/nextAnd/nextAnd_t2.xml";
-  clc::traceFiles.push_back("./gTestsTB/nextAnd/nextAnd_t2.vcd");
+  clc::configFile = "../tests/gTestsTB/nextAnd/nextAnd_t2.xml";
+  clc::traceFiles.push_back("../tests/gTestsTB/nextAnd/nextAnd_t2.vcd");
   clc::parserType = "vcd";
   clc::clk = "wb_clk";
   mineProperties();
@@ -107,11 +107,11 @@ TEST_F(NextAndTest, t2) {
 }
 
 TEST_F(NextAndTest, t3) {
-  clc::configFile = "./gTestsTB/nextAnd/nextAnd_t3.xml";
-  clc::traceFiles.push_back("./gTestsTB/nextAnd/nextAnd_t3.vcd");
+  clc::configFile = "../tests/gTestsTB/nextAnd/nextAnd_t3.xml";
+  clc::traceFiles.push_back("../tests/gTestsTB/nextAnd/nextAnd_t3.vcd");
 
   for (const auto &entry : std::filesystem::directory_iterator(
-           "./gTestsTB/nextAnd/nextAnd_t3_fd")) {
+           "../tests/gTestsTB/nextAnd/nextAnd_t3_fd")) {
     if (entry.path().extension() == ".vcd") {
       clc::faultyTraceFiles.push_back(entry.path().u8string());
     }
@@ -131,8 +131,8 @@ TEST_F(NextAndTest, t3) {
 }
 
 TEST_F(NextAndTest, t5) {
-  clc::configFile = "./gTestsTB/nextAnd/nextAnd_t5.xml";
-  clc::traceFiles.push_back("./gTestsTB/nextAnd/nextAnd_t5.vcd");
+  clc::configFile = "../tests/gTestsTB/nextAnd/nextAnd_t5.xml";
+  clc::traceFiles.push_back("../tests/gTestsTB/nextAnd/nextAnd_t5.vcd");
 
   clc::parserType = "vcd";
   clc::clk = "wb_clk";
@@ -199,7 +199,7 @@ public:
 };
 
 TEST_F(ParserTest, t1) {
-  clc::traceFiles.push_back("./gTestsTB/parser/trace.csv");
+  clc::traceFiles.push_back("../tests/gTestsTB/parser/trace.csv");
 
   clc::parserType = "csv";
   if (clc::parserType == "csv") {
@@ -254,7 +254,7 @@ public:
 };
 
 TEST_F(StuckAtTest, t1) {
-  clc::traceFiles.push_back("./vendingMachine/vendingMachine.vcd");
+  clc::traceFiles.push_back("../tests/vendingMachine/vendingMachine.vcd");
 
   clc::parserType = "vcd";
   clc::clk = "clk";

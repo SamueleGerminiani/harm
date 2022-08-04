@@ -1,6 +1,7 @@
 #include "PropertyMiner.hh"
 namespace harm {
 
-PropertyMiner::PropertyMiner() { }
+//FIXME: do we still need this?
+PropertyMiner::PropertyMiner() {}
 
 } // namespace harm

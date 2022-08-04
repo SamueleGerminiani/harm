@@ -8,20 +8,20 @@
 
 namespace harm {
 
-Miner::Config_t::Config_t()
+Miner::ModulesConfig::ModulesConfig()
     : contextMiner(nullptr), propertyMiner(nullptr),
       propertyQualifier(nullptr) {
   // ntd
 }
 
-Miner::Config_t::~Config_t() {
+Miner::ModulesConfig::~ModulesConfig() {
   delete contextMiner;
   delete traceReader;
   delete propertyMiner;
   delete propertyQualifier;
 }
 
-Miner::Miner(Config_t &configuration) : _config(configuration) {
+Miner::Miner(ModulesConfig &configuration) : _config(configuration) {
   // ntd
 }
 
@@ -32,15 +32,14 @@ void Miner::run() {
 
   std::vector<Context *> contexts;
 
-  //==== step 1) Read simulation traces
-  //======================================
+  //1) Read the simulation traces
   messageErrorIf(_config.traceReader == nullptr,
                  "Trace reader module has not been set!");
 
   Trace *trace = _config.traceReader->readTrace();
   hs::traceLength = trace->getLength();
 
-  //==== step 2) Define contexts
+  //2) Read the contexts
   messageErrorIf(_config.contextMiner == nullptr,
                  "ContextMiner module has not been set!");
   _config.contextMiner->mineContexts(trace, contexts);
@@ -66,31 +65,30 @@ void Miner::run() {
     std::chrono::steady_clock::time_point begin =
         std::chrono::steady_clock::now();
 
-    //==== step 3) Mine temporal assertions
-    if (_config.propertyMiner == nullptr)
-      messageWarning("No propertyMiner module has been set");
-    else
-      _config.propertyMiner->mineProperties(*context, trace);
+    messageErrorIf(_config.propertyMiner == nullptr,
+                   "No propertyMiner module has been set");
 
-    // store the time to mine this context
+    //3) Mine temporal assertions
+    _config.propertyMiner->mineProperties(*context, trace);
+
+    // store the time to mine of this context
     std::chrono::steady_clock::time_point end =
         std::chrono::steady_clock::now();
     hs::timeToMine_ms +=
         std::chrono::duration_cast<std::chrono::milliseconds>(end - begin)
             .count();
 
-    //==== step 4) Qualify the mined temporal assertions
-    if (_config.propertyQualifier == nullptr)
-      messageWarning("No propertyQualifier module has been set");
-    else
-      _config.propertyQualifier->qualify(*context, trace);
+    messageErrorIf(_config.propertyQualifier == nullptr,
+                   "No propertyQualifier module has been set");
+
+    //4) Qualify the mined temporal assertions (additionally print and dump)
+    _config.propertyQualifier->qualify(*context, trace);
 
     for (Template *t : toCheck) {
       t->check();
     }
     delete context;
   }
-  //----------------------------------------------------------------------
 
   delete trace;
 
@@ -143,9 +141,8 @@ void Miner::printStats() {
 void Miner::_printWelcomeMessage() {
   std::cout << getIcon() << "\n";
 
-
   //FIXME should we keep this?
- 
+
   //  std::string shift = "                             ";
   //
   //  std::cout << shift << "╭╮╱╭┳━━━┳━━━┳━╮╭━╮"

@@ -3,21 +3,19 @@
 #include "modules.hh"
 
 namespace harm {
-/// @brief Miner declaration.
-/// This class represents an assertion miner.
+/// \class Miner
+/// \brief This class contains a collection of modules implementing the functionaltiies of an assertion miner.
 class Miner {
 
 public:
-  /// @brief Config_t declaration.
-  /// This class collects a trace reader, a static analyser, a proposition
-  /// miner, an assertion miner and an assetions printer
-
-  struct Config_t {
+  /// \struct ModulesConfig
+  /// This class collects a trace reader, a context miner and a property miner
+  struct ModulesConfig {
     /// @brief Constructor.
-    Config_t();
+    ModulesConfig();
 
     /// @brief Destructor.
-    ~Config_t();
+    ~ModulesConfig();
 
     /// a pointer to a trace reader
     TraceReader *traceReader;
@@ -29,21 +27,24 @@ public:
     PropertyQualifier *propertyQualifier;
 
     /// @brief Unsupported constructor.
-    Config_t(const Config_t &) = delete;
+    ModulesConfig(const ModulesConfig &) = delete;
 
     /// @brief Unsupported operator
-    Config_t &operator=(const Config_t &) = delete;
+    ModulesConfig &operator=(const ModulesConfig &) = delete;
   };
 
-  explicit Miner(Config_t &configuration);
+  explicit Miner(ModulesConfig &configuration);
   ~Miner() = default;
 
+  /// run the miner
   void run();
 
 private:
-  Config_t &_config;
+  ModulesConfig &_config;
 
+  /// @brief Print the statistics of mining (stored in the hs:: namespace)
   void printStats();
+  /// @brief Print a message before executin the mining
   void _printWelcomeMessage();
 };
 

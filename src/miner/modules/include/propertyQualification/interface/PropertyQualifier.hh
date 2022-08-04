@@ -14,9 +14,9 @@ class PropertyQualifier {
     virtual ~PropertyQualifier() = default;
 
     /// @brief An implementation of this module qualify the assertions of
-    /// a context of the influence.
+    /// a context and return the ranked assertions.
     /// @param context A context of influence
-    virtual void qualify(Context &context,Trace *trace) = 0;
+    virtual std::vector<Assertion *> qualify(Context &context,Trace *trace) = 0;
 
     /// @brief Unsupported constructor.
     PropertyQualifier(const PropertyQualifier &other) = delete;

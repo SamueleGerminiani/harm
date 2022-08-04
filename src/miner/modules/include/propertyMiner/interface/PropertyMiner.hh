@@ -15,12 +15,9 @@ class PropertyMiner {
     virtual ~PropertyMiner() = default;
 
     /// @brief An implementation of this method analyzes the traces of a
-    /// TraceRepository to mine temporal assertions by combing temporal
-    /// operators with the propositions of a given context of influence.
-    /// @param context A context of influence.
-    /// @param traceRepository A repository of simulation traces.
+    /// Trace to mine Assertions
     virtual void mineProperties(Context &context,
-                                Trace *traceRepository) = 0;
+                                Trace *trace) = 0;
 
     /// @brief Unsupported constructor.
     PropertyMiner(const PropertyMiner &other) = delete;
@@ -30,11 +27,7 @@ class PropertyMiner {
 
   protected:
     /// @brief Constructor.
-    
     explicit PropertyMiner();
-
-    /// @brief The xml node containing the configuration
-    /// parameters for the module.
 
 };
 

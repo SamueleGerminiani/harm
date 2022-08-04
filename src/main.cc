@@ -29,7 +29,7 @@ int main(int arg, char *argv[]) {
   // FIXME
   //  signal(SIGINT, sigint_handler);
 
-  Miner::Config_t config;
+  Miner::ModulesConfig config;
 
   parseCommandLineArguments(arg, argv);
 

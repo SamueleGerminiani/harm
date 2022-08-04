@@ -46,25 +46,9 @@ namespace harm {
 
 using namespace expression;
 
-size_t findColoredImpPos(const std::string &ass) {
-  size_t pos = 0;
-  if ((pos = ass.find("[]->")) != std::string::npos) {
-    return pos + 9;
-  };
-  if ((pos = ass.find("[]=>")) != std::string::npos) {
-    return pos + 9;
-  };
-  if ((pos = ass.find("->")) != std::string::npos) {
-    return pos + 7;
-  };
-  if ((pos = ass.find("=>")) != std::string::npos) {
-    return pos + 7;
-  };
-  assert(0);
-  return 0;
-}
 Qualifier::Qualifier() : PropertyQualifier() {
 
+  //initialize the assertion's feature
   metrics::_availableVars.push_back(
       std::make_tuple("atct", VarType::ULogic, 32));
   metrics::_availableVars.push_back(
@@ -93,6 +77,7 @@ Qualifier::Qualifier() : PropertyQualifier() {
   loadParams();
 }
 void Qualifier::loadParams() {
+  //load the legal parameters for the interactive ranking
   _functionParams[1] = FunctionParameter(2.9937, 95.114);
   _functionParams[2] = FunctionParameter(3.3212, 52.431);
   _functionParams[3] = FunctionParameter(3.4217, 35.841);
@@ -157,6 +142,7 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
   std::vector<Assertion *> assertions;
   std::unordered_set<Assertion *> assP;
   std::unordered_set<std::string> keys;
+  //change data structer to allow constant access with id
   for (Assertion *ass : context._assertions) {
     assP.insert(ass);
   }
@@ -167,6 +153,7 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
   size_t discarded = 0;
 #endif
 
+  //discard assertions deemed 'equivalent'
   for (auto &ass : assP) {
 #if enPB
     pb.changeMessage(0, "Extracting unique assertions... " +
@@ -175,6 +162,7 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
     pb.display();
 #endif
 
+    //compress contingency table
     std::string cont =
         std::to_string(ass->_ct[0][0]) + std::to_string(ass->_ct[0][1]) +
         std::to_string(ass->_ct[0][2]) + std::to_string(ass->_ct[1][0]) +
@@ -190,8 +178,10 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
                                   c == '}' || c == '[' || c == ']';
                          }),
                assS.end());
+    //combine the string rep of an assertion with its contincency table to generate a key
     std::string key = cont + assS;
     if (!keys.count(key)) {
+      //add only if the key is unique
       assertions.push_back(ass);
       keys.insert(key);
     } else {
@@ -254,26 +244,28 @@ std::vector<Assertion *> Qualifier::extractUniqueAssertions(Context &context) {
 #endif
   return assertions;
 }
-void Qualifier::qualify(Context &context, Trace *trace) {
+
+std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
 
   _traceLength = trace->getLength();
-  std::vector<Assertion *> assertions = rankAssertions(context, trace);
-  hs::nAssertions += assertions.size();
+  std::vector<Assertion *> rankedAssertions = rankAssertions(context, trace);
+  hs::nAssertions += rankedAssertions.size();
 
   // print
-  if (!clc::dontPrintAss && !assertions.empty()) {
-    printAssertions(context, assertions, trace);
+  if (!clc::dontPrintAss && !rankedAssertions.empty()) {
+    printAssertions(context, rankedAssertions, trace);
   }
 
   // fault-based qualification
   if (!clc::faultyTraceFiles.empty() || clc::ftmFile != "") {
-    faultBasedQualification(assertions, trace);
+    faultBasedQualification(rankedAssertions, trace);
   }
 
   // dump to file
   if (clc::dumpAssToFile) {
-    dumpAssToFile(context, trace, assertions);
+    dumpAssToFile(context, trace, rankedAssertions);
   }
+  return rankedAssertions;
 }
 
 double Qualifier::evaluate(Assertion &a, Metric &m) {
@@ -437,6 +429,7 @@ void Qualifier::sortAssertions(Context &context, Trace *trace,
               return left->_finalScore > right->_finalScore;
             });
 }
+
 void Qualifier::printAssertions(Context &context,
                                 std::vector<Assertion *> &assertions,
                                 Trace *trace) {
@@ -447,22 +440,28 @@ void Qualifier::printAssertions(Context &context,
     fort::utf8_table table;
     table.set_border_style(FT_NICE_STYLE);
 
-    table << fort::header << "N"
-          << std::string("Assertion ") + "(Context : " + context._name + ")"
-          << "final";
-    for (auto m : context._sort) {
-      table << m->_name;
-    }
-    table << fort::endr;
-
+    //need this to normalize the values
     std::unordered_map<std::string, double> mToMaxValue =
         gatherMaxValuesForMetrics(context, assertions);
+    size_t headerPrintRate = 100;
     for (size_t i = 0; i < assertions.size(); i++) {
-      Assertion *ass = assertions[i];
+      if (i % headerPrintRate == 0) {
+        //print the header, this is repeated every 'headerPrintRate' assertions to improve readability
+        table << fort::header << "N"
+              << std::string("Assertion ") + "(Context : " + context._name + ")"
+              << "final";
+        for (auto m : context._sort) {
+          table << m->_name;
+        }
+        table << fort::endr;
+      }
 
+      //get the assertion being printed
+      Assertion *ass = assertions[i];
       std::vector<std::string> line;
       std::string ass_colored = "";
       std::string ass_black = "";
+      //print the assertions according to the selected output language
       if (clc::outputLang == "Spot") {
         ass_colored = ass->_toString.second;
         ass_black = ass->_toString.first;
@@ -478,28 +477,24 @@ void Qualifier::printAssertions(Context &context,
         line.push_back(to_string_with_precision(
             evaluate(*ass, *m) / mToMaxValue.at(m->_name), 2));
       }
+      //print the assertion with its ranking
       table.range_write_ln(std::begin(line), std::end(line));
     }
 
-    if (assertions.size() > 50) {
-      table << fort::header << "N"
-            << std::string("Assertion ") + "(Context : " + context._name + ")"
-            << "final";
-      for (auto m : context._sort) {
-        table << m->_name;
-      }
-      table << fort::endr;
-    }
-
     std::cout << table.to_string() << std::endl;
+
     if (!clc::intMode) {
       break;
     }
     std::string outPar = std::to_string(currParamIndex);
     std::cout << "Current value: " << outPar << "\n";
-    std::cout << "Insert new ranking range LR"
+    std::cout << "Insert new ranking range LR (1 to 90, -1 to exit)"
               << "\n";
     std::cin >> currParamIndex;
+    if ((size_t)(-1) == currParamIndex) {
+      //exit interactive mode
+      break;
+    }
   }
 }
 void Qualifier::fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,
@@ -630,6 +625,7 @@ void Qualifier::fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,
 #endif
 }
 void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
+  //silence warnings and infos (to silence the traceReader)
   clc::isilent = 1;
   clc::wsilent = 1;
 #if enPB
@@ -652,13 +648,16 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
     for (size_t i = 0; i < selected.size(); i++) {
       auto &a = selected[i];
+      //new assertion with faulty trace
       Template *fAss = hparser::parseTemplate(a->_toString.first, ft);
-      fAss->setL1Threads(std::thread::hardware_concurrency() / 2);
+      //exploit l1 parallelism
+      fAss->setL1Threads((l1Constants::MAX_THREADS + 1) / 2);
       if (!fAss->assHoldsOnTrace(Location::AntCon)) {
         // new fault covered
         _aToF[i].push_back(j);
         _fToA[j].push_back(i);
         if (!clc::findMinSubset) {
+          //stop search for this for if do not want the optimal covering set
 #if enPB
           progressBar.increment(0, selected.size() - i);
           progressBar.display();
@@ -691,7 +690,9 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
 #endif
   clc::isilent = 0;
   clc::wsilent = 0;
+
   //  debug
+  //  which ass covers which fault?
   //  for (auto aff : _aToF) {
   //    std::cout << aff.first << ") " <<
   //    selected[aff.first]->_toString.second
@@ -706,7 +707,8 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
 void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
                                         Trace *trace) {
   if (selected.size() > 10000) {
-    messageWarning("keeping only the top 10000 assertions for qualification");
+    messageWarning(
+        "keeping only the top 10000 assertions for fault-based qualification");
     selected.erase(std::begin(selected) + 9999, std::end(selected));
   }
 
@@ -727,6 +729,8 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
     hs::nFaults = nFaultsftm;
   }
   std::stringstream ss;
+
+  //gather info on the coverage
 
   ss << "Coverage: "
      << (double)_fToA.size() /
@@ -770,6 +774,7 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
 
   ss << "\nNAssertions:" << selected.size() << "\n";
   ss << "NFaults:" << hs::nFaults << "\n";
+  //print the coverage
   messageInfo(ss.str());
 }
 void Qualifier::dumpAssToFile(Context &context, Trace *trace,
@@ -784,7 +789,6 @@ void Qualifier::dumpAssToFile(Context &context, Trace *trace,
   std::ofstream assFile(clc::dumpPath + "/" + context._name + "_ass.txt");
   for (auto &a : assertions) {
 
-    // ass
     if (clc::outputLang == "Spot") {
       assFile << a->_toString.first << "\n";
     } else if (clc::outputLang == "SVA") {
@@ -818,7 +822,7 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
     assertions = extractUniqueAssertions(context);
   }
 
-  // filter
+  // apply filtering metrics, mark as 'deleted' (nullptr) all assertions that evaluates under the threshold
   size_t filtered = 0;
   for (auto &a : assertions) {
     for (auto &m : context._filter) {
@@ -830,11 +834,13 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
     }
   }
 
+  //actually remove the assertion from the container
   assertions.erase(remove_if(assertions.begin(), assertions.end(),
                              [](Assertion *a) { return a == nullptr; }),
                    assertions.end());
   messageInfo("Filtered " + std::to_string(filtered) + " assertions");
 
+  //sort according to the final score
   sortAssertions(context, trace, assertions);
 
   if (assertions.size() > clc::maxAss) {

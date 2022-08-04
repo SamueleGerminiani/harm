@@ -8,25 +8,25 @@
 namespace harm {
 
 /// @brief ContextMiner declaration.
-/// This is an interface for a generic context of influence miner module.
+/// This is an interface for a generic context miner
 class ContextMiner {
 
 public:
   /// @brief Destructor.
   virtual ~ContextMiner() {
-      if (_xmlFile!=nullptr) {
+    if (_xmlFile != nullptr) {
       delete _xmlFile;
-      }
-      if (_doc!=nullptr) {
+    }
+    if (_doc != nullptr) {
       delete _doc;
-      }
+    }
   }
 
   /// @brief An implementation of this method generates
-  /// context of influences in some way.
+  /// contexts in some way.
   /// @param traceRepo A repository of simulation traces.
   /// @param context A context of influence.
-  virtual void mineContexts(Trace *trace, std::vector<Context*> &contexts) = 0;
+  virtual void mineContexts(Trace *trace, std::vector<Context *> &contexts) = 0;
 
   /// @brief Unsupported constructor.
   ContextMiner(const ContextMiner &other) = delete;

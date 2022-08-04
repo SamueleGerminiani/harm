@@ -1,4 +1,5 @@
 #include "harm.hh"
+#include "Assertion.hh"
 #include "CSVtraceReader.hh"
 #include "ManualDefinition.hh"
 #include "Miner.hh"
@@ -83,31 +84,24 @@ static void loadParameters(const Parameters &p) {
 }
 
 static std::unordered_map<std::string, std::vector<Assertion *>>
-runMiner(Miner::Config_t &config) {
+runMiner(Miner::ModulesConfig &config) {
   std::unordered_map<std::string, std::vector<Assertion *>> contextToAss;
 
   messageInfo("Miner started...");
 
   std::vector<Context *> contexts;
 
-  //==== step 1) Read simulation traces
-  //======================================
+  //1) Read the simulation traces
   messageErrorIf(config.traceReader == nullptr,
                  "Trace reader module has not been set!");
 
   Trace *trace = config.traceReader->readTrace();
+  hs::traceLength = trace->getLength();
 
-  ////--------------------------------------------------------------------------
-
-  //==== step 2) Mine the contexts===================================
+  //2) Read the contexts
   messageErrorIf(config.contextMiner == nullptr,
                  "ContextMiner module has not been set!");
   config.contextMiner->mineContexts(trace, contexts);
-
-#if dumpTime
-  std::chrono::steady_clock::time_point begin =
-      std::chrono::steady_clock::now();
-#endif
 
   for (Context *context : contexts) {
     messageErrorIf(context->_templates.empty(),
@@ -126,27 +120,46 @@ runMiner(Miner::Config_t &config) {
     templs.erase(std::remove(templs.begin(), templs.end(), nullptr),
                  templs.end());
 
-    //==== step 3) Mine temporal assertions
-    if (config.propertyMiner == nullptr)
-      messageWarning("No propertyMiner module has been set");
-    else
-      config.propertyMiner->mineProperties(*context, trace);
+    // time to mine
+    std::chrono::steady_clock::time_point begin =
+        std::chrono::steady_clock::now();
 
-    //----------------------------------------------------------------------
+    messageErrorIf(config.propertyMiner == nullptr,
+                   "No propertyMiner module has been set");
 
-    //==== step 4) Qualify the mined temporal assertions
-    if (config.propertyQualifier == nullptr)
-      messageWarning("No propertyQualifier module has been set");
-    else
-      config.propertyQualifier->qualify(*context, trace);
+    //3) Mine temporal assertions
+    config.propertyMiner->mineProperties(*context, trace);
+
+    // store the time to mine this context
+    std::chrono::steady_clock::time_point end =
+        std::chrono::steady_clock::now();
+    hs::timeToMine_ms +=
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - begin)
+            .count();
+
+    messageErrorIf(config.propertyQualifier == nullptr,
+                   "No propertyQualifier module has been set");
+
+    //4) Qualify the mined temporal assertions (additionally print and dump)
+    contextToAss[context->_name] =
+        config.propertyQualifier->qualify(*context, trace);
 
     for (Template *t : toCheck) {
       t->check();
     }
-    // save the assertions
-    contextToAss[context->_name] = context->_assertions;
 
-    // avoid deleting the assertions
+    if (contextToAss.at(context->_name).size() < context->_assertions.size()) {
+      //delete assertions filtered by ranking (if any)
+      for (auto *a : context->_assertions) {
+        if (std::find(std::begin(contextToAss.at(context->_name)),
+                      std::end(contextToAss.at(context->_name)),
+                      a) != std::end(contextToAss.at(context->_name))) {
+          delete a;
+        }
+      }
+    }
+
+    // avoid deleting the assertions, the responsability lies on the caller
     context->_assertions.clear();
     delete context;
   }
@@ -161,7 +174,7 @@ mine(const Parameters &p) {
   std::unordered_map<std::string, std::vector<Assertion *>> contextToAss;
 
   loadParameters(p);
-  Miner::Config_t config;
+  Miner::ModulesConfig config;
 
   // trace reader
   if (clc::parserType == "vcd") {

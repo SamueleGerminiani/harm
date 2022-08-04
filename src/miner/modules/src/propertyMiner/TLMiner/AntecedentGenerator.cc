@@ -62,19 +62,19 @@ Result_DC mean_MT(Template *t) {
   }
 
   //  debug
-//  std::cout << t->getColoredAssertion() << "\n";
-//  for (size_t i = 0; i < t->_max_length; i++) {
-//    std::cout << t->evaluate_ant(i) << " ";
-//  }
-//  std::cout << "\n";
-//  for (size_t i = 0; i < t->_max_length; i++) {
-//    std::cout << t->evaluate_con(i) << " ";
-//  }
-//  std::cout << "\n";
-//
-//
-//  std::cout << "----------------------"
-//            << "\n";
+  //  std::cout << t->getColoredAssertion() << "\n";
+  //  for (size_t i = 0; i < t->_max_length; i++) {
+  //    std::cout << t->evaluate_ant(i) << " ";
+  //  }
+  //  std::cout << "\n";
+  //  for (size_t i = 0; i < t->_max_length; i++) {
+  //    std::cout << t->evaluate_con(i) << " ";
+  //  }
+  //  std::cout << "\n";
+  //
+  //
+  //  std::cout << "----------------------"
+  //            << "\n";
   return res;
 }
 
@@ -200,7 +200,7 @@ inline void AntecedentGenerator::findCandidates(
         template_dt->addLeaf(prop, candidate, propI, depth);
         discLeaves.push_back(DiscoveredLeaf(candidate, propI, depth));
 
-        _store(t, res.occGoal != 0);
+        storeSolution(t, res.occGoal == 0);
       } else {
         double condEnt = getConditionalEntropy(res.occProposition, res.occGoal,
                                                t->_max_length);
@@ -266,12 +266,6 @@ AntecedentGenerator::gatherInterestingValues(Template *t, CachedAllNumeric *cn,
 //  }
 //  return merged;
 //}
-inline std::vector<Proposition *>
-AntecedentGenerator::generatePropositionsFromIV(std::vector<size_t> &ivs,
-                                                CachedAllNumeric *cn,
-                                                Template *t) {
-  return genPropsThroughClustering(ivs, cn, t->_max_length);
-}
 
 inline std::vector<Proposition *>
 AntecedentGenerator::gatherPropositionsFromNumerics(
@@ -283,7 +277,7 @@ AntecedentGenerator::gatherPropositionsFromNumerics(
   std::vector<size_t> ivs = gatherInterestingValues(t, cn, depth);
   // 2. Generation of propositions
   if (!ivs.empty()) {
-    props = generatePropositionsFromIV(ivs, cn, t);
+    props = genPropsThroughClustering(ivs, cn, t->_max_length);
   }
   // keep track of generated props to know what to delete
   genProps.insert(genProps.end(), props.begin(), props.end());
@@ -336,7 +330,7 @@ inline void AntecedentGenerator::findCandidatesNumeric(
         discLeaf = 1;
         taken = 1;
 
-        _store(t, res.occGoal != 0);
+        storeSolution(t, res.occGoal == 0);
       } else {
         double condEnt = getConditionalEntropy(res.occProposition, res.occGoal,
                                                t->_max_length);
@@ -428,7 +422,7 @@ void AntecedentGenerator::_runDecisionTree(
                   template_dt->getCurrentDepth(), genProps, currEntropy);
           }
           if (template_dt->canInsertAtDepth(template_dt->getCurrentDepth() +
-                                             1)) {
+                                            1)) {
             if (candidate != unusedVars.end())
               findCandidates(*candidate, dcVariables, t, discLeaves, igs,
                              template_dt->getCurrentDepth() + 1, currEntropy);
@@ -501,8 +495,7 @@ void AntecedentGenerator::_runDecisionTree(
 #if printTree
       tree << currState << " -> " << ++nStates << "[label= \""
            << prop2String(*prop) << " \\["
-           << (c_ig._depth == -1 ? template_dt->getCurrentDepth()
-                                 : c_ig._depth)
+           << (c_ig._depth == -1 ? template_dt->getCurrentDepth() : c_ig._depth)
            << ", "
            //             << t->getAssertion() << " \\[" <<
            //             (c_ig._depth==-1?template_dt->getCurrentDepth():
@@ -521,16 +514,16 @@ void AntecedentGenerator::_runDecisionTree(
     template_dt->removeLeaf(dl._id, dl._second, dl._depth);
   }
 }
-void AntecedentGenerator::_store(Template *t, bool value) {
+void AntecedentGenerator::storeSolution(Template *t, bool isOffset) {
 
   DTOperator *template_dt = t->getDT();
 
-  if (!value && !saveOffset) {
+  if (isOffset && !saveOffset) {
     return;
   }
 
   // Let's save the current propositions
-  std::vector<Proposition *> items = template_dt->minimize(!value);
+  std::vector<Proposition *> items = template_dt->minimize(isOffset);
 
   if (isKnownSolution(items, template_dt)) {
     if (template_dt->isMultiDimensional()) {
@@ -557,7 +550,7 @@ void AntecedentGenerator::_store(Template *t, bool value) {
   ass = replaceAll(ass, "{", "\\{");
 #endif
 
-  if (value) {
+  if (!isOffset) {
 #if printTree
     ass = replaceAll(ass, ">", "\\>");
     nStateToAss.at(nStates) = nStateToAss.at(nStates) + ass + "\\n";

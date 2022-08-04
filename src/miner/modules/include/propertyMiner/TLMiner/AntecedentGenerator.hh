@@ -6,25 +6,16 @@
 #include <vector>
 
 #define printTree 0
-using namespace std;
-
-extern size_t countA;
 
 namespace harm {
 
-// for the decision tree algorithm variables are numerated.
-// Each variable is a proposition splitting the research space.
-using DecTreeVariables = map<size_t, std::pair<Proposition *, Proposition *>>;
-using NumericDecTreeExp = map<size_t, CachedAllNumeric *>;
+// For the decision tree algorithm variables are enumerated. Each variable is a proposition splitting the search space.
+using DecTreeVariables = std::map<size_t, std::pair<Proposition *, Proposition *>>;
+using NumericDecTreeExp = std::map<size_t, CachedAllNumeric *>;
 
-/// @brief AntecedentGenerator
-///
-/// This class implements a search algorithm based on a decision tree.
-/// Given a goal, which is represented by a proposition, the algorihtm generates
-/// sets of constraints. When a constraint is satisfied, then the goal has
-/// value 1.
-///
-
+/*! \struct DiscoveredLeaf
+    \brief utility structure to store a leaf of a decision tree
+*/
 struct DiscoveredLeaf {
   DiscoveredLeaf(size_t id, bool second, int depth)
       : _id(id), _second(second), _depth(depth) {
@@ -34,6 +25,9 @@ struct DiscoveredLeaf {
   bool _second;
   int _depth;
 };
+/*! \struct CandidateDec
+    \brief utility structure to store a candidate
+*/
 struct CandidateDec {
 
   CandidateDec() {}
@@ -54,6 +48,11 @@ struct CandidateDec {
   double _entropy;
   std::vector<std::pair<Proposition *, size_t>> _props;
 };
+
+/*! \class AntecedentGenerator
+    \brief This class implements a search algorithm based on a decision tree with an entropy based heuristic.
+*/
+
 class AntecedentGenerator {
 public:
   /// @brief Constructor.
@@ -74,57 +73,39 @@ public:
   /// generated antecedent
   size_t maxPropositions;
 
-  /// the algorithm's result:
-  ////set<set<Proposition *>> onSets;
-  ////set<set<Proposition *>> offSets;
-  vector<vector<Proposition *>> onSets;
-  vector<vector<Proposition *>> offSets;
+  /// the algorithm's result (onset, ant -> con):
+  std::vector<std::vector<Proposition *>> onSets;
+  /// the algorithm's result (offset, ant -> !con):
+  std::vector<std::vector<Proposition *>> offSets;
 
-  /// @brief saveOffset defines if
+  ///if true, it prompts the algo to save the offset
   bool saveOffset;
 
-  unordered_set<std::string> knownSolutions;
+  ///previously found solutions in a string representation
+  std::unordered_set<std::string> knownSolutions;
 
-  /// @brief makeAntecedents
-  /// @param dcVariables a set of Variables
-  /// @paran posAndNeg a flag ...
-  /// @return ....
+  /// @brief fill onSets and offSets with solutions
   void makeAntecedents(Template *t, DecTreeVariables &dcVariables,
                        NumericDecTreeExp &numericCandidates,
                        std::vector<Proposition *> &genProps);
 
 private:
+  /// @brief implements the actual dt algo
   void _runDecisionTree(std::set<size_t> &unusedVars,
                         DecTreeVariables &dcVariables,
                         std::set<size_t> &unusedNumerics,
                         NumericDecTreeExp &numericCandidates, Template *t,
                         std::vector<Proposition *> &genProps,
                         double currEntropy);
+
+  /// @brief find choices to split the search space
   inline void findCandidates(size_t candidate, DecTreeVariables &dcVariables,
                              Template *t,
                              std::vector<DiscoveredLeaf> &discLeaves,
                              std::vector<CandidateDec> &igs, int depth,
                              double currEntropy);
-  template <typename T>
-  std::vector<Proposition *>
-  getPropsThroughClustering(CachedAllNumeric *cn, std::vector<size_t> &sVals,
-                            Template *t, int depth,
-                            std::vector<Proposition *> &genProps);
 
-  inline std::vector<Proposition *>
-  gatherPropositions(CachedAllNumeric *cn, Template *t, int depth,
-                     std::vector<Proposition *> &genProps);
-
-  inline std::vector<Proposition *>
-  gatherPropositionsFromNumerics(CachedAllNumeric *cn, Template *t, int depth,
-                                 std::vector<Proposition *> &genProps);
-  inline std::vector<Proposition *>
-  generatePropositionsFromIV(std::vector<size_t> &ivs, CachedAllNumeric *cn,
-                             Template *t);
-
-  inline std::vector<size_t>
-  gatherInterestingValues(Template *t, CachedAllNumeric *cn, int depth);
-
+  /// @brief find choices to split the search space, use numerics instead of props, uses gatherPropositionsFromNumerics
   inline void findCandidatesNumeric(size_t candidate,
                                     NumericDecTreeExp &dcVariables, Template *t,
                                     std::vector<DiscoveredLeaf> &discLeaves,
@@ -132,13 +113,22 @@ private:
                                     std::vector<Proposition *> &genProps,
                                     double currEntropy);
 
-  bool isKnownSolution(const std::vector<Proposition *> &items, DTOperator *template_dt, bool checkOnly=false);
-  void _store(Template *t, bool value);
+  /// @brief find choices through clustering, uses gatherPropositionsFromNumerics
+  inline std::vector<Proposition *>
+  gatherPropositionsFromNumerics(CachedAllNumeric *cn, Template *t, int depth,
+                                 std::vector<Proposition *> &genProps);
 
-  void _getCoverage(Template *t, bool value);
+  /// @brief analyse the trace to find a set of values on which to perform the clustering
+  inline std::vector<size_t>
+  gatherInterestingValues(Template *t, CachedAllNumeric *cn, int depth);
 
-  size_t addL = 0;
-  size_t removeL = 0;
+  bool isKnownSolution(const std::vector<Proposition *> &items,
+                       DTOperator *template_dt, bool checkOnly = false);
+
+  void storeSolution(Template *t, bool isOffset);
+
+
+  //debug
 #if printTree
   std::stringstream tree;
   std::stringstream foundAss;

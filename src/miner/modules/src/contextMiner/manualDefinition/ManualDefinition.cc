@@ -24,7 +24,7 @@ namespace harm {
 using namespace rapidxml;
 ManualDefinition::ManualDefinition(std::string &configFile)
     : ContextMiner(configFile) {}
-
+///used to parse the 'op' attribute in a numeric tag
 std::unordered_set<ClsOp> parseClsOp(std::string op) {
   std::unordered_set<ClsOp> ret;
   op.erase(remove_if(op.begin(), op.end(), isspace), op.end());
@@ -57,6 +57,7 @@ std::unordered_set<ClsOp> parseClsOp(std::string op) {
   }
   return ret;
 }
+///used to parse the 'loc' attribute in a prop or numeric tag
 std::vector<Location> parseLocation(std::string loc) {
   std::vector<Location> ret;
   loc.erase(remove_if(loc.begin(), loc.end(), isspace), loc.end());
@@ -127,7 +128,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       context->_templates.back()->_check = (check == "1" ? 1 : 0);
     }
 
-    // sort
+    // get sort metrics
     std::vector<rapidxml::xml_node<> *> sortsTag;
     getNodesFromName(contextTag, "sort", sortsTag);
     for (auto &sortTag : sortsTag) {
@@ -138,7 +139,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       context->_sort.push_back(hparser::parseMetric(name, exp, trace));
     }
 
-    // filter
+    // get filter metrics
     std::vector<rapidxml::xml_node<> *> filtersTag;
     getNodesFromName(contextTag, "filter", filtersTag);
     for (auto &filterTag : filtersTag) {
@@ -149,7 +150,7 @@ void ManualDefinition::mineContexts(Trace *trace,
                                     std::stod(th));
     }
 
-    // propositions
+    // get propositions
     std::vector<rapidxml::xml_node<> *> propsTag;
     getNodesFromName(contextTag, "prop", propsTag);
     for (auto &propTag : propsTag) {
@@ -169,7 +170,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       }
     }
 
-    // numerics for dt
+    // get numerics
     std::vector<rapidxml::xml_node<> *> numsTag;
     getNodesFromName(contextTag, "numeric", numsTag);
 
@@ -218,6 +219,7 @@ void ManualDefinition::mineContexts(Trace *trace,
 
         for (auto &loc : locs) {
           if (loc != Location::DecTree) {
+            //generate props though clustering using the whole trace
             std::vector<size_t> ivs;
             for (size_t i = 0; i < trace->getLength(); i++) {
               ivs.push_back(i);
@@ -230,6 +232,8 @@ void ManualDefinition::mineContexts(Trace *trace,
             context->_numerics.push_back(nn);
           }
         }
+
+        //delete nn if it is no longer used
         if (std::find(begin(locs), end(locs), Location::DecTree) == locs.end())
           delete nn;
 #if enPB
@@ -241,6 +245,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       pb.done(0);
 #endif
     }
+
     contexts.push_back(context);
   }
 }
