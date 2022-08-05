@@ -17,39 +17,37 @@ using namespace std;
 
 namespace harm {
 
-/// @brief Ateam property miner declaration.
-/// This class mines temporal assertions by using assertion templates
+/*! \class TLMiner
+    \brief implements the logic of the harm assertion miner
+*/
 class TLMiner : public PropertyMiner {
 
 public:
   explicit TLMiner();
 
-  /// @brief Copy constructor.
-  /// @param other The TLMiner to be copied.
   TLMiner(const TLMiner &other) = delete;
 
-  /// @brief Assignment operator
-  /// @param other The TLMiner to be copied.
   TLMiner &operator=(const TLMiner &other) = delete;
 
-  /// @brief Destructor.
   ~TLMiner() override;
 
-  /// @brief mineProperties.
-  /// @param context The context of influence
-  /// @param traceRepository The trace repository used by the miner
-  void mineProperties(Context &context, Trace *traceRepository) override;
+  /// @brief the context is filled with mined assertions
+  void mineProperties(Context &context, Trace *trace) override;
 
+  /// @brief implements level 3 of parallelization (Template)
   void l3Handler(Context &context, size_t nThread);
+  /// @brief implements level 2 of parallelization (Permutation)
   void l2Handler(Template *t, size_t l3InstId,
                  std::unordered_map<size_t, Semaphore *> &l3Instances,
                  Semaphore &l3avThreads, std::mutex &spotStupidity,
                  std::mutex &l3InstancesGuard, std::unordered_map<size_t, size_t>  &l3InstToNumThreads);
+  /// @brief implements level 1 of parallelization (Evaluation function)
   void l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
                  Semaphore *l2avThreads,
                  std::unordered_map<size_t, size_t> &l2Instances,
                  std::mutex &l2InstancesGuard);
 
+  /// @brief clears the utility vars and the gathered assertions
   void clear();
 
 private:
@@ -58,11 +56,12 @@ private:
   std::vector<Proposition *> _propsAntCon;
   std::vector<Proposition *> _propsDT;
   std::vector<CachedAllNumeric *> _numerics;
-  // @brief trace length
+
   size_t _traceLength;
   std::vector<std::vector<Assertion*>> _collectedAssertions;
   std::mutex _collectedAssertionsGuard;
   progresscpp::ParallelProgressBar _progressBar;
+  //debug
 #if dumpVacAss
   std::mutex vacLock;
 #endif

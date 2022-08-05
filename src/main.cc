@@ -20,15 +20,11 @@ static void parseCommandLineArguments(int argc, char *args[]);
 
 static void genConfigFile(std::string &configFile, TraceReader *tr);
 
-// FIXME
-// extern bool halt;
-// inline void sigint_handler(int signal) { halt = 1; }
-
 int main(int arg, char *argv[]) {
+  //enforce deterministic rand
   srand(1);
-  // FIXME
-  //  signal(SIGINT, sigint_handler);
 
+  //it holds the employed modules
   Miner::ModulesConfig config;
 
   parseCommandLineArguments(arg, argv);
@@ -47,6 +43,7 @@ int main(int arg, char *argv[]) {
     return 0;
   }
 
+  //setting the modules
   config.contextMiner = new ManualDefinition(clc::configFile);
   config.propertyMiner = new TLMiner();
   config.propertyQualifier = new Qualifier();
@@ -56,10 +53,14 @@ int main(int arg, char *argv[]) {
   return 0;
 }
 void parseCommandLineArguments(int argc, char *args[]) {
+  //parse the cmd using an external library
   auto result = parseHARM(argc, args);
+
+  //check for errors and build the environment
+
   messageErrorIf(((result.count("vcd") || result.count("vcd_dir")) &&
                   (result.count("csv") || result.count("csv_dir"))),
-                 "Mixing vcd with csv traces!");
+                 "Mixing vcd with csv traces");
 
   if (result.count("name")) {
     hs::name = result["name"].as<std::string>();
@@ -76,12 +77,12 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::traceFiles.push_back(result["vcd"].as<std::string>());
     clc::clk = result["clk"].as<std::string>();
     messageErrorIf(!std::filesystem::exists(clc::traceFiles[0]),
-                   "Can not find '" + clc::traceFiles[0] + "'");
+                   "Can not find trace file '" + clc::traceFiles[0] + "'");
   } else if (result.count("csv")) {
     clc::parserType = "csv";
     clc::traceFiles.push_back(result["csv"].as<std::string>());
     messageErrorIf(!std::filesystem::exists(clc::traceFiles[0]),
-                   "Can not find '" + clc::traceFiles[0] + "'");
+                   "Can not find trace file '" + clc::traceFiles[0] + "'");
   }
 
   if (result.count("vcd_dir")) {
@@ -122,7 +123,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
   clc::genTemp = result.count("generate_config");
   clc::configFile = result["c"].as<std::string>();
   messageErrorIf(!clc::genTemp && !std::filesystem::exists(clc::configFile),
-                 "Can not find '" + clc::configFile + "'");
+                 "Can not find config file '" + clc::configFile + "'");
   if (result.count("maxAss")) {
     clc::maxAss = result["maxAss"].as<size_t>();
   }
@@ -138,6 +139,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
     l2Constants::MAX_THREADS = nt;
     l1Constants::MAX_THREADS = nt;
   }
+  //this is mostly a debug feature
   if (result.count("testLevel")) {
     size_t l = result["testLevel"].as<size_t>();
     messageErrorIf(l != 1 && l != 2 && l != 3,
@@ -247,6 +249,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
                    "Unknown clustering algorithm '" + clc::clsAlg + "'");
   }
 }
+///Automatically generates a config file only using the input trace
 void genConfigFile(std::string &configFile, TraceReader *tr) {
   messageInfo("Generating default config file");
   messageErrorIf(tr == nullptr, "Trace reader module has not been set!");

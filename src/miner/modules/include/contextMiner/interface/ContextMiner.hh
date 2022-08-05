@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Context.hh"
-#include "Trace.hh"
-#include "minerUtils.hh"
 #include "xmlUtils.hh"
 
 namespace harm {
+
+class Context;
+class Trace;
 
 /// @brief ContextMiner declaration.
 /// This is an interface for a generic context miner
@@ -24,8 +24,6 @@ public:
 
   /// @brief An implementation of this method generates
   /// contexts in some way.
-  /// @param traceRepo A repository of simulation traces.
-  /// @param context A context of influence.
   virtual void mineContexts(Trace *trace, std::vector<Context *> &contexts) = 0;
 
   /// @brief Unsupported constructor.

@@ -22,9 +22,6 @@
 #include <unordered_set>
 #include <utility>
 
-// FIXME
-// bool halt=0;
-
 namespace harm {
 
 TLMiner::TLMiner() : PropertyMiner() {}
@@ -36,7 +33,6 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
   std::ofstream vacFile("vac.txt", ios_base::out);
   vacFile.close();
 #endif
-
 
   _traceLength = trace->getLength();
   messageInfo("CONTEXT: " + context._name);
@@ -104,7 +100,7 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
 
     if (toBeServed < context._templates.size() &&
         l3Instances.size() < l3Constants::MAX_THREADS) {
-        //mine a new template and give it the thread
+      //mine a new template and give it the thread
       l3InstToNumThreads[toBeServed] = 1;
       l3Instances[toBeServed] = new Semaphore(1);
       Template *t = context._templates[toBeServed];
@@ -116,8 +112,8 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
           .detach();
       toBeServed++;
     } else if (!l3Instances.empty()) {
-        //all templates are being mined: give the thread to an active template
-        //this code is to balance the number of threads among the active template, it searches for an l3Instance that is using less threads than the current max
+      //all templates are being mined: give the thread to an active template
+      //this code is to balance the number of threads among the active templates, it searches for an l3Instance that is using less threads than the current max
       for (auto &e : l3Instances) {
         if (l3InstToNumThreads.at(e.first) < l3MaxThread) {
           e.second->notify();
@@ -146,7 +142,7 @@ void TLMiner::l2Handler(
     Semaphore &l3avThreads, std::mutex &spotStupidity,
     std::mutex &l3InstancesGuard,
     std::unordered_map<size_t, size_t> &l3InstToNumThreads) {
-    //this function follows the same princle of l3Handler; however, we create a new Template instance for each permutation to avoid as much as possible sharing memory 
+  //this function follows the same principles of l3Handler; however, we create a new Template instance for each permutation to avoid sharing memory
 
   Semaphore *l2avThreads = atGuard(l3Instances, l3InstId, l3InstancesGuard);
   std::unordered_map<size_t, size_t> l2Instances;
@@ -238,6 +234,7 @@ void TLMiner::l2Handler(
     delete templs[i];
   }
 
+  //debug
   //#if enPB
   //    _progressBar.changeMessage(l3InstId, std::to_string(0));
   _progressBar.done(l3InstId);
@@ -296,7 +293,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     // Onset
     for (std::vector<Proposition *> &props : antGen.onSets) {
 
-        //rebulding the assertion starting from a list propositions (the operands of a dt operator)
+      //rebulding the assertion starting from a list propositions (the operands of a dt operator)
       if (t->getDT()->isMultiDimensional()) {
         for (size_t i = 0; i < props.size(); i++) {
           for (auto prop : t->getDT()->unpack(props[i])) {
@@ -314,7 +311,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       //check for vacuity
       if (!t->isVacuous(Location::Ant)) {
 
-          //create a new assertion
+        //create a new assertion by making a snapshot of a template
         auto prettyAss = t->getDT()->prettyPrint(0);
         Assertion *ass = new Assertion();
         t->fillContingency(ass->_ct, 0);
@@ -420,6 +417,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     if (!t->isVacuous(harm::Location::AntCon) &&
         t->assHoldsOnTrace(harm::Location::None)) {
 
+      //create a new assertion by making a snapshot of a template
       Assertion *ass = new Assertion();
       t->fillContingency(ass->_ct, 0);
       ass->_toString =
@@ -450,7 +448,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
   } // else
 
 end:;
-    //store the assertions collected in the current permutation
+  //store the assertions collected in the current permutation
   if (!assp.empty()) {
     std::lock_guard<std::mutex> lock{_collectedAssertionsGuard};
     _collectedAssertions.push_back(assp);

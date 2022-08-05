@@ -15,7 +15,7 @@ class PropertyMiner {
     virtual ~PropertyMiner() = default;
 
     /// @brief An implementation of this method analyzes the traces of a
-    /// Trace to mine Assertions
+    /// to mine Assertions
     virtual void mineProperties(Context &context,
                                 Trace *trace) = 0;
 

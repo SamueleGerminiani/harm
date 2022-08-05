@@ -11,31 +11,39 @@ namespace harm {
 
 using namespace expression;
 
-TraceReader::TraceReader(const std::vector<std::string> &files,
-                         const std::string &clk)
-    : _files(files), _clk(clk) {
+TraceReader::TraceReader(const std::vector<std::string> &files)
+    : _files(files){
   // ntd
 }
 
 Trace *TraceReader::readTrace() {
+
+   //avoid repeating the read
   if (_trace != nullptr) {
     return _trace;
   }
+
+  //read all the single traces
   std::vector<Trace *> traces;
   for (auto &f : _files) {
     traces.push_back(readTrace(f));
   }
+
   if (traces.size() > 1) {
+      //merge multiple traces into one
     _trace = mergeTrace(traces);
+    //delete the sub-traces
     for (auto t : traces) {
       delete t;
     }
+    //print some stats
     double avgLength =
         (double)_trace->getLength() / (double)_trace->getCuts().size();
     messageInfo("Final trace length: " + std::to_string(_trace->getLength()));
     messageInfo("N merged traces: " + std::to_string(_trace->getCuts().size()));
     messageInfo("AVG length: " + std::to_string(avgLength));
   } else {
+      //only one trace
     _trace = traces[0];
     _trace->setCuts(std::vector<size_t>({_trace->getLength() - 1}));
     messageInfo("Trace length:" + std::to_string(_trace->getLength()));
@@ -51,6 +59,7 @@ Trace *TraceReader::mergeTrace(const std::vector<Trace *> &traces) {
 
   std::vector<VarDeclaration> decs = traces[0]->getDeclarations();
   size_t mergedLength = traces[0]->getLength();
+  //cuts are used to keep track of when the sub-traces (composing the merged trace) end
   std::vector<size_t> cuts;
   cuts.push_back(traces[0]->getLength() - 1);
 
@@ -80,6 +89,7 @@ Trace *TraceReader::mergeTrace(const std::vector<Trace *> &traces) {
     mergedLength += trace->getLength();
   }
 
+  //create the base for the mergedTrace
   auto varsCopy = traces[0]->getVariables();
   Trace *mergedTrace = new Trace(varsCopy, mergedLength);
   mergedTrace->setCuts(cuts);
@@ -98,6 +108,7 @@ Trace *TraceReader::mergeTrace(const std::vector<Trace *> &traces) {
     }
   }
 
+  //assign the merged trace with the values of the sub-traces
   size_t time = 0;
 
   for (auto t : traces) {

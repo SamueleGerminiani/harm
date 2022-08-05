@@ -1,6 +1,8 @@
 #include "ManualDefinition.hh"
+#include "Context.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
+#include "Trace.hh"
 #include "classes/atom/Atom.hh"
 #include "dtLimitsParser.hh"
 #include "metricParser.hh"

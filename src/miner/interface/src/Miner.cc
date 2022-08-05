@@ -53,6 +53,7 @@ void Miner::run() {
     for (Template *&t : context->_templates) {
       if (t->_check) {
         toCheck.push_back(t);
+        //mark for removal
         t = nullptr;
       }
     }

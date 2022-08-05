@@ -1,9 +1,11 @@
 #include "ContextMiner.hh"
+#include "message.hh"
+#include <sstream>
 
 namespace harm {
 
-ContextMiner::ContextMiner(std::string &configFile) : _configuration(nullptr),_xmlFile(nullptr), _doc(nullptr) {
-
+ContextMiner::ContextMiner(std::string &configFile)
+    : _configuration(nullptr), _xmlFile(nullptr), _doc(nullptr) {
 
   // find root node
   try {

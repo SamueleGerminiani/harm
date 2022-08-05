@@ -15,19 +15,19 @@
 		<prop exp="ready_from_bus" loc="c"/>
 		<prop exp="wb_rst" loc="c"/>
 
-		<prop exp="busy" loc="a"/>
-		<prop exp="reset" loc="a"/>
-		<prop exp="error_from_bus" loc="a"/>
-		<prop exp="write" loc="a"/>
-		<prop exp="request" loc="a"/>
-		<prop exp="wb_ack" loc="a"/>
-		<prop exp="wb_stall" loc="a"/>
-		<prop exp="wb_err" loc="a"/>
-		<prop exp="wb_cyc" loc="a"/>
-		<prop exp="wb_stb" loc="a"/>
-		<prop exp="wb_we" loc="a"/>
-		<prop exp="ready_from_bus" loc="a"/>
-		<prop exp="wb_rst" loc="a"/>
+		<prop exp="busy" loc="dt"/>
+		<prop exp="reset" loc="dt"/>
+		<prop exp="error_from_bus" loc="dt"/>
+		<prop exp="write" loc="dt"/>
+		<prop exp="request" loc="dt"/>
+		<prop exp="wb_ack" loc="dt"/>
+		<prop exp="wb_stall" loc="dt"/>
+		<prop exp="wb_err" loc="dt"/>
+		<prop exp="wb_cyc" loc="dt"/>
+		<prop exp="wb_stb" loc="dt"/>
+		<prop exp="wb_we" loc="dt"/>
+		<prop exp="ready_from_bus" loc="dt"/>
+		<prop exp="wb_rst" loc="dt"/>
 
 
 
@@ -46,6 +46,7 @@
 
 		<sort name="causality" exp="1-afct/traceLength"/>
 		<sort name="frequency" exp="atct/traceLength"/>
+		<filter name="frequency" exp="atct/traceLength" threshold="0.45"/>
 	</context>
 </harm>
 

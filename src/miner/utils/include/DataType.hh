@@ -38,13 +38,6 @@ public:
   /// @returns The size value.
   size_t getSize() const;
 
-  /// @brief Sets the direction of the variable
-  /// @param dir The enum direction value to be set.
-  void setLocation(Location dir);
-
-  /// @brief Returns the direction of the variable.
-  /// @returns The enum direction value.
-  Location getLocation() const;
 
 private:
   /// @brief Stores the name of the variable.
@@ -56,8 +49,6 @@ private:
   /// @brief Stores the size of the variable.
   size_t _size;
 
-  /// @brief Stores the direction of the variable.
-  Location _location;
 };
 
 } // namespace harm

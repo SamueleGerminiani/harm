@@ -3,6 +3,8 @@
 
 namespace harm {
 
+/// \class VCDtraceReader
+/// This class implements the logic to read a .vcd file
 class VCDtraceReader : public TraceReader {
 public:
   VCDtraceReader(const std::vector<std::string> &files, const std::string &clk);
@@ -10,6 +12,6 @@ public:
 
 private:
   virtual Trace *readTrace(const std::string file) override;
-  /* data */
+  std::string _clk="";
 };
 } // namespace harm

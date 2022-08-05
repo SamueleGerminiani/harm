@@ -16,19 +16,31 @@ using namespace csv;
 using namespace expression;
 
 CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files)
-    : TraceReader(files, "") {}
+    : TraceReader(files) {}
 
 CSVtraceReader::CSVtraceReader(const std::string &file)
-    : TraceReader(std::vector<std::string>({file}), "") {}
+    : TraceReader(std::vector<std::string>({file})) {}
+
+///var declaration to cpp class
 DataType toDataType(std::string name, std::string type, size_t size) {
   DataType ret;
-
   auto type_size = variableTypeFromString(type, size);
+
+  //optimization: 1 bit logic to bool
+  if ((type_size.first == VarType::SLogic ||
+       type_size.first == VarType::ULogic) &&
+      type_size.second == 1) {
+    type_size.first = VarType::Bool;
+    type_size.second = 1;
+  }
+
   ret.setName(name);
   ret.setType(type_size.first, type_size.second);
 
   return ret;
 }
+
+///parse a variable declaration
 std::pair<std::string, std::pair<std::string, size_t>>
 parseVariable(std::string varDecl) {
   hparser::VarDeclarationParserHandler listenerLocDec;
@@ -42,6 +54,7 @@ parseVariable(std::string varDecl) {
 
   return listenerLocDec.getVarDeclaration();
 }
+
 Trace *CSVtraceReader::readTrace(const std::string file) {
 
   std::vector<DataType> vars_dt;
@@ -78,6 +91,7 @@ Trace *CSVtraceReader::readTrace(const std::string file) {
   std::getline(myfile, line);
   while (std::getline(myfile, line)) {
     line.erase(remove_if(line.begin(), line.end(), isspace), line.end());
+    //workaround
     if (!std::isdigit(line[0]) && !(line[0] == '-')) {
       break;
     }

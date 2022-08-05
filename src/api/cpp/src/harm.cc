@@ -18,69 +18,58 @@
 namespace harm {
 
 static void loadParameters(const Parameters &p) {
-  if (clc::traceFiles != p.traceFiles) {
-    clc::traceFiles = p.traceFiles;
+  messageErrorIf(!std::filesystem::exists(p.configFile),
+                 "Can not find config file '" + p.configFile + "'");
+  clc::configFile = p.configFile;
+
+  messageErrorIf(p.parserType != "vcd" && p.parserType != "csv",
+                 "Unknown parser type '" + p.parserType +
+                     "', expected 'vcd' or 'csv'");
+  clc::parserType = p.parserType;
+
+  for (const auto &file : p.traceFiles) {
+      messageErrorIf(!std::filesystem::exists(file),
+                     "Can not find trace file '" + file + "'");
+      clc::traceFiles.push_back(file);
   }
-  if (clc::faultyTraceFiles != p.faultyTraceFiles) {
-    clc::faultyTraceFiles = p.faultyTraceFiles;
+
+  for (const auto &file : p.faultyTraceFiles) {
+      messageErrorIf(!std::filesystem::exists(file),
+                     "Can not find faulty trace file '" + file + "'");
+      clc::faultyTraceFiles.push_back(file);
   }
-  if (clc::configFile != p.configFile) {
-    clc::configFile = p.configFile;
-  }
-  if (clc::parserType != p.parserType) {
-    clc::parserType = p.parserType;
-  }
-  if (clc::clk != p.clk) {
-    clc::clk = p.clk;
-  }
-  if (clc::genTemp != p.genTemp) {
-    clc::genTemp = p.genTemp;
-  }
-  if (clc::maxThreads != p.maxThreads) {
-    clc::maxThreads = p.maxThreads;
-  }
-  if (clc::findMinSubset != p.findMinSubset) {
-    clc::findMinSubset = p.findMinSubset;
-  }
-  if (clc::dumpAssToFile != p.dumpAssToFile) {
-    clc::dumpAssToFile = p.dumpAssToFile;
-  }
-  if (clc::noData != p.noData) {
-    clc::noData = p.noData;
-  }
-  if (clc::dumpPath != p.dumpPath) {
-    clc::dumpPath = p.dumpPath;
-  }
-  if (clc::intMode != p.intMode) {
-    clc::intMode = p.intMode;
-  }
-  if (clc::splitLogic != p.splitLogic) {
-    clc::splitLogic = p.splitLogic;
-  }
-  if (clc::vcdRecursive != p.vcdRecursive) {
-    clc::vcdRecursive = p.vcdRecursive;
-  }
-  if (clc::selectedScope != p.selectedScope) {
-    clc::selectedScope = p.selectedScope;
-  }
-  if (clc::dontFillAss != p.dontFillAss) {
-    clc::dontFillAss = p.dontFillAss;
-  }
-  if (clc::dontPrintAss != p.dontPrintAss) {
-    clc::dontPrintAss = p.dontPrintAss;
-  }
-  if (clc::silent != p.silent) {
-    clc::silent = p.silent;
-  }
-  if (clc::wsilent != p.wsilent) {
-    clc::wsilent = p.wsilent;
-  }
-  if (clc::isilent != p.isilent) {
-    clc::isilent = p.isilent;
-  }
-  if (clc::psilent != p.psilent) {
-    clc::psilent = p.psilent;
-  }
+
+  messageErrorIf(p.parserType=="vcd" && p.clk=="", "Undefined sampling clk signal");
+  clc::clk = p.clk;
+
+
+  messageErrorIf(p.maxThreads<=1, "Illegal number of threads '"+std::to_string(p.maxThreads)+"'");
+  clc::maxThreads = p.maxThreads;
+
+  clc::findMinSubset = p.findMinSubset;
+
+  clc::dumpAssToFile = p.dumpAssToFile;
+
+  clc::noData = p.noData;
+
+  clc::dumpPath = p.dumpPath;
+
+
+  clc::vcdRecursive = p.vcdRecursive;
+
+  clc::selectedScope = p.selectedScope;
+
+  clc::dontFillAss = p.dontFillAss;
+
+  clc::dontPrintAss = p.dontPrintAss;
+
+  clc::silent = p.silent;
+
+  clc::wsilent = p.wsilent;
+
+  clc::isilent = p.isilent;
+
+  clc::psilent = p.psilent;
 }
 
 static std::unordered_map<std::string, std::vector<Assertion *>>
@@ -153,7 +142,7 @@ runMiner(Miner::ModulesConfig &config) {
       for (auto *a : context->_assertions) {
         if (std::find(std::begin(contextToAss.at(context->_name)),
                       std::end(contextToAss.at(context->_name)),
-                      a) != std::end(contextToAss.at(context->_name))) {
+                      a) == std::end(contextToAss.at(context->_name))) {
           delete a;
         }
       }
@@ -169,8 +158,8 @@ runMiner(Miner::ModulesConfig &config) {
   return contextToAss;
 }
 
-std::unordered_map<std::string, std::vector<Assertion *>>
-mine(const Parameters &p) {
+std::unordered_map<std::string, std::vector<Assertion *>> mine(const Parameters &p) {
+
   std::unordered_map<std::string, std::vector<Assertion *>> contextToAss;
 
   loadParameters(p);

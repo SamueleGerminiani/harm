@@ -5,8 +5,7 @@ namespace harm {
     using namespace expression;
 
 DataType::DataType()
-    : _name(""), _type(VarType::Unknown), _size(1),
-      _location(Location::Ant) {
+    : _name(""), _type(VarType::Unknown), _size(1) {
     // ntd
 }
 
@@ -23,8 +22,5 @@ VarType DataType::getType() const { return _type; }
 
 size_t DataType::getSize() const { return _size; }
 
-void DataType::setLocation(Location dir) { _location = dir; }
-
-Location DataType::getLocation() const { return _location; }
 
 } // namespace oden
