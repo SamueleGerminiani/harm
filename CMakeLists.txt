@@ -183,10 +183,11 @@ add_executable(varEstimator EXCLUDE_FROM_ALL src/varEstimator/main.cc)
 target_link_libraries(varEstimator estimator commandLineParser traceReader)
 
 
-### TESTS ###
+### TESTS & EXAMPLES ###
 enable_testing()
 include (CTest)
 add_subdirectory(tests)
+add_subdirectory(examples)
 #############
 
 

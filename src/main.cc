@@ -58,20 +58,21 @@ void parseCommandLineArguments(int argc, char *args[]) {
 
   //check for errors and build the environment
 
-  messageErrorIf(((result.count("vcd") || result.count("vcd_dir")) &&
-                  (result.count("csv") || result.count("csv_dir"))),
+  messageErrorIf(((result.count("vcd") || result.count("vcd-dir")) &&
+                  (result.count("csv") || result.count("csv-dir"))),
                  "Mixing vcd with csv traces");
 
   if (result.count("name")) {
     hs::name = result["name"].as<std::string>();
   }
-  if (result.count("vcd_ss")) {
-    clc::selectedScope = result["vcd_ss"].as<std::string>();
+  if (result.count("vcd-ss")) {
+    clc::selectedScope = result["vcd-ss"].as<std::string>();
     clc::vcdRecursive = 0;
   }
-  if (result.count("vcd_r")) {
+  if (result.count("vcd-r")) {
     clc::vcdRecursive = true;
   }
+
   if (result.count("vcd")) {
     clc::parserType = "vcd";
     clc::traceFiles.push_back(result["vcd"].as<std::string>());
@@ -85,33 +86,33 @@ void parseCommandLineArguments(int argc, char *args[]) {
                    "Can not find trace file '" + clc::traceFiles[0] + "'");
   }
 
-  if (result.count("vcd_dir")) {
+  if (result.count("vcd-dir")) {
     clc::parserType = "vcd";
     clc::clk = result["clk"].as<std::string>();
     messageErrorIf(
-        !std::filesystem::is_directory(result["vcd_dir"].as<std::string>()),
-        "Can not find directory '" + result["vcd_dir"].as<std::string>() + "'");
+        !std::filesystem::is_directory(result["vcd-dir"].as<std::string>()),
+        "Can not find directory '" + result["vcd-dir"].as<std::string>() + "'");
     for (const auto &entry : std::filesystem::directory_iterator(
-             result["vcd_dir"].as<std::string>())) {
+             result["vcd-dir"].as<std::string>())) {
       if (entry.path().extension() == ".vcd") {
         clc::traceFiles.push_back(entry.path().u8string());
       }
     }
-    messageErrorIf(!result.count("vcd") && clc::traceFiles.empty(),
+    messageErrorIf(clc::traceFiles.empty(),
                    "No vcd trace found in: " +
-                       result["vcd_dir"].as<std::string>());
-  } else if (result.count("csv_dir")) {
+                       result["vcd-dir"].as<std::string>());
+  } else if (result.count("csv-dir")) {
     messageErrorIf(
-        !std::filesystem::is_directory(result["csv_dir"].as<std::string>()),
-        "Can not find directory '" + result["csv_dir"].as<std::string>() + "'");
+        !std::filesystem::is_directory(result["csv-dir"].as<std::string>()),
+        "Can not find directory '" + result["csv-dir"].as<std::string>() + "'");
     for (const auto &entry : std::filesystem::directory_iterator(
-             result["csv_dir"].as<std::string>())) {
+             result["csv-dir"].as<std::string>())) {
       clc::parserType = "csv";
       if (entry.path().extension() == ".csv") {
         clc::traceFiles.push_back(entry.path().u8string());
       }
     }
-    messageErrorIf(!result.count("csv") && clc::traceFiles.empty(),
+    messageErrorIf(clc::traceFiles.empty(),
                    "No csv trace found in: " +
                        result["csv_dir"].as<std::string>());
   }
@@ -120,16 +121,16 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::outputLang = "SVA";
   }
 
-  clc::genTemp = result.count("generate_config");
-  clc::configFile = result["c"].as<std::string>();
+  clc::genTemp = result.count("generate-config");
+  clc::configFile = result["conf"].as<std::string>();
   messageErrorIf(!clc::genTemp && !std::filesystem::exists(clc::configFile),
                  "Can not find config file '" + clc::configFile + "'");
-  if (result.count("maxAss")) {
-    clc::maxAss = result["maxAss"].as<size_t>();
+  if (result.count("max-ass")) {
+    clc::maxAss = result["max-ass"].as<size_t>();
   }
 
-  if (result.count("max_threads")) {
-    size_t nt = result["max_threads"].as<size_t>();
+  if (result.count("max-threads")) {
+    size_t nt = result["max-threads"].as<size_t>();
     messageWarningIf(nt > std::thread::hardware_concurrency(),
                      "This machine should run " +
                          std::to_string(std::thread::hardware_concurrency()) +
@@ -140,8 +141,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     l1Constants::MAX_THREADS = nt;
   }
   //this is mostly a debug feature
-  if (result.count("testLevel")) {
-    size_t l = result["testLevel"].as<size_t>();
+  if (result.count("test-level")) {
+    size_t l = result["test-level"].as<size_t>();
     messageErrorIf(l != 1 && l != 2 && l != 3,
                    "Uknown test level '" + std::to_string(l) + "'");
     if (l == 1) {
@@ -173,7 +174,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
       }
     }
 
-    if (result.count("find_min_subset")) {
+    if (result.count("find-min-subset")) {
       clc::findMinSubset = true;
     }
   }
@@ -210,7 +211,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::psilent = true;
   }
 
-  if (result.count("dumpStat")) {
+  if (result.count("dump-stat")) {
     clc::dumpStat = true;
   }
 
@@ -221,14 +222,14 @@ void parseCommandLineArguments(int argc, char *args[]) {
       clc::noData = true;
     }
   }
-  if (result.count("dumpTo") || result.count("dumpTo-no-data")) {
+  if (result.count("dump-to") || result.count("dump-to-no-data")) {
 
     clc::dumpAssToFile = true;
-    if (result.count("dumpTo-no-data")) {
+    if (result.count("dump-to-no-data")) {
       clc::noData = true;
-      clc::dumpPath = result["dumpTo-no-data"].as<std::string>();
+      clc::dumpPath = result["dump-to-no-data"].as<std::string>();
     } else {
-      clc::dumpPath = result["dumpTo"].as<std::string>();
+      clc::dumpPath = result["dump-to"].as<std::string>();
     }
     messageErrorIf(!std::filesystem::is_directory(clc::dumpPath),
                    "Can not find directory '" + clc::dumpPath + "'");
@@ -240,10 +241,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::splitLogic = true;
   }
   messageErrorIf(clc::splitLogic && !clc::genTemp,
-                 "--splitLogic must be used with --generate_config");
+                 "--split-logic must be used with --generate-config");
 
-  if (result.count("clsAlg")) {
-    clc::clsAlg = result["clsAlg"].as<std::string>();
+  if (result.count("cls-alg")) {
+    clc::clsAlg = result["cls-alg"].as<std::string>();
     messageErrorIf(clc::clsAlg != "kmeans" && clc::clsAlg != "kde" &&
                        clc::clsAlg != "hc",
                    "Unknown clustering algorithm '" + clc::clsAlg + "'");

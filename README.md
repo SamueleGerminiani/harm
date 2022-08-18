@@ -13,7 +13,7 @@ The official repo of the Hint-Based AsseRtion Miner
 
 [Project info](#project-info)
 
-[Quick start](#project-info)
+[Quick start](#quick-start)
 1. [Install dependencies](#dependencies)
 2. [Build the project](#build-the-project)
 3. [Run default tests](#run-default-tests)

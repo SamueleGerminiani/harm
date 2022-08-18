@@ -18,7 +18,6 @@
 #include "DTNCReps.hh"
 #include "DTNext.hh"
 #include "DTNextAnd.hh"
-#include "EdgeProposition.hh"
 #include "Hstring.hh"
 #include "Location.hh"
 #include "PermGenerator.hh"
@@ -35,6 +34,7 @@
 #include "spot/twaalgos/translate.hh"
 
 namespace harm {
+    class EdgeProposition;
 
 /*! \class Template
     \brief Class representing an assertion template, the template can be
@@ -188,13 +188,7 @@ private:
    */
   void build();
 
-  /** \brief builds a custom automaton (see class Automaton) from a spotLTL automaton
-   */
-  Automaton *buildAutomaton(spot::twa_graph_ptr &automata);
 
-  /** \brief converts a spot LTL formula to a custom proposition
-   */
-  EdgeProposition *edgeToProposition(const spot::formula &f);
 
   /** \brief evaluates the formula implemented by the custom automaton
    */
@@ -220,10 +214,6 @@ private:
    */
   std::string findCauseInProposition(Proposition *ep, size_t time, bool goal);
 
-  /** \brief generate a FSM from a spot formula
-   */
-  std::shared_ptr<spot::twa_graph>
-  generateDeterministicSpotAutomaton(spot::formula &formula);
 
   /*! \structure Range
     \brief utility data structure for cuts and threads in the evaluation algorithm

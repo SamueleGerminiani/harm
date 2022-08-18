@@ -1,12 +1,11 @@
 #include "EdgeProposition.hh"
+namespace harm {
 
-EdgeAnd::EdgeAnd(EdgeProposition *p1, EdgeProposition *p2)
-    : EdgeProposition() {
+EdgeAnd::EdgeAnd(EdgeProposition *p1, EdgeProposition *p2) : EdgeProposition() {
   _operands.push_back(p1);
   _operands.push_back(p2);
 }
-EdgeAnd::EdgeAnd(std::vector<EdgeProposition *> pp)
-    : EdgeProposition() {
+EdgeAnd::EdgeAnd(std::vector<EdgeProposition *> pp) : EdgeProposition() {
   for (auto &p : pp) {
     _operands.push_back(p);
   }
@@ -31,13 +30,11 @@ std::string EdgeAnd::toString() {
   }
   return ret;
 }
-EdgeOr::EdgeOr(EdgeProposition *p1, EdgeProposition *p2)
-    : EdgeProposition() {
+EdgeOr::EdgeOr(EdgeProposition *p1, EdgeProposition *p2) : EdgeProposition() {
   _operands.push_back(p1);
   _operands.push_back(p2);
 }
-EdgeOr::EdgeOr(std::vector<EdgeProposition *> pp)
-    : EdgeProposition() {
+EdgeOr::EdgeOr(std::vector<EdgeProposition *> pp) : EdgeProposition() {
   for (auto &p : pp) {
     _operands.push_back(p);
   }
@@ -68,12 +65,10 @@ EdgeNot::EdgeNot(EdgeProposition *p) : EdgeProposition() {
 
 EdgeNot::~EdgeNot() { delete _operands[0]; }
 
-bool EdgeNot::evaluate(size_t time) {
-  return !_operands[0]->evaluate(time);
-}
+bool EdgeNot::evaluate(size_t time) { return !_operands[0]->evaluate(time); }
 
 std::string EdgeNot::toString() {
-        return "!(" + _operands[0]->toString()+")";
+  return "!(" + _operands[0]->toString() + ")";
 }
 bool EdgeTrue::evaluate(size_t time) { return true; }
 
@@ -82,11 +77,11 @@ std::string EdgeTrue::toString() { return "true"; }
 bool EdgeFalse::evaluate(size_t time) { return false; }
 
 std::string EdgeFalse::toString() { return "false"; }
-EdgePlaceholder::EdgePlaceholder(expression::Proposition **toProp,const std::string &phName)
+EdgePlaceholder::EdgePlaceholder(expression::Proposition **toProp,
+                                 const std::string &phName)
     : EdgeProposition(), _toProp(toProp), _phName(phName) {}
 bool EdgePlaceholder::evaluate(size_t time) {
   return (*_toProp)->evaluate(time);
 }
-std::string EdgePlaceholder::toString() {
-  return prop2String(**_toProp);
-}
+std::string EdgePlaceholder::toString() { return prop2String(**_toProp); }
+} // namespace harm

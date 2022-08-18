@@ -1,6 +1,7 @@
 #pragma once
 
 #include "exp.hh"
+namespace harm {
 
 /*! \class DTOperator
     \brief Class representing an edge of Automaton
@@ -66,3 +67,4 @@ public:
   expression::Proposition **_toProp;
   std::string _phName = "";
 };
+} // namespace harm

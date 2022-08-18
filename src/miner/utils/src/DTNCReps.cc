@@ -103,10 +103,10 @@ void DTNCReps::generateFormulas() {
     spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
 
     // Synthesising the automata
-    auto antAutomaton = _t->generateDeterministicSpotAutomaton(ant.f);
+    auto antAutomaton = generateDeterministicSpotAutomaton(ant.f);
 
     // building storing our custom automata
-    _ant.push_back(_t->buildAutomaton(antAutomaton));
+    _ant.push_back(buildAutomaton(antAutomaton, _t->_tokenToProp));
 
     // storing depths
     _antDepth.push_back(_t->getDepth(_ant.back()));
@@ -134,8 +134,8 @@ void DTNCReps::handleParallelDepth() {
       print_spin_ltl(ss, portionBare, false) << '\n';
       std::string portion = "{" + ss.str() + "}";
       auto portionFormula = spot::parse_infix_psl(portion);
-      auto aut = _t->generateDeterministicSpotAutomaton(portionFormula.f);
-      Automaton *pAnt = _t->buildAutomaton(aut);
+      auto aut = generateDeterministicSpotAutomaton(portionFormula.f);
+      Automaton *pAnt = buildAutomaton(aut, _t->_tokenToProp);
       //get the max depth of the automaton from the root
       int depth = _t->getDepth(pAnt);
       //fails if the automaton has cycles

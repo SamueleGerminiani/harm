@@ -117,10 +117,10 @@ void DTNextAnd::generateFormulas() {
     // string to spot formula
     spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
 
-    auto antAutomaton = _t->generateDeterministicSpotAutomaton(ant.f);
+    auto antAutomaton = generateDeterministicSpotAutomaton(ant.f);
 
     // building storing our custom automata
-    _ant.push_back(_t->buildAutomaton(antAutomaton));
+    _ant.push_back(buildAutomaton(antAutomaton, _t->_tokenToProp));
 
     // storing depths
     _antDepth.push_back(_t->getDepth(_ant.back()));
@@ -151,8 +151,8 @@ void DTNextAnd::handleParallelDepth() {
       print_spin_ltl(ss, portionBare, false) << '\n';
       std::string portion = "{" + ss.str() + "}";
       auto portionFormula = spot::parse_infix_psl(portion);
-      auto aut = _t->generateDeterministicSpotAutomaton(portionFormula.f);
-      Automaton *pAnt = _t->buildAutomaton(aut);
+      auto aut = generateDeterministicSpotAutomaton(portionFormula.f);
+      Automaton *pAnt = buildAutomaton(aut, _t->_tokenToProp);
       //get the max depth of the automaton from the root
       int depth = _t->getDepth(pAnt);
       //fails if the automaton has cycles
@@ -282,7 +282,8 @@ void DTNextAnd::removeItems() {
   _currDepth = 0;
 }
 void DTNextAnd::popItem(int depth) {
-    messageErrorIf(depth==-1, "You must always specify the depth when popping from a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when popping "
+                              "from a multidimensional operator");
   if (_parallelDepth) {
     _op[depth]->popItem();
   } else {
@@ -307,7 +308,8 @@ void DTNextAnd::popItem(int depth) {
 }
 void DTNextAnd::addItem(Proposition *p, int depth) {
 
-    messageErrorIf(depth==-1, "You must always specify the depth when inserting in a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when "
+                              "inserting in a multidimensional operator");
   _order.push_back(depth);
   if (_parallelDepth) {
     _op[depth]->addItem(p);
@@ -336,14 +338,16 @@ std::vector<Proposition *> DTNextAnd::getItems() {
 }
 bool DTNextAnd::isMultiDimensional() { return 1; }
 bool DTNextAnd::canInsertAtDepth(int depth) {
-    messageErrorIf(depth==-1, "You must always specify the depth when dealing with a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when dealing "
+                              "with a multidimensional operator");
   return (_choices[depth].size() < _limits._maxWidth &&
           (size_t)depth < _limits._maxDepth);
 }
 bool DTNextAnd::isRandomConstructed() { return _limits._isRandomConstructed; }
 size_t DTNextAnd::getNChoices() { return _order.size(); }
 bool DTNextAnd::isTaken(size_t id, bool second, int depth) {
-    messageErrorIf(depth==-1, "You must always specify the depth when dealing with a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when dealing "
+                              "with a multidimensional operator");
   if (second) {
     return _leaves[depth].count(id) && _leaves[depth].at(id).second != nullptr;
   } else {
@@ -351,7 +355,8 @@ bool DTNextAnd::isTaken(size_t id, bool second, int depth) {
   }
 }
 void DTNextAnd::removeLeaf(size_t id, bool second, int depth) {
-    messageErrorIf(depth==-1, "You must always specify the depth when dealing with a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when dealing "
+                              "with a multidimensional operator");
   if (second) {
     _leaves[depth].at(id).second = nullptr;
   } else {
@@ -359,7 +364,8 @@ void DTNextAnd::removeLeaf(size_t id, bool second, int depth) {
   }
 }
 void DTNextAnd::addLeaf(Proposition *p, size_t id, bool second, int depth) {
-    messageErrorIf(depth==-1, "You must always specify the depth when dealing with a multidimensional operator");
+  messageErrorIf(depth == -1, "You must always specify the depth when dealing "
+                              "with a multidimensional operator");
   if (second) {
     _leaves[depth][id].second = p;
   } else {
