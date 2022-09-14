@@ -9,17 +9,14 @@ namespace clc {
 extern std::string ve_assPath;
 extern std::string ve_technique;
 extern std::string ve_tracePath;
-extern std::string ftPath;
-extern std::string vars;
-extern bool ve_consecutive;
+extern std::string ve_ftPath;
+extern std::string ve_varList;
+extern std::string ve_dumpTo;
 extern size_t ve_nStatements;
-extern bool ve_inAnt;
-extern size_t ve_sa;
 extern size_t ve_cluster;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
-extern bool ve_oo;
 } // namespace clc
 
 struct Diff {
@@ -40,21 +37,16 @@ std::vector<std::string> readAssertions(std::string assPath);
 std::unordered_map<std::string, std::vector<harm::Template *>>
 discardAssertionsGroupBy(std::vector<harm::Template *> &assertions,
                          int groupByAnt);
-void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
-               size_t cluster, bool normalize, bool consecutive, bool inAnt);
-void getDiff(
-    std::unordered_map<std::string, Diff> &varToDiff,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
-    harm::Trace *trace, int where);
+void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff, bool normalize);
 
 
-void getDiffFT(
+void getDiffVBR(
     std::unordered_map<std::string, Diff> &varToDiff,
     std::unordered_map<std::string, size_t> &varToSize,
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
     harm::Trace *trace) ;
 
-void getDiffFT_LP(
+void getDiffSR(
     std::unordered_map<std::string, Diff> &stmToDiff,
     std::unordered_map<std::string, std::vector<harm::Template *>> &stmToAss) ;
 

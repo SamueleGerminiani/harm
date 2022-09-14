@@ -37,9 +37,8 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "find the minimum number of assertions covering all faults")(
         "dump", "dump assertions to file")("dump-stat",
                                            "dump statistics to file")(
-        "dump-no-data", "dump assertions to file without contingency")(
-        "dump-to", "dump assertions to file with given path",
-        cxxopts::value<std::string>(), "<DIRECTORY>")(
+        "dump-no-data", "dump assertions to file without contingency")
+                                               ( "dump-to", "dump assertions to file with given path", cxxopts::value<std::string>(), "<DIRECTORY>")(
         "dump-to-no-data",
         "dump assertions to file with given path without contingency",
         cxxopts::value<std::string>(), "<DIRECTORY>")(
@@ -138,29 +137,27 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
 
     std::string file = "";
 
-    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
-                          "<FILE>")(
-        "path", "", cxxopts::value<std::string>(),
-        "path to assertion file (one per each line)")(
-        "sa", "", cxxopts::value<std::string>(),
-        "stuck at 0, 1 or X ")("cluster", "", cxxopts::value<std::string>(),
-                               "divide the score into N clusters")(
+    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(), "<FILE>")
+        ( "ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")("cluster", "", cxxopts::value<std::string>(), "divide the score into N clusters")(
         "cs", "", cxxopts::value<std::string>(),
-        "chunkSize (depends on the available memory) ")(
-        "consec", "insert faults consecutively in the variables")(
-        "ant", "insert faults in ant variables")(
-        "con", "insert faults in ant variables")(
-        "technique", "", cxxopts::value<std::string>(),
+        "chunk-size number of assertions processed at a time (depends on the available memory) ")(
+        "tech", "", cxxopts::value<std::string>(),
         "technique used to perform the estimation")(
-        "clk", "clk signal", cxxopts::value<std::string>(), "<String>")(
-        "fd", "path to the directory containing faulty traces",
-        cxxopts::value<std::string>(),
+        "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+            
+            
+            
+            ( "var-list", "path to a csv file containing the the variables with their size", cxxopts::value<std::string>(),
+        "<DIRECTORY>")
+            
+            
+            ( "fd", "path to the directory containing faulty traces", cxxopts::value<std::string>(),
         "<DIRECTORY>")("vars", "path to the file containing the variables",
                        cxxopts::value<std::string>(), "<FILE>")
-            ( "max_threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
-            ( "nStatements", "", cxxopts::value<size_t>(), "<uint>")
-            ("oo", "assertions contain only outputs in the consequent")(
-        "help", "Show options");
+            ( "max-threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+                                               ( "dump-to", "dump ranking to file with given path", cxxopts::value<std::string>(), "<DIRECTORY>")
+            ( "n-stm", "The number of statements when yousing statement reduction", cxxopts::value<size_t>(), "<uint>")
+            ( "help", "Show options");
 
     auto result = options.parse(argc, argv);
 
@@ -168,13 +165,12 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
       std::cout << options.help({"", "Group"}) << std::endl;
       exit(0);
     }
-    if (result.count("path") == 0 || result.count("technique") == 0 ||
-        result.count("vcd") == 0 || result.count("clk") == 0 ||
-        (result.count("ant") == 0 && result.count("con") == 0)) {
-      std::cout << "Usage:\n varEstimator --path <FILE> --technique <string> "
+    if (result.count("ass-file") == 0 || result.count("tech") == 0 ||
+        result.count("vcd") == 0 || result.count("clk") == 0 ) {
+      std::cout << "Usage:\n varEstimator --ass-file <FILE> --tech <string> "
                    "--vcd <FILE>"
                    " --clk <string>"
-                   " [--ant | --con]"
+                   " [--var-list | --n-stm]"
                 << "\n";
       exit(0);
     }
