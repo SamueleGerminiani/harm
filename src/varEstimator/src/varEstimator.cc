@@ -37,10 +37,11 @@ std::string vars = "";
 bool ve_consecutive = 0;
 bool ve_inAnt = 0;
 bool ve_oo = 0;
+size_t ve_nStatements = 0;
 size_t ve_sa = 0;
 size_t ve_cluster = 1;
 // number of assertions processed each time
-size_t ve_chunkSize = 100;
+size_t ve_chunkSize = 100000;
 } // namespace clc
 
 using namespace harm;
@@ -297,17 +298,143 @@ inline void fillUtilityVars(
   }
   aToProps[ass].emplace_back(p, s);
 }
+//void getDiffFT(
+//    std::unordered_map<std::string, Diff> &varToDiff,
+//    std::unordered_map<std::string, size_t> &varToSize,
+//    std::unordered_map<std::string, std::vector<Template *>> &varToAss,
+//    Trace *trace) {
+//
+//  //  std::unordered_map<std::string, size_t> varToSize;
+//  //  // get the size of all variables
+//  //  for (auto &vaa : varToAss) {
+//  //    varToSize[vaa.first] = trace->getVarSize(vaa.first);
+//  //  }
+//
+//  progresscpp::ParallelProgressBar pb;
+//#if enPB_ve
+//  pb.addInstance(1, std::string("Evaluating assertions... "), varToAss.size(),
+//                 70);
+//#endif
+//  clc::isilent = 1;
+//
+//  for (auto &[v, assertions] : varToAss) {
+//    // parse the ft
+//    for (size_t i = 0; i < varToSize.at(v); i++) {
+//      std::string varName = v + "[" + std::to_string(i) + "]";
+//      std::string fn = clc::ftPath + "/" + varName + ".vcd";
+//      pb.changeMessage(1, fn);
+//      if (!std::filesystem::exists(fn)) {
+//        messageWarning("Can not find '" + fn + "'");
+//        continue;
+//      }
+//      TraceReader *tr = new harm::VCDtraceReader(fn, clc::clk);
+//      Trace *ft = tr->readTrace();
+//      delete tr;
+//      size_t nThreads = 16;
+//      Semaphore sem(nThreads);
+//      size_t served = 0;
+//      std::mutex cs;
+//      std::mutex ss;
+//      while (served < assertions.size()) {
+//        sem.wait();
+//        auto a = assertions[served];
+//        served++;
+//
+//        std::thread([&ss, &cs, &sem, &a, &ft, &varToDiff, &varName] {
+//
+//          size_t ct[3][3] = {{0}};
+//          a->setCacheAntFalse();
+//          a->setCacheConFalse();
+//          a->setL1Threads(2);
+//          a->fillContingency(ct, 0);
+//
+//          ss.lock();
+//          Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+//          ss.unlock();
+//
+//          fAss->setCacheAntFalse();
+//          fAss->setCacheConFalse();
+//          fAss->setL1Threads(2);
+//
+//          size_t ctWS[3][3] = {{0}};
+//          fAss->fillContingency(ctWS, 0);
+//
+//          cs.lock();
+//          // save the diffs
+//          varToDiff[varName]._atct += std::abs((int)(ct[0][0] - ctWS[0][0]));
+//          varToDiff[varName]._atcf += std::abs((int)(ct[0][1] - ctWS[0][1]));
+//          varToDiff[varName]._nAssertions+= (std::abs((int)(ct[0][1] - ctWS[0][1]))>0?1:0);
+//          cs.unlock();
+//          delete fAss;
+//          sem.notify();
+//        }).detach();
+//      }
+//      for (size_t i = 0; i < nThreads; i++) {
+//        sem.wait();
+//      }
+//
+//      delete ft;
+//    }
+//    pb.increment(1);
+//  }
+//  pb.done(1);
+//  clc::isilent = 0;
+//}
+void getDiffFT_LP(
+    std::unordered_map<std::string, Diff> &stmToDiff,
+    std::unordered_map<std::string, std::vector<Template *>> &stmToAss) {
+
+  progresscpp::ParallelProgressBar pb;
+  clc::isilent = 1;
+  pb.addInstance(1, std::string("Evaluating assertions... "), stmToAss.size(), 70);
+
+  for (auto &[s, assertions] : stmToAss) {
+    // parse the ft
+    std::string fn = clc::ftPath + "/" + s + ".vcd";
+    pb.changeMessage(1, fn);
+    if (!std::filesystem::exists(fn)) {
+      messageWarning("Can not find '" + fn + "'");
+      continue;
+    }
+    TraceReader *tr = new harm::VCDtraceReader(fn, clc::clk);
+    Trace *ft = tr->readTrace();
+    delete tr;
+
+    for (auto &a : assertions) {
+
+      Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+      size_t atcf = 0;
+      std::unordered_map<size_t, size_t> &cov = stmToDiff[s]._coverage;
+
+      for (size_t i = 0; i < fAss->_max_length; i++) {
+        if (fAss->evaluate(i) == Trinary::F) {
+          atcf++;
+          cov[i]++;
+        }
+      }
+      stmToDiff[s]._atcf += atcf;
+
+      delete fAss;
+    }
+
+    delete ft;
+    pb.increment(1);
+  }
+  pb.done(1);
+  clc::isilent = 0;
+}
+
 void getDiffFT(
     std::unordered_map<std::string, Diff> &varToDiff,
     std::unordered_map<std::string, size_t> &varToSize,
     std::unordered_map<std::string, std::vector<Template *>> &varToAss,
     Trace *trace) {
 
-//  std::unordered_map<std::string, size_t> varToSize;
-//  // get the size of all variables
-//  for (auto &vaa : varToAss) {
-//    varToSize[vaa.first] = trace->getVarSize(vaa.first);
-//  }
+  //  std::unordered_map<std::string, size_t> varToSize;
+  //  // get the size of all variables
+  //  for (auto &vaa : varToAss) {
+  //    varToSize[vaa.first] = trace->getVarSize(vaa.first);
+  //  }
 
   progresscpp::ParallelProgressBar pb;
 #if enPB_ve
@@ -329,46 +456,31 @@ void getDiffFT(
       TraceReader *tr = new harm::VCDtraceReader(fn, clc::clk);
       Trace *ft = tr->readTrace();
       delete tr;
-      size_t nThreads = 16;
-      Semaphore sem(nThreads);
-      size_t served = 0;
-      std::mutex cs;
-      std::mutex ss;
-      while (served < assertions.size()) {
-        sem.wait();
-        auto a = assertions[served];
-        served++;
 
-        std::thread([&ss, &cs, &sem, &a, &ft, &varToDiff, &varName] {
-          size_t ct[3][3] = {{0}};
-          a->setCacheAntFalse();
-          a->setCacheConFalse();
-          a->setL1Threads(2);
-          a->fillContingency(ct, 0);
+      for (auto &a : assertions) {
 
-          ss.lock();
-          Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
-          ss.unlock();
+        Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+        //fAss->setL1Threads(4);
 
-          fAss->setCacheAntFalse();
-          fAss->setCacheConFalse();
-          fAss->setL1Threads(2);
+        // size_t ct[3][3] = {{0}};
+        // fAss->fillContingency(ct, 0);
 
-          size_t ctWS[3][3] = {{0}};
-          fAss->fillContingency(ctWS, 0);
+        // // save the diffs
+        // varToDiff[varName]._atcf += ct[0][1];
+        // varToDiff[varName]._nAssertions += ((int)(ct[0][1]) > 0 ? 1 : 0);
+        //varToDiff[varName]._weight+=(double)ct[0][1]/(double)ct[0][0];
+        size_t atcf = 0;
+        std::unordered_map<size_t, size_t> &cov = varToDiff[varName]._coverage;
 
-          cs.lock();
-          // save the diffs
-          varToDiff[varName]._atct += std::abs((int)(ct[0][0] - ctWS[0][0]));
-          varToDiff[varName]._atcf += std::abs((int)(ct[0][1] - ctWS[0][1]));
-          varToDiff[varName]._nAssertions++;
-          cs.unlock();
-          delete fAss;
-          sem.notify();
-        }).detach();
-      }
-      for (size_t i = 0; i < nThreads; i++) {
-        sem.wait();
+        for (size_t i = 0; i < fAss->_max_length; i++) {
+          if (fAss->evaluate(i) == Trinary::F) {
+            atcf++;
+            cov[i]++;
+          }
+        }
+        varToDiff[varName]._atcf += atcf;
+
+        delete fAss;
       }
 
       delete ft;
@@ -615,6 +727,33 @@ void getDiff(std::unordered_map<std::string, Diff> &varToDiff,
 #endif
 }
 
+//std::vector<std::pair<std::string, double>>
+//converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
+//               bool inAnt) {
+//
+//  std::vector<std::pair<std::string, double>> scores;
+//  if (normalize) {
+//    for (auto &[var, diff] : varToDiff) {
+//      scores.emplace_back(var, (double)(diff._atct + diff._atcf) /
+//                                   (double)diff._nAssertions);
+//    }
+//  } else {
+//    for (auto &[var, diff] : varToDiff) {
+//      scores.emplace_back(var, (double)(diff._atct + diff._atcf));
+//    }
+//  }
+//
+//  std::sort(scores.begin(), scores.end(),
+//            [](const std::pair<std::string, double> &e1,
+//               const std::pair<std::string, double> &e2) {
+//              if (e1.second == e2.second) {
+//                return e1.first < e2.first;
+//              } else {
+//                return e1.second < e2.second;
+//              }
+//            });
+//  return scores;
+//}
 std::vector<std::pair<std::string, double>>
 converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
                bool inAnt) {
@@ -622,12 +761,17 @@ converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
   std::vector<std::pair<std::string, double>> scores;
   if (normalize) {
     for (auto &[var, diff] : varToDiff) {
-      scores.emplace_back(var, (double)(/*diff._atct +*/ diff._atcf) /
-                                   (double)diff._nAssertions);
+      //scores.emplace_back(var, (double)(diff._atcf * diff._weight));
+      //scores.emplace_back(var, (double)(diff._coverage.size()));
+      double score = 0.f;
+      for (auto &[id, v] : diff._coverage) {
+        score += 1.f + log(v);
+      }
+      scores.emplace_back(var, score);
     }
   } else {
     for (auto &[var, diff] : varToDiff) {
-      scores.emplace_back(var, (double)(/*diff._atct +*/ diff._atcf));
+      scores.emplace_back(var, (double)(diff._atcf));
     }
   }
 
@@ -642,6 +786,51 @@ converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
             });
   return scores;
 }
+//void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
+//               size_t cluster, bool normalize, bool consecutive, bool inAnt) {
+//  auto scores = converToScores(varToDiff, normalize, inAnt);
+//
+//  std::ofstream out(std::string("rank_out_sa") + (inAnt ? "Ant" : "Con") +
+//                    std::to_string(stuckAt) + (consecutive ? "Consec" : "") +
+//                    (normalize ? "Nor" : "") + ".txt");
+//
+//  std::vector<double> elements;
+//  for (auto &v_s : scores) {
+//    elements.push_back(v_s.second);
+//  }
+//
+//  auto ranges = clc::ve_cluster != 1
+//                    ? kmeansElbow(elements, clc::ve_cluster, 0.000001, 1)
+//                    : kmeansElbow(elements, 100, 0.01, 1);
+//  std::map<size_t, std::vector<std::pair<std::string, double>>> buckets;
+//  for (auto &v_s : scores) {
+//    auto it =
+//        std::find_if(ranges.begin(), ranges.end(),
+//                     [&v_s](const std::pair<double, double> &e) {
+//                       return v_s.second <= e.second && v_s.second >= e.first;
+//                     });
+//    messageErrorIf(it == ranges.end(), "Could not find range");
+//    buckets[std::distance(ranges.begin(), it)].emplace_back(v_s.first,
+//                                                            v_s.second);
+//  }
+//  for (auto &b : buckets) {
+//    if (!normalize) {
+//      //std::cout << "===================[" << b.first << "]====================" << "\n";
+//    }
+//    //out << "===================[" << b.first << "]====================" << "\n";
+//    for (auto &v_s : b.second) {
+//      if (!normalize) {
+//        std::cout << v_s.first << "; " << (int)v_s.second << "\n";
+//        out << v_s.first << "; " << (int)v_s.second << "\n";
+//      } else {
+//        out << v_s.first << "; " << std::fixed << std::setprecision(4)
+//            << (double)v_s.second << "\n";
+//      }
+//    }
+//  }
+//
+//  out.close();
+//}
 void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
                size_t cluster, bool normalize, bool consecutive, bool inAnt) {
   auto scores = converToScores(varToDiff, normalize, inAnt);
@@ -650,40 +839,13 @@ void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
                     std::to_string(stuckAt) + (consecutive ? "Consec" : "") +
                     (normalize ? "Nor" : "") + ".txt");
 
-  std::vector<double> elements;
-  for (auto &v_s : scores) {
-    elements.push_back(v_s.second);
-  }
-
-  auto ranges = clc::ve_cluster != 1
-                    ? kmeansElbow(elements, clc::ve_cluster, 0.000001, 1)
-                    : kmeansElbow(elements, 100, 0.01, 1);
-  std::map<size_t, std::vector<std::pair<std::string, double>>> buckets;
-  for (auto &v_s : scores) {
-    auto it =
-        std::find_if(ranges.begin(), ranges.end(),
-                     [&v_s](const std::pair<double, double> &e) {
-                       return v_s.second <= e.second && v_s.second >= e.first;
-                     });
-    messageErrorIf(it == ranges.end(), "Could not find range");
-    buckets[std::distance(ranges.begin(), it)].emplace_back(v_s.first,
-                                                            v_s.second);
-  }
-  for (auto &b : buckets) {
+  for (auto &[v, s] : scores) {
     if (!normalize) {
-      std::cout << "===================[" << b.first << "]===================="
-                << "\n";
-    }
-      out << "===================[" << b.first << "]===================="
+      std::cout << v << "; " << (int)s << "\n";
+      out << v << "; " << (int)s << "\n";
+    } else {
+      out << v << "; " << std::fixed << std::setprecision(4) << (double)s
           << "\n";
-    for (auto &v_s : b.second) {
-      if (!normalize) {
-        std::cout << v_s.first << ": " << (int)v_s.second << "\n";
-        out << v_s.first << ": " << (int)v_s.second << "\n";
-      } else {
-        out << v_s.first << ": " << std::fixed << std::setprecision(4)
-            << (double)v_s.second << "\n";
-      }
     }
   }
 

@@ -31,7 +31,8 @@ public:
 
   /** \brief rank the assertions in the given context (print or dump the result), return the ranked assertions
    */
-  virtual std::vector<Assertion *> qualify(Context &context, Trace *trace) override;
+  virtual std::vector<Assertion *> qualify(Context &context,
+                                           Trace *trace) override;
 
 private:
   /** \brief parse a trace containing a fault
@@ -79,7 +80,7 @@ private:
   /** \brief load the parameters for the interactive ranking with several 'calibration' functions
    */
   void loadParams();
-  
+
   /** \brief run the sat solver to find the minimum number of assertions covering the maximum number of faults
    */
   std::vector<size_t> getCoverageSet();
@@ -92,6 +93,10 @@ private:
   std::vector<Assertion *> extractUniqueAssertionsFast(Context &context);
 
   size_t _traceLength;
+
+  ///keeps the ids of the assertions covering the maximum numbers of faults
+  std::vector<size_t> _coverageSet;
+
   std::unordered_map<size_t, FunctionParameter> _functionParams;
   /** \brief filter redundant assertions, quikly allbeit less precisely
    */

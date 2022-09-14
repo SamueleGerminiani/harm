@@ -1,9 +1,9 @@
 #include "TraceReader.hh"
 #include "VCDtraceReader.hh"
 #include "commandLineParser.hh"
+#include "csv.hpp"
 #include "globals.hh"
 #include "varEstimator.hh"
-#include "csv.hpp"
 #include <filesystem>
 #include <random>
 
@@ -42,17 +42,23 @@ int main(int arg, char *argv[]) {
     std::unordered_map<std::string, std::vector<Template *>> varToAss;
     std::unordered_map<std::string, size_t> varToSize;
     if (clc::ve_oo && !clc::faultyTraceFiles.empty()) {
-      //auto vars = trace->getVariables();
+      if (clc::ve_technique == "lp") {
+        for (size_t i = 0; i < clc::ve_nStatements; i++) {
+          varToAss["s" + std::to_string(i)] = assertions;
+        }
+      } else {
         csv::CSVReader reader(clc::vars);
         csv::CSVRow row;
-        std::vector<std::string> vars;
+        varToAss[reader.get_col_names()[1]] = assertions;
+        varToSize[reader.get_col_names()[1]] =
+            std::stoul(reader.get_col_names()[2]);
+        //        std::cout << reader.get_col_names()[1] <<" "<<reader.get_col_names()[2]<< "\n\n\n\n\n";
         while (reader.read_row(row)) {
-//        std::cout << row[1].get() <<" "<<row[2].get()<< "\n";
-            varToAss[row[1].get()] = assertions;
-            varToSize[row[1].get()] = std::stoul(row[2].get());
-
+          //           std::cout << row[1].get() <<" "<<row[2].get()<< "\n\n\n\n\n";
+          varToAss[row[1].get()] = assertions;
+          varToSize[row[1].get()] = std::stoul(row[2].get());
         }
-
+      }
     } else {
       varToAss = discardAssertionsGroupBy(assertions, clc::ve_inAnt ? 0 : 1);
     }
@@ -60,7 +66,11 @@ int main(int arg, char *argv[]) {
     if (clc::faultyTraceFiles.empty()) {
       getDiff(varToDiff, varToAss, trace, clc::ve_inAnt ? 0 : 1);
     } else {
-      getDiffFT(varToDiff,varToSize, varToAss, trace);
+      if (clc::ve_technique == "lp") {
+        getDiffFT_LP(varToDiff, varToAss);
+      } else {
+        getDiffFT(varToDiff, varToSize, varToAss, trace);
+      }
     }
 
     // delete processed assertions
@@ -111,6 +121,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     std::cout << "Clusters: " << clc::ve_cluster << "\n";
     clc::ve_cluster = clc::ve_cluster > 0 ? clc::ve_cluster : 1;
   }
+  if (result.count("nStatements")) {
+    std::cout << "nStatements: " << result["nStatements"].as<size_t>()<< "\n";
+    clc::ve_nStatements = result["nStatements"].as<size_t>();
+  }
   if (result.count("technique")) {
     clc::ve_technique = result["technique"].as<std::string>();
     std::cout << "Technique: " << clc::ve_technique << "\n";
@@ -155,8 +169,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("cs")) {
     clc::ve_chunkSize = std::stoul(result["cs"].as<std::string>());
-    std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   }
+  std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();
     std::cout << "clk: " << clc::clk << "\n";

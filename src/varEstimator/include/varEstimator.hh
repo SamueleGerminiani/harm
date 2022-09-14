@@ -12,6 +12,7 @@ extern std::string ve_tracePath;
 extern std::string ftPath;
 extern std::string vars;
 extern bool ve_consecutive;
+extern size_t ve_nStatements;
 extern bool ve_inAnt;
 extern size_t ve_sa;
 extern size_t ve_cluster;
@@ -30,6 +31,9 @@ struct Diff {
   int _atct = 0;
   int _atcf = 0;
   size_t _nAssertions = 0;
+  double _weight = 0.f;
+  std::unordered_map<size_t, size_t> _coverage;
+
 };
 
 std::vector<std::string> readAssertions(std::string assPath);
@@ -50,6 +54,9 @@ void getDiffFT(
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
     harm::Trace *trace) ;
 
+void getDiffFT_LP(
+    std::unordered_map<std::string, Diff> &stmToDiff,
+    std::unordered_map<std::string, std::vector<harm::Template *>> &stmToAss) ;
 
 void findFaultCoverageOnTrace(
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,

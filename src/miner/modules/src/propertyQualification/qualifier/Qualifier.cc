@@ -257,12 +257,12 @@ std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
   }
 
   // fault-based qualification
-  if (!clc::faultyTraceFiles.empty() || clc::ftmFile != "") {
+  if ((!clc::faultyTraceFiles.empty() || clc::ftmFile != "") && !rankedAssertions.empty()) {
     faultBasedQualification(rankedAssertions, trace);
   }
 
   // dump to file
-  if (clc::dumpAssToFile) {
+  if (clc::dumpAssToFile && !rankedAssertions.empty()) {
     dumpAssToFile(context, trace, rankedAssertions);
   }
   return rankedAssertions;
@@ -657,7 +657,7 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
         _aToF[i].push_back(j);
         _fToA[j].push_back(i);
         if (!clc::findMinSubset) {
-          //stop search for this for if do not want the optimal covering set
+          //stop search for this fault if do not want the optimal covering set
 #if enPB
           progressBar.increment(0, selected.size() - i);
           progressBar.display();
@@ -739,11 +739,12 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
   hs::nOfCovFaults = _fToA.size();
 
   if (!_fToA.empty()) {
-    auto cs = getCoverageSet();
-    hs::nFaultCovSubset = cs.size();
+    _coverageSet.clear();
+    _coverageSet = getCoverageSet();
+    hs::nFaultCovSubset = _coverageSet.size();
     ss << "Covering Subset:"
        << "\n\033[0m";
-    for (auto a : cs) {
+    for (auto a : _coverageSet) {
       ss << a << ")"
          << "\t" << selected[a]->_toString.second << "\n";
     }
@@ -801,6 +802,14 @@ void Qualifier::dumpAssToFile(Context &context, Trace *trace,
 #endif
   }
 
+  //dump fault coverage
+  std::ofstream fc_assFile(clc::dumpPath + "/" + context._name + "_faultCov.txt");
+
+    for (auto a : _coverageSet) {
+      fc_assFile << assertions[a]->_toString.first << "\n";
+    }
+
+  fc_assFile.close();
   assFile.close();
 #if enPB
   pb.done(0);

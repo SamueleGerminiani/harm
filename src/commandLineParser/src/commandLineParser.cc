@@ -156,10 +156,10 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
         "fd", "path to the directory containing faulty traces",
         cxxopts::value<std::string>(),
         "<DIRECTORY>")("vars", "path to the file containing the variables",
-                       cxxopts::value<std::string>(), "<FILE>")(
-        "max_threads", "max number of threads that harm is allowed to spawn",
-        cxxopts::value<size_t>(),
-        "<uint>")("oo", "assertions contain only outputs in the consequent")(
+                       cxxopts::value<std::string>(), "<FILE>")
+            ( "max_threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+            ( "nStatements", "", cxxopts::value<size_t>(), "<uint>")
+            ("oo", "assertions contain only outputs in the consequent")(
         "help", "Show options");
 
     auto result = options.parse(argc, argv);
