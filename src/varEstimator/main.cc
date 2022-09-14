@@ -14,7 +14,6 @@ void parseCommandLineArguments(int argc, char *args[]);
 
 int main(int arg, char *argv[]) {
   parseCommandLineArguments(arg, argv);
-  l1Constants::MAX_THREADS = 2;
 
   TraceReader *traceReader = new VCDtraceReader(clc::ve_tracePath, clc::clk);
 
@@ -22,13 +21,8 @@ int main(int arg, char *argv[]) {
   harm::Trace *trace = traceReader->readTrace();
 
   auto assStrs = readAssertions(clc::ve_assPath);
-  size_t th = 100000000000;
-  if (assStrs.size() > th) {
-    auto rng = std::default_random_engine{};
-    std::shuffle(std::begin(assStrs), std::end(assStrs), rng);
-    assStrs.erase(assStrs.begin() + th, assStrs.end());
-  }
-  std::unordered_map<std::string, Diff> varToDiff;
+
+  std::unordered_map<std::string, Diff> tokenToDiff;
 
   int evaluated = 0;
   // eval the assertions one chunck at a time (to avoid memory explosion)
@@ -39,39 +33,31 @@ int main(int arg, char *argv[]) {
     std::vector<Template *> assertions = parseAssertions(
         assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
 
-    std::unordered_map<std::string, std::vector<Template *>> varToAss;
-    std::unordered_map<std::string, size_t> varToSize;
-    if (clc::ve_oo && !clc::faultyTraceFiles.empty()) {
-      if (clc::ve_technique == "lp") {
+
+      if (clc::ve_technique == "sr") {
+          //Statement reduction
+          std::unordered_map<std::string, std::vector<Template *>> stmToAss;
         for (size_t i = 0; i < clc::ve_nStatements; i++) {
-          varToAss["s" + std::to_string(i)] = assertions;
+          stmToAss["s" + std::to_string(i)] = assertions;
         }
-      } else {
-        csv::CSVReader reader(clc::vars);
+        getDiffSR(tokenToDiff, stmToAss);
+      } else if(clc::ve_technique == "vbr") {
+          //Variable Bit reduction
+          std::unordered_map<std::string, std::vector<Template *>> varToAss;
+          std::unordered_map<std::string, size_t> varToSize;
+        csv::CSVReader reader(clc::ve_varMap);
         csv::CSVRow row;
         varToAss[reader.get_col_names()[1]] = assertions;
         varToSize[reader.get_col_names()[1]] =
             std::stoul(reader.get_col_names()[2]);
-        //        std::cout << reader.get_col_names()[1] <<" "<<reader.get_col_names()[2]<< "\n\n\n\n\n";
         while (reader.read_row(row)) {
-          //           std::cout << row[1].get() <<" "<<row[2].get()<< "\n\n\n\n\n";
           varToAss[row[1].get()] = assertions;
           varToSize[row[1].get()] = std::stoul(row[2].get());
         }
-      }
-    } else {
-      varToAss = discardAssertionsGroupBy(assertions, clc::ve_inAnt ? 0 : 1);
-    }
 
-    if (clc::faultyTraceFiles.empty()) {
-      getDiff(varToDiff, varToAss, trace, clc::ve_inAnt ? 0 : 1);
-    } else {
-      if (clc::ve_technique == "lp") {
-        getDiffFT_LP(varToDiff, varToAss);
-      } else {
-        getDiffFT(varToDiff, varToSize, varToAss, trace);
+        getDiffVBR(tokenToDiff, varToSize, varToAss, trace);
       }
-    }
+    
 
     // delete processed assertions
     for (Template *a : assertions) {
@@ -81,12 +67,10 @@ int main(int arg, char *argv[]) {
     evaluated += clc::ve_chunkSize;
   }
 
-  // absolute
-  dumpScore(varToDiff, clc::ve_sa, clc::ve_cluster, 0, clc::ve_consecutive,
-            clc::ve_inAnt);
-  // normalized
-  dumpScore(varToDiff, clc::ve_sa, clc::ve_cluster, 1, clc::ve_consecutive,
-            clc::ve_inAnt);
+  //abs
+  dumpScore(tokenToDiff,0);
+  //norm
+  dumpScore(tokenToDiff,1);
 
   delete trace;
   return 0;
@@ -103,16 +87,17 @@ void parseCommandLineArguments(int argc, char *args[]) {
         clc::faultyTraceFiles.push_back(entry.path().u8string());
       }
     }
-    messageErrorIf(clc::faultyTraceFiles.empty(), "No ft found!");
   }
-  if (result.count("vars")) {
-    clc::vars = result["vars"].as<std::string>();
-  }
-  if (result.count("oo")) {
-    clc::ve_oo = 1;
+    messageErrorIf(clc::faultyTraceFiles.empty(), "No faulty traces found!");
+
+  if (result.count("var-map")) {
+      clc::ve_varMap = result["var-map"].as<std::string>();
   }
 
-  if (result.count("path")) {
+  messageErrorIf(clc::ve_technique=="vbr" && !result.count("var-map") , "No var-map specified");
+
+
+  if (result.count("ass-path")) {
     clc::ve_assPath = result["path"].as<std::string>();
     std::cout << "Path: " << clc::ve_assPath << "\n";
   }
@@ -127,6 +112,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("technique")) {
     clc::ve_technique = result["technique"].as<std::string>();
+    messageErrorIf(clc::ve_technique!="sr" && clc::ve_technique!="vbr", "Unknown technique");
     std::cout << "Technique: " << clc::ve_technique << "\n";
   }
   if (result.count("ant")) {
@@ -149,18 +135,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
     std::cout << "Consecutive: "
               << "No"
               << "\n";
-  }
-  if (result.count("sa")) {
-    if (result["sa"].as<std::string>() == "0") {
-      clc::ve_sa = 0;
-    } else if (result["sa"].as<std::string>() == "1") {
-      clc::ve_sa = 1;
-    } else if (result["sa"].as<std::string>() == "x") {
-      clc::ve_sa = 2;
-    } else {
-      messageError("Unknown stuck at option!");
-    }
-    std::cout << "Stuck at: " << result["sa"].as<std::string>() << "\n";
   }
 
   if (result.count("vcd")) {

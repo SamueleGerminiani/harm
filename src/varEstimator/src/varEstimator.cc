@@ -34,11 +34,7 @@ std::string ve_technique = "";
 std::string ve_tracePath = "";
 std::string ftPath = "";
 std::string vars = "";
-bool ve_consecutive = 0;
-bool ve_inAnt = 0;
-bool ve_oo = 0;
 size_t ve_nStatements = 0;
-size_t ve_sa = 0;
 size_t ve_cluster = 1;
 // number of assertions processed each time
 size_t ve_chunkSize = 100000;
@@ -386,7 +382,8 @@ void getDiffFT_LP(
 
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
-  pb.addInstance(1, std::string("Evaluating assertions... "), stmToAss.size(), 70);
+  pb.addInstance(1, std::string("Evaluating assertions... "), stmToAss.size(),
+                 70);
 
   for (auto &[s, assertions] : stmToAss) {
     // parse the ft
@@ -727,44 +724,17 @@ void getDiff(std::unordered_map<std::string, Diff> &varToDiff,
 #endif
 }
 
-//std::vector<std::pair<std::string, double>>
-//converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
-//               bool inAnt) {
-//
-//  std::vector<std::pair<std::string, double>> scores;
-//  if (normalize) {
-//    for (auto &[var, diff] : varToDiff) {
-//      scores.emplace_back(var, (double)(diff._atct + diff._atcf) /
-//                                   (double)diff._nAssertions);
-//    }
-//  } else {
-//    for (auto &[var, diff] : varToDiff) {
-//      scores.emplace_back(var, (double)(diff._atct + diff._atcf));
-//    }
-//  }
-//
-//  std::sort(scores.begin(), scores.end(),
-//            [](const std::pair<std::string, double> &e1,
-//               const std::pair<std::string, double> &e2) {
-//              if (e1.second == e2.second) {
-//                return e1.first < e2.first;
-//              } else {
-//                return e1.second < e2.second;
-//              }
-//            });
-//  return scores;
-//}
 std::vector<std::pair<std::string, double>>
-converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
-               bool inAnt) {
+converToScores(std::unordered_map<std::string, Diff> &tokenToDiff,
+               bool normalize) {
 
   std::vector<std::pair<std::string, double>> scores;
+
   if (normalize) {
     for (auto &[var, diff] : varToDiff) {
-      //scores.emplace_back(var, (double)(diff._atcf * diff._weight));
-      //scores.emplace_back(var, (double)(diff._coverage.size()));
       double score = 0.f;
       for (auto &[id, v] : diff._coverage) {
+        //use a log function to normalize
         score += 1.f + log(v);
       }
       scores.emplace_back(var, score);
@@ -775,6 +745,7 @@ converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
     }
   }
 
+  //sort the scores
   std::sort(scores.begin(), scores.end(),
             [](const std::pair<std::string, double> &e1,
                const std::pair<std::string, double> &e2) {
@@ -831,28 +802,49 @@ converToScores(std::unordered_map<std::string, Diff> &varToDiff, bool normalize,
 //
 //  out.close();
 //}
-void dumpScore(std::unordered_map<std::string, Diff> &varToDiff, size_t stuckAt,
-               size_t cluster, bool normalize, bool consecutive, bool inAnt) {
-  auto scores = converToScores(varToDiff, normalize, inAnt);
+void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
+               bool normalize) {
 
-  std::ofstream out(std::string("rank_out_sa") + (inAnt ? "Ant" : "Con") +
-                    std::to_string(stuckAt) + (consecutive ? "Consec" : "") +
-                    (normalize ? "Nor" : "") + ".txt");
+  auto scores = converToScores(tokenToDiff, normalize);
 
-  for (auto &[v, s] : scores) {
-    if (!normalize) {
-      std::cout << v << "; " << (int)s << "\n";
-      out << v << "; " << (int)s << "\n";
-    } else {
-      out << v << "; " << std::fixed << std::setprecision(4) << (double)s
-          << "\n";
+  std::ofstream out(std::string("rank_") + clc::ve_technique +
+                    (normalize ? "_nor" : "") + ".csv");
+
+  //prep for clustering
+  std::vector<double> elements;
+  for (auto &v_s : scores) {
+    elements.push_back(v_s.second);
+  }
+
+  std::map<size_t, std::vector<std::pair<std::string, double>>> clusters_score;
+
+  auto clusters_range =
+      clc::ve_cluster != 1 ? kmeansElbow(elements, clc::ve_cluster, 0.000001, 1)
+                           : kmeansElbow(elements, 100, 0.01, 1);
+
+  //fill the clusters with scores
+  for (auto &v_s : scores) {
+    auto it =
+        std::find_if(clusters_range.begin(), clusters_range.end(),
+                     [&v_s](const std::pair<double, double> &e) {
+                       return v_s.second <= e.second && v_s.second >= e.first;
+                     });
+    messageErrorIf(it == clusters_range.end(), "Could not find range");
+    clusters_score[std::distance(clusters_range.begin(), it)].emplace_back(
+        v_s.first, v_s.second);
+  }
+
+  //dump the scores
+  for (auto &[id, scores] : clusters_score) {
+    for (auto &[token, score] : scores) {
+      if (!normalize) {
+        out << token << "; " << (int)score << ";" << id << "\n";
+      } else {
+        out << token << "; " << std::fixed << std::setprecision(4)
+            << (double)score << ";" << id "\n";
+      }
     }
   }
 
   out.close();
 }
-void stuckAtQualification(
-    std::vector<harm::Assertion *> &selected,
-    const std::string &outsVarFilePath, harm::Trace *trace, size_t stuckAt,
-    std::unordered_map<size_t, std::vector<size_t>> &aToF) {}
-
