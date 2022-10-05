@@ -1,1 +1,0 @@
-./varEstimator --technique "sa" --path ~/axc-designs-and-configs/sobel/harm/allAssertions.txt --clk clk --cluster 10 --sa 0 --con --vcd ~/axc-designs-and-configs/sobel/sobelBaboon.vcd --cs 3000

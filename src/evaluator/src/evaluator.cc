@@ -1,4 +1,5 @@
-#include "varEstimator.hh"
+#include "evaluator.hh"
+#include "CSVtraceReader.hh"
 #include "DataType.hh"
 #include "EdgeProposition.hh"
 #include "Kmeans.hh"
@@ -33,16 +34,31 @@ std::string ve_assPath = "";
 std::string ve_technique = "";
 std::string ve_tracePath = "";
 std::string ve_ftPath = "";
-std::string ve_varList = "";
+std::string ve_infoList = "";
 std::string ve_dumpTo = ".";
 size_t ve_nStatements = 0;
-size_t ve_cluster = 1;
+int ve_cluster = 1;
 // number of assertions processed each time
 size_t ve_chunkSize = 100000;
+bool ve_print_failing_ass = 0;
 } // namespace clc
 
 using namespace harm;
 using namespace expression;
+
+TraceReader *parseTrace(std::string path) {
+
+  TraceReader *traceReader = nullptr;
+  if (clc::parserType == "vcd") {
+    traceReader = new VCDtraceReader(path, clc::clk);
+  } else if (clc::parserType == "csv") {
+    traceReader = new CSVtraceReader(path);
+  } else {
+    messageError("Unknown parser type");
+  }
+
+  return traceReader;
+}
 
 std::vector<size_t> findAllOccs(const std::string &str,
                                 const std::string &sub) {
@@ -142,7 +158,9 @@ inline void fillUtilityVars(
 }
 void getDiffSR(
     std::unordered_map<std::string, Diff> &stmToDiff,
-    std::unordered_map<std::string, std::vector<Template *>> &stmToAss) {
+    std::unordered_map<std::string, std::vector<Template *>> &stmToAss,
+    std::unordered_map<std::string, std::vector<std::string>>
+        &tokenToFailingAssertions) {
 
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
@@ -151,13 +169,14 @@ void getDiffSR(
 
   for (auto &[s, assertions] : stmToAss) {
     // parse the ft
-    std::string fn = clc::ve_ftPath + "/" + s + ".vcd";
+    std::string fn =
+        clc::ve_ftPath + "/" + s + (clc::parserType == "vcd" ? ".vcd" : ".csv");
     pb.changeMessage(1, fn);
     if (!std::filesystem::exists(fn)) {
       messageWarning("Can not find '" + fn + "'");
       continue;
     }
-    TraceReader *tr = new harm::VCDtraceReader(fn, clc::clk);
+    TraceReader *tr = parseTrace(fn);
     Trace *ft = tr->readTrace();
     delete tr;
 
@@ -172,6 +191,11 @@ void getDiffSR(
           atcf++;
           cov[i]++;
         }
+      }
+      //debug
+      if (atcf > 0) {
+        tokenToFailingAssertions[s].push_back(a->getColoredAssertion() +
+                                              " --> " + std::to_string(atcf));
       }
       stmToDiff[s]._atcf += atcf;
 
@@ -188,8 +212,7 @@ void getDiffSR(
 void getDiffVBR(
     std::unordered_map<std::string, Diff> &varToDiff,
     std::unordered_map<std::string, size_t> &varToSize,
-    std::unordered_map<std::string, std::vector<Template *>> &varToAss,
-    Trace *trace) {
+    std::unordered_map<std::string, std::vector<Template *>> &varToAss) {
 
   progresscpp::ParallelProgressBar pb;
 #if enPB_ve
@@ -201,14 +224,14 @@ void getDiffVBR(
   for (auto &[v, assertions] : varToAss) {
     // parse the ft
     for (size_t i = 0; i < varToSize.at(v); i++) {
-      std::string fn =
-          clc::ve_ftPath + "/" + v + "[" + std::to_string(i) + "]" + ".vcd";
+      std::string fn = clc::ve_ftPath + "/" + v + "[" + std::to_string(i) +
+                       "]" + (clc::parserType == "vcd" ? ".vcd" : ".csv");
       pb.changeMessage(1, fn);
       if (!std::filesystem::exists(fn)) {
         messageWarning("Can not find '" + fn + "'");
         continue;
       }
-      TraceReader *tr = new harm::VCDtraceReader(fn, clc::clk);
+      TraceReader *tr = parseTrace(fn);
       Trace *ft = tr->readTrace();
       delete tr;
 
@@ -217,8 +240,7 @@ void getDiffVBR(
         Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
 
         size_t atcf = 0;
-        std::string varCSVformat =
-            v + "," + std::to_string(varToSize.at(v)) + "," + std::to_string(i);
+        std::string varCSVformat = v + "," + std::to_string(varToSize.at(v))+","+ std::to_string(i);
         std::unordered_map<size_t, size_t> &cov =
             varToDiff[varCSVformat]._coverage;
 
@@ -229,6 +251,59 @@ void getDiffVBR(
           }
         }
         varToDiff[varCSVformat]._atcf += atcf;
+
+        delete fAss;
+      }
+
+      delete ft;
+    }
+    pb.increment(1);
+  }
+  pb.done(1);
+  clc::isilent = 0;
+}
+void getDiffBR(
+    std::unordered_map<std::string, Diff> &idToDiff,
+    std::unordered_map<std::string, size_t> &idToSize,
+    std::unordered_map<std::string, std::vector<Template *>> &idToAss) {
+
+  progresscpp::ParallelProgressBar pb;
+#if enPB_ve
+  pb.addInstance(1, std::string("Evaluating assertions... "), idToAss.size(),
+                 70);
+#endif
+  clc::isilent = 1;
+
+  for (auto &[id, assertions] : idToAss) {
+    // parse the ft
+    for (size_t i = 0; i < idToSize.at(id); i++) {
+      std::string fn = clc::ve_ftPath + "/" + id + "_" + std::to_string(i) +
+                       (clc::parserType == "vcd" ? ".vcd" : ".csv");
+      pb.changeMessage(1, fn);
+      if (!std::filesystem::exists(fn)) {
+        messageWarning("Can not find '" + fn + "'");
+        continue;
+      }
+      TraceReader *tr = parseTrace(fn);
+      Trace *ft = tr->readTrace();
+      delete tr;
+
+      for (auto &a : assertions) {
+
+        Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+
+        size_t atcf = 0;
+        std::string idCSVformat = id + "," +std::to_string(idToSize.at(id))+ "," + std::to_string(i);
+        std::unordered_map<size_t, size_t> &cov =
+            idToDiff[idCSVformat]._coverage;
+
+        for (size_t i = 0; i < fAss->_max_length; i++) {
+          if (fAss->evaluate(i) == Trinary::F) {
+            atcf++;
+            cov[i]++;
+          }
+        }
+        idToDiff[idCSVformat]._atcf += atcf;
 
         delete fAss;
       }
@@ -292,8 +367,11 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
   std::map<size_t, std::vector<std::pair<std::string, double>>> clusters_score;
 
   auto clusters_range =
-      clc::ve_cluster != 1 ? kmeansElbow(elements, clc::ve_cluster, 0.000001, 1)
-                           : kmeansElbow(elements, 100, 0.01, 1);
+      clc::ve_cluster == -1
+          ? kmeansElbow(elements, 10, 0.1, 1)
+          : (clc::ve_cluster > 1
+                 ? kmeansElbow(elements, clc::ve_cluster, 0.01, 1)
+                 : kmeansElbow(elements, 1, 0.01, 1));
 
   //fill the clusters with scores
   for (auto &v_s : scores) {
@@ -308,13 +386,41 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
   }
 
   //dump the scores
-  for (auto &[id, scores] : clusters_score) {
-    for (auto &[token, score] : scores) {
-      if (!normalize) {
-        out << token << "," << (int)score << "," << id << "\n";
-      } else {
-        out << token << "," << std::fixed << std::setprecision(4)
-            << (double)score << "," << id << "\n";
+  if (clc::ve_technique == "vbr") {
+    out << "var,size,bit,cluster,score\n";
+    for (auto &[id, scores] : clusters_score) {
+      for (auto &[token, score] : scores) {
+        if (!normalize) {
+          out << token << "," << id << "," << (int)score << "\n";
+        } else {
+          out << token << "," << std::fixed << std::setprecision(4) << id << ","
+              << (double)score << "\n";
+        }
+      }
+    }
+
+  } else if (clc::ve_technique == "sr") {
+    out << "statement,cluster,score\n";
+    for (auto &[id, scores] : clusters_score) {
+      for (auto &[token, score] : scores) {
+        if (!normalize) {
+          out << token << "," << id << "," << (int)score << "\n";
+        } else {
+          out << token << "," << std::fixed << std::setprecision(4) << id << ","
+              << (double)score << "\n";
+        }
+      }
+    }
+  } else if (clc::ve_technique == "br") {
+    out << "token,size,bit,cluster,score\n";
+    for (auto &[id, scores] : clusters_score) {
+      for (auto &[token, score] : scores) {
+        if (!normalize) {
+          out << token << "," << id << "," << (int)score << "\n";
+        } else {
+          out << token << "," << std::fixed << std::setprecision(4) << id << ","
+              << (double)score << "\n";
+        }
       }
     }
   }

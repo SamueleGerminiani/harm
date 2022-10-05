@@ -46,10 +46,10 @@ target_include_directories(propertyMiner PUBLIC include/propertyMiner/interface/
 	include/propertyMiner/TLMiner/)
 
 
-#estimator (used both in varEstimator and in fault-based qualifier)
-SET(VE_SRC ./../../varEstimator/src/varEstimator.cc)
-add_library(estimator ${VE_SRC})
-target_include_directories( estimator PUBLIC ./../../varEstimator/include/)
+#estimator (used both in evaluator and in fault-based qualifier)
+SET(E_SRC ./../../evaluator/src/evaluator.cc)
+add_library(estimator ${E_SRC})
+target_include_directories(estimator PUBLIC ./../../evaluator/include/)
 target_link_libraries(estimator miner_utils templateParser propositionParser varParser traceReader)
 
 #Property Qualifier

@@ -179,8 +179,8 @@ add_executable(traceGenerator EXCLUDE_FROM_ALL ${TG_MAIN_SRC})
 target_link_libraries(traceGenerator commandLineParser templateParser propositionParser varParser traceReader ${Z3_LIBRARY})
 
 #Var estimator
-add_executable(varEstimator EXCLUDE_FROM_ALL src/varEstimator/main.cc)
-target_link_libraries(varEstimator estimator commandLineParser traceReader)
+add_executable(evaluator EXCLUDE_FROM_ALL src/evaluator/main.cc)
+target_link_libraries(evaluator estimator commandLineParser traceReader)
 
 
 ### TESTS & EXAMPLES ###

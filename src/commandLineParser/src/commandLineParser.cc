@@ -10,15 +10,17 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
     options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
                           "<FILE>")(
         "vcd-r", "recursively add signals for all sub-scopes")(
-        "vcd-dir", "path to a directory containing .vcd traces", cxxopts::value<std::string>(),
+        "vcd-dir", "path to a directory containing .vcd traces",
+        cxxopts::value<std::string>(),
         "<DIRECTORY>")("vcd-ss",
                        "select a scope of signals in the .vcd trace (use vcd-r "
                        "for recursive add)",
                        cxxopts::value<std::string>(), "<String>")(
-        "csv", ".csv trace file", cxxopts::value<std::string>(), "<FILE>")(
-        "csv-dir", "path to a directory containing .csv traces", cxxopts::value<std::string>(),
-        "<DIRECTORY>")("conf", ".xml configuration file",
-                       cxxopts::value<std::string>(), "<FILE>")(
+        "csv", ".csv trace file", cxxopts::value<std::string>(),
+        "<FILE>")("csv-dir", "path to a directory containing .csv traces",
+                  cxxopts::value<std::string>(),
+                  "<DIRECTORY>")("conf", ".xml configuration file",
+                                 cxxopts::value<std::string>(), "<FILE>")(
         "clk", "clk signal", cxxopts::value<std::string>(), "<String>")(
         "sva", " output assertions in SystemVerilog Assertion format")(
         "fd", "path to the directory containing faulty traces",
@@ -37,8 +39,9 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "find the minimum number of assertions covering all faults")(
         "dump", "dump assertions to file")("dump-stat",
                                            "dump statistics to file")(
-        "dump-no-data", "dump assertions to file without contingency")
-                                               ( "dump-to", "dump assertions to file with given path", cxxopts::value<std::string>(), "<DIRECTORY>")(
+        "dump-no-data", "dump assertions to file without contingency")(
+        "dump-to", "dump assertions to file with given path",
+        cxxopts::value<std::string>(), "<DIRECTORY>")(
         "dump-to-no-data",
         "dump assertions to file with given path without contingency",
         cxxopts::value<std::string>(), "<DIRECTORY>")(
@@ -70,11 +73,12 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
          result.count("csv") == 0 && result.count("csv-dir") == 0) ||
         result.count("conf") == 0) {
       std::cout << "Usage:\n";
-      std::cout << "vcd input --> harm [--vcd <vcdFile> | --vcd-dir <dirPath>] --clk "
-                   "<clkSignal> --conf <xmlConfigFile> [<OptionalArguments...>]\n";
       std::cout
-          << "csv input --> harm [--csv <csvFile> | --csv-dir <dirPath>] --conf <xmlConfigFile> [<OptionalArguments...>]"
-          << "\n";
+          << "vcd input --> harm [--vcd <vcdFile> | --vcd-dir <dirPath>] --clk "
+             "<clkSignal> --conf <xmlConfigFile> [<OptionalArguments...>]\n";
+      std::cout << "csv input --> harm [--csv <csvFile> | --csv-dir <dirPath>] "
+                   "--conf <xmlConfigFile> [<OptionalArguments...>]"
+                << "\n";
       exit(0);
     }
 
@@ -137,27 +141,37 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
 
     std::string file = "";
 
-    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(), "<FILE>")
-        ( "ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")("cluster", "", cxxopts::value<std::string>(), "divide the score into N clusters")(
+    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
+                          "<FILE>")("csv", ".csv trace",
+                                    cxxopts::value<std::string>(), "<FILE>")(
+        "ass-file", "", cxxopts::value<std::string>(),
+        "path to assertion file (one per each line)")(
+        "cluster", "", cxxopts::value<std::string>(),
+        "divide the score into N clusters")(
         "cs", "", cxxopts::value<std::string>(),
-        "chunk-size number of assertions processed at a time (depends on the available memory) ")(
-        "tech", "", cxxopts::value<std::string>(),
-        "technique used to perform the estimation")(
+        "chunk-size number of assertions processed at a time (depends on the "
+        "available memory) ")("tech", "", cxxopts::value<std::string>(),
+                              "technique used to perform the estimation")(
         "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
-            
-            
-            
-            ( "var-list", "path to a csv file containing the the variables with their size", cxxopts::value<std::string>(),
-        "<DIRECTORY>")
-            
-            
-            ( "fd", "path to the directory containing faulty traces", cxxopts::value<std::string>(),
-        "<DIRECTORY>")("vars", "path to the file containing the variables",
-                       cxxopts::value<std::string>(), "<FILE>")
-            ( "max-threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
-                                               ( "dump-to", "dump ranking to file with given path", cxxopts::value<std::string>(), "<DIRECTORY>")
-            ( "n-stm", "The number of statements when yousing statement reduction", cxxopts::value<size_t>(), "<uint>")
-            ( "help", "Show options");
+
+        ("info-list",
+         "path to a csv file containing the the variables with their size",
+         cxxopts::value<std::string>(), "<DIRECTORY>")
+
+            ("fd", "path to the directory containing faulty traces",
+             cxxopts::value<std::string>(),
+             "<DIRECTORY>")("vars", "path to the file containing the variables",
+                            cxxopts::value<std::string>(), "<FILE>")(
+                "max-threads",
+                "max number of threads that harm is allowed to spawn",
+                cxxopts::value<size_t>(),
+                "<uint>")("dump-to", "dump ranking to file with given path",
+                          cxxopts::value<std::string>(), "<DIRECTORY>")(
+                "n-stm",
+                "The number of statements when yousing statement reduction",
+                cxxopts::value<size_t>(), "<uint>")
+                              ( "print-failing-ass", "")
+                              ("help", "Show options");
 
     auto result = options.parse(argc, argv);
 
@@ -166,11 +180,12 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
       exit(0);
     }
     if (result.count("ass-file") == 0 || result.count("tech") == 0 ||
-        result.count("vcd") == 0 || result.count("clk") == 0 ) {
-      std::cout << "Usage:\n varEstimator --ass-file <FILE> --tech <string> "
+        (result.count("vcd") == 0 && result.count("csv") == 0) ||
+        (result.count("vcd") == 1 && result.count("clk") == 0)) {
+      std::cout << "Usage:\n evaluator --ass-file <FILE> --tech <string> "
                    "--vcd <FILE>"
                    " --clk <string>"
-                   " [--var-list | --n-stm]"
+                   " [--info-list | --n-stm]"
                 << "\n";
       exit(0);
     }

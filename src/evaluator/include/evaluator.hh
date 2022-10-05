@@ -10,10 +10,11 @@ extern std::string ve_assPath;
 extern std::string ve_technique;
 extern std::string ve_tracePath;
 extern std::string ve_ftPath;
-extern std::string ve_varList;
+extern std::string ve_infoList;
 extern std::string ve_dumpTo;
 extern size_t ve_nStatements;
-extern size_t ve_cluster;
+extern int ve_cluster;
+extern bool ve_print_failing_ass;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
@@ -43,12 +44,17 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff, bool normaliz
 void getDiffVBR(
     std::unordered_map<std::string, Diff> &varToDiff,
     std::unordered_map<std::string, size_t> &varToSize,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
-    harm::Trace *trace) ;
+    std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss) ;
 
 void getDiffSR(
     std::unordered_map<std::string, Diff> &stmToDiff,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &stmToAss) ;
+    std::unordered_map<std::string, std::vector<harm::Template *>> &stmToAss,
+    std::unordered_map <std::string, std::vector<std::string>> &tokenToFailingAssertions
+    ) ;
+void getDiffBR(
+    std::unordered_map<std::string, Diff> &idToDiff,
+    std::unordered_map<std::string, size_t> &idToSize,
+    std::unordered_map<std::string, std::vector<harm::Template *>> &idToAss);
 
 void findFaultCoverageOnTrace(
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,

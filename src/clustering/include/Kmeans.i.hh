@@ -83,7 +83,7 @@ std::vector<std::pair<T, T>> kmeansElbow(std::vector<T> elements, size_t max,
     if (std::abs((double)prevSD - (double)totSD) / (double)prevSD < SDmin_red) {
       break;
     }
-    // translate the customers into ranges [min, max]
+    // translate the clusters into ranges [min, max]
     auto rr = toRanges<T>(labelToValues);
     // add the ranges to the final list
     if (keepOnlyBest) {

@@ -13,7 +13,6 @@
 #include "metricParser.hh"
 #include "misc.hh"
 #include "templateParsingUtils.hh"
-#include "varEstimator.hh"
 #include <algorithm>
 #include <filesystem>
 #include <iomanip>
@@ -257,7 +256,8 @@ std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
   }
 
   // fault-based qualification
-  if ((!clc::faultyTraceFiles.empty() || clc::ftmFile != "") && !rankedAssertions.empty()) {
+  if ((!clc::faultyTraceFiles.empty() || clc::ftmFile != "") &&
+      !rankedAssertions.empty()) {
     faultBasedQualification(rankedAssertions, trace);
   }
 
@@ -803,13 +803,17 @@ void Qualifier::dumpAssToFile(Context &context, Trace *trace,
   }
 
   //dump fault coverage
-  std::ofstream fc_assFile(clc::dumpPath + "/" + context._name + "_faultCov.txt");
+  if (!clc::faultyTraceFiles.empty()) {
+
+    std::ofstream fc_assFile(clc::dumpPath + "/" + context._name +
+                             "_faultCov.txt");
 
     for (auto a : _coverageSet) {
       fc_assFile << assertions[a]->_toString.first << "\n";
     }
+    fc_assFile.close();
+  }
 
-  fc_assFile.close();
   assFile.close();
 #if enPB
   pb.done(0);
