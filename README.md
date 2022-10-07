@@ -151,7 +151,7 @@ For csv:
 		<prop exp="!var5 || !var6" loc="c"/>
 		<prop exp="var8" loc="c"/>
 		
-		<numeric clsEffort="0.3" exp="var5" loc="c"/>
+		<numeric clsEffort="0.3" exp="var7 + var8" loc="c"/>
 		
 		<template dtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
@@ -231,26 +231,26 @@ The template expression has an additional parameter "check", if it is set to "1"
  
  #  Optional arguments
 
+* \-\-cls-alg : <String> type of clustering algorithm; <kmeans>, <kde> kernel density estimation, <hc> hierarchical (default is kmeans)
+* \-\-dont-fill-ass : do not populate assertions with values (saves memory)
 * \-\-dump : dumps all assertions and their contingency matrix in the current folder
-* \-\-dump-to <DIRECTORY> : dump assertions to file on given path
 * \-\-dump-stat : dump mining statistics to file
-* \-\-split-logic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate-config)
-* \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn
-* \-\-vcd-ss <string> :  select a scope of signals in the .vcd trace
-* \-\-vcd-r : recursively add signals for all sub-scopes
+* \-\-dump-to <DIRECTORY> : dump assertions to file on given path
 * \-\-fd <DIRECTORY> : path to the directory containing the faulty traces (for fault coverage)
 * \-\-find-min-subset : find the minimum number of assertions covering all faults (must be used with --fd)
-* \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
-* \-\-dont-fill-ass : do not populate assertions with values (saves memory)
-* \-\-interactive : enable interactive assertion ranking
-* \-\-silent : disable all outputs
-* \-\-wsilent : disable all warnings
-* \-\-isilent : disable all infos
-* \-\-psilent : disable all progress bars
-* \-\-cls-alg : <String> type of clustering algorithm; <kmeans>, <kde> kernel density estimation, <hc> hierarchical (default is kmeans)
-* \-\-name : <String> name of this execution (used when dumping statistics);
-* \-\-sva : output assertions in SystemVerilog Assertion format
 * \-\-help : show options
+* \-\-interactive : enable interactive assertion ranking
+* \-\-isilent : disable all infos
+* \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
+* \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn
+* \-\-name : <String> name of this execution (used when dumping statistics);
+* \-\-psilent : disable all progress bars
+* \-\-silent : disable all outputs
+* \-\-split-logic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate-config)
+* \-\-sva : output assertions in SystemVerilog Assertion format
+* \-\-vcd-r : recursively add signals for all sub-scopes
+* \-\-vcd-ss <string> :  select a scope of signals in the .vcd trace
+* \-\-wsilent : disable all warnings
 
 
 ## API
