@@ -103,36 +103,45 @@ The user can find several working examples in the "tests" directory .
 ## Run with a vcd trace
 
 ```
-./harm --vcd trace.vcd --clk clock -c config.xml
+./harm --vcd trace.vcd --clk clock --conf config.xml
 ```
 
 * clock is the signal used to sample time (every posedge).
 * config.xml is the configuration file containing propositions and templates.
-* use --vcd_dir <DIRECTORY>  to give as input a set of .vcd traces
+* use --vcd-dir <DIRECTORY>  to give as input a set of .vcd traces
 
 ## Run with a csv trace
 
 ```
-./harm --csv trace.csv -c config.xml
+./harm --csv trace.csv --conf config.xml
 ```
-*  use --csv_dir <DIRECTORY>  to give as input a set of .csv traces
-
+*  use --csv-dir <DIRECTORY>  to give as input a set of .csv traces
+* Note that you do not have to specify a clock signal when using a csv file, as each row is already considered a clock event.
+* A CSV trace must contain the declaration of the design's variables in the first row, following a C/Verilog style.
+	
+Example of valid csv file:
+```
+int var1, bool var2, float var3
+23, 1, 34.7
+34, 0, 99.912
+```
+	
 ## Automatically generating a configuration file
 To simplify the creation of a new test, HARM is capable of generating a sample configuration file using the variables found in the trace.  The user might want to modify the generated configuration file to adapt it to her/his needs.
 
 For vcd:
 ```
-./harm --vcd trace.vcd --clk clock -c path/to/newConfig.xml --generate_config
+./harm --vcd trace.vcd --clk clock --conf path/to/newConfig.xml --generate-config
 ```
 For csv:
 ```
-./harm --csv trace.csv -c path/to/newConfig.xml --generate_config
+./harm --csv trace.csv --conf path/to/newConfig.xml --generate-config
 ```
 
  HARM will create the configuration file on the path given as argument.
 
 #  The configuration file
- It is recommended to always start from an automatically generated configuration file (using the --generate_config option).
+ It is recommended to always start from an automatically generated configuration file (using the --generate-config option).
  Hints are organised in contexts, each context contains three types of expressions: propositions, templates and metrics (see the configuration file below).  
  ```xml
 <harm>
@@ -141,6 +150,8 @@ For csv:
 		<prop exp="var3 + var4 > 100" loc="a"/>
 		<prop exp="!var5 || !var6" loc="c"/>
 		<prop exp="var8" loc="c"/>
+		
+		<numeric clsEffort="0.3" exp="var5" loc="c"/>
 		
 		<template dtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
@@ -164,7 +175,7 @@ Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c", "
 The user can specify a set of tuples N = \{(ne\_i, loc\_i, th\_i) | i =1, ..., k\} to automatically generate propositions (using a clustering algorithm) predicating over arithmetic expressions, like c==ne, c>= ne, c<= ne, c\_l<= ne <= c\_r, with c, c\_l, c\_r representing constants of numeric type, and ne indicating numerical expressions involving DUV  variables.
 * ne\_i is a numeric expression ("exp" attribute)
 * loc\_i is a location label (among 'a', 'c', 'ac', and 'dt', following the same meaning as in a proposition, "loc" attribute). 
-* th\_i is a numeric threshold (from 0 to 1, "clsEffort" attribute) that is used to specify how much effort the tool must put in to generate propositions including the numeric expression ne\_i.
+* th\_i is a numeric threshold (from 0 to 1, "clsEffort" attribute) that is used to specify how much effort the tool must put in to generate propositions including the numeric expression ne\_i (for technical reasons, a threshold close to 0 is considered high effort while a threshold close to 1 is low effort).
 
 
 
@@ -221,26 +232,24 @@ The template expression has an additional parameter "check", if it is set to "1"
  #  Optional arguments
 
 * \-\-dump : dumps all assertions and their contingency matrix in the current folder
-* \-\-dump-no-data : dump assertions to file without contingency tables
-* \-\-splitLogic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate_config)
-* \-\-max_threads <uint> : max number of threads that HARM is allowed to spawn
-* \-\-vcd_ss <string> :  select a scope of signals in the .vcd trace
-* \-\-vcd_r : recursively add signals for all sub-scopes
+* \-\-dump-to <DIRECTORY> : dump assertions to file on given path
+* \-\-dump-stat : dump mining statistics to file
+* \-\-split-logic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate-config)
+* \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn
+* \-\-vcd-ss <string> :  select a scope of signals in the .vcd trace
+* \-\-vcd-r : recursively add signals for all sub-scopes
 * \-\-fd <DIRECTORY> : path to the directory containing the faulty traces (for fault coverage)
-* \-\-find_min_subset : find the minimum number of assertions covering all faults (must be used with --fd)
-* \-\-dumpTo <DIRECTORY> : dump assertions to file on given path
-* \-\-dumpTo-no-data <DIRECTORY> : dump assertions to file on given path without contingency tables
-* \-\-maxAss <uint> : the maximum number of assertions to keep after the ranking
+* \-\-find-min-subset : find the minimum number of assertions covering all faults (must be used with --fd)
+* \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
 * \-\-dont-fill-ass : do not populate assertions with values (saves memory)
-* \-\-dumpStat : dump statistics to file
 * \-\-interactive : enable interactive assertion ranking
 * \-\-silent : disable all outputs
 * \-\-wsilent : disable all warnings
 * \-\-isilent : disable all infos
 * \-\-psilent : disable all progress bars
-* \-\-clsAlg : <String> type of clustering algorithm; <kmeans>, <kde> kernel density estimation, <hc> hierarchical (default is kmeans)
+* \-\-cls-alg : <String> type of clustering algorithm; <kmeans>, <kde> kernel density estimation, <hc> hierarchical (default is kmeans)
 * \-\-name : <String> name of this execution (used when dumping statistics);
-* \-\-sva : output assertions in SystemVerilog Assetion format
+* \-\-sva : output assertions in SystemVerilog Assertion format
 * \-\-help : show options
 
 
