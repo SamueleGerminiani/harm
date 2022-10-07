@@ -38,12 +38,9 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "find-min-subset",
         "find the minimum number of assertions covering all faults")(
         "dump", "dump assertions to file")("dump-stat",
-                                           "dump statistics to file")(
-        "dump-no-data", "dump assertions to file without contingency")(
+                                           "dump statistics to file")
+(
         "dump-to", "dump assertions to file with given path",
-        cxxopts::value<std::string>(), "<DIRECTORY>")(
-        "dump-to-no-data",
-        "dump assertions to file with given path without contingency",
         cxxopts::value<std::string>(), "<DIRECTORY>")(
         "max-ass", "maximum number of assertions to keep after the ranking",
         cxxopts::value<size_t>(),
