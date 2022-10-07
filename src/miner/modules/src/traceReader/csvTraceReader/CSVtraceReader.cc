@@ -65,7 +65,7 @@ Trace *CSVtraceReader::readTrace(const std::string file) {
   messageInfo("Parsing " + file);
 
   CSVFormat format;
-  format.delimiter(';');
+  format.delimiter(',');
   CSVReader reader(file, format);
   for (auto cn : reader.get_col_names()) {
     auto var = parseVariable(cn);

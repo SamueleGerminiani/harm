@@ -50,7 +50,6 @@ static void loadParameters(const Parameters &p) {
 
   clc::dumpAssToFile = p.dumpAssToFile;
 
-  clc::noData = p.noData;
 
   clc::dumpPath = p.dumpPath;
 

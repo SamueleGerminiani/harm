@@ -25,7 +25,6 @@ size_t maxThreads = std::thread::hardware_concurrency();
 bool findMinSubset = false;
 bool dumpAssToFile = false;
 size_t maxAss = std::numeric_limits<size_t>().max();
-bool noData = false;
 std::string dumpPath = "";
 bool intMode = false;
 bool splitLogic = false;

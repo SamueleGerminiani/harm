@@ -215,22 +215,13 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::dumpStat = true;
   }
 
-  if (result.count("dump") || result.count("dump-no-data")) {
+  if (result.count("dump")) {
     clc::dumpAssToFile = true;
     clc::dumpPath = ".";
-    if (result.count("dump-no-data")) {
-      clc::noData = true;
-    }
   }
-  if (result.count("dump-to") || result.count("dump-to-no-data")) {
-
+  if (result.count("dump-to")) {
     clc::dumpAssToFile = true;
-    if (result.count("dump-to-no-data")) {
-      clc::noData = true;
-      clc::dumpPath = result["dump-to-no-data"].as<std::string>();
-    } else {
-      clc::dumpPath = result["dump-to"].as<std::string>();
-    }
+    clc::dumpPath = result["dump-to"].as<std::string>();
     messageErrorIf(!std::filesystem::is_directory(clc::dumpPath),
                    "Can not find directory '" + clc::dumpPath + "'");
   }
