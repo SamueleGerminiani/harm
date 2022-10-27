@@ -538,6 +538,7 @@ bool Template::isVacuous(harm::Location update) {
     break;
   }
 
+  //ant at least true once
   for (size_t i = 0; i < _max_length; i++) {
     if (evaluate_ant(i) == Trinary::T && evaluate(i) == Trinary::T) {
       goto nextCondition;
@@ -546,6 +547,7 @@ bool Template::isVacuous(harm::Location update) {
   return true;
 
 nextCondition:;
+  //con at least false once
   for (size_t i = 0; i < _max_length; i++) {
     if (evaluate_con(i) == Trinary::F) {
       return false;
@@ -572,6 +574,7 @@ bool Template::isVacuousOffset(harm::Location update) {
     break;
   }
 
+  //ant at least true once
   for (size_t i = 0; i < _max_length; i++) {
     if (evaluate_ant(i) == Trinary::T && evaluate(i) == Trinary::F) {
       goto nextCondition;
@@ -580,6 +583,7 @@ bool Template::isVacuousOffset(harm::Location update) {
   return true;
 
 nextCondition:;
+  //cons at least false once
   for (size_t i = 0; i < _max_length; i++) {
     if (evaluate_con(i) == Trinary::T) {
       return false;

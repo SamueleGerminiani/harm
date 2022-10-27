@@ -12,6 +12,7 @@
 #include "message.hh"
 #include "metricParser.hh"
 #include "misc.hh"
+#include "propositionParsingUtils.hh"
 #include "templateParsingUtils.hh"
 #include <algorithm>
 #include <filesystem>
@@ -137,18 +138,45 @@ void Qualifier::loadParams() {
 }
 
 std::vector<Assertion *>
-Qualifier::extractUniqueAssertionsFast(Context &context) {
-  std::vector<Assertion *> assertions;
+Qualifier::patchDiscardAssertions(std::vector<Assertion *> &inAssertions,
+                                  Trace *trace) {
+  std::vector<Assertion *> outAssertions;
+  for (auto a : inAssertions) {
+    if (a->_ct[1][0] == 0) {
+      auto assTemp = hparser::parseTemplate(a->_toString.first, trace);
+      auto antProps = assTemp->getLoadedPropositionsAnt();
+      if (antProps.size() == 1) {
+        auto conProps = assTemp->getLoadedPropositionsCon();
+        if (conProps.size() == antProps.size()) {
+          auto antPropStr = prop2String(*antProps.back());
+          auto conPropStr = prop2String(*conProps.back());
+          if (antPropStr == conPropStr) {
+            delete assTemp;
+            continue;
+          }
+        }
+        delete assTemp;
+      }
+    }
+    outAssertions.push_back(a);
+  }
+  return outAssertions;
+}
+
+std::vector<Assertion *>
+Qualifier::extractUniqueAssertionsFast(std::vector<Assertion *> &inAssertions) {
+
+  std::vector<Assertion *> outAssertions;
   std::unordered_set<Assertion *> assP;
   std::unordered_set<std::string> keys;
   //change data structer to allow constant access with id
-  for (Assertion *ass : context._assertions) {
+  for (Assertion *ass : inAssertions) {
     assP.insert(ass);
   }
 #if enPB
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Extracting unique assertions... 0 discarded",
-                 context._assertions.size(), 70);
+                 inAssertions.size(), 70);
   size_t discarded = 0;
 #endif
 
@@ -181,7 +209,7 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
     std::string key = cont + assS;
     if (!keys.count(key)) {
       //add only if the key is unique
-      assertions.push_back(ass);
+      outAssertions.push_back(ass);
       keys.insert(key);
     } else {
 #if enPB
@@ -192,21 +220,23 @@ Qualifier::extractUniqueAssertionsFast(Context &context) {
 #if enPB
   pb.done(0);
 #endif
-  return assertions;
+  return outAssertions;
 }
 
-std::vector<Assertion *> Qualifier::extractUniqueAssertions(Context &context) {
+std::vector<Assertion *>
+Qualifier::extractUniqueAssertions(std::vector<Assertion *> &inAssertions) {
+
   // remove equivalent solutions, keep shortest
-  std::vector<Assertion *> assertions;
+  std::vector<Assertion *> outAssertions;
   std::unordered_set<size_t> taken;
 #if enPB
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Extracting unique assertions... 0 discarded",
-                 context._assertions.size(), 70);
+                 inAssertions.size(), 70);
   size_t discarded = 0;
 #endif
 
-  for (size_t i = 0; i < context._assertions.size(); i++) {
+  for (size_t i = 0; i < inAssertions.size(); i++) {
 #if enPB
     pb.changeMessage(0, "Extracting unique assertions... " +
                             std::to_string(discarded) + " discarded");
@@ -216,13 +246,13 @@ std::vector<Assertion *> Qualifier::extractUniqueAssertions(Context &context) {
     if (taken.count(i))
       continue;
     taken.insert(i);
-    Assertion *a1 = context._assertions[i];
+    Assertion *a1 = inAssertions[i];
     Assertion *shortest = a1;
-    for (size_t j = i + 1; j < context._assertions.size(); j++) {
+    for (size_t j = i + 1; j < inAssertions.size(); j++) {
       if (taken.count(j))
         continue;
 
-      Assertion *a2 = context._assertions[j];
+      Assertion *a2 = inAssertions[j];
       if (*a1 == *a2) {
         //     debug
         //     std::cout << a1._toString.second << " == " << a2._toString.second
@@ -236,12 +266,12 @@ std::vector<Assertion *> Qualifier::extractUniqueAssertions(Context &context) {
 #endif
       }
     }
-    assertions.push_back(shortest);
+    outAssertions.push_back(shortest);
   }
 #if enPB
   pb.done(0);
 #endif
-  return assertions;
+  return outAssertions;
 }
 
 std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
@@ -830,9 +860,10 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
   messageInfo("Found " + std::to_string(context._assertions.size()) +
               " assertions");
   if (context._assertions.size() > 10000) {
-    assertions = extractUniqueAssertionsFast(context);
+    assertions = extractUniqueAssertionsFast(context._assertions);
   } else {
-    assertions = extractUniqueAssertions(context);
+    assertions = patchDiscardAssertions(context._assertions, trace);
+    assertions = extractUniqueAssertions(assertions);
   }
 
   // apply filtering metrics, mark as 'deleted' (nullptr) all assertions that evaluates under the threshold

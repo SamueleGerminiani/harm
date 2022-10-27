@@ -891,7 +891,7 @@ void Template::check() {
 
         evalAutomatonDyShift(shift, _con, shift);
         std::cout << "[" << i << "," << shift << "]"
-                  << ")\n";
+                  << "\n";
         std::cout << _trace->printTrace(i, (shift - i) + 1) << "\n";
         std::cout << "===================================="
                   << "\n";
@@ -947,6 +947,19 @@ Hstring Template::getTemplateFormula() {
   ;
 }
 
+void Template::getPlaceholdersDepth(
+    spot::formula f, std::vector<std::pair<std::string, size_t>> &phToDepth) {
+  static int depth = -1;
+  depth++;
+  if (f.is(spot::op::ap)) {
+    phToDepth.emplace_back(f.ap_name(), depth);
+  } else {
+    for (size_t i = 0; i < f.size(); i++) {
+      getPlaceholdersDepth(f[i], phToDepth);
+    }
+  }
+  depth--;
+}
 std::vector<Proposition *> Template::getLoadedPropositions() {
   std::vector<Proposition *> ret;
   for (auto &s : _templateFormula) {
@@ -966,52 +979,32 @@ std::vector<Proposition *> Template::getLoadedPropositions() {
   }
   return ret;
 }
-void Template::getPlaceholdersDepth(
-    spot::formula f, std::vector<std::pair<std::string, size_t>> &phToDepth) {
-  static int depth = -1;
-  depth++;
-  if (f.is(spot::op::ap)) {
-    phToDepth.emplace_back(f.ap_name(), depth);
-  } else {
-    for (size_t i = 0; i < f.size(); i++) {
-      getPlaceholdersDepth(f[i], phToDepth);
+std::vector<Proposition *> Template::getLoadedPropositionsAnt() {
+  std::vector<Proposition *> ret;
+  for (auto &s : _templateFormula.getAnt()) {
+    if (s._t == Hstring::Stype::Ph || s._t == Hstring::Stype::Inst) {
+      assert(s._pp != nullptr);
+      ret.push_back(*s._pp);
     }
   }
-  depth--;
-}
-std::vector<std::pair<Proposition *, size_t>>
-Template::getLoadedPropositionsWithDepth() {
-  std::vector<std::pair<Proposition *, size_t>> ret;
-  std::vector<std::pair<std::string, size_t>> phToDepth;
-  spot::parsed_formula f =
-      spot::parse_infix_psl(_templateFormula.toSpotString());
-  getPlaceholdersDepth(f.f, phToDepth);
-  for (auto &p : phToDepth) {
-    ret.emplace_back(*_tokenToProp.at(p.first), p.second);
+  if (_dtOp.second != nullptr) {
+    if (_dtOp.second->isMultiDimensional()) {
+      std::vector<Proposition *> items = _dtOp.second->unpack();
+      ret.insert(ret.end(), items.begin(), items.end());
+    } else {
+      std::vector<Proposition *> items = _dtOp.second->getItems();
+      ret.insert(ret.end(), items.begin(), items.end());
+    }
   }
   return ret;
 }
-std::vector<std::pair<Proposition *, size_t>>
-Template::getLoadedPropositionsWithDepthAnt() {
-  std::vector<std::pair<Proposition *, size_t>> ret;
-  std::vector<std::pair<std::string, size_t>> phToDepth;
-  spot::parsed_formula f =
-      spot::parse_infix_psl(_templateFormula.getAnt().toSpotString());
-  getPlaceholdersDepth(f.f, phToDepth);
-  for (auto &p : phToDepth) {
-    ret.emplace_back(*_tokenToProp.at(p.first), p.second);
-  }
-  return ret;
-}
-std::vector<std::pair<Proposition *, size_t>>
-Template::getLoadedPropositionsWithDepthCon() {
-  std::vector<std::pair<Proposition *, size_t>> ret;
-  std::vector<std::pair<std::string, size_t>> phToDepth;
-  spot::parsed_formula f =
-      spot::parse_infix_psl(_templateFormula.getCon().toSpotString());
-  getPlaceholdersDepth(f.f, phToDepth);
-  for (auto &p : phToDepth) {
-    ret.emplace_back(*_tokenToProp.at(p.first), p.second);
+std::vector<Proposition *> Template::getLoadedPropositionsCon() {
+  std::vector<Proposition *> ret;
+  for (auto &s : _templateFormula.getCon()) {
+    if (s._t == Hstring::Stype::Ph || s._t == Hstring::Stype::Inst) {
+      assert(s._pp != nullptr);
+      ret.push_back(*s._pp);
+    }
   }
   return ret;
 }

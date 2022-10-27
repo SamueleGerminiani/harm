@@ -14,11 +14,9 @@ namespace hparser {
 void SpotParserHandler::enterFile(__attribute__((unused))
                                   spotParser::FileContext *ctx) {
   _abort = false;
-
 }
 SpotParserHandler::SpotParserHandler(harm::Trace *trace)
-    : _abort(false), _trace(trace) {
-}
+    : _abort(false), _trace(trace) {}
 
 void SpotParserHandler::exitFile(spotParser::FileContext *ctx) {
   auto formula = _subFormulas.top();
@@ -57,9 +55,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
 
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" -> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" -> ", Hstring::Stype::Imp) +
+                      formulaCon);
     return;
   }
 
@@ -71,9 +68,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" => ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" => ", Hstring::Stype::Imp) +
+                      formulaCon);
   }
 
   if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
@@ -84,9 +80,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" []-> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" []-> ", Hstring::Stype::Imp) +
+                      formulaCon);
     return;
   }
 
@@ -98,9 +93,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" []=> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" []=> ", Hstring::Stype::Imp) +
+                      formulaCon);
     return;
   }
   if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
@@ -111,9 +105,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" |-> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" |-> ", Hstring::Stype::Imp) +
+                      formulaCon);
     return;
   }
 
@@ -125,9 +118,8 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(Hstring("{", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring("}", Hstring::Stype::Temp) +
-                      Hstring(" |=> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(formulaAnt + Hstring(" |=> ", Hstring::Stype::Imp) +
+                      formulaCon);
     return;
   }
 }
@@ -160,8 +152,8 @@ void SpotParserHandler::exitTformula(spotParser::TformulaContext *ctx) {
     return;
   }
   if (ctx->DT_AND() != nullptr) {
-    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
-                                     printErrorMessage());
+    messageErrorIf(dtCount > 0,
+                   "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtAnd" + std::to_string(dtCount++);
     _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
     return;
@@ -297,8 +289,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
   if (ctx->dt_next() != nullptr) {
-    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
-                                     printErrorMessage());
+    messageErrorIf(dtCount > 0,
+                   "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtNext" + std::to_string(dtCount++);
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNext, nullptr);
     tmp._offset =
@@ -309,8 +301,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
   if (ctx->dt_NCReps() != nullptr) {
-    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
-                                     printErrorMessage());
+    messageErrorIf(dtCount > 0,
+                   "More than one dt operator defined\n" + printErrorMessage());
     std::string ph =
         "dtNCReps0[->" + ctx->dt_NCReps()->NUMERIC()->getText() + "]:dtMock";
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNCReps, nullptr);
@@ -322,15 +314,16 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     } else if (ctx->dt_NCReps()->SEP()->getText() == "@:") {
       tmp._sep = ":";
     } else {
-      messageError("Unknown separator: " + ctx->dt_NCReps()->SEP()->getText()+printErrorMessage());
+      messageError("Unknown separator: " + ctx->dt_NCReps()->SEP()->getText() +
+                   printErrorMessage());
     }
     _subFormulas.push(tmp);
 
     return;
   }
   if (ctx->dt_next_and() != nullptr) {
-    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
-                                     printErrorMessage());
+    messageErrorIf(dtCount > 0,
+                   "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtNextAnd" + std::to_string(dtCount++);
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNextAnd, nullptr);
     tmp._offset =
@@ -341,8 +334,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
   if (ctx->DT_AND() != nullptr) {
-    messageErrorIf(dtCount > 0, "More than one dt operator defined\n" +
-                                     printErrorMessage());
+    messageErrorIf(dtCount > 0,
+                   "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtAnd" + std::to_string(dtCount++);
     _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
     return;

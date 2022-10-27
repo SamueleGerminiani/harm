@@ -149,25 +149,24 @@ public:
    * \param the index of the permutation to load
    */
   void loadPerm(size_t n);
-  std::vector<Proposition *> getLoadedPropositions();
   /** \brief get the depth of the placeholder in the abtract syntax tree of the template formula
    * \param phToDepth a list that is filled by this method
    */
   void
   getPlaceholdersDepth(spot::formula f,
                        std::vector<std::pair<std::string, size_t>> &phToDepth);
+
   /** \brief get the depth of the propositions in the abtract syntax tree of the template formula
    */
-  std::vector<std::pair<Proposition *, size_t>>
-  getLoadedPropositionsWithDepth();
-  std::vector<std::pair<Proposition *, size_t>>
+  std::vector<Proposition *> getLoadedPropositions();
+
   /** \brief get the depth of the propositions of the antecedent in the abtract syntax tree of the template formula
    */
-  getLoadedPropositionsWithDepthAnt();
-  std::vector<std::pair<Proposition *, size_t>>
+  std::vector<Proposition *> getLoadedPropositionsAnt();
   /** \brief get the depth of the propositions of the consequent in the abtract syntax tree of the template formula
    */
-  getLoadedPropositionsWithDepthCon();
+  std::vector<Proposition *> getLoadedPropositionsCon();
+
   /** \brief get the number of permutations generated */
   size_t nPermsGenerated() const;
 

@@ -277,6 +277,34 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
       ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
       ofs << std::get<0>(dec);
       ofs << "\"";
+      ofs << " loc=\"a\"/>"
+          << "\n";
+    }
+  }
+
+  // dt
+  for (auto &dec : trace->getDeclarations()) {
+    if (clc::splitLogic && (std::get<1>(dec) == VarType::SLogic ||
+                            std::get<1>(dec) == VarType::ULogic)) {
+      for (size_t i = 0; i < std::get<2>(dec); i++) {
+        ofs << "\t\t<prop exp=\"";
+        ofs << std::get<0>(dec) + "[" + std::to_string(i) + "]";
+        ofs << "\"";
+        ofs << " loc=\"dt\"/>"
+            << "\n";
+      }
+
+    } else if (std::get<2>(dec) == 1) {
+      // bool var
+      ofs << "\t\t<prop exp=\"";
+      ofs << std::get<0>(dec);
+      ofs << "\"";
+      ofs << " loc=\"dt\"/>"
+          << "\n";
+    } else {
+      ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
+      ofs << std::get<0>(dec);
+      ofs << "\"";
       ofs << " loc=\"dt\"/>"
           << "\n";
     }

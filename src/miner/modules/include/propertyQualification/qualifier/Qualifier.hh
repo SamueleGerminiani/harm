@@ -85,12 +85,20 @@ private:
    */
   std::vector<size_t> getCoverageSet();
 
-  /** \brief filter redundant assertions
+  /** \brief returns all the assertions were ant != con
    */
-  std::vector<Assertion *> extractUniqueAssertions(Context &context);
+  std::vector<Assertion *>
+  patchDiscardAssertions(std::vector<Assertion *> &inAssertions, Trace *trace);
+
   /** \brief filter redundant assertions, quikly allbeit less precisely
    */
-  std::vector<Assertion *> extractUniqueAssertionsFast(Context &context);
+  std::vector<Assertion *>
+  extractUniqueAssertionsFast(std::vector<Assertion *> &inAssertions);
+
+  /** \brief filter redundant assertions
+   */
+  std::vector<Assertion *>
+  extractUniqueAssertions(std::vector<Assertion *> &inAssertions);
 
   size_t _traceLength;
 
