@@ -38,6 +38,7 @@ bool isilent = false;
 bool psilent = false;
 std::string clsAlg = "kmeans";
 bool dumpStat = false;
+bool dontNormalize = false;
 } // namespace clc
 
 // harm stat

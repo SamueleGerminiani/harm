@@ -17,20 +17,17 @@
 
 
 
-        <!--
-        -->
 
 		<template dtLimits="3A,0.1E" exp="G({..&&..}|-> X(P0))" /> 
-        <template dtLimits="3A,-0.1E,S" exp="G({..[->1]@;..}|-> X(P0))" /> 
-		<template dtLimits="3A,-0.1E,S,O" exp="G({..##1..}|-> X(P0))" /> 
-		<template dtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" /> 
-		<template dtLimits="5A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" /> 
-		<template dtLimits="2A,0E,R" exp="G({..#1&..}|-> X(P0))" /> 
-
-
+        <template dtLimits="3A,-0.1E,S" exp="G({..[->1]@;..}|-> X(P0))" />
+		<template dtLimits="3A,-0.1E,S,O" exp="G({..##1..}|-> X(P0))" />
+		<template dtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" />
+		<template dtLimits="5A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" />
+		<template dtLimits="2A,0E,R" exp="G({..#1&..}|-> X(P0))" />
 
 		<sort name="causality" exp="1-afct/traceLength"/>
 		<sort name="frequency" exp="atct/traceLength"/>
+        <filter name="causality_filter" threshold="0.6" exp="1-afct/traceLength"/>
 	</context>
 </harm>
 

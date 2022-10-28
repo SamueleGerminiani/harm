@@ -61,21 +61,28 @@ private:
   /** \brief for each sorting metric, gather the max values reached by any of the input assertions
    */
   std::unordered_map<std::string, double>
-  gatherMaxValuesForMetrics(Context &context,
-                            std::vector<Assertion *> &assertions);
+  getMaxValuesForSortMetrics(std::vector<Metric *> &metrics,
+                             std::vector<Assertion *> &assertions);
+
+  /** \brief for each filtering metric, gather the max values reached by any of the input assertions
+   */
+  std::unordered_map<std::string, double> getMaxValuesForFilterMetrics(
+      std::vector<std::pair<Metric *, double>> &metrics,
+      std::vector<Assertion *> &assertions);
 
   std::vector<Assertion *> rankAssertions(Context &context, Trace *trace);
+
   /** \brief sort the input assertions according to their finalScore
    */
-  void sortAssertions(Context &context, Trace *trace, size_t currParamIndex,
-                      std::vector<Assertion *> &assertions);
+  void sortAssertionsWithMetrics(std::vector<Metric *> &metrics,
+                                 std::vector<Assertion *> &assertions,
+                                 size_t currParamIndex = 19);
 
-  /** \brief sort the input assertions according to their finalScore, interactive version
-   *  \param currParamIndex configure the calibrate function, default is (0.1 - 0.9, that is, 19) 
+  /** \brief filter the input assertions using the 'filter' metrics
    */
-  void sortAssertions(Context &context, Trace *trace,
-                      std::vector<Assertion *> &assertions,
-                      size_t currParamIndex = 19);
+  void filterAssertionsWithMetrics(
+      std::vector<Assertion *> &assertions,
+      std::vector<std::pair<Metric *, double>> &metrics);
 
   /** \brief load the parameters for the interactive ranking with several 'calibration' functions
    */

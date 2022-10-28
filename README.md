@@ -240,6 +240,7 @@ The template expression has an additional parameter "check", if it is set to "1"
 * \-\-find-min-subset : find the minimum number of assertions covering all faults (must be used with --fd)
 * \-\-help : show options
 * \-\-interactive : enable interactive assertion ranking
+* \-\-dont-normalize : discard assertions using the absolute value (not normalized) of filterig metrics 
 * \-\-isilent : disable all infos
 * \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
 * \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn

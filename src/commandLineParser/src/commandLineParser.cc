@@ -35,11 +35,12 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "<uint>")("test-level", "test one level of the 3lp (1,2 or 3)",
                   cxxopts::value<size_t>(), "<uint>")(
         "generate-config", "generate template xml configuration")(
+        "dont-normalize", "discard assertions using the absolute value (not "
+                          "normalized) of filterig metrics ")(
         "find-min-subset",
         "find the minimum number of assertions covering all faults")(
         "dump", "dump assertions to file")("dump-stat",
-                                           "dump statistics to file")
-(
+                                           "dump statistics to file")(
         "dump-to", "dump assertions to file with given path",
         cxxopts::value<std::string>(), "<DIRECTORY>")(
         "max-ass", "maximum number of assertions to keep after the ranking",
@@ -166,9 +167,8 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                           cxxopts::value<std::string>(), "<DIRECTORY>")(
                 "n-stm",
                 "The number of statements when yousing statement reduction",
-                cxxopts::value<size_t>(), "<uint>")
-                              ( "print-failing-ass", "")
-                              ("help", "Show options");
+                cxxopts::value<size_t>(),
+                "<uint>")("print-failing-ass", "")("help", "Show options");
 
     auto result = options.parse(argc, argv);
 

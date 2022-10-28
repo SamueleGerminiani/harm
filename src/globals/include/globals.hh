@@ -42,6 +42,7 @@ extern bool isilent;
 extern bool psilent;
 extern std::string clsAlg;
 extern bool dumpStat;
+extern bool dontNormalize;
 } // namespace clc
 
 // harm stat

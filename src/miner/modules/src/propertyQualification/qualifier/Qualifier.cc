@@ -426,29 +426,27 @@ std::vector<size_t> Qualifier::getCoverageSet() {
 
   return ret;
 }
-void Qualifier::sortAssertions(Context &context, Trace *trace,
-                               std::vector<Assertion *> &assertions,
-                               size_t currParamIndex) {
+void Qualifier::sortAssertionsWithMetrics(std::vector<Metric *> &metrics,
+                                          std::vector<Assertion *> &assertions,
+                                          size_t currParamIndex) {
+  if (metrics.empty()) {
+    //nothing to do
+    return;
+  }
 
   if (!_functionParams.count(currParamIndex)) {
     currParamIndex = _maxParamIndex;
   }
 
-  if (context._sort.empty()) {
-    std::string causality = "1-afct/traceLength";
-    context._sort.push_back(
-        hparser::parseMetric("causality", causality, trace));
-  }
-  // gather max value for all metrics
+  // gather max value for all metrics (needed to normalize)
   std::unordered_map<std::string, double> mToMaxValue =
-      gatherMaxValuesForMetrics(context, assertions);
+      getMaxValuesForSortMetrics(metrics, assertions);
 
   for (auto &a : assertions) {
     double score = 1;
-    for (auto &m : context._sort) {
+    for (auto &m : metrics) {
       double r = scoreFunction(evaluate(*a, *m) / mToMaxValue.at(m->_name),
                                _functionParams[currParamIndex]);
-      // double r=evaluate(a, m) / mToMaxValue.at(m._name);
       score *= r;
     }
     a->_finalScore = score;
@@ -460,23 +458,54 @@ void Qualifier::sortAssertions(Context &context, Trace *trace,
             });
 }
 
+void Qualifier::filterAssertionsWithMetrics(
+    std::vector<Assertion *> &assertions,
+    std::vector<std::pair<Metric *, double>> &metrics) {
+
+  //need this to normalize the values
+  std::unordered_map<std::string, double> mToMaxValue =
+      getMaxValuesForFilterMetrics(metrics, assertions);
+
+  // apply filtering metrics, mark as 'deleted' (nullptr) all assertions that evaluates under the threshold
+  size_t filtered = 0;
+  for (auto &a : assertions) {
+    for (auto &m : metrics) {
+      if (clc::dontNormalize
+              ? evaluate(*a, *m.first) < m.second
+              : evaluate(*a, *m.first) / mToMaxValue.at(m.first->_name) <
+                    m.second) {
+        a = nullptr;
+        filtered++;
+        break;
+      }
+    }
+  }
+
+  //actually remove the assertion from the container
+  assertions.erase(remove_if(assertions.begin(), assertions.end(),
+                             [](Assertion *a) { return a == nullptr; }),
+                   assertions.end());
+
+  messageInfo("Filtered " + std::to_string(filtered) + " assertions");
+}
+
 void Qualifier::printAssertions(Context &context,
                                 std::vector<Assertion *> &assertions,
                                 Trace *trace) {
 
   size_t currParamIndex = 19;
   while (1) {
-    sortAssertions(context, trace, assertions, currParamIndex);
+    sortAssertionsWithMetrics(context._sort, assertions, currParamIndex);
     fort::utf8_table table;
     table.set_border_style(FT_NICE_STYLE);
 
     //need this to normalize the values
     std::unordered_map<std::string, double> mToMaxValue =
-        gatherMaxValuesForMetrics(context, assertions);
+        getMaxValuesForSortMetrics(context._sort, assertions);
     size_t headerPrintRate = 100;
     for (size_t i = 0; i < assertions.size(); i++) {
       if (i % headerPrintRate == 0) {
-        //print the header, this is repeated every 'headerPrintRate' assertions to improve readability
+        //print the header, this is repeated every '#headerPrintRate' assertions to improve readability
         table << fort::header << "N"
               << std::string("Assertion ") + "(Context : " + context._name + ")"
               << "final";
@@ -866,26 +895,11 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
     assertions = extractUniqueAssertions(assertions);
   }
 
-  // apply filtering metrics, mark as 'deleted' (nullptr) all assertions that evaluates under the threshold
-  size_t filtered = 0;
-  for (auto &a : assertions) {
-    for (auto &m : context._filter) {
-      if (evaluate(*a, *m.first) < m.second) {
-        a = nullptr;
-        filtered++;
-        break;
-      }
-    }
-  }
-
-  //actually remove the assertion from the container
-  assertions.erase(remove_if(assertions.begin(), assertions.end(),
-                             [](Assertion *a) { return a == nullptr; }),
-                   assertions.end());
-  messageInfo("Filtered " + std::to_string(filtered) + " assertions");
+  //filter according to filtering metrics
+  filterAssertionsWithMetrics(assertions, context._filter);
 
   //sort according to the final score
-  sortAssertions(context, trace, assertions);
+  sortAssertionsWithMetrics(context._sort, assertions);
 
   if (assertions.size() > clc::maxAss) {
     messageInfo("Keeping only the top " + std::to_string(clc::maxAss) +
@@ -898,11 +912,11 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
 }
 
 std::unordered_map<std::string, double>
-Qualifier::gatherMaxValuesForMetrics(Context &context,
-                                     std::vector<Assertion *> &assertions) {
+Qualifier::getMaxValuesForSortMetrics(std::vector<Metric *> &metrics,
+                                      std::vector<Assertion *> &assertions) {
 
   std::unordered_map<std::string, double> mToMaxValue;
-  for (auto &m : context._sort) {
+  for (auto &m : metrics) {
     double max = 0;
     for (auto &a : assertions) {
       double eval = evaluate(*a, *m);
@@ -912,4 +926,20 @@ Qualifier::gatherMaxValuesForMetrics(Context &context,
   }
   return mToMaxValue;
 }
+std::unordered_map<std::string, double> Qualifier::getMaxValuesForFilterMetrics(
+    std::vector<std::pair<Metric *, double>> &metrics,
+    std::vector<Assertion *> &assertions) {
+
+  std::unordered_map<std::string, double> mToMaxValue;
+  for (auto &[m, th] : metrics) {
+    double max = 0;
+    for (auto &a : assertions) {
+      double eval = evaluate(*a, *m);
+      max = eval > max ? eval : max;
+    }
+    mToMaxValue[m->_name] = max;
+  }
+  return mToMaxValue;
+}
+
 } // namespace harm

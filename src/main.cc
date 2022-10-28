@@ -179,6 +179,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     }
   }
 
+  if (result.count("dont-normalize")) {
+    clc::dontNormalize = true;
+  }
+
   messageErrorIf(result.count("ftm") && result.count("fd"),
                  "ftm and fd options are mutually exclusive");
 
