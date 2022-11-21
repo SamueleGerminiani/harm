@@ -167,6 +167,11 @@ For csv:
 #### Proposition
  Propositions are non-temporal boolean expressions used to fill the empty spots (placeholders) of the templates;  metrics are used to perform the final ranking of assertions. Propositions can be written using all boolean, relational an arithmetic operators of the C/C++ language.
 For the full grammar of propositions, check "src/antl4/propositionParser/grammar/proposition.g4".
+	
+A proposition is defined inside the "exp" attribute
+* WARNING: if you are using a vcd trace, the variables must include the hierarchical path as a prefix, ex. "test1::modn::a" is the variable "a" in module "modn" instantiated in module "test1". Check the vcd file to retrieve the path.
+* Do not include the prefix common to all variables in the vcd, ex. If all design's variables are contained inside the global scope "test1", then variable "a" must be referenced as "modn::a"
+
 Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c", "ac" and "dt"
 * "a" propositions will be used only to fill antecedent's placeholders (not the dt operator)
 * "c" propositions will be used only to fill consequent's placeholders (not the decision tree operators)
