@@ -17,6 +17,7 @@ add_test(NAME ncReps COMMAND harm --csv ${EXAMPLE_DIR}/ncReps/ncReps.csv --conf 
 add_test(NAME multiTrace COMMAND harm --csv-dir ${EXAMPLE_DIR}/multiTrace/csv/ --conf ${EXAMPLE_DIR}/multiTrace/multiTrace.xml WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME nonBoolDT COMMAND harm --csv ${EXAMPLE_DIR}/nonBoolDT/nonBooleanDT.csv --conf ${EXAMPLE_DIR}/nonBoolDT/nonBooleanDT.xml WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME paperRE COMMAND harm --csv ${EXAMPLE_DIR}/paperRE/re.csv --conf ${EXAMPLE_DIR}/paperRE/reConfig.xml WORKING_DIRECTORY ${WORK_DIR})
+add_test(NAME ex3 COMMAND harm --csv ${EXAMPLE_DIR}/ex3/ex3.csv --conf ${EXAMPLE_DIR}/ex3/ex3Config.xml WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME faultCov COMMAND harm --csv ${EXAMPLE_DIR}/faultCov/fc.csv --conf ${EXAMPLE_DIR}/faultCov/fcConfig.xml --fd ${EXAMPLE_DIR}/faultCov/faultyTraces WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME csvCheck COMMAND harm --csv ${EXAMPLE_DIR}/csvCheck/harm_test_data.csv --conf ${EXAMPLE_DIR}/csvCheck/csvCheckConfig.xml --dump-to ${CMAKE_BINARY_DIR} WORKING_DIRECTORY ${WORK_DIR})
 

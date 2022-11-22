@@ -1,0 +1,19 @@
+<harm>
+	<context name="default">
+
+		<prop exp="v1" loc="dt"/>
+		<prop exp="v2" loc="dt"/>
+		<prop exp="v3" loc="dt"/>
+		<prop exp="v4" loc="c"/>
+
+        <template dtLimits="3A,1E,R"
+            exp="G({..##1..}|-> X(v4))" /> 
+
+
+
+
+	</context>
+</harm>
+
+
+
