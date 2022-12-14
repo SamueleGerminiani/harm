@@ -174,8 +174,10 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   messageInfo("Parsing " + file);
 
   //hack to remove unknown scopes: they make the vcd parser fail
-#ifdef linux
+#ifdef __linux__
   system(("sed -i '/$scope unknown/d' " + file).c_str());
+#elif __APPLE__
+  system(("sed -i '' '/$scope unknown/d' " + file).c_str());
 #endif
 
   //external library
