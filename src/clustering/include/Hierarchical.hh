@@ -6,6 +6,10 @@
 #include <ostream>
 #include <unordered_set>
 #include <vector>
+
+using EvaluatorClusterElement =
+    std::pair<std::string, std::unordered_set<std::string>>;
+
 template <typename T> class Hierarchical {
   using Cluster = std::vector<T>;
   using Level = std::vector<Cluster>;
@@ -37,8 +41,10 @@ private:
 };
 
 template <typename T>
-std::vector<std::pair<T, T>> hcElbow(std::vector<T> elements, size_t max = 20,
-                                     double SDmin_red = 0.1f,
-                                     bool keepOnlyBest = false);
+std::vector<std::pair<T, T>>
+hcElbowHarm(std::vector<T> elements, size_t max = 20, double SDmin_red = 0.1f,
+            bool keepOnlyBest = false);
+
+std::vector<std::vector<EvaluatorClusterElement>> hcElbowEvaluator( std::unordered_map<std::string, std::unordered_set<std::string>> elements);
 
 #include "Hierarchical.i.hh"

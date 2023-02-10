@@ -48,8 +48,8 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "<uint>")("dont-fill-ass",
                   "do not populate assertions with values (saves memory)")(
         "interactive", "enable interactive assertion ranking")(
-        "split-logic", "split bitvectors into boolean variabes")(
-        "dont-print-ass", "do not print the mined assertions")(
+        "split-logic", "split bitvectors into boolean variabes")
+        ( "dont-print-ass", "do not print the mined assertions")(
         "silent", "disable all outputs")("wsilent", "disable all warning")(
         "isilent", "disable all info")("psilent", "disable all progress bars")(
         "cls-alg",
@@ -131,7 +131,7 @@ cxxopts::ParseResult parseTraceGenerator(int argc, char *argv[]) {
   }
 }
 
-// Var estimator
+// evaluator
 cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
   try {
     cxxopts::Options options(argv[0], "");
@@ -168,7 +168,11 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                 "n-stm",
                 "The number of statements when yousing statement reduction",
                 cxxopts::value<size_t>(),
-                "<uint>")("print-failing-ass", "")("help", "Show options");
+                "<uint>")
+                              ("print-failing-ass", "")
+                              ("recover-diff", "")
+                              ("cbs", "cluster by similarity")
+                              ("help", "Show options");
 
     auto result = options.parse(argc, argv);
 

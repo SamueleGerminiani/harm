@@ -6,9 +6,15 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <limits.h>
 #include <map>
+#include <message.hh>
 #include <numeric>
 #include <set>
+#include <string>
+
+using EvaluatorClusterElement =
+    std::pair<std::string, std::unordered_set<std::string>>;
 
 template <typename T>
 Hierarchical<T>::Hierarchical(const std::vector<T> objects,
@@ -212,14 +218,21 @@ std::ostream &operator<<(std::ostream &o, Hierarchical<F> &h) {
   return o;
 }
 
-template <typename T> std::string printObject(const std::pair<T, double> &obj) {
+inline std::string printObjectEvaluator(const EvaluatorClusterElement &obj) {
+  std::string ret = "";
+  ret += obj.first;
+  return ret;
+}
+
+template <typename T>
+std::string printObjectHarm(const std::pair<T, double> &obj) {
   std::string ret = "";
   ret += std::to_string(obj.first);
   return ret;
 }
 template <typename T>
-float similarity(const std::vector<std::pair<T, double>> &e1,
-                 const std::vector<std::pair<T, double>> &e2) {
+float similarityHarm(const std::vector<std::pair<T, double>> &e1,
+                     const std::vector<std::pair<T, double>> &e2) {
   double s1 = 0.f;
   double s2 = 0.f;
 
@@ -241,9 +254,82 @@ float similarity(const std::vector<std::pair<T, double>> &e1,
 
   return std::abs(s1 - s2) == 0 ? DBL_MAX : 1.f / std::abs(s1 - s2);
 }
+
+//float inline similarityEvaluator(
+//    const std::vector<EvaluatorClusterElement> &e1,
+//    const std::vector<EvaluatorClusterElement> &e2) {
+//
+//  std::unordered_set<std::string> uniqueInstancesTot;
+//  std::unordered_set<std::string> uniqueInstancesE2;
+//
+//  for (auto &[id, instances] : e1) {
+//    for (auto inst : instances) {
+//      uniqueInstancesTot.insert(inst);
+//    }
+//  }
+//  size_t e1Size = uniqueInstancesTot.size();
+//
+//  for (auto &[id, instances] : e2) {
+//    for (auto inst : instances) {
+//      uniqueInstancesTot.insert(inst);
+//      uniqueInstancesE2.insert(inst);
+//    }
+//  }
+//
+//  size_t e2Size = uniqueInstancesE2.size();
+//  size_t increment = uniqueInstancesTot.size() - e1Size;
+//
+//  return 1.f - (increment / ((float)e1Size + (float)e2Size));
+//}
+
+float inline similarityEvaluator(
+    const std::vector<EvaluatorClusterElement> &e1,
+    const std::vector<EvaluatorClusterElement> &e2) {
+
+  std::unordered_map<std::string, size_t> instToNElements;
+  size_t nClusters = e1.size() + e2.size();
+  size_t totInstances = 0;
+
+  for (auto &[id, instances] : e1) {
+    totInstances += instances.size();
+    for (auto inst : instances) {
+      //init
+      if (!instToNElements.count(inst)) {
+        instToNElements[inst] = 0;
+      }
+      instToNElements.at(inst)++;
+    }
+  }
+
+  for (auto &[id, instances] : e2) {
+    totInstances += instances.size();
+    for (auto inst : instances) {
+      if (!instToNElements.count(inst)) {
+        instToNElements[inst] = 0;
+      }
+      instToNElements.at(inst)++;
+    }
+  }
+
+  size_t notOverlappingScore = 0;
+  for (auto &[inst, n] : instToNElements) {
+    //if nCluster - n == 0 then the instance is contained in all clusters (best case)
+    notOverlappingScore += nClusters - n;
+  }
+
+  //(instToNElements.size()*(nClusters-1) is the worst case where all instances are
+  //non-overlapping
+  messageErrorIf(nClusters < 2, "nClusters == " + std::to_string(nClusters));
+  messageErrorIf(instToNElements.size() == 0, "instToNElements.size() == 0");
+
+  //std::cout << 1.f - (double)notOverlappingScore / (instToNElements.size() * (nClusters - 1)) << "\n";
+  return 1.f - (double)notOverlappingScore /
+                   (instToNElements.size() * (nClusters - 1));
+}
+
 template <typename T>
-std::vector<std::pair<T, T>> hcElbow(std::vector<T> elements, size_t max,
-                                     double SDmin_red, bool keepOnlyBest) {
+std::vector<std::pair<T, T>> hcElbowHarm(std::vector<T> elements, size_t max,
+                                         double SDmin_red, bool keepOnlyBest) {
 
   std::map<T, double> ivTosup;
   for (auto i : elements) {
@@ -256,14 +342,14 @@ std::vector<std::pair<T, T>> hcElbow(std::vector<T> elements, size_t max,
   }
 
   //perform hc
-  Hierarchical<std::pair<T, double>> cls(uniqValWithSupport, &similarity<T>,
-                                         0.f, &printObject<T>);
+  Hierarchical<std::pair<T, double>> cls(uniqValWithSupport, &similarityHarm<T>,
+                                         0.f, &printObjectHarm<T>);
 
   std::vector<std::pair<T, T>> ranges;
   double prevSD = DBL_MAX;
 
   for (size_t i = 0; i < cls.getNumLevels() && i <= max; i++) {
-      //set of clusters at level i
+    //set of clusters at level i
     auto level = cls.getLevel(cls.getNumLevels() - i - 1);
 
     // group the clusters by label
@@ -323,6 +409,155 @@ std::vector<std::pair<T, T>> hcElbow(std::vector<T> elements, size_t max,
             [](const std::pair<T, T> &e1, const std::pair<T, T> &e2) {
               return e1.second <= e2.first;
             });
+
+  return ret;
+}
+using EvaluatorClusterElement =
+    std::pair<std::string, std::unordered_set<std::string>>;
+
+inline size_t
+getNUniqueElementsEvaluator(std::vector<EvaluatorClusterElement> &c) {
+
+  std::unordered_set<std::string> uniqueInstances;
+
+  for (auto &[id, instances] : c) {
+    for (auto &inst : instances) {
+      uniqueInstances.insert(inst);
+    }
+  }
+
+  return uniqueInstances.size();
+}
+
+inline size_t getNUniqueElementsEvaluator(
+    std::vector<std::vector<EvaluatorClusterElement>> &listOfClusters) {
+
+  std::unordered_set<std::string> uniqueInstances;
+
+  for (auto &c : listOfClusters) {
+    for (auto &[id, instances] : c) {
+      for (auto &inst : instances) {
+        uniqueInstances.insert(inst);
+      }
+    }
+  }
+
+  return uniqueInstances.size();
+}
+
+
+inline double
+getScoreEvaluator(std::vector<std::vector<EvaluatorClusterElement>> &level) {
+
+  double mean = 0.f;
+  for (auto cl : level) {
+    std::unordered_map<std::string, size_t> instToNElements;
+
+    for (auto &[id, instances] : cl) {
+      for (auto inst : instances) {
+        //init
+        if (!instToNElements.count(inst)) {
+          instToNElements[inst] = 0;
+        }
+        instToNElements.at(inst)++;
+      }
+    }
+
+    for (auto &[inst, n] : instToNElements) {
+      mean += level.size() - n;
+    }
+  }
+
+  return mean;
+}
+
+inline std::vector<std::vector<EvaluatorClusterElement>> hcElbowEvaluator(
+    std::unordered_map<std::string, std::unordered_set<std::string>> elements) {
+
+  std::vector<std::vector<EvaluatorClusterElement>> ret;
+  std::vector<EvaluatorClusterElement> arrangedElements;
+  std::vector<EvaluatorClusterElement> zeroInstancesCluster;
+
+  for (auto &[id, instances] : elements) {
+    if (!instances.empty()) {
+      arrangedElements.emplace_back(id, instances);
+    } else {
+      zeroInstancesCluster.emplace_back(id, elements.at(id));
+    }
+  }
+
+  //perform hc
+  Hierarchical<EvaluatorClusterElement> cls(
+      arrangedElements, &similarityEvaluator, 0.f, &printObjectEvaluator);
+
+  //  debug -- print levels
+  //  std::cout << cls << "\n";
+
+  //  double prevMean = DBL_MAX;
+
+  double minScore = DBL_MAX;
+  int minIndex = INT_MAX;
+
+  for (size_t i = 0; i < cls.getNumLevels(); i++) {
+    //set of clusters at level i
+    auto level = cls.getLevel(i);
+    double thisLevelScore = getScoreEvaluator(level);
+
+    if (thisLevelScore < minScore) {
+      minScore = thisLevelScore;
+      minIndex = i;
+    }
+
+    //std::cout << "Mean:" << mean << "\n";
+    //std::cout << "prevMean:" << prevMean << "\n";
+    //std::cout << "SDmin_red:" << SDmin_red << "\n";
+    //std::cout << "Reduction:"
+    //          << std::abs((double)prevMean - (double)mean) / (double)prevMean
+    //          << "\n";
+
+    // continue only if the mean reduction is above the
+    // defined threshold
+    //    if (std::abs((double)prevMean - (double)mean) / (double)prevMean <
+    //        SDmin_red) {
+    //      std::cout << "Saving level:" << i - 1 << "\n";
+    //      for (auto cl : cls.getLevel(i - 1)) {
+    //        ret.push_back(cl);
+    //      }
+    //      return ret;
+    //    }
+    //
+    //    prevMean = mean;
+    //  }
+    //  std::cout << "Saving top level"<< "\n";
+    //  for (auto cl : cls.getTopLevel()) {
+    //    ret.push_back(cl);
+  }
+
+  std::cout << "Level " << minIndex << "\n";
+  std::cout << "MinScore " << minScore << "\n";
+  std::cout << "-------------------------------"
+            << "\n";
+
+  for (auto cl : cls.getLevel(minIndex)) {
+    ret.push_back(cl);
+  }
+  ret.push_back(zeroInstancesCluster);
+
+  std::sort(begin(ret), end(ret),
+            [](std::vector<EvaluatorClusterElement> &c1,
+               std::vector<EvaluatorClusterElement> &c2) {
+              return getNUniqueElementsEvaluator(c1) <
+                     getNUniqueElementsEvaluator(c2);
+            });
+
+  //debug - print sorted clusters
+  //for (auto &cls : ret) {
+  //  std::cout << "Score: " << getNUniqueElementsEvaluator(cls) << "\n";
+  //  for (auto inst : cls) {
+  //    std::cout << inst.first << " ";
+  //  }
+  //  std::cout << "---------------------------------" << "\n";
+  //}
 
   return ret;
 }

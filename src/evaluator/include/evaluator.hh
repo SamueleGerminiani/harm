@@ -3,6 +3,7 @@
 #include "Assertion.hh"
 #include "Template.hh"
 #include "Trace.hh"
+#include "Assertion.hh"
 #include <vector>
 
 namespace clc {
@@ -15,22 +16,23 @@ extern std::string ve_dumpTo;
 extern size_t ve_nStatements;
 extern int ve_cluster;
 extern bool ve_print_failing_ass;
+extern bool ve_recover_diff;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
+extern bool ve_clusterBySim;
 } // namespace clc
 
 struct Diff {
   Diff() {}
-  Diff(int atct, int atcf, size_t nAssertions)
-      : _atct(atct), _atcf(atcf), _nAssertions(nAssertions) {
-    // not todo
-  }
-  int _atct = 0;
-  int _atcf = 0;
-  size_t _nAssertions = 0;
-  double _weight = 0.f;
+
+  size_t _atct = 0;
+  size_t _atcf = 0;
+  //<time,N>
   std::unordered_map<size_t, size_t> _coverage;
+
+  //set of instantes of the form "assId,time"
+  std::unordered_set<std::string> _coveredInstances;
 
 };
 
@@ -42,19 +44,22 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff, bool normaliz
 
 
 void getDiffVBR(
-    std::unordered_map<std::string, Diff> &varToDiff,
+    std::unordered_map<std::string, Diff> &csvVarToDiff,
     std::unordered_map<std::string, size_t> &varToSize,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss) ;
+    std::vector<std::string> &vars,
+    std::vector<harm::Template *> &assertions);
 
 void getDiffSR(
-    std::unordered_map<std::string, Diff> &stmToDiff,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &stmToAss,
-    std::unordered_map <std::string, std::vector<std::string>> &tokenToFailingAssertions
-    ) ;
-void getDiffBR(
     std::unordered_map<std::string, Diff> &idToDiff,
+    std::vector<std::string> &ids,
+    std::vector<harm::Template *> &assertions
+    );
+
+void getDiffBR(
+    std::unordered_map<std::string, Diff> &csvIdToDiff,
     std::unordered_map<std::string, size_t> &idToSize,
-    std::unordered_map<std::string, std::vector<harm::Template *>> &idToAss);
+    std::vector<std::string> &ids,
+    std::vector<harm::Template *> &assertions);
 
 void findFaultCoverageOnTrace(
     std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,

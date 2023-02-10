@@ -3,13 +3,24 @@
 #include "VCDtraceReader.hh"
 #include "commandLineParser.hh"
 #include "csv.hpp"
-#include "globals.hh"
 #include "evaluator.hh"
+#include "globals.hh"
 #include <filesystem>
 #include <random>
+#include <string>
+#include <vector>
 
 using namespace harm;
 using namespace expression;
+
+void tokenizeString(std::string const &str, const char delim,
+                    std::vector<std::string> &out) {
+  char *token = strtok(const_cast<char *>(str.c_str()), &delim);
+  while (token != nullptr) {
+    out.push_back(std::string(token));
+    token = strtok(nullptr, &delim);
+  }
+}
 
 void parseCommandLineArguments(int argc, char *args[]);
 
@@ -25,62 +36,108 @@ int main(int arg, char *argv[]) {
     messageError("Unknown parser type");
   }
 
-  // allocate trace
-  harm::Trace *trace = traceReader->readTrace();
-
-  auto assStrs = readAssertions(clc::ve_assPath);
-
   std::unordered_map<std::string, Diff> tokenToDiff;
+  std::unordered_map<std::string, std::vector<std::string>>
+      tokenToFailingAssertions;
 
-  int evaluated = 0;
-  std::unordered_map<std::string, std::vector<std::string>> tokenToFailingAssertions;
-  // eval the assertions one chunck at a time (to avoid memory explosion)
-  for (size_t i = 0; ((int)assStrs.size() - evaluated) > 0; i++) {
-    std::cout << evaluated << "/" << assStrs.size() << " evaluated\n";
+  if (!clc::ve_recover_diff) {
 
-    // convert string to Template
-    std::vector<Template *> assertions = parseAssertions(
-        assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
+    // allocate trace
+    harm::Trace *trace = traceReader->readTrace();
 
-    if (clc::ve_technique == "sr") {
-      //Statement reduction
-      std::unordered_map<std::string, std::vector<Template *>> stmToAss;
-      for (size_t i = 0; i < clc::ve_nStatements; i++) {
-        stmToAss["s" + std::to_string(i)] = assertions;
+    auto assStrs = readAssertions(clc::ve_assPath);
+
+    int evaluated = 0;
+    // eval the assertions one chunck at a time (to avoid memory explosion)
+    for (size_t i = 0; ((int)assStrs.size() - evaluated) > 0; i++) {
+      std::cout << evaluated << "/" << assStrs.size() << " evaluated\n";
+
+      // convert string to Template
+      std::vector<Template *> assertions = parseAssertions(
+          assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
+
+      if (clc::ve_technique == "sr") {
+        //Statement reduction
+        std::vector<std::string> ids;
+        for (size_t i = 0; i < clc::ve_nStatements; i++) {
+          ids.push_back("s" + std::to_string(i));
+        }
+        getDiffSR(tokenToDiff, ids, assertions);
+
+      } else if (clc::ve_technique == "vbr") {
+        //Variable Bit reduction
+        std::unordered_map<std::string, std::vector<Template *>> varToAss;
+        std::unordered_map<std::string, size_t> varToSize;
+        std::vector<std::string> vars;
+        csv::CSVReader reader(clc::ve_infoList);
+        csv::CSVRow row;
+        while (reader.read_row(row)) {
+          vars.push_back(row[0].get());
+          varToSize[row[0].get()] = std::stoul(row[1].get());
+        }
+        getDiffVBR(tokenToDiff, varToSize, vars, assertions);
+
+      } else if (clc::ve_technique == "br") {
+        //Bit reduction
+        std::vector<std::string> ids;
+        std::unordered_map<std::string, size_t> idToSize;
+        csv::CSVReader reader(clc::ve_infoList);
+        csv::CSVRow row;
+        while (reader.read_row(row)) {
+          ids.push_back(row[0].get());
+          idToSize[row[0].get()] = std::stoul(row[1].get());
+        }
+        getDiffBR(tokenToDiff, idToSize, ids, assertions);
+
+        //debug - print instances
+        //for (auto &[token, diff] : tokenToDiff) {
+        //  std::cout << "[" << token << "]"
+        //            << "\n";
+        //  for (auto ci : diff._coveredInstances) {
+        //    std::cout << ci << " ";
+        //  }
+        //  std::cout << "\n";
+        //}
       }
-      getDiffSR(tokenToDiff, stmToAss, tokenToFailingAssertions);
-    } else if (clc::ve_technique == "vbr") {
-      //Variable Bit reduction
-      std::unordered_map<std::string, std::vector<Template *>> varToAss;
-      std::unordered_map<std::string, size_t> varToSize;
-      csv::CSVReader reader(clc::ve_infoList);
-      csv::CSVRow row;
-      while (reader.read_row(row)) {
-        varToAss[row[0].get()] = assertions;
-        varToSize[row[0].get()] = std::stoul(row[1].get());
-      }
 
-      getDiffVBR(tokenToDiff, varToSize, varToAss);
-    } else if (clc::ve_technique == "br") {
-      //Bit reduction
-      std::unordered_map<std::string, std::vector<Template *>> idToAss;
-      std::unordered_map<std::string, size_t> idToSize;
-      csv::CSVReader reader(clc::ve_infoList);
-      csv::CSVRow row;
-      while (reader.read_row(row)) {
-        idToAss[row[0].get()] = assertions;
-        idToSize[row[0].get()] = std::stoul(row[1].get());
+      // delete processed assertions
+      for (Template *a : assertions) {
+        delete a;
       }
+      // update the amount of evaluated assertions
+      evaluated += clc::ve_chunkSize;
+    }
+    delete trace;
+  } else {
+    //recover diff
+    csv::CSVFormat format;
+    format.delimiter(';');
+    std::string filePath = clc::ve_dumpTo + "/" + std::string("diff_") +
+                           clc::ve_technique + ".csv";
+    messageErrorIf(!std::filesystem::exists(filePath),
+                   "Could not find: " + filePath);
 
-      getDiffBR(tokenToDiff, idToSize, idToAss);
+    csv::CSVReader reader(filePath, format);
+
+    csv::CSVRow row;
+
+    while (reader.read_row(row)) {
+      tokenToDiff[row[0].get()]._atcf = std::stoull(row[1].get());
+      std::vector<std::string> instances;
+      tokenizeString(row[2].get(), ' ', instances);
+      for (auto &inst : instances) {
+        tokenToDiff[row[0].get()]._coveredInstances.insert(inst);
+      }
     }
 
-    // delete processed assertions
-    for (Template *a : assertions) {
-      delete a;
-    }
-    // update the amount of evaluated assertions
-    evaluated += clc::ve_chunkSize;
+    //debug -- print diffs
+    //for (auto &[token, diff] : tokenToDiff) {
+    //  std::cout << token << ": ";
+    //  for (auto inst : diff._coveredInstances) {
+    //    std::cout << inst << " ";
+    //  }
+    //  std::cout << "\n";
+    //}
   }
 
   //abs
@@ -88,6 +145,7 @@ int main(int arg, char *argv[]) {
   //norm
   dumpScore(tokenToDiff, 1);
 
+  //FIXME: do we still need this?
   if (clc::ve_print_failing_ass) {
     for (auto &[t, ass] : tokenToFailingAssertions) {
       std::cout << t << std::endl;
@@ -97,7 +155,6 @@ int main(int arg, char *argv[]) {
     }
   }
 
-  delete trace;
   return 0;
 }
 
@@ -133,6 +190,13 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_print_failing_ass = 1;
   }
 
+  if (result.count("recover-diff")) {
+    clc::ve_recover_diff = 1;
+  }
+
+  if (result.count("cbs")) {
+    clc::ve_clusterBySim = 1;
+  }
 
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
@@ -148,7 +212,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("tech")) {
     clc::ve_technique = result["tech"].as<std::string>();
-    messageErrorIf(clc::ve_technique != "sr" && clc::ve_technique != "vbr" && clc::ve_technique != "br",
+    messageErrorIf(clc::ve_technique != "sr" && clc::ve_technique != "vbr" &&
+                       clc::ve_technique != "br",
                    "Unknown technique");
     std::cout << "Technique: " << clc::ve_technique << "\n";
   }
@@ -192,7 +257,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
                  "No info-list specified");
   messageErrorIf(clc::ve_technique == "br" && !result.count("info-list"),
                  "No info-list specified");
-  messageErrorIf(clc::ve_technique == "sr" && clc::ve_nStatements<=0,
-                 "You must specify the number of statements for the sr technique");
-
+  messageErrorIf(
+      clc::ve_technique == "sr" && clc::ve_nStatements <= 0,
+      "You must specify the number of statements for the sr technique");
 }

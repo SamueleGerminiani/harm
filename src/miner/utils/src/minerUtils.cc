@@ -180,7 +180,7 @@ std::vector<std::pair<T, T>> clsElbow(std::vector<T> &elements,
   } else if (clc::clsAlg == "kde") {
     clusters = kdeElbow<T>(elements, 20, clsEffort);
   } else if (clc::clsAlg == "hc") {
-    clusters = hcElbow<T>(elements, 20, clsEffort);
+    clusters = hcElbowHarm<T>(elements, 20, clsEffort);
   }
   return clusters;
 }

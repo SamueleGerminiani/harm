@@ -17,6 +17,7 @@ elseif (CMAKE_COMPILER_IS_GNUCXX)
         message(FATAL_ERROR "gcc version must be >= 8")
     endif()
     add_compile_options("-fPIC")
+    add_compile_options("-std=c++1z")
     add_compile_options("-Wno-psabi")
 endif()
 
@@ -178,7 +179,7 @@ SET(TG_MAIN_SRC src/traceGenerator/traceGenerator.cc
 add_executable(traceGenerator EXCLUDE_FROM_ALL ${TG_MAIN_SRC})
 target_link_libraries(traceGenerator commandLineParser templateParser propositionParser varParser traceReader ${Z3_LIBRARY})
 
-#Var estimator
+#axc project
 add_executable(evaluator EXCLUDE_FROM_ALL src/evaluator/main.cc)
 target_link_libraries(evaluator estimator commandLineParser traceReader)
 
