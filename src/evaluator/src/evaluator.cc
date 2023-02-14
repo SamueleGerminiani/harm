@@ -6,6 +6,7 @@
 #include "Hierarchical.hh"
 #include "Kmeans.hh"
 #include "Location.hh"
+#include "NSGA2.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "VCDtraceReader.hh"
@@ -47,6 +48,8 @@ size_t ve_chunkSize = 100000;
 bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
 bool ve_clusterBySim = 0;
+bool ve_recover_cls = 0;
+std::string ve_cls_type = "rand";
 } // namespace clc
 
 using namespace harm;
@@ -370,39 +373,173 @@ converToScores(std::unordered_map<std::string, Diff> &tokenToDiff,
   return scores;
 }
 
-void generatePareto(
+void dumpParetoAllComb(
     std::vector<std::vector<EvaluatorClusterElement>> clusters) {
-  std::vector<std::vector<size_t>> listOfCombs;
 
-  for (size_t i = 1; i < clusters.size() && i <= 10; i++) {
-//    std::cout << "================================[" << i << "]" << "\n";
-    comb(clusters.size() > 10 ? 10 : clusters.size(), i, listOfCombs);
+  std::vector<std::vector<size_t>> listOfCombs;
+  size_t maxClusters = 14;
+  size_t maxSize = 14;
+
+  std::vector<std::pair<size_t, size_t>> objectives;
+  std::vector<std::unordered_set<std::string>> pop;
+
+  for (size_t i = 1; i < clusters.size() && i <= maxSize; i++) {
+    std::cout << "================================[" << i << "]"
+              << "\n";
+    comb(clusters.size() > maxClusters ? maxClusters : clusters.size(), i,
+         listOfCombs);
     for (auto &comb : listOfCombs) {
-      std::stringstream ss;
       size_t nTokens = 0;
       std::vector<std::vector<EvaluatorClusterElement>> selectedClusters;
-      ss << '{';
+      //get conf label, conf size
       for (auto &index : comb) {
-        ss << index << (index != comb.back() ? " " : "},");
         nTokens += clusters[index].size();
         selectedClusters.push_back(clusters[index]);
       }
 
       size_t nUniqueElements = getNUniqueElementsEvaluator(selectedClusters);
-      ss << nTokens << "," << nUniqueElements;
-      std::cout << ss.str() << "\n";
+
+      std::unordered_set<std::string> individual;
+      for (auto &c : selectedClusters) {
+        for (auto &[id, f] : c) {
+          individual.insert(id);
+        }
+        pop.push_back(individual);
+        objectives.emplace_back(nTokens, nUniqueElements);
+      }
     }
 
     listOfCombs.clear();
   }
+
+  std::cout << "Dumping pareto front..."
+            << "\n";
+  auto ranks = generateDominanceRank(pop, objectives);
+  std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
+                    "_paretoFront.csv");
+  out << "nTokens, nUniqueInstances\n";
+  for (size_t i = 0; i < objectives.size(); i++) {
+    if (ranks[i] == 0) {
+      out << objectives[i].first << ";" << objectives[i].second << "\n";
+    }
+  }
+
+  out.close();
 }
-void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
-               bool normalize) {
+std::vector<size_t>
+getNRandoms(size_t l, size_t r, size_t n,
+            std::unordered_set<std::string> &alreadyPresent) {
+  if (n > (r - l) || n == 0) {
+    std::cout << n << "," << r << "," << l << "\n";
+    throw std::invalid_argument("n must be greater or equal to r-l");
+  }
+  std::vector<size_t> result;
+  result.reserve(n);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<size_t> distrib(l, r);
+  std::string key = "";
+
+  while (result.size() < n) {
+    size_t num = distrib(gen);
+    if (std::find(result.begin(), result.end(), num) == result.end()) {
+      result.push_back(num);
+    }
+  }
+  std::sort(begin(result), end(result));
+
+  for (auto &i : result) {
+    key += std::to_string(i) + ",";
+  }
+
+  if (alreadyPresent.count(key)) {
+    return std::vector<size_t>({(size_t)-1});
+  }
+  alreadyPresent.insert(key);
+
+  return result;
+}
+void dumpParetoRandom(
+    std::vector<std::vector<EvaluatorClusterElement>> clusters) {
+
+  std::vector<std::vector<size_t>> listOfCombs;
+  size_t confIndex = 0;
+  size_t maxClusters = 22;
+  size_t maxSize = 22;
+  size_t nRandomCombsPerSize = 3000;
+
+  std::vector<std::pair<size_t, size_t>> objectives;
+  std::vector<std::unordered_set<std::string>> pop;
+
+  for (size_t i = 1; i < clusters.size() && i <= maxSize; i++) {
+    std::cout << "================================[" << i << "]"
+              << "\n";
+    std::unordered_set<std::string> alreadyPresent;
+    for (size_t j = 0; j < nRandomCombsPerSize; j++) {
+      listOfCombs.push_back(
+          getNRandoms(0, clusters.size() - 1, i, alreadyPresent));
+      if (listOfCombs.back()[0] == -1) {
+        listOfCombs.pop_back();
+      }
+    }
+    alreadyPresent.clear();
+    std::cout << listOfCombs.size() << "\n";
+    auto start = std::chrono::steady_clock::now();
+
+    for (auto &comb : listOfCombs) {
+
+      size_t nTokens = 0;
+      std::vector<std::vector<EvaluatorClusterElement>> selectedClusters;
+      //get conf label, conf size
+      for (auto &index : comb) {
+        nTokens += clusters[index].size();
+        selectedClusters.push_back(clusters[index]);
+      }
+
+      size_t nUniqueElements = getNUniqueElementsEvaluator(selectedClusters);
+
+      std::unordered_set<std::string> individual;
+      for (auto &c : selectedClusters) {
+        for (auto &[id, f] : c) {
+          individual.insert(id);
+        }
+        pop.push_back(individual);
+        objectives.emplace_back(nTokens, nUniqueElements);
+      }
+    }
+    auto stop = std::chrono::steady_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+
+    std::cout << duration.count() << "s\n";
+
+    listOfCombs.clear();
+  }
+
+  std::cout << "Dumping pareto front..."
+            << "\n";
+  auto ranks = generateDominanceRank(pop, objectives);
+
+  std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
+                    "_paretoFront.csv");
+  out << "nTokens, nUniqueInstances\n";
+  for (size_t i = 0; i < objectives.size(); i++) {
+    if (ranks[i] == 0) {
+      out << objectives[i].first << ";" << objectives[i].second << "\n";
+    }
+  }
+
+  out.close();
+}
+
+void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
+                bool normalize) {
 
   auto scores = converToScores(tokenToDiff, normalize);
 
   std::ofstream out(clc::ve_dumpTo + "/" + std::string("rank_") +
-                    clc::ve_technique + (normalize ? "_nor" : "") + ".csv");
+                    clc::ve_technique + (normalize ? "_nor" : "") +
+                    "_kmeans.csv");
 
   //prep for clustering
   std::vector<double> elements;
@@ -470,8 +607,47 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
       }
     }
   }
-
   out.close();
+
+  //pareto front
+  std::vector<std::unordered_set<std::string>> pop;
+
+  for (auto &[id, cluster] : clusters_score) {
+    std::unordered_set<std::string> individual;
+    for (auto &[id, score] : cluster) {
+      individual.insert(id);
+    }
+    pop.push_back(individual);
+  }
+
+  std::vector<std::pair<size_t, size_t>> objectives;
+  for (auto &individual : pop) {
+    std::vector<EvaluatorClusterElement> c;
+    for (auto &token : individual) {
+      EvaluatorClusterElement ce;
+      ce.first = token;
+      ce.second = tokenToDiff.at(token)._coveredInstances;
+      c.push_back(ce);
+    }
+    size_t nUniqueElements = getNUniqueElementsEvaluator(c);
+    objectives.emplace_back(individual.size(), nUniqueElements);
+  }
+
+  std::cout << "Dumping pareto front..."
+            << "\n";
+
+  std::ofstream pout(clc::ve_dumpTo + "/" + clc::ve_technique +
+                     "_paretoFront.csv");
+  pout << "nTokens, nUniqueInstances\n";
+  for (size_t i = 0; i < objectives.size(); i++) {
+      pout << objectives[i].first << ";" << objectives[i].second << "\n";
+  }
+
+  pout.close();
+}
+
+void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
+               bool normalize) {
 
   //dump diffs
   std::ofstream outDiff(clc::ve_dumpTo + "/" + std::string("diff_") +
@@ -486,41 +662,106 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
   }
   outDiff.close();
 
-  if (clc::ve_clusterBySim && !normalize) {
+  //arrange elements
+  std::unordered_map<std::string, std::unordered_set<std::string>>
+      arrangedElements;
+  for (auto &[token, diff] : tokenToDiff) {
+    arrangedElements[token] = diff._coveredInstances;
+  }
 
-    //HC clustering
-    std::unordered_map<std::string, std::unordered_set<std::string>>
-        arrangedElements;
-    for (auto &[token, diff] : tokenToDiff) {
-      arrangedElements[token] = diff._coveredInstances;
-    }
+  std::vector<std::vector<EvaluatorClusterElement>> hcClusters;
 
-    std::cout << "HC clustering... might take a while"
-              << "\n";
-    std::vector<std::vector<EvaluatorClusterElement>> hcClusters =
-        hcElbowEvaluator(arrangedElements);
+  if (clc::ve_cls_type != "kmeans") {
+    if (clc::ve_recover_cls) {
+      //recover clusters
+      std::string filePath = clc::ve_dumpTo + "/" + std::string("rank_") +
+                             clc::ve_technique + ".csv";
+      std::cout << filePath << "\n";
+      messageErrorIf(!std::filesystem::exists(filePath),
+                     "Could not find: " + filePath);
 
-    std::ofstream out(clc::ve_dumpTo + "/" + std::string("rank_") +
-                      clc::ve_technique + "_bySim" + ".csv");
+      std::unordered_map<size_t, std::vector<std::string>> cidToFaults;
 
-    //print header
-    if (clc::ve_technique == "br") {
-      out << "token,size,bit,cluster,score\n";
-    } else if (clc::ve_technique == "sr") {
-      out << "statement,cluster,score\n";
-    } else if (clc::ve_technique == "vbr") {
-      out << "var,size,bit,cluster,score\n";
-    }
+      csv::CSVFormat format;
+      format.delimiter(',');
+      csv::CSVReader reader(filePath, format);
+      csv::CSVRow row;
 
-    for (size_t i = 0; i < hcClusters.size(); i++) {
-      auto &cls = hcClusters[i];
-      size_t clusterScore = getNUniqueElementsEvaluator(cls);
-      for (auto inst : cls) {
-        out << inst.first << "," << i << "," << clusterScore << "\n";
+      while (reader.read_row(row)) {
+        std::string id = row[0].get() + "," + row[1].get() + "," + row[2].get();
+        size_t clusterID = std::stoull(row[3].get());
+        cidToFaults[clusterID].push_back(id);
       }
-    }
-    out.close();
 
-    generatePareto(hcClusters);
+      for (size_t id = 0; id < cidToFaults.size(); id++) {
+        auto faults = cidToFaults.at(id);
+
+        std::vector<EvaluatorClusterElement> newCls;
+        for (auto &f : faults) {
+          EvaluatorClusterElement ce;
+          ce.first = f;
+          ce.second = arrangedElements.at(f);
+          newCls.push_back(ce);
+        }
+        hcClusters.push_back(newCls);
+      }
+
+      //for (auto &c : hcClusters) {
+      //    std::cout << "======================" << "\n";
+      //  for (auto &[id, faults] : c) {
+      //      std::cout << "-------------------------" << "\n";
+      //    std::cout << id << " "<<faults.size();
+      //    std::cout <<  "\n";
+      //  }
+      //}
+      std::cout << "Recovered clusters:" << hcClusters.size() << "\n";
+
+    } else {
+      //hc clustering
+      std::cout << "HC clustering... might take a while"
+                << "\n";
+      hcClusters = hcElbowEvaluator(arrangedElements);
+
+      std::ofstream out(clc::ve_dumpTo + "/" + std::string("rank_") +
+                        clc::ve_technique + ".csv");
+
+      //dump clusters
+      //print header
+      if (clc::ve_technique == "br") {
+        out << "token,size,bit,cluster,score\n";
+      } else if (clc::ve_technique == "sr") {
+        out << "statement,cluster,score\n";
+      } else if (clc::ve_technique == "vbr") {
+        out << "var,size,bit,cluster,score\n";
+      }
+
+      for (size_t i = 0; i < hcClusters.size(); i++) {
+        auto &cls = hcClusters[i];
+        size_t clusterScore = getNUniqueElementsEvaluator(cls);
+        for (auto inst : cls) {
+          out << inst.first << "," << i << "," << clusterScore << "\n";
+        }
+      }
+      out.close();
+    }
+  }
+
+  if (clc::ve_cls_type == "rand") {
+    dumpParetoRandom(hcClusters);
+  } else if (clc::ve_cls_type == "comb") {
+    dumpParetoAllComb(hcClusters);
+  } else if (clc::ve_cls_type == "nsga2") {
+    std::vector<std::unordered_set<std::string>> initialPop;
+    for (auto &c : hcClusters) {
+      std::unordered_set<std::string> individual;
+      for (auto &[id, f] : c) {
+        individual.insert(id);
+      }
+      initialPop.push_back(individual);
+    }
+    nsga2(arrangedElements, 15);
+
+  } else if (clc::ve_cls_type == "kmeans") {
+    dumpKmeans(tokenToDiff, normalize);
   }
 }

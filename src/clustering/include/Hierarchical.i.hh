@@ -415,6 +415,7 @@ std::vector<std::pair<T, T>> hcElbowHarm(std::vector<T> elements, size_t max,
 using EvaluatorClusterElement =
     std::pair<std::string, std::unordered_set<std::string>>;
 
+
 inline size_t
 getNUniqueElementsEvaluator(std::vector<EvaluatorClusterElement> &c) {
 
@@ -444,7 +445,6 @@ inline size_t getNUniqueElementsEvaluator(
 
   return uniqueInstances.size();
 }
-
 
 inline double
 getScoreEvaluator(std::vector<std::vector<EvaluatorClusterElement>> &level) {

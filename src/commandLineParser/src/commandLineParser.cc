@@ -148,8 +148,10 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
         "divide the score into N clusters")(
         "cs", "", cxxopts::value<std::string>(),
         "chunk-size number of assertions processed at a time (depends on the "
-        "available memory) ")("tech", "", cxxopts::value<std::string>(),
-                              "technique used to perform the estimation")(
+        "available memory) ")
+            ("tech", "", cxxopts::value<std::string>(), "axc technique used to perform the estimation")
+            ("cls-type", "", cxxopts::value<std::string>(), "technique used to perform the clustering")
+            (
         "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
 
         ("info-list",
@@ -171,6 +173,7 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                 "<uint>")
                               ("print-failing-ass", "")
                               ("recover-diff", "")
+                              ("recover-cls", "")
                               ("cbs", "cluster by similarity")
                               ("help", "Show options");
 

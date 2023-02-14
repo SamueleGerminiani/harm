@@ -142,8 +142,6 @@ int main(int arg, char *argv[]) {
 
   //abs
   dumpScore(tokenToDiff, 0);
-  //norm
-  dumpScore(tokenToDiff, 1);
 
   //FIXME: do we still need this?
   if (clc::ve_print_failing_ass) {
@@ -194,6 +192,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_recover_diff = 1;
   }
 
+  if (result.count("recover-cls")) {
+    clc::ve_recover_cls = 1;
+  }
+
   if (result.count("cbs")) {
     clc::ve_clusterBySim = 1;
   }
@@ -216,6 +218,12 @@ void parseCommandLineArguments(int argc, char *args[]) {
                        clc::ve_technique != "br",
                    "Unknown technique");
     std::cout << "Technique: " << clc::ve_technique << "\n";
+  }
+  if (result.count("cls-type")) {
+    clc::ve_cls_type = result["cls-type"].as<std::string>();
+    messageErrorIf(clc::ve_cls_type != "rand" && clc::ve_cls_type != "comb" &&
+                       clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans",
+                   "Unknown clustering technique");
   }
   if (result.count("dump-to")) {
     clc::ve_dumpTo = result["dump-to"].as<std::string>();
