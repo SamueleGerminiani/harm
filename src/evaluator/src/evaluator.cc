@@ -19,6 +19,7 @@
 #include "propositionParsingUtils.hh"
 #include "templateParsingUtils.hh"
 #include "varDeclarationParser.hh"
+#include <cmath>
 #include <filesystem>
 
 #include <algorithm>
@@ -47,7 +48,6 @@ int ve_cluster = 1;
 size_t ve_chunkSize = 100000;
 bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
-bool ve_clusterBySim = 0;
 bool ve_recover_cls = 0;
 std::string ve_cls_type = "rand";
 } // namespace clc
@@ -640,7 +640,7 @@ void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
                      "_paretoFront.csv");
   pout << "nTokens, nUniqueInstances\n";
   for (size_t i = 0; i < objectives.size(); i++) {
-      pout << objectives[i].first << ";" << objectives[i].second << "\n";
+    pout << objectives[i].first << ";" << objectives[i].second << "\n";
   }
 
   pout.close();
@@ -671,10 +671,10 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
 
   std::vector<std::vector<EvaluatorClusterElement>> hcClusters;
 
-  if (clc::ve_cls_type != "kmeans") {
+  if (clc::ve_cls_type != "kmeans" && clc::ve_cls_type != "nsga2") {
     if (clc::ve_recover_cls) {
       //recover clusters
-      std::string filePath = clc::ve_dumpTo + "/" + std::string("rank_") +
+      std::string filePath = clc::ve_dumpTo + "/" + std::string("hccls_") +
                              clc::ve_technique + ".csv";
       std::cout << filePath << "\n";
       messageErrorIf(!std::filesystem::exists(filePath),
@@ -722,7 +722,7 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
                 << "\n";
       hcClusters = hcElbowEvaluator(arrangedElements);
 
-      std::ofstream out(clc::ve_dumpTo + "/" + std::string("rank_") +
+      std::ofstream out(clc::ve_dumpTo + "/" + std::string("hccls_") +
                         clc::ve_technique + ".csv");
 
       //dump clusters
@@ -750,16 +750,66 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
     dumpParetoRandom(hcClusters);
   } else if (clc::ve_cls_type == "comb") {
     dumpParetoAllComb(hcClusters);
-  } else if (clc::ve_cls_type == "nsga2") {
+  } else if (clc::ve_cls_type == "nsga2" || clc::ve_cls_type == "nsga2pop") {
+    //prepare data for nsga2
     std::vector<std::unordered_set<std::string>> initialPop;
-    for (auto &c : hcClusters) {
-      std::unordered_set<std::string> individual;
-      for (auto &[id, f] : c) {
+    std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>>
+        ret;
+
+    if (clc::ve_cls_type == "nsga2") {
+      //use single elements as starting pop
+      for (auto &[id, instaces] : arrangedElements) {
+        std::unordered_set<std::string> individual;
         individual.insert(id);
+        initialPop.push_back(individual);
       }
-      initialPop.push_back(individual);
+
+    } else {
+      //use clusters as starting pop
+      for (auto &c : hcClusters) {
+        std::unordered_set<std::string> individual;
+        for (auto &[id, f] : c) {
+          individual.insert(id);
+        }
+        initialPop.push_back(individual);
+      }
     }
-    nsga2(arrangedElements, 15);
+
+    ret = nsga2(arrangedElements, 20, initialPop);
+
+    std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
+                      "_paretoFront.csv");
+    out << "nTokens, nUniqueInstances\n";
+    for (auto &p : ret) {
+      out << std::get<0>(p) << ";" << std::get<1>(p) << "\n";
+    }
+
+    out.close();
+
+    out = std::ofstream(clc::ve_dumpTo + "/" + std::string("rank_") +
+                        clc::ve_technique + ".csv");
+    //dump the scores
+    if (clc::ve_technique == "vbr") {
+      out << "var,size,bit,cluster,score\n";
+    } else if (clc::ve_technique == "sr") {
+      out << "statement,cluster,score\n";
+    } else if (clc::ve_technique == "br") {
+      out << "token,size,bit,cluster,score\n";
+    }
+    std::sort(
+        ret.begin(), ret.end(),
+        [](std::tuple<size_t, size_t, std::unordered_set<std::string>> &e1,
+           std::tuple<size_t, size_t, std::unordered_set<std::string>> &e2) {
+          return std::get<1>(e1) < std::get<1>(e2);
+        });
+    size_t cIndex = 0;
+    for (auto &[f1, f2, tokens] : ret) {
+      for (auto &token : tokens) {
+        out << token << "," << cIndex << "," << f2 << "\n";
+      }
+      cIndex++;
+    }
+    out.close();
 
   } else if (clc::ve_cls_type == "kmeans") {
     dumpKmeans(tokenToDiff, normalize);

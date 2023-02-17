@@ -222,7 +222,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
     messageErrorIf(clc::ve_cls_type != "rand" && clc::ve_cls_type != "comb" &&
-                       clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans",
+                       clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans" &&
+                       clc::ve_cls_type != "nsga2pop",
                    "Unknown clustering technique");
   }
   if (result.count("dump-to")) {
