@@ -174,7 +174,6 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                               ("print-failing-ass", "")
                               ("recover-diff", "")
                               ("recover-cls", "")
-                              ("cbs", "cluster by similarity")
                               ("help", "Show options");
 
     auto result = options.parse(argc, argv);

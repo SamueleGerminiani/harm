@@ -1,9 +1,12 @@
 #pragma once
 #include "message.hh"
 #include <algorithm>
+#include <cfloat>
 #include <chrono>
 #include <iostream>
+#include <optional>
 #include <random>
+#include <ratio>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -28,7 +31,7 @@ inline std::pair<size_t, size_t> evalIndividual(
                                         uniqueFeatures.size());
 }
 
-inline std::vector<int> generateDominanceRank(
+inline std::vector<size_t> generateDominanceRank(
     const std::vector<std::unordered_set<std::string>> &individuals,
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes) {
@@ -42,7 +45,7 @@ inline std::vector<int> generateDominanceRank(
   }
 
   // Store the dominance rank for each individual
-  std::vector<int> rank(n, 0);
+  std::vector<size_t> rank(n, 0);
 
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
@@ -114,6 +117,23 @@ inline std::vector<std::vector<std::unordered_set<std::string>>> generateFronts(
 
   return fronts;
 }
+inline std::vector<std::unordered_set<std::string>> generateParetoFront(
+    const std::vector<std::unordered_set<std::string>> &individuals,
+    const std::unordered_map<std::string, std::unordered_set<std::string>>
+        &allGenes) {
+
+  int n = individuals.size();
+  auto rank = generateDominanceRank(individuals, allGenes);
+  std::vector<std::unordered_set<std::string>> topFront;
+
+  for (int i = 0; i < n; i++) {
+    if (rank[i] == 0) {
+      topFront.push_back(individuals[i]);
+    }
+  }
+
+  return topFront;
+}
 
 template <typename T, typename U>
 std::pair<T, U> getRandomItem(const std::unordered_map<T, U> &map) {
@@ -127,17 +147,6 @@ std::pair<T, U> getRandomItem(const std::unordered_map<T, U> &map) {
   return *it;
 }
 
-template <typename T> void removeRandomElement(std::unordered_set<T> &set) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-
-  // Get a random element from the set
-  std::uniform_int_distribution<> dis(0, set.size() - 1);
-  auto it = std::next(set.begin(), dis(gen));
-
-  // Remove the random element from the set
-  set.erase(it);
-}
 
 inline std::vector<std::unordered_set<std::string>> samplePopulation(
     const std::unordered_map<std::string, std::unordered_set<std::string>>
@@ -155,24 +164,29 @@ inline std::vector<std::unordered_set<std::string>> samplePopulation(
   return population;
 }
 
-inline void
-removeDuplicates(std::vector<std::unordered_set<std::string>> &vec) {
+//remove twins
+inline void removeDuplicates(std::vector<std::unordered_set<std::string>> &pop) {
+
   std::unordered_set<std::string> uniqueStrings;
-  for (auto &set : vec) {
+  for (auto &individual : pop) {
     std::string key = "";
-    for (auto &i : set) {
-      key += i;
+    for (auto &gene : individual) {
+      key += gene;
     }
     if (uniqueStrings.count(key)) {
-      set.clear();
+      //mark as deleted
+      individual.clear();
     } else {
       uniqueStrings.insert(key);
     }
   }
-  vec.erase(std::remove_if(
-                vec.begin(), vec.end(),
-                [](std::unordered_set<std::string> &e) { return e.empty(); }),
-            vec.end());
+
+  //erase marked
+  pop.erase(std::remove_if(pop.begin(), pop.end(),
+                           [](const std::unordered_set<std::string> &e) {
+                             return e.empty();
+                           }),
+            pop.end());
 }
 
 void inline crowdSort(
@@ -180,12 +194,12 @@ void inline crowdSort(
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes) {
 
-  // Evaluate all individuals in the population
   std::vector<std::pair<size_t, size_t>> objValues(pop.size());
   size_t min[2] = {(size_t)-1, (size_t)-1};
   size_t max[2] = {0, 0};
   size_t diff[2] = {0, 0};
 
+  // Evaluate all individuals in the population
   for (size_t i = 0; i < pop.size(); i++) {
     objValues[i] = evalIndividual(pop[i], allGenes);
     min[0] = objValues[i].first < min[0] ? objValues[i].first : min[0];
@@ -236,6 +250,7 @@ void inline crowdSort(
     }
   }
 
+  //need to associate the individual with a score for sorting
   std::vector<std::pair<std::unordered_set<std::string>, double>> popWithCD;
   for (size_t i = 0; i < pop.size(); i++) {
     popWithCD.emplace_back(pop[i], crowdingDist[i]);
@@ -252,7 +267,8 @@ void inline crowdSort(
     pop.push_back(e.first);
   }
 }
-void inline fillNewPopulation(
+
+void inline selectElites(
     std::vector<std::vector<std::unordered_set<std::string>>> &fronts,
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes,
@@ -260,9 +276,13 @@ void inline fillNewPopulation(
     size_t originalPopSize) {
 
   population.clear();
+
+  //used to avoid repetitions of individuals with the same score
   std::set<std::pair<size_t, size_t>> alreadyInUse;
+
   for (auto &front : fronts) {
     if (front.size() + population.size() <= originalPopSize) {
+      //front fits entirely
       for (const auto &individual : front) {
         auto score = evalIndividual(individual, allGenes);
         if (!alreadyInUse.count(score)) {
@@ -289,9 +309,8 @@ void inline fillNewPopulation(
 
 inline std::pair<std::unordered_set<std::string>,
                  std::unordered_set<std::string>>
-tournamentSelection(
-    const std::vector<std::unordered_set<std::string>> &population,
-    const std::vector<int> &rank) {
+tournamentSelection(const std::vector<std::unordered_set<std::string>> &pop,
+                    const std::vector<size_t> &rank) {
 
   std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>
       parents;
@@ -299,7 +318,7 @@ tournamentSelection(
   //select first parent
   std::random_device rd1;
   std::mt19937 rng1(rd1());
-  std::uniform_int_distribution<int> dist(0, population.size() - 1);
+  std::uniform_int_distribution<int> dist(0, pop.size() - 1);
 
   int a1 = 0;
   int b1 = 0;
@@ -309,7 +328,7 @@ tournamentSelection(
     b1 = dist(rng1);
   }
 
-  parents.first = rank[a1] > rank[b1] ? population[b1] : population[a1];
+  parents.first = rank[a1] > rank[b1] ? pop[b1] : pop[a1];
 
   //select second parent
   std::random_device rd2;
@@ -322,7 +341,7 @@ tournamentSelection(
     a2 = dist(rng2);
     b2 = dist(rng2);
   }
-  parents.second = rank[a2] > rank[b2] ? population[b2] : population[a2];
+  parents.second = rank[a2] > rank[b2] ? pop[b2] : pop[a2];
 
   return parents;
 }
@@ -330,7 +349,10 @@ tournamentSelection(
 inline std::unordered_set<std::string> crossover(
     std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>
         &parents) {
+
   std::unordered_set<std::string> kidGenes;
+
+  //merge the genes
 
   for (auto &gene : parents.first) {
     kidGenes.insert(gene);
@@ -342,87 +364,212 @@ inline std::unordered_set<std::string> crossover(
   return kidGenes;
 }
 
-inline void
-mutate(std::unordered_set<std::string> &child,
-       const std::unordered_map<std::string, std::unordered_set<std::string>>
-           &allGenes) {}
+inline void mutateIndividual(
+    std::unordered_set<std::string> &child,
+    const std::unordered_map<std::string, std::unordered_set<std::string>>
+        &allGenes) {}
 
-inline std::vector<std::unordered_set<std::string>> produceOffspring(
-    const std::vector<std::unordered_set<std::string>> &pop,
+inline void
+mutatePop(std::vector<std::unordered_set<std::string>> &pop,
+          const std::unordered_map<std::string, std::unordered_set<std::string>>
+              &allGenes) {
+  for (auto &ind : pop) {
+    //add a random individual of the same size
+    pop.push_back(samplePopulation(allGenes, ind.size(), 1).front());
+  }
+}
+
+inline void addOffspring(
+    std::vector<std::unordered_set<std::string>> &pop,
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes) {
 
-  std::vector<std::unordered_set<std::string>> newPop;
+  std::vector<std::unordered_set<std::string>> offSpring;
 
   auto rank = generateDominanceRank(pop, allGenes);
+  //each iteration generates and adds one child
   for (size_t i = 0; i < pop.size(); i++) {
     auto parents = tournamentSelection(pop, rank);
     auto child = crossover(parents);
-    mutate(child, allGenes);
-    newPop.push_back(child);
+    mutateIndividual(child, allGenes);
+    offSpring.push_back(child);
   }
-  newPop.insert(std::end(newPop), std::begin(pop), std::end(pop));
-  return newPop;
+  //add the offpring to the elite population
+  pop.insert(std::end(pop), std::begin(offSpring), std::end(offSpring));
 }
 
+size_t inline getDominatedSurface(
+    const std::vector<std::pair<size_t, size_t>> &points,
+    const std::pair<size_t, size_t> &gridSize) {
+  // Initialize a 2D grid with all elements set to false
+  std::vector<std::vector<bool>> grid(
+      gridSize.first, std::vector<bool>(gridSize.second, false));
+
+  // Mark all the dominated cells as true
+  for (size_t i = 0; i < points.size(); i++) {
+    size_t x = points[i].first;
+    size_t y = points[i].second;
+
+    for (size_t j = 0; j <= x; j++) {
+      for (size_t k = y; k < gridSize.second; k++) {
+        grid[j][k] = true;
+      }
+    }
+  }
+
+  // Count the number of dominated cells
+  size_t count = 0;
+  for (size_t i = 0; i < gridSize.first; i++) {
+    for (size_t j = 0; j < gridSize.second; j++) {
+      if (grid[i][j]) {
+        count++;
+      }
+    }
+  }
+
+  // Ensure that the returned value is not greater than the maximum surface
+  return std::min(count, gridSize.first * gridSize.second);
+}
+
+void inline plotGNU(
+    const std::vector<std::pair<size_t, size_t>> &data,
+    const std::string &xlabel = "X", const std::string &ylabel = "Y",
+    const std::string &title = "Data Plot",
+    std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
+    std::optional<std::pair<size_t, size_t>> yrange = std::nullopt) {
+
+  system("killall gnuplot");
+
+  FILE *pipe = popen("gnuplot -persistent", "r");
+  pipe = popen("gnuplot -persistent", "w");
+  if (!pipe) {
+    std::cerr << "Error opening gnuplot pipe" << std::endl;
+    return;
+  }
+
+  // Set up gnuplot settings
+  fprintf(pipe, "set title '%s'\n", title.c_str());
+  fprintf(pipe, "set xlabel '%s'\n", xlabel.c_str());
+  fprintf(pipe, "set ylabel '%s'\n", ylabel.c_str());
+  fprintf(pipe, "set grid\n");
+
+  // Set up x and y ranges, if given
+  if (xrange.has_value()) {
+    fprintf(pipe, "set xrange [%lu:%lu]\n", xrange.value().first,
+            xrange.value().second);
+  }
+  if (yrange.has_value()) {
+    fprintf(pipe, "set yrange [%lu:%lu]\n", yrange.value().first,
+            yrange.value().second);
+  }
+
+  fprintf(pipe, "set key below\n");
+
+  // Plot data using points
+  fprintf(
+      pipe,
+      "plot '-' with points pointtype 7 pointsize 0.5 title 'Configuration'\n");
+  for (const auto &p : data) {
+    fprintf(pipe, "%lu %lu\n", p.first, p.second);
+  }
+  fprintf(pipe, "e\n");
+
+  // Place the legend below the chart
+
+  pclose(pipe);
+}
+inline std::pair<size_t, size_t> getMaxObjectivesValues(
+    const std::unordered_map<std::string, std::unordered_set<std::string>>
+        &allGenes) {
+
+  std::unordered_set<std::string> uniqueInstances;
+  for (auto &[id, instances] : allGenes) {
+    for (auto &i : instances) {
+      uniqueInstances.insert(i);
+    }
+  }
+  return std::make_pair(allGenes.size(), uniqueInstances.size());
+}
 inline std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>>
 nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
           &allGenes,
-      size_t iterations = 20,
+      size_t maxIterations = 20,
       const std::vector<std::unordered_set<std::string>> &initialPop =
           std::vector<std::unordered_set<std::string>>()) {
+
+  auto maxObjs = getMaxObjectivesValues(allGenes);
+
+  //debug
+  //std::cout << "Grid size:" << maxObjs.first << "," << maxObjs.second << "\n";
 
   std::vector<std::unordered_set<std::string>> pop;
 
   if (initialPop.empty()) {
-    pop = samplePopulation(allGenes, 20, 20);
+    pop = samplePopulation(allGenes, 1, allGenes.size());
   } else {
     pop = initialPop;
   }
 
   size_t originalPopSize = pop.size();
+  std::cout << "Pop size:" << originalPopSize << "\n";
+
   //  debug
-  std::cout << "Initial pop:"
-            << "\n";
-  for (auto &individual : pop) {
-    auto score = evalIndividual(individual, allGenes);
-    std::cout << "" << score.first << ";" << score.second << ""
-              << "\n";
-  }
+  //  std::cout << "Initial pop:"
+  //            << "\n";
+  //  for (auto &individual : pop) {
+  //    auto score = evalIndividual(individual, allGenes);
+  //    std::cout << "" << score.first << ";" << score.second << ""
+  //              << "\n";
+  //  }
 
-  for (size_t i = 0; i < iterations; i++) {
+  //used for the halting criteria
+  double prevDominance = 0;
+  double dominance = DBL_MAX;
+
+  for (size_t i = 0; i < maxIterations; i++) {
+    //keep track how long each iteratin takes
     auto start = std::chrono::steady_clock::now();
-    std::cout << "Iteration: " << i << "\n";
 
-    size_t avgSize = 0;
-    for (auto &i : pop) {
-      avgSize += i.size();
-    }
-    avgSize = avgSize / pop.size();
+    //mutation on the entire population
+    mutatePop(pop, allGenes);
 
-    auto randPop = samplePopulation(allGenes, avgSize + 1, pop.size());
-    for (auto &ind : randPop) {
-      pop.push_back(ind);
-    }
-
-    pop = produceOffspring(pop, allGenes);
+    addOffspring(pop, allGenes);
 
     removeDuplicates(pop);
 
     auto fronts = generateFronts(pop, allGenes);
-    fillNewPopulation(fronts, allGenes, pop, originalPopSize);
+
+    selectElites(fronts, allGenes, pop, originalPopSize);
 
     auto stop = std::chrono::steady_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::seconds>(stop - start);
 
-    for (auto &individual : pop) {
+    std::vector<std::pair<size_t, size_t>> front_plot_data;
+    for (auto &individual : generateParetoFront(pop, allGenes)) {
       auto score = evalIndividual(individual, allGenes);
-      std::cout << "" << score.first << ";" << score.second << ""
-                << "\n";
+      front_plot_data.push_back(score);
     }
-    std::cout << "-----------------------> " << duration.count() << "s\n";
-    std::cout << "Pop size:" << pop.size() << "\n";
+
+    dominance = getDominatedSurface(front_plot_data, maxObjs) /
+                ((double)maxObjs.first * maxObjs.second);
+
+    //plot the pareto frontier - debug
+    plotGNU(front_plot_data, "Ntokens", "Damage", "Surface dominance: " + std::to_string(dominance * 100) + "%", std::make_pair(0, maxObjs.first), std::make_pair(0, maxObjs.second));
+
+    std::cout << "Iteration: " << i << "th\n";
+    std::cout << "Duration: " << duration.count() << "s\n";
+    std::cout << "PrevDominance:" << prevDominance << "\n";
+    std::cout << "Dominance:" << dominance << "\n";
+    double increment = ((dominance - prevDominance) / dominance) * 100;
+    std::cout << "Dominance increment :" << increment << "%\n";
+
+    //terminal condition
+    if (increment <= 1.f) {
+      break;
+    }
+
+    prevDominance = dominance;
   }
 
   std::vector<std::pair<size_t, size_t>> objectives(pop.size());
@@ -430,14 +577,12 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
     objectives[i] = evalIndividual(pop[i], allGenes);
   }
 
-  auto ranks = generateDominanceRank(pop, objectives);
+  //<x,y,individual>
   std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>> ret;
-  for (size_t i = 0; i < pop.size(); i++) {
-    if (ranks[i] == 0) {
-      auto score = objectives[i];
-
-      ret.emplace_back(score.first, score.second, pop[i]);
-    }
+  for (auto &individual : generateParetoFront(pop, allGenes)) {
+    auto score = evalIndividual(individual, allGenes);
+    ret.emplace_back(score.first, score.second, individual);
   }
+
   return ret;
 }

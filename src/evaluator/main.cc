@@ -1,4 +1,5 @@
 #include "CSVtraceReader.hh"
+#include "ProgressBar.hpp"
 #include "TraceReader.hh"
 #include "VCDtraceReader.hh"
 #include "commandLineParser.hh"
@@ -6,6 +7,10 @@
 #include "evaluator.hh"
 #include "globals.hh"
 #include <filesystem>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <random>
 #include <string>
 #include <vector>
@@ -23,6 +28,155 @@ void tokenizeString(std::string const &str, const char delim,
 }
 
 void parseCommandLineArguments(int argc, char *args[]);
+void dumpDiffs(const std::unordered_map<std::string, Diff> &tokenToDiff,
+               size_t id = -1) {
+
+  std::string fileName = clc::ve_dumpTo + "/" + std::string("diff_") +
+                         (id == -1 ? "" : std::to_string(id) + "_") +
+                         clc::ve_technique + ".csv";
+
+  std::ofstream outDiff(fileName);
+  outDiff << "token; atcf; instances\n";
+  for (auto &[token, diff] : tokenToDiff) {
+    outDiff << token << ";" << diff._atcf << ";";
+    for (auto &ci : diff._coveredInstances) {
+      outDiff << ci << " ";
+    }
+    outDiff << "\n";
+  }
+  outDiff.close();
+}
+
+void recoverDiffs(std::unordered_map<std::string, Diff> &tokenToDiff,
+                  size_t id = -1) {
+
+  std::string fileName = clc::ve_dumpTo + "/" + std::string("diff_") +
+                         (id == -1 ? "" : std::to_string(id) + "_") +
+                         clc::ve_technique + ".csv";
+
+  csv::CSVFormat format;
+  format.delimiter(';');
+  messageErrorIf(!std::filesystem::exists(fileName),
+                 "Could not find: " + fileName);
+
+  csv::CSVReader reader(fileName, format);
+
+  csv::CSVRow row;
+
+  while (reader.read_row(row)) {
+    tokenToDiff[row[0].get()]._atcf = std::stoull(row[1].get());
+    std::vector<std::string> instances;
+    tokenizeString(row[2].get(), ' ', instances);
+    for (auto &inst : instances) {
+      tokenToDiff[row[0].get()]._coveredInstances.insert(inst);
+    }
+  }
+
+  //debug -- print diffs
+  //for (auto &[token, diff] : tokenToDiff) {
+  //  std::cout << token << ": ";
+  //  for (auto inst : diff._coveredInstances) {
+  //    std::cout << inst << " ";
+  //  }
+  //  std::cout << "\n";
+  //}
+  if (id != -1) {
+    std::filesystem::remove(std::filesystem::path(fileName));
+  }
+}
+void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
+                     std::unordered_map<std::string, Diff> &tokenToDiff,
+                     size_t i, size_t nProcs) {
+
+  // convert string to Template
+  std::vector<Template *> assertions =
+      parseAssertions(assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
+  std::unordered_map<std::string, std::vector<Template *>> tokenToAss;
+  std::unordered_map<std::string, size_t> tokenToSize;
+  std::vector<std::string> tokens;
+
+  if (clc::ve_technique == "sr") {
+    //Statement reduction
+    for (size_t i = 0; i < clc::ve_nStatements; i++) {
+      tokens.push_back("s" + std::to_string(i));
+    }
+  } else if (clc::ve_technique == "vbr") {
+    //Variable Bit reduction
+    csv::CSVReader reader(clc::ve_infoList);
+    csv::CSVRow row;
+    while (reader.read_row(row)) {
+      tokens.push_back(row[0].get());
+      tokenToSize[row[0].get()] = std::stoul(row[1].get());
+    }
+  } else if (clc::ve_technique == "br") {
+    //Bit reduction
+    csv::CSVReader reader(clc::ve_infoList);
+    csv::CSVRow row;
+    while (reader.read_row(row)) {
+      tokens.push_back(row[0].get());
+      tokenToSize[row[0].get()] = std::stoul(row[1].get());
+    }
+  }
+
+  size_t elaborated = 0;
+  size_t runningProcesses = 0;
+  pid_t pids[tokens.size()];
+  progresscpp::ParallelProgressBar pb;
+  pb.addInstance(1, std::string("Evaluating assertions... "), tokens.size(),
+                 70);
+  pb.display();
+
+  while (elaborated < tokens.size()) {
+    runningProcesses++;
+    pids[elaborated] = fork();
+    if (pids[elaborated] == 0) {
+      std::vector<std::string> selectedTokens;
+      selectedTokens.push_back(tokens[elaborated]);
+
+      if (clc::ve_technique == "vbr") {
+        getDiffVBR(tokenToDiff, tokenToSize, selectedTokens, assertions, 0);
+      } else if (clc::ve_technique == "br") {
+        getDiffBR(tokenToDiff, tokenToSize, selectedTokens, assertions, 0);
+      } else if (clc::ve_technique == "sr") {
+        getDiffSR(tokenToDiff, selectedTokens, assertions, 0);
+      }
+
+      dumpDiffs(tokenToDiff, elaborated);
+      exit(0);
+    }
+    while (runningProcesses == nProcs ||
+           (elaborated == tokens.size() - 1 && runningProcesses > 0)) {
+      int status;
+      waitpid(-1, &status, 0);
+      messageErrorIf(!WIFEXITED(status) || WEXITSTATUS(status) != 0,
+                     "Child failed!");
+      runningProcesses--;
+      pb.increment(1);
+      pb.display();
+    }
+    elaborated++;
+  }
+  pb.done(1);
+
+  for (size_t j = 0; j < tokens.size(); j++) {
+    recoverDiffs(tokenToDiff, j);
+  }
+
+  //debug - print instances
+  //for (auto &[token, diff] : tokenToDiff) {
+  //  std::cout << "[" << token << "]"
+  //            << "\n";
+  //  for (auto ci : diff._coveredInstances) {
+  //    std::cout << ci << " ";
+  //  }
+  //  std::cout << "\n";
+  //}
+
+  // delete processed assertions
+  for (Template *a : assertions) {
+    delete a;
+  }
+}
 
 int main(int arg, char *argv[]) {
   parseCommandLineArguments(arg, argv);
@@ -37,10 +191,9 @@ int main(int arg, char *argv[]) {
   }
 
   std::unordered_map<std::string, Diff> tokenToDiff;
-  std::unordered_map<std::string, std::vector<std::string>>
-      tokenToFailingAssertions;
 
   if (!clc::ve_recover_diff) {
+    //get diffs
 
     // allocate trace
     harm::Trace *trace = traceReader->readTrace();
@@ -48,110 +201,24 @@ int main(int arg, char *argv[]) {
     auto assStrs = readAssertions(clc::ve_assPath);
 
     int evaluated = 0;
-    // eval the assertions one chunck at a time (to avoid memory explosion)
+    // eval the assertions one chunk at a time (to avoid memory explosion)
     for (size_t i = 0; ((int)assStrs.size() - evaluated) > 0; i++) {
       std::cout << evaluated << "/" << assStrs.size() << " evaluated\n";
-
-      // convert string to Template
-      std::vector<Template *> assertions = parseAssertions(
-          assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
-
-      if (clc::ve_technique == "sr") {
-        //Statement reduction
-        std::vector<std::string> ids;
-        for (size_t i = 0; i < clc::ve_nStatements; i++) {
-          ids.push_back("s" + std::to_string(i));
-        }
-        getDiffSR(tokenToDiff, ids, assertions);
-
-      } else if (clc::ve_technique == "vbr") {
-        //Variable Bit reduction
-        std::unordered_map<std::string, std::vector<Template *>> varToAss;
-        std::unordered_map<std::string, size_t> varToSize;
-        std::vector<std::string> vars;
-        csv::CSVReader reader(clc::ve_infoList);
-        csv::CSVRow row;
-        while (reader.read_row(row)) {
-          vars.push_back(row[0].get());
-          varToSize[row[0].get()] = std::stoul(row[1].get());
-        }
-        getDiffVBR(tokenToDiff, varToSize, vars, assertions);
-
-      } else if (clc::ve_technique == "br") {
-        //Bit reduction
-        std::vector<std::string> ids;
-        std::unordered_map<std::string, size_t> idToSize;
-        csv::CSVReader reader(clc::ve_infoList);
-        csv::CSVRow row;
-        while (reader.read_row(row)) {
-          ids.push_back(row[0].get());
-          idToSize[row[0].get()] = std::stoul(row[1].get());
-        }
-        getDiffBR(tokenToDiff, idToSize, ids, assertions);
-
-        //debug - print instances
-        //for (auto &[token, diff] : tokenToDiff) {
-        //  std::cout << "[" << token << "]"
-        //            << "\n";
-        //  for (auto ci : diff._coveredInstances) {
-        //    std::cout << ci << " ";
-        //  }
-        //  std::cout << "\n";
-        //}
-      }
-
-      // delete processed assertions
-      for (Template *a : assertions) {
-        delete a;
-      }
+      getDiffParallel(trace, assStrs, tokenToDiff, i, 16);
       // update the amount of evaluated assertions
       evaluated += clc::ve_chunkSize;
     }
     delete trace;
+  }
+
+  if (clc::ve_recover_diff) {
+    recoverDiffs(tokenToDiff);
   } else {
-    //recover diff
-    csv::CSVFormat format;
-    format.delimiter(';');
-    std::string filePath = clc::ve_dumpTo + "/" + std::string("diff_") +
-                           clc::ve_technique + ".csv";
-    messageErrorIf(!std::filesystem::exists(filePath),
-                   "Could not find: " + filePath);
-
-    csv::CSVReader reader(filePath, format);
-
-    csv::CSVRow row;
-
-    while (reader.read_row(row)) {
-      tokenToDiff[row[0].get()]._atcf = std::stoull(row[1].get());
-      std::vector<std::string> instances;
-      tokenizeString(row[2].get(), ' ', instances);
-      for (auto &inst : instances) {
-        tokenToDiff[row[0].get()]._coveredInstances.insert(inst);
-      }
-    }
-
-    //debug -- print diffs
-    //for (auto &[token, diff] : tokenToDiff) {
-    //  std::cout << token << ": ";
-    //  for (auto inst : diff._coveredInstances) {
-    //    std::cout << inst << " ";
-    //  }
-    //  std::cout << "\n";
-    //}
+    dumpDiffs(tokenToDiff);
   }
 
   //abs
   dumpScore(tokenToDiff, 0);
-
-  //FIXME: do we still need this?
-  if (clc::ve_print_failing_ass) {
-    for (auto &[t, ass] : tokenToFailingAssertions) {
-      std::cout << t << std::endl;
-      for (auto &a : ass) {
-        std::cout << "\t\t\t" << a << std::endl;
-      }
-    }
-  }
 
   return 0;
 }
@@ -196,10 +263,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_recover_cls = 1;
   }
 
-  if (result.count("cbs")) {
-    clc::ve_clusterBySim = 1;
-  }
-
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
     std::cout << "Path: " << clc::ve_assPath << "\n";
@@ -222,7 +285,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
     messageErrorIf(clc::ve_cls_type != "rand" && clc::ve_cls_type != "comb" &&
-                       clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans" &&
+                       clc::ve_cls_type != "nsga2" &&
+                       clc::ve_cls_type != "kmeans" &&
                        clc::ve_cls_type != "nsga2pop",
                    "Unknown clustering technique");
   }

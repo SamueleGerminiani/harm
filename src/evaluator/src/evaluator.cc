@@ -167,20 +167,26 @@ inline void fillUtilityVars(
 }
 void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
                std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions) {
+               std::vector<harm::Template *> &assertions, bool enablePB) {
 
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
-  pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
+  if (enablePB) {
+    pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
+  }
 
   for (auto &s : ids) {
     // parse the ft
     std::string fn =
         clc::ve_ftPath + "/" + s + (clc::parserType == "vcd" ? ".vcd" : ".csv");
-    pb.changeMessage(1, fn);
+    if (enablePB) {
+      pb.changeMessage(1, fn);
+    }
     if (!std::filesystem::exists(fn)) {
-      messageWarning("Can not find '" + fn + "'\n\n");
-      pb.increment(1);
+      //messageWarning("Can not find '" + fn + "'\n\n");
+      if (enablePB) {
+        pb.increment(1);
+      }
       continue;
     }
     TraceReader *tr = parseTrace(fn);
@@ -209,21 +215,26 @@ void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
     }
 
     delete ft;
-    pb.increment(1);
+    if (enablePB) {
+      pb.increment(1);
+    }
   }
-  pb.done(1);
+  if (enablePB) {
+    pb.done(1);
+  }
   clc::isilent = 0;
 }
 
 void getDiffVBR(std::unordered_map<std::string, Diff> &csvVarToDiff,
                 std::unordered_map<std::string, size_t> &varToSize,
                 std::vector<std::string> &vars,
-                std::vector<harm::Template *> &assertions) {
+                std::vector<harm::Template *> &assertions, bool enablePB) {
 
   progresscpp::ParallelProgressBar pb;
-#if enPB_ve
-  pb.addInstance(1, std::string("Evaluating assertions... "), vars.size(), 70);
-#endif
+  if (enablePB) {
+    pb.addInstance(1, std::string("Evaluating assertions... "), vars.size(),
+                   70);
+  }
   clc::isilent = 1;
 
   for (auto &v : vars) {
@@ -231,7 +242,9 @@ void getDiffVBR(std::unordered_map<std::string, Diff> &csvVarToDiff,
     for (size_t i = 0; i < varToSize.at(v); i++) {
       std::string fn = clc::ve_ftPath + "/" + v + "[" + std::to_string(i) +
                        "]" + (clc::parserType == "vcd" ? ".vcd" : ".csv");
-      pb.changeMessage(1, fn);
+      if (enablePB) {
+        pb.changeMessage(1, fn);
+      }
       if (!std::filesystem::exists(fn)) {
         messageWarning("Can not find '" + fn + "'");
         continue;
@@ -267,20 +280,24 @@ void getDiffVBR(std::unordered_map<std::string, Diff> &csvVarToDiff,
 
       delete ft;
     }
-    pb.increment(1);
+    if (enablePB) {
+      pb.increment(1);
+    }
   }
-  pb.done(1);
+  if (enablePB) {
+    pb.done(1);
+  }
   clc::isilent = 0;
 }
 void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
                std::unordered_map<std::string, size_t> &idToSize,
                std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions) {
+               std::vector<harm::Template *> &assertions, bool enablePB) {
 
   progresscpp::ParallelProgressBar pb;
-#if enPB_ve
-  pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
-#endif
+  if (enablePB) {
+    pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
+  }
   clc::isilent = 1;
 
   for (auto &id : ids) {
@@ -290,10 +307,15 @@ void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
     for (size_t i = 0; i < idToSize.at(id); i++) {
       std::string fn = clc::ve_ftPath + "/" + id + "_" + std::to_string(i) +
                        (clc::parserType == "vcd" ? ".vcd" : ".csv");
-      pb.changeMessage(1, fn);
+      if (enablePB) {
+        pb.changeMessage(1, fn);
+      }
+
       if (!std::filesystem::exists(fn)) {
         messageWarning("Can not find '" + fn + "'\n\n");
-        pb.increment(1);
+        if (enablePB) {
+          pb.increment(1);
+        }
         continue;
       }
 
@@ -333,9 +355,13 @@ void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
 
       delete ft;
     }
-    pb.increment(1);
+    if (enablePB) {
+      pb.increment(1);
+    }
   }
-  pb.done(1);
+  if (enablePB) {
+    pb.done(1);
+  }
   clc::isilent = 0;
 }
 
@@ -649,19 +675,6 @@ void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
 void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
                bool normalize) {
 
-  //dump diffs
-  std::ofstream outDiff(clc::ve_dumpTo + "/" + std::string("diff_") +
-                        clc::ve_technique + ".csv");
-  outDiff << "token; atcf; instances\n";
-  for (auto &[token, diff] : tokenToDiff) {
-    outDiff << token << ";" << diff._atcf << ";";
-    for (auto &ci : diff._coveredInstances) {
-      outDiff << ci << " ";
-    }
-    outDiff << "\n";
-  }
-  outDiff.close();
-
   //arrange elements
   std::unordered_map<std::string, std::unordered_set<std::string>>
       arrangedElements;
@@ -775,7 +788,7 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
       }
     }
 
-    ret = nsga2(arrangedElements, 20, initialPop);
+    ret = nsga2(arrangedElements, 100, initialPop);
 
     std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                       "_paretoFront.csv");
