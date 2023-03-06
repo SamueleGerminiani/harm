@@ -20,6 +20,7 @@ extern bool ve_recover_diff;
 extern size_t ve_chunkSize;
 extern size_t max_threads;
 extern bool ve_recover_cls;
+extern double ve_nsga2_mi;
 extern std::string ve_cls_type;
 } // namespace clc
 

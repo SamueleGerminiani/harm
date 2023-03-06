@@ -145,10 +145,8 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
         "ass-file", "", cxxopts::value<std::string>(),
         "path to assertion file (one per each line)")(
         "cluster", "", cxxopts::value<std::string>(),
-        "divide the score into N clusters")(
-        "cs", "", cxxopts::value<std::string>(),
-        "chunk-size number of assertions processed at a time (depends on the "
-        "available memory) ")
+        "divide the score into N clusters")( "cs", "", cxxopts::value<std::string>(), "chunk-size number of assertions processed at a time (depends on the " "available memory) ")
+( "nsga2-mi", "", cxxopts::value<std::string>(), "minimum surface dominance increment to continue the nsga2 algo with an other iteration, default is 1% (1)")
             ("tech", "", cxxopts::value<std::string>(), "axc technique used to perform the estimation")
             ("cls-type", "", cxxopts::value<std::string>(), "technique used to perform the clustering")
             (
@@ -162,10 +160,7 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
              cxxopts::value<std::string>(),
              "<DIRECTORY>")("vars", "path to the file containing the variables",
                             cxxopts::value<std::string>(), "<FILE>")(
-                "max-threads",
-                "max number of threads that harm is allowed to spawn",
-                cxxopts::value<size_t>(),
-                "<uint>")("dump-to", "dump ranking to file with given path",
+                "max-threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")("dump-to", "dump ranking to file with given path",
                           cxxopts::value<std::string>(), "<DIRECTORY>")(
                 "n-stm",
                 "The number of statements when yousing statement reduction",

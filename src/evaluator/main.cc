@@ -308,6 +308,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("cs")) {
     clc::ve_chunkSize = std::stoul(result["cs"].as<std::string>());
   }
+  if (result.count("nsga2-mi")) {
+    clc::ve_nsga2_mi = std::stod(result["nsga2-mi"].as<std::string>());
+  }
   std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();

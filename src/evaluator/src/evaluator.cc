@@ -49,6 +49,7 @@ size_t ve_chunkSize = 100000;
 bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
 bool ve_recover_cls = 0;
+double ve_nsga2_mi=1.f;
 std::string ve_cls_type = "rand";
 } // namespace clc
 
@@ -788,7 +789,7 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
       }
     }
 
-    ret = nsga2(arrangedElements, 100, initialPop);
+    ret = nsga2(arrangedElements, 100,clc::ve_nsga2_mi, initialPop);
 
     std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                       "_paretoFront.csv");

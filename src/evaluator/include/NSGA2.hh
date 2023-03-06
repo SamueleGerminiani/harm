@@ -147,7 +147,6 @@ std::pair<T, U> getRandomItem(const std::unordered_map<T, U> &map) {
   return *it;
 }
 
-
 inline std::vector<std::unordered_set<std::string>> samplePopulation(
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes,
@@ -165,7 +164,8 @@ inline std::vector<std::unordered_set<std::string>> samplePopulation(
 }
 
 //remove twins
-inline void removeDuplicates(std::vector<std::unordered_set<std::string>> &pop) {
+inline void
+removeDuplicates(std::vector<std::unordered_set<std::string>> &pop) {
 
   std::unordered_set<std::string> uniqueStrings;
   for (auto &individual : pop) {
@@ -436,15 +436,19 @@ void inline plotGNU(
     const std::string &xlabel = "X", const std::string &ylabel = "Y",
     const std::string &title = "Data Plot",
     std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
-    std::optional<std::pair<size_t, size_t>> yrange = std::nullopt) {
+    std::optional<std::pair<size_t, size_t>> yrange = std::nullopt,
+    bool dontClose = true) {
 
-  system("killall gnuplot");
+  static FILE *pipe = nullptr;
 
-  FILE *pipe = popen("gnuplot -persistent", "r");
-  pipe = popen("gnuplot -persistent", "w");
-  if (!pipe) {
-    std::cerr << "Error opening gnuplot pipe" << std::endl;
-    return;
+  if (!dontClose || pipe == nullptr) {
+    system("killall gnuplot");
+    pipe = popen("gnuplot -persistent", "r");
+    pipe = popen("gnuplot -persistent", "w");
+    if (!pipe) {
+      std::cerr << "Error opening gnuplot pipe" << std::endl;
+      return;
+    }
   }
 
   // Set up gnuplot settings
@@ -476,7 +480,11 @@ void inline plotGNU(
 
   // Place the legend below the chart
 
-  pclose(pipe);
+  if (dontClose) {
+    fflush(pipe);
+  } else {
+    pclose(pipe);
+  }
 }
 inline std::pair<size_t, size_t> getMaxObjectivesValues(
     const std::unordered_map<std::string, std::unordered_set<std::string>>
@@ -493,7 +501,7 @@ inline std::pair<size_t, size_t> getMaxObjectivesValues(
 inline std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>>
 nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
           &allGenes,
-      size_t maxIterations = 20,
+      size_t maxIterations = 20, double minIncrement = 1.f,
       const std::vector<std::unordered_set<std::string>> &initialPop =
           std::vector<std::unordered_set<std::string>>()) {
 
@@ -510,7 +518,7 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
     pop = initialPop;
   }
 
-  size_t originalPopSize = pop.size();
+  size_t originalPopSize = pop.size()>200?200:pop.size();
   std::cout << "Pop size:" << originalPopSize << "\n";
 
   //  debug
@@ -555,17 +563,20 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
                 ((double)maxObjs.first * maxObjs.second);
 
     //plot the pareto frontier - debug
-    plotGNU(front_plot_data, "Ntokens", "Damage", "Surface dominance: " + std::to_string(dominance * 100) + "%", std::make_pair(0, maxObjs.first), std::make_pair(0, maxObjs.second));
+    plotGNU(front_plot_data, "Ntokens", "Damage",
+            "Surface dominance: " + std::to_string(dominance * 100) + "%",
+            std::make_pair(0, maxObjs.first),
+            std::make_pair(0, maxObjs.second),1);
 
     std::cout << "Iteration: " << i << "th\n";
     std::cout << "Duration: " << duration.count() << "s\n";
     std::cout << "PrevDominance:" << prevDominance << "\n";
     std::cout << "Dominance:" << dominance << "\n";
-    double increment = ((dominance - prevDominance) / dominance) * 100;
+    double increment = ((dominance - prevDominance) / dominance) * 100.f;
     std::cout << "Dominance increment :" << increment << "%\n";
 
     //terminal condition
-    if (increment <= 1.f) {
+    if (increment <= minIncrement) {
       break;
     }
 
