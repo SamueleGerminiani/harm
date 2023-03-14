@@ -13,15 +13,21 @@ extern std::string ve_ftPath;
 extern std::string ve_infoList;
 extern std::string ve_dumpTo;
 extern size_t ve_nStatements;
+extern size_t ve_maxPushTime;
 extern int ve_cluster;
 extern bool ve_print_failing_ass;
 extern bool ve_recover_diff;
+extern bool ve_stopExecution;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
 extern bool ve_recover_cls;
 extern double ve_nsga2_mi;
+extern bool ve_pushp;
+extern std::string ve_pushp_design;
+extern bool ve_only_sim;
 extern std::string ve_cls_type;
+extern bool ve_genRand;
 } // namespace clc
 
 struct Diff {

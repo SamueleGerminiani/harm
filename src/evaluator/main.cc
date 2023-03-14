@@ -178,7 +178,16 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   }
 }
 
+void stopExecution(int s) {
+  clc::ve_stopExecution = 1;
+  std::cout << "Halting request received!"
+            << "\n";
+}
+
 int main(int arg, char *argv[]) {
+  srand(1);
+  //signal(SIGINT, stopExecution);
+
   parseCommandLineArguments(arg, argv);
 
   TraceReader *traceReader = nullptr;
@@ -262,6 +271,17 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("recover-cls")) {
     clc::ve_recover_cls = 1;
   }
+  if (result.count("gen-rand")) {
+    clc::ve_genRand = 1;
+  }
+
+  if (result.count("pushp")) {
+    clc::ve_pushp = 1;
+    clc::ve_pushp_design = result["pushp"].as<std::string>();
+  }
+  if (result.count("only-sim")) {
+    clc::ve_only_sim = 1;
+  }
 
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
@@ -274,6 +294,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("n-stm")) {
     std::cout << "nStatements: " << result["n-stm"].as<size_t>() << "\n";
     clc::ve_nStatements = result["n-stm"].as<size_t>();
+  }
+  if (result.count("max-push-time")) {
+    clc::ve_maxPushTime = result["max-push-time"].as<size_t>();
   }
   if (result.count("tech")) {
     clc::ve_technique = result["tech"].as<std::string>();

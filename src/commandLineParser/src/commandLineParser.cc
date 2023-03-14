@@ -1,4 +1,5 @@
 #include "commandLineParser.hh"
+#include <cstddef>
 // HARM
 cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
   try {
@@ -52,8 +53,7 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         ( "dont-print-ass", "do not print the mined assertions")(
         "silent", "disable all outputs")("wsilent", "disable all warning")(
         "isilent", "disable all info")("psilent", "disable all progress bars")(
-        "cls-alg",
-        "type of clustering algorithm; <kmeans>, <kde> kernel density "
+        "cls-alg", "type of clustering algorithm; <kmeans>, <kde> kernel density "
         "estimation, <hc> hierarchical (default is kmeans)",
         cxxopts::value<std::string>(), "<String>")("help", "Show options")(
         "name", "name of this execution (used when dumping statistics)",
@@ -149,8 +149,7 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
 ( "nsga2-mi", "", cxxopts::value<std::string>(), "minimum surface dominance increment to continue the nsga2 algo with an other iteration, default is 1% (1)")
             ("tech", "", cxxopts::value<std::string>(), "axc technique used to perform the estimation")
             ("cls-type", "", cxxopts::value<std::string>(), "technique used to perform the clustering")
-            (
-        "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+            ("clk", "clk signal", cxxopts::value<std::string>(), "<String>")
 
         ("info-list",
          "path to a csv file containing the the variables with their size",
@@ -169,6 +168,10 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                               ("print-failing-ass", "")
                               ("recover-diff", "")
                               ("recover-cls", "")
+                              ("gen-rand", "")
+                              ("pushp", "design you want to push", cxxopts::value<std::string>(), "<String>")
+                              ("max-push-time", "max time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+                              ("only-sim", "")
                               ("help", "Show options");
 
     auto result = options.parse(argc, argv);

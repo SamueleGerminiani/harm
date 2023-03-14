@@ -44,13 +44,19 @@ std::string ve_infoList = "";
 std::string ve_dumpTo = ".";
 size_t ve_nStatements = 0;
 int ve_cluster = 1;
+bool ve_stopExecution=0;
 // number of assertions processed each time
 size_t ve_chunkSize = 100000;
 bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
 bool ve_recover_cls = 0;
 double ve_nsga2_mi=1.f;
+bool ve_pushp=0;
+std::string ve_pushp_design = "";
+bool ve_only_sim=0;
+bool ve_genRand=0;
 std::string ve_cls_type = "rand";
+size_t ve_maxPushTime=-1;
 } // namespace clc
 
 using namespace harm;
@@ -789,11 +795,11 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
       }
     }
 
-    ret = nsga2(arrangedElements, 100,clc::ve_nsga2_mi, initialPop);
+    ret = nsga2(arrangedElements, 100000,clc::ve_nsga2_mi, initialPop);
 
     std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                       "_paretoFront.csv");
-    out << "nTokens, nUniqueInstances\n";
+    out << "nTokens; nUniqueInstances\n";
     for (auto &p : ret) {
       out << std::get<0>(p) << ";" << std::get<1>(p) << "\n";
     }
