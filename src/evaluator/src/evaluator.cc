@@ -44,21 +44,21 @@ std::string ve_infoList = "";
 std::string ve_dumpTo = ".";
 size_t ve_nStatements = 0;
 int ve_cluster = 1;
-bool ve_stopExecution=0;
+bool ve_stopExecution = 0;
 // number of assertions processed each time
 size_t ve_chunkSize = 100000;
 bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
-bool ve_recover_cls = 0;
-double ve_nsga2_mi=1.f;
-bool ve_pushp=0;
+double ve_nsga2_mi = 1.f;
+bool ve_pushp = 0;
 std::string ve_pushp_design = "";
-bool ve_only_sim=0;
-bool ve_genRand=0;
+bool ve_only_sim = 0;
+bool ve_genRand = 0;
+bool ve_plotDominance = 0;
 std::string ve_cls_type = "rand";
-size_t ve_maxPushTime=-1;
-size_t ve_minPushTime=0;
-size_t ve_minTime=0;
+size_t ve_maxPushTime = -1;
+size_t ve_minPushTime = 0;
+size_t ve_minTime = 0;
 } // namespace clc
 
 using namespace harm;
@@ -134,46 +134,6 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
   return ret;
 }
 
-inline void subVarInPropStr(
-    const std::unordered_map<
-        Proposition *, std::unordered_map<std::string, std::vector<size_t>>>
-        &pToVarsToPositions,
-    const std::string &substitute, Proposition *p, const std::string &varName,
-    size_t saIndex, std::string &originalStrCopy) {
-  size_t strSizeIncrement = 0;
-  for (auto &pos : pToVarsToPositions.at(p).at(varName)) {
-    originalStrCopy.replace(pos + strSizeIncrement, varName.size(), substitute);
-    strSizeIncrement += substitute.size() - varName.size();
-  }
-}
-inline void fillUtilityVars(
-    std::unordered_map<Proposition *,
-                       std::unordered_map<std::string, std::vector<size_t>>>
-        &pToVarsToPositions,
-    std::unordered_map<Template *,
-                       std::vector<std::pair<Proposition *, std::string>>>
-        &aToProps,
-    Proposition *p, Template *ass) {
-
-  auto s = prop2String(*p);
-  auto copy = s;
-  auto vars = getVars(*p);
-
-  std::sort(vars.begin(), vars.end(),
-            [](const std::pair<std::string, size_t> &e1,
-               const std::pair<std::string, size_t> &e2) {
-              return e1.first.size() > e2.first.size();
-            });
-  vars.erase(std::unique(vars.begin(), vars.end()), vars.end());
-  for (auto &[v, d1] : vars) {
-    pToVarsToPositions[p][v] = findAllOccs(copy, v);
-    std::string fillStr(v.size(), ' ');
-    for (auto &pos : pToVarsToPositions[p][v]) {
-      copy.replace(pos, v.size(), fillStr);
-    }
-  }
-  aToProps[ass].emplace_back(p, s);
-}
 void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
                std::vector<std::string> &ids,
                std::vector<harm::Template *> &assertions, bool enablePB) {
@@ -234,70 +194,6 @@ void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
   clc::isilent = 0;
 }
 
-void getDiffVBR(std::unordered_map<std::string, Diff> &csvVarToDiff,
-                std::unordered_map<std::string, size_t> &varToSize,
-                std::vector<std::string> &vars,
-                std::vector<harm::Template *> &assertions, bool enablePB) {
-
-  progresscpp::ParallelProgressBar pb;
-  if (enablePB) {
-    pb.addInstance(1, std::string("Evaluating assertions... "), vars.size(),
-                   70);
-  }
-  clc::isilent = 1;
-
-  for (auto &v : vars) {
-    // parse the ft
-    for (size_t i = 0; i < varToSize.at(v); i++) {
-      std::string fn = clc::ve_ftPath + "/" + v + "[" + std::to_string(i) +
-                       "]" + (clc::parserType == "vcd" ? ".vcd" : ".csv");
-      if (enablePB) {
-        pb.changeMessage(1, fn);
-      }
-      if (!std::filesystem::exists(fn)) {
-        messageWarning("Can not find '" + fn + "'");
-        continue;
-      }
-      TraceReader *tr = parseTrace(fn);
-      Trace *ft = tr->readTrace();
-      delete tr;
-
-      std::string varCSVformat =
-          v + "," + std::to_string(varToSize.at(v)) + "," + std::to_string(i);
-      std::unordered_map<size_t, size_t> &cov =
-          csvVarToDiff[varCSVformat]._coverage;
-      size_t &atcf = csvVarToDiff[varCSVformat]._atcf;
-      std::unordered_set<std::string> &covInstances =
-          csvVarToDiff[varCSVformat]._coveredInstances;
-
-      for (size_t assId = 0; assId < assertions.size(); assId++) {
-
-        auto &a = assertions[assId];
-        Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
-
-        for (size_t i = 0; i < fAss->_max_length; i++) {
-          if (fAss->evaluate(i) == Trinary::F) {
-            atcf++;
-            cov[i]++;
-            covInstances.insert(std::to_string(assId) + "," +
-                                std::to_string(i));
-          }
-        }
-
-        delete fAss;
-      }
-
-      delete ft;
-    }
-    if (enablePB) {
-      pb.increment(1);
-    }
-  }
-  if (enablePB) {
-    pb.done(1);
-  }
-  clc::isilent = 0;
-}
 void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
                std::unordered_map<std::string, size_t> &idToSize,
                std::vector<std::string> &ids,
@@ -461,118 +357,56 @@ void dumpParetoAllComb(
 
   out.close();
 }
-std::vector<size_t>
-getNRandoms(size_t l, size_t r, size_t n,
-            std::unordered_set<std::string> &alreadyPresent) {
-  if (n > (r - l) || n == 0) {
-    std::cout << n << "," << r << "," << l << "\n";
-    throw std::invalid_argument("n must be greater or equal to r-l");
-  }
-  std::vector<size_t> result;
-  result.reserve(n);
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<size_t> distrib(l, r);
-  std::string key = "";
+void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
 
-  while (result.size() < n) {
-    size_t num = distrib(gen);
-    if (std::find(result.begin(), result.end(), num) == result.end()) {
-      result.push_back(num);
-    }
-  }
-  std::sort(begin(result), end(result));
+  //prepare data for nsga2
+  std::vector<std::unordered_set<std::string>> initialPop;
+  //return is a vector of clusters <size,error/damage,tokens>
+  std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>> ret;
 
-  for (auto &i : result) {
-    key += std::to_string(i) + ",";
+  //group up all the genes <approximation tokens AT>
+  std::unordered_map<std::string, std::unordered_set<std::string>> allGenes;
+  for (auto &[id, diff] : tokenToDiff) {
+    allGenes[id] = diff._coveredInstances;
   }
 
-  if (alreadyPresent.count(key)) {
-    return std::vector<size_t>({(size_t)-1});
-  }
-  alreadyPresent.insert(key);
-
-  return result;
-}
-void dumpParetoRandom(
-    std::vector<std::vector<EvaluatorClusterElement>> clusters) {
-
-  std::vector<std::vector<size_t>> listOfCombs;
-  size_t confIndex = 0;
-  size_t maxClusters = 22;
-  size_t maxSize = 22;
-  size_t nRandomCombsPerSize = 3000;
-
-  std::vector<std::pair<size_t, size_t>> objectives;
-  std::vector<std::unordered_set<std::string>> pop;
-
-  for (size_t i = 1; i < clusters.size() && i <= maxSize; i++) {
-    std::cout << "================================[" << i << "]"
-              << "\n";
-    std::unordered_set<std::string> alreadyPresent;
-    for (size_t j = 0; j < nRandomCombsPerSize; j++) {
-      listOfCombs.push_back(
-          getNRandoms(0, clusters.size() - 1, i, alreadyPresent));
-      if (listOfCombs.back()[0] == -1) {
-        listOfCombs.pop_back();
-      }
-    }
-    alreadyPresent.clear();
-    std::cout << listOfCombs.size() << "\n";
-    auto start = std::chrono::steady_clock::now();
-
-    for (auto &comb : listOfCombs) {
-
-      size_t nTokens = 0;
-      std::vector<std::vector<EvaluatorClusterElement>> selectedClusters;
-      //get conf label, conf size
-      for (auto &index : comb) {
-        nTokens += clusters[index].size();
-        selectedClusters.push_back(clusters[index]);
-      }
-
-      size_t nUniqueElements = getNUniqueElementsEvaluator(selectedClusters);
-
-      std::unordered_set<std::string> individual;
-      for (auto &c : selectedClusters) {
-        for (auto &[id, f] : c) {
-          individual.insert(id);
-        }
-        pop.push_back(individual);
-        objectives.emplace_back(nTokens, nUniqueElements);
-      }
-    }
-    auto stop = std::chrono::steady_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-
-    std::cout << duration.count() << "s\n";
-
-    listOfCombs.clear();
+  //use single elements as starting pop
+  for (auto &[gene, instances] : allGenes) {
+    initialPop.push_back(std::unordered_set<std::string>({gene}));
   }
 
-  std::cout << "Dumping pareto front..."
-            << "\n";
-  auto ranks = generateDominanceRank(pop, objectives);
+  ret = nsga2(allGenes, 100000, clc::ve_nsga2_mi, initialPop);
 
   std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
-                    "_paretoFront.csv");
-  out << "nTokens, nUniqueInstances\n";
-  for (size_t i = 0; i < objectives.size(); i++) {
-    if (ranks[i] == 0) {
-      out << objectives[i].first << ";" << objectives[i].second << "\n";
-    }
+                    std::string("_nsga2") + ".csv");
+  //dump the scores
+  if (clc::ve_technique == "br") {
+    out << "token,size,bit,cluster,damage/error\n";
+  } else if (clc::ve_technique == "sr") {
+    out << "statement,cluster,score,damage/error\n";
   }
-
+  std::sort(
+      ret.begin(), ret.end(),
+      [](std::tuple<size_t, double, std::unordered_set<std::string>> &e1,
+         std::tuple<size_t, double, std::unordered_set<std::string>> &e2) {
+        return std::get<1>(e1) < std::get<1>(e2);
+      });
+  size_t cIndex = 0;
+  for (auto &[f1, f2, tokens] : ret) {
+    for (auto &token : tokens) {
+      out << token << "," << cIndex << "," << f2 << "\n";
+    }
+    cIndex++;
+  }
   out.close();
 }
 
-void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
-                bool normalize) {
+void cluster_with_kmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
+                         bool normalize) {
 
   auto scores = converToScores(tokenToDiff, normalize);
 
-  std::ofstream out(clc::ve_dumpTo + "/" + std::string("rank_") +
+  std::ofstream out(clc::ve_dumpTo + "/" +
                     clc::ve_technique + (normalize ? "_nor" : "") +
                     "_kmeans.csv");
 
@@ -603,9 +437,8 @@ void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
         v_s.first, v_s.second);
   }
 
-  //dump the scores
-  if (clc::ve_technique == "vbr") {
-    out << "var,size,bit,cluster,score\n";
+  if (clc::ve_technique == "br") {
+    out << "token,size,bit,cluster,score\n";
     for (auto &[id, scores] : clusters_score) {
       for (auto &[token, score] : scores) {
         if (!normalize) {
@@ -616,21 +449,8 @@ void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
         }
       }
     }
-
   } else if (clc::ve_technique == "sr") {
     out << "statement,cluster,score\n";
-    for (auto &[id, scores] : clusters_score) {
-      for (auto &[token, score] : scores) {
-        if (!normalize) {
-          out << token << "," << id << "," << (int)score << "\n";
-        } else {
-          out << token << "," << std::fixed << std::setprecision(4) << id << ","
-              << (double)score << "\n";
-        }
-      }
-    }
-  } else if (clc::ve_technique == "br") {
-    out << "token,size,bit,cluster,score\n";
     for (auto &[id, scores] : clusters_score) {
       for (auto &[token, score] : scores) {
         if (!normalize) {
@@ -681,160 +501,12 @@ void dumpKmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
   pout.close();
 }
 
-void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
-               bool normalize) {
+void cluster(std::unordered_map<std::string, Diff> &tokenToDiff,
+             bool normalize) {
 
-  //arrange elements
-  std::unordered_map<std::string, std::unordered_set<std::string>>
-      arrangedElements;
-  for (auto &[token, diff] : tokenToDiff) {
-    arrangedElements[token] = diff._coveredInstances;
-  }
-
-  std::vector<std::vector<EvaluatorClusterElement>> hcClusters;
-
-  if (clc::ve_cls_type != "kmeans" && clc::ve_cls_type != "nsga2") {
-    if (clc::ve_recover_cls) {
-      //recover clusters
-      std::string filePath = clc::ve_dumpTo + "/" + std::string("hccls_") +
-                             clc::ve_technique + ".csv";
-      std::cout << filePath << "\n";
-      messageErrorIf(!std::filesystem::exists(filePath),
-                     "Could not find: " + filePath);
-
-      std::unordered_map<size_t, std::vector<std::string>> cidToFaults;
-
-      csv::CSVFormat format;
-      format.delimiter(',');
-      csv::CSVReader reader(filePath, format);
-      csv::CSVRow row;
-
-      while (reader.read_row(row)) {
-        std::string id = row[0].get() + "," + row[1].get() + "," + row[2].get();
-        size_t clusterID = std::stoull(row[3].get());
-        cidToFaults[clusterID].push_back(id);
-      }
-
-      for (size_t id = 0; id < cidToFaults.size(); id++) {
-        auto faults = cidToFaults.at(id);
-
-        std::vector<EvaluatorClusterElement> newCls;
-        for (auto &f : faults) {
-          EvaluatorClusterElement ce;
-          ce.first = f;
-          ce.second = arrangedElements.at(f);
-          newCls.push_back(ce);
-        }
-        hcClusters.push_back(newCls);
-      }
-
-      //for (auto &c : hcClusters) {
-      //    std::cout << "======================" << "\n";
-      //  for (auto &[id, faults] : c) {
-      //      std::cout << "-------------------------" << "\n";
-      //    std::cout << id << " "<<faults.size();
-      //    std::cout <<  "\n";
-      //  }
-      //}
-      std::cout << "Recovered clusters:" << hcClusters.size() << "\n";
-
-    } else {
-      //hc clustering
-      std::cout << "HC clustering... might take a while"
-                << "\n";
-      hcClusters = hcElbowEvaluator(arrangedElements);
-
-      std::ofstream out(clc::ve_dumpTo + "/" + std::string("hccls_") +
-                        clc::ve_technique + ".csv");
-
-      //dump clusters
-      //print header
-      if (clc::ve_technique == "br") {
-        out << "token,size,bit,cluster,score\n";
-      } else if (clc::ve_technique == "sr") {
-        out << "statement,cluster,score\n";
-      } else if (clc::ve_technique == "vbr") {
-        out << "var,size,bit,cluster,score\n";
-      }
-
-      for (size_t i = 0; i < hcClusters.size(); i++) {
-        auto &cls = hcClusters[i];
-        size_t clusterScore = getNUniqueElementsEvaluator(cls);
-        for (auto inst : cls) {
-          out << inst.first << "," << i << "," << clusterScore << "\n";
-        }
-      }
-      out.close();
-    }
-  }
-
-  if (clc::ve_cls_type == "rand") {
-    dumpParetoRandom(hcClusters);
-  } else if (clc::ve_cls_type == "comb") {
-    dumpParetoAllComb(hcClusters);
-  } else if (clc::ve_cls_type == "nsga2" || clc::ve_cls_type == "nsga2pop") {
-    //prepare data for nsga2
-    std::vector<std::unordered_set<std::string>> initialPop;
-    std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>>
-        ret;
-
-    if (clc::ve_cls_type == "nsga2") {
-      //use single elements as starting pop
-      for (auto &[id, instaces] : arrangedElements) {
-        std::unordered_set<std::string> individual;
-        individual.insert(id);
-        initialPop.push_back(individual);
-      }
-
-    } else {
-      //use clusters as starting pop
-      for (auto &c : hcClusters) {
-        std::unordered_set<std::string> individual;
-        for (auto &[id, f] : c) {
-          individual.insert(id);
-        }
-        initialPop.push_back(individual);
-      }
-    }
-
-
-    ret = nsga2(arrangedElements, 100000,clc::ve_nsga2_mi, initialPop);
-
-    std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
-                      "_paretoFront.csv");
-    out << "nTokens; nUniqueInstances\n";
-    for (auto &p : ret) {
-      out << std::get<0>(p) << ";" << std::get<1>(p) << "\n";
-    }
-
-    out.close();
-
-    out = std::ofstream(clc::ve_dumpTo + "/" + std::string("rank_") +
-                        clc::ve_technique + ".csv");
-    //dump the scores
-    if (clc::ve_technique == "vbr") {
-      out << "var,size,bit,cluster,score\n";
-    } else if (clc::ve_technique == "sr") {
-      out << "statement,cluster,score\n";
-    } else if (clc::ve_technique == "br") {
-      out << "token,size,bit,cluster,score\n";
-    }
-    std::sort(
-        ret.begin(), ret.end(),
-        [](std::tuple<size_t, size_t, std::unordered_set<std::string>> &e1,
-           std::tuple<size_t, size_t, std::unordered_set<std::string>> &e2) {
-          return std::get<1>(e1) < std::get<1>(e2);
-        });
-    size_t cIndex = 0;
-    for (auto &[f1, f2, tokens] : ret) {
-      for (auto &token : tokens) {
-        out << token << "," << cIndex << "," << f2 << "\n";
-      }
-      cIndex++;
-    }
-    out.close();
-
+  if (clc::ve_cls_type == "nsga2") {
+    cluster_with_nsga2(tokenToDiff);
   } else if (clc::ve_cls_type == "kmeans") {
-    dumpKmeans(tokenToDiff, normalize);
+    cluster_with_kmeans(tokenToDiff, normalize);
   }
 }

@@ -22,7 +22,6 @@ extern bool ve_stopExecution;
 // number of assertions processed each time
 extern size_t ve_chunkSize;
 extern size_t max_threads;
-extern bool ve_recover_cls;
 extern double ve_nsga2_mi;
 extern bool ve_pushp;
 extern std::string ve_pushp_design;
@@ -30,6 +29,7 @@ extern bool ve_only_sim;
 extern std::string ve_cls_type;
 extern bool ve_genRand;
 extern size_t ve_minTime;
+extern bool ve_plotDominance;
 } // namespace clc
 
 struct Diff {
@@ -48,14 +48,9 @@ std::vector<std::string> readAssertions(std::string assPath);
 std::unordered_map<std::string, std::vector<harm::Template *>>
 discardAssertionsGroupBy(std::vector<harm::Template *> &assertions,
                          int groupByAnt);
-void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
+void cluster(std::unordered_map<std::string, Diff> &tokenToDiff,
                bool normalize);
 
-void getDiffVBR(std::unordered_map<std::string, Diff> &csvVarToDiff,
-                std::unordered_map<std::string, size_t> &varToSize,
-                std::vector<std::string> &vars,
-                std::vector<harm::Template *> &assertions,
-                bool enablePB = true);
 
 void getDiffSR(std::unordered_map<std::string, Diff> &idToDiff,
                std::vector<std::string> &ids,
@@ -66,11 +61,6 @@ void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
                std::vector<std::string> &ids,
                std::vector<harm::Template *> &assertions, bool enablePB = true);
 
-void findFaultCoverageOnTrace(
-    std::unordered_map<std::string, std::vector<harm::Template *>> &varToAss,
-    harm::Trace *trace, const std::unordered_set<std::string> outVars,
-    size_t &nFaults,
-    std::unordered_map<std::string, std::vector<size_t>> &assToFault);
 std::vector<harm::Template *> parseAssertions(std::vector<std::string> assStrs,
                                               harm::Trace *trace, size_t start,
                                               size_t n);

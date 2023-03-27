@@ -487,9 +487,6 @@ inline std::vector<std::pair<size_t, size_t>> getObjectives(
         &allGenes) {
   std::vector<std::pair<size_t, size_t>> objectives(pop.size());
 
-  //for (int i = 0; i < pop.size(); i++) {
-  //  objectives[i] = evalIndividual(pop[i], allGenes);
-  //}
   size_t nThreads = 16;
   Semaphore maxThreads(nThreads);
   Semaphore completed(0);
@@ -993,7 +990,8 @@ void inline plotDominance(
     std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
-    const std::optional<std::string> &dumpFilePath = std::nullopt) {
+    const std::optional<std::string> &dumpFilePath = std::nullopt,
+    const std::optional<std::string> &pngFilePath = std::nullopt) {
 
   static FILE *pipe = nullptr;
 
@@ -1049,7 +1047,15 @@ void inline plotDominance(
   }
   fprintf(pipe, "e\n");
 
-  // Place the legend below the chart
+  // Dump current plot as PNG file, if requested
+  if (pngFilePath.has_value()) {
+    std::string filePath = pngFilePath.value();
+    std::string command = "set terminal pngcairo size 1920,1080 enhanced font "
+                          "'Verdana,27' linewidth 10 pointscale 10;"
+                          "set output '" +
+                          filePath + "';replot; set output";
+    fprintf(pipe, "%s\n", command.c_str());
+  }
 
   if (dontClose) {
     fflush(pipe);
@@ -1058,14 +1064,15 @@ void inline plotDominance(
   }
 }
 
-void inline plotGNU(
+void inline plotErrorDamage(
     const std::vector<std::pair<size_t, double>> &data,
     const std::string &xlabel = "X", const std::string &ylabel = "Y",
     const std::string &title = "Data Plot",
     std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
-    const std::optional<std::string> &dumpFilePath = std::nullopt) {
+    const std::optional<std::string> &dumpFilePath = std::nullopt,
+    const std::optional<std::string> &pngFilePath = std::nullopt) {
 
   static FILE *pipe = nullptr;
 
@@ -1095,7 +1102,7 @@ void inline plotGNU(
             yrange.value().second);
   }
 
-  fprintf(pipe, "set key below\n");
+  fprintf(pipe, "unset key\n");
 
   // Dump data as CSV file, if requested
   if (dumpFilePath.has_value()) {
@@ -1113,14 +1120,22 @@ void inline plotGNU(
   }
 
   // Plot data using points
-  fprintf(pipe, "plot '-' with points pointtype 7 pointsize 0.5 title "
-                "'Configuration'\n");
+  fprintf(pipe, "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb "
+                "'dark-violet' \n");
   for (const auto &p : data) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
   }
   fprintf(pipe, "e\n");
 
-  // Place the legend below the chart
+  // Dump current plot as PNG file, if requested
+  if (pngFilePath.has_value()) {
+    std::string filePath = pngFilePath.value();
+    std::string command = "set terminal pngcairo size 1920,1080 enhanced font "
+                          "'Verdana,27' linewidth 10 pointscale 10;"
+                          "set output '" +
+                          filePath + "';replot; set output";
+    fprintf(pipe, "%s\n", command.c_str());
+  }
 
   if (dontClose) {
     fflush(pipe);
@@ -1129,17 +1144,18 @@ void inline plotGNU(
   }
 }
 
-void inline plot2GNU(
-    const std::vector<std::pair<size_t, double>> &data1,
-    const std::vector<std::pair<size_t, double>> &data2,
-    const std::string &xlabel = "X", const std::string &ylabel = "Y",
+void inline plotBeforeAfter(
+    std::vector<std::pair<size_t, double>> data1,
+    std::vector<std::pair<size_t, double>> data2,
+    const std::string &xlabel = "X", std::string ylabel = "Y",
     const std::string &title = "Data Plot",
     const std::string &series1Title = "S1",
     const std::string &series2Title = "S2",
     std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
-    const std::optional<std::string> &dumpFilePath = std::nullopt) {
+    const std::optional<std::string> &dumpFilePath = std::nullopt,
+    const std::optional<std::string> &pngFilePath = std::nullopt) {
 
   static FILE *pipe = nullptr;
 
@@ -1151,6 +1167,16 @@ void inline plot2GNU(
       std::cerr << "Error opening gnuplot pipe" << std::endl;
       return;
     }
+  }
+
+  if (clc::ve_pushp_design == "sobelBR" || clc::ve_pushp_design == "sobelSR") {
+    for (auto &[n, e] : data1) {
+      e = 1.f - e;
+    }
+    for (auto &[n, e] : data2) {
+      e = 1.f - e;
+    }
+    ylabel = "SSIM";
   }
 
   // Set up gnuplot settings
@@ -1190,20 +1216,31 @@ void inline plot2GNU(
   // Plot data using points with colors
   fprintf(
       pipe,
-      "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'purple' title '%s', \
-                  '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s'\n",
-      series1Title.c_str(), series2Title.c_str());
-  for (const auto &p : data1) {
+      "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s', \
+                  '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'dark-violet' title '%s'\n",
+      series2Title.c_str(),series1Title.c_str());
+
+  for (const auto &p : data2) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
   }
   fprintf(pipe, "e\n");
-  for (const auto &p : data2) {
+  for (const auto &p : data1) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
   }
   fprintf(pipe, "e\n");
 
   // Place the legend below the chart
   fprintf(pipe, "set key below\n");
+
+  // Dump current plot as PNG file, if requested
+  if (pngFilePath.has_value()) {
+    std::string filePath = pngFilePath.value();
+    std::string command = "set terminal pngcairo size 1920,1080 enhanced font "
+                          "'Verdana,27' linewidth 10 pointscale 10;"
+                          "set output '" +
+                          filePath + "';replot; set output";
+    fprintf(pipe, "%s\n", command.c_str());
+  }
 
   if (dontClose) {
     fflush(pipe);
@@ -1212,11 +1249,11 @@ void inline plot2GNU(
   }
 }
 
-void inline plot3GNU(
-    const std::vector<std::pair<size_t, double>> &data1,
-    const std::vector<std::pair<size_t, double>> &data2,
-    const std::vector<std::pair<size_t, double>> &data3,
-    const std::string &xlabel = "X", const std::string &ylabel = "Y",
+void inline plotBeforeAfterRandom(
+    std::vector<std::pair<size_t, double>> data1,
+    std::vector<std::pair<size_t, double>> data2,
+    std::vector<std::pair<size_t, double>> data3,
+    const std::string &xlabel = "X", std::string ylabel = "Y",
     const std::string &title = "Data Plot",
     const std::string &series1Title = "S1",
     const std::string &series2Title = "S2",
@@ -1224,7 +1261,8 @@ void inline plot3GNU(
     std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
-    const std::optional<std::string> &dumpFilePath = std::nullopt) {
+    const std::optional<std::string> &dumpFilePath = std::nullopt,
+    const std::optional<std::string> &pngFilePath = std::nullopt) {
 
   static FILE *pipe = nullptr;
 
@@ -1236,6 +1274,19 @@ void inline plot3GNU(
       std::cerr << "Error opening gnuplot pipe" << std::endl;
       return;
     }
+  }
+
+  if (clc::ve_pushp_design == "sobelBR" || clc::ve_pushp_design == "sobelSR") {
+    for (auto &[n, e] : data1) {
+      e = 1.f - e;
+    }
+    for (auto &[n, e] : data2) {
+      e = 1.f - e;
+    }
+    for (auto &[n, e] : data3) {
+      e = 1.f - e;
+    }
+    ylabel = "SSIM";
   }
 
   // Set up gnuplot settings
@@ -1254,7 +1305,7 @@ void inline plot3GNU(
             yrange.value().second);
   }
 
-  fprintf(pipe, "set key below\n");
+  fprintf(pipe, "set key above\n");
 
   // Dump data as CSV file, if requested
   if (dumpFilePath.has_value()) {
@@ -1266,45 +1317,23 @@ void inline plot3GNU(
       size_t longestSeriesSize =
           std::max(data1.size(), std::max(data2.size(), data3.size()));
       outfile << "x1;y1;x2;y2;x3;y3" << std::endl;
-      if (clc::ve_pushp_design == "sobelBR" ||
-          clc::ve_pushp_design == "sobelSR") {
-        for (size_t i = 0; i < longestSeriesSize; i++) {
-          if (i < data1.size()) {
-            outfile << data1[i].first << ";" << 1.f - data1[i].second << ";";
-          } else {
-            outfile << ";;";
-          }
-          if (i < data2.size()) {
-            outfile << data2[i].first << ";" << 1.f - data2[i].second << ";";
-          } else {
-            outfile << ";;";
-          }
-          if (i < data3.size()) {
-            outfile << data3[i].first << ";" << 1.f - data3[i].second;
-          } else {
-            outfile << ";";
-          }
-          outfile << "\n";
+      for (size_t i = 0; i < longestSeriesSize; i++) {
+        if (i < data1.size()) {
+          outfile << data1[i].first << ";" << data1[i].second << ";";
+        } else {
+          outfile << ";;";
         }
-      } else {
-        for (size_t i = 0; i < longestSeriesSize; i++) {
-          if (i < data1.size()) {
-            outfile << data1[i].first << ";" << data1[i].second << ";";
-          } else {
-            outfile << ";;";
-          }
-          if (i < data2.size()) {
-            outfile << data2[i].first << ";" << data2[i].second << ";";
-          } else {
-            outfile << ";;";
-          }
-          if (i < data3.size()) {
-            outfile << data3[i].first << ";" << data3[i].second;
-          } else {
-            outfile << ";";
-          }
-          outfile << "\n";
+        if (i < data2.size()) {
+          outfile << data2[i].first << ";" << data2[i].second << ";";
+        } else {
+          outfile << ";;";
         }
+        if (i < data3.size()) {
+          outfile << data3[i].first << ";" << data3[i].second;
+        } else {
+          outfile << ";";
+        }
+        outfile << "\n";
       }
     }
     outfile.close();
@@ -1313,16 +1342,17 @@ void inline plot3GNU(
   // Plot data using points with colors
   fprintf(
       pipe,
-      "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'purple' title '%s', \
-                  '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s', \
+      "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s', \
+                  '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'dark-violet' title '%s', \
                   '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'red' title '%s'\n",
-      series1Title.c_str(), series2Title.c_str(), series3Title.c_str());
+      series2Title.c_str(), series1Title.c_str(), series3Title.c_str());
 
-  for (const auto &p : data1) {
+  for (const auto &p : data2) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
   }
   fprintf(pipe, "e\n");
-  for (const auto &p : data2) {
+
+  for (const auto &p : data1) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
   }
   fprintf(pipe, "e\n");
@@ -1334,6 +1364,16 @@ void inline plot3GNU(
 
   // Place the legend below the chart
   fprintf(pipe, "set key below\n");
+
+  // Dump current plot as PNG file, if requested
+  if (pngFilePath.has_value()) {
+    std::string filePath = pngFilePath.value();
+    std::string command = "set terminal pngcairo size 1920,1080 enhanced font "
+                          "'Verdana,27' linewidth 10 pointscale 10;"
+                          "set output '" +
+                          filePath + "';replot; set output";
+    fprintf(pipe, "%s\n", command.c_str());
+  }
 
   if (dontClose) {
     fflush(pipe);
@@ -1360,7 +1400,7 @@ inline void genAndDumpRandomClusters(
     const std::unordered_map<std::string, std::unordered_set<std::string>>
         &allGenes,
     std::vector<std::pair<size_t, double>> &beforePushMetricFrontData,
-    bool pushing = 0, size_t reps = 2) {
+    bool pushing = 0, size_t reps = 10) {
 
   auto maxObjs = pushing
                      ? std::make_pair<size_t, size_t>(allGenes.size(), 10000)
@@ -1371,10 +1411,13 @@ inline void genAndDumpRandomClusters(
   std::vector<std::pair<size_t, double>> randomData;
   std::vector<std::unordered_set<std::string>> randomRepresentatives;
 
+  //keep track the elaborated individuals
   size_t geObIndex = 0;
+
   for (auto &individual : paretoFront) {
     originalObjectives.push_back(evalIndividual(individual, allGenes));
 
+    //gather random individuals
     std::vector<std::unordered_set<std::string>> randomIndividuals;
     for (size_t i = 0; i < reps; i++) {
       randomIndividuals.push_back(
@@ -1387,13 +1430,16 @@ inline void genAndDumpRandomClusters(
         candidatesRand;
 
     std::cout << geObIndex++ << "/" << paretoFront.size() << "\n";
+    //eval random individuals
     std::vector<std::pair<size_t, size_t>> objectives =
         getObjectives(randomIndividuals, allGenes);
+
     for (size_t i = 0; i < objectives.size(); i++) {
       double rnd = (((double)objectives[i].second / (double)maxObjs.second));
       avgRandom += rnd;
       candidatesRand.emplace_back(rnd, randomIndividuals[i]);
     }
+
     avgRandom /= objectives.size();
 
     //sort by distance from the avg
@@ -1405,6 +1451,7 @@ inline void genAndDumpRandomClusters(
                  std::abs(e2.first - avgRandom);
         });
 
+    //store a good rand candidate (close to the average)
     randomRepresentatives.push_back(candidatesRand.front().second);
 
     randomData.emplace_back(individual.size(), avgRandom);
@@ -1414,11 +1461,13 @@ inline void genAndDumpRandomClusters(
     originalData.emplace_back(x, (((double)y / (double)maxObjs.second)));
   }
 
-  plot3GNU(beforePushMetricFrontData, originalData, randomData, "Ntokens",
-           (pushing ? std::string("Metric error") : std::string("Damage %")),
-           "", "Before push", "After push", "Random",
-           std::make_pair(0.f, maxObjs.first), std::make_pair(0.f, 1.f), 1,
-           "rank/" + clc::ve_technique + "_" + "bar.csv");
+  plotBeforeAfterRandom(
+      beforePushMetricFrontData, originalData, randomData, "Number of tokens",
+      (pushing ? std::string("Error") : std::string("Damage")), "",
+      "Before push", "After push", "Random", std::make_pair(0.f, maxObjs.first),
+      std::make_pair(0.f, 1.f), 1,
+      "rank/" + clc::ve_technique + "_" + "bar.csv",
+      "rank/" + clc::ve_technique + "_bar.png");
 
   std::ofstream out("rank/" + clc::ve_technique + "_randCandidates.csv");
 
@@ -1428,21 +1477,7 @@ inline void genAndDumpRandomClusters(
               return e1.size() < e2.size();
             });
 
-  //dump the random representatives
-  //if (clc::ve_technique == "vbr") {
-  //  out << "var,size,bit,randClusterID\n";
-  //} else if (clc::ve_technique == "sr") {
-  //  out << "statement,randClusterID\n";
-  //} else if (clc::ve_technique == "br") {
-  //  out << "token,size,bit,randClusterID\n";
-  //}
-  //size_t cIndex = 0;
-  //for (auto &rp : randomRepresentatives) {
-  //  for (auto &token : rp) {
-  //    out << token << "," << cIndex << "\n";
-  //  }
-  //  cIndex++;
-  //}
+  //dump verilog defines
   out << "size,define\n";
   for (auto &rp : randomRepresentatives) {
     out << rp.size() << ","
@@ -1451,18 +1486,19 @@ inline void genAndDumpRandomClusters(
   }
   out.close();
 }
-inline std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>>
+inline std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>>
 nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
           &allGenes,
       size_t maxIterations = 100, double minIncrement = 1.f,
       const std::vector<std::unordered_set<std::string>> &initialPop =
           std::vector<std::unordered_set<std::string>>()) {
 
+  //clear all gnuplot windows
   system("killall gnuplot");
+
+  //stats utility vars
   size_t secondsPhase1 = 0;
-  ;
   size_t secondsPhase2 = 0;
-  ;
   double dominancePhase1 = 0.f;
   double dominancePhase2 = 0.f;
   std::vector<std::pair<size_t, double>> dominance_plot_data;
@@ -1470,9 +1506,8 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
 
   //get max possible value for the objectives (all token together)
   auto maxObjs = getMaxObjectivesValues(allGenes);
-  bool dumpParetoMetricBeforePush = 0;
+  bool saveParetoMetricBeforePush = 0;
   std::vector<std::pair<size_t, double>> beforePushMetricFrontData;
-
   std::vector<std::unordered_set<std::string>> pop;
 
   if (initialPop.empty()) {
@@ -1505,7 +1540,6 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
     if (i > 0) {
       //mutation on the entire population
       mutatePop(pop, allGenes);
-
       addOffspring(pop, allGenes);
       removeDuplicates(pop);
     }
@@ -1522,11 +1556,6 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
       confWithAllTokensExists =
           confWithAllTokensExists || score.first == maxObjs.first;
     }
-    // debug configs
-    // for (auto &individual : pop) {
-    //   auto score = evalIndividual(individual, allGenes);
-    //   chart_data.push_back(score);
-    // }
 
     dominance = getDominatedSurface(chart_data, maxObjs);
     double increment = ((dominance - prevDominance) / dominance) * 100.f;
@@ -1535,37 +1564,40 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
     std::vector<std::pair<size_t, double>> front_plot_data;
     for (const auto &[x, y] : chart_data) {
       front_plot_data.emplace_back(x, (((double)y / (double)maxObjs.second)));
-      //std::cout << x<<","<<y << "\n";
     }
 
-    if (dumpParetoMetricBeforePush) {
-      dumpParetoMetricBeforePush = 0;
+    if (saveParetoMetricBeforePush) {
+      saveParetoMetricBeforePush = 0;
       dominancePhase1 = dominance;
       beforePushMetricFrontData = front_plot_data;
     }
 
     if (pushing) {
-      plot2GNU(beforePushMetricFrontData, front_plot_data, "Ntokens",
-               (pushing ? std::string("Metric error") : std::string("Damage")),
-               "Surface dominance: " + std::to_string(dominance * 100) + "%",
-               "Before push", "After push", std::make_pair(0.f, maxObjs.first),
-               std::make_pair(0.f, 1.f), 1);
+      plotBeforeAfter(
+          beforePushMetricFrontData, front_plot_data, "Number of tokens",
+          (pushing ? std::string("Error") : std::string("Damage")),
+          "Dominance: " + std::to_string(dominance * 100) + "%", "Before push",
+          "After push", std::make_pair(0.f, maxObjs.first),
+          std::make_pair(0.f, 1.f), 1);
 
-      //dominance_plot_data.emplace_back(dirtyTimerSeconds("startNSGA2", 0),
-      //                                 dominance);
-      //maxDominance = maxDominance > dominance_plot_data.back().second
-      //                   ? maxDominance
-      //                   : dominance_plot_data.back().second;
-      //plotDominance(dominance_plot_data, "Time(s)", "Dominance",
-      //              "Dominance in time",
-      //              std::make_pair(0.f, dirtyTimerSeconds("startNSGA2", 0)),
-      //              std::make_pair(0.f, maxDominance), 1);
+      if (clc::ve_plotDominance) {
+        dominance_plot_data.emplace_back(dirtyTimerSeconds("startNSGA2", 0),
+                                         dominance);
+        maxDominance = maxDominance > dominance_plot_data.back().second
+                           ? maxDominance
+                           : dominance_plot_data.back().second;
+        plotDominance(dominance_plot_data, "Time(s)", "Dominance",
+                      "Dominance in time",
+                      std::make_pair(0.f, dirtyTimerSeconds("startNSGA2", 0)),
+                      std::make_pair(0.f, maxDominance), 1);
+      }
 
     } else {
-      plotGNU(front_plot_data, "Ntokens",
-              (pushing ? std::string("Metric error") : std::string("Damage")),
-              "Surface dominance: " + std::to_string(dominance * 100) + "%",
-              std::make_pair(0.f, maxObjs.first), std::make_pair(0.f, 1.f), 1);
+      plotErrorDamage(front_plot_data, "Number of tokens",
+                      (pushing ? std::string("Error") : std::string("Damage")),
+                      "Dominance: " + std::to_string(dominance * 100) + "%",
+                      std::make_pair(0.f, maxObjs.first),
+                      std::make_pair(0.f, 1.f), 1);
     }
 
     auto stop = std::chrono::steady_clock::now();
@@ -1589,30 +1621,23 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
         }
 
       } else {
+        secondsPhase1 = dirtyTimerSeconds("startNSGA2", 0);
+        plotErrorDamage(
+            front_plot_data, "Number of tokens", std::string("Damage"),
+            "Dominance " + std::to_string(dominance * 100) + "%",
+            std::make_pair(0.f, maxObjs.first), std::make_pair(0.f, 1.f), 1,
+            "rank/" + clc::ve_technique + "_" + "damage.cvs",
+            "rank/" + clc::ve_technique + "_damage.png");
+
         if (clc::ve_pushp) {
           //dump frontier before push
-          plotGNU(
-              front_plot_data, "Ntokens",
-              (pushing ? std::string("Metric error") : std::string("Damage %")),
-              "Surface dominance: " + std::to_string(dominance * 100) + "%",
-              std::make_pair(0.f, maxObjs.first), std::make_pair(0.f, 1.f), 1,
-              "rank/" + clc::ve_technique + "_" + "paretoBeforePush.cvs");
           dirtyTimerSeconds("startPush", 1);
           pushing = 1;
-          //          debug
-//          for (auto &individual : generateParetoFront(pop, allGenes)) {
-//              std::cout << individual.size()<<":";
-//              for (auto gene : individual) {
-//                  std::cout << gene << " ";
-//              }
-//              std::cout <<  "\n";
-//          }
           evalIndividual(std::unordered_set<std::string>(), allGenes, 0, 1);
           maxObjs.second = 10000;
           prevDominance = 0;
           dominance = DBL_MAX;
-          dumpParetoMetricBeforePush = 1;
-          secondsPhase1 = dirtyTimerSeconds("startNSGA2", 0);
+          saveParetoMetricBeforePush = 1;
           continue;
         }
       }
@@ -1629,7 +1654,8 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
 
   continueUpdate:;
     prevDominance = dominance;
-    allowedPopSize = allowedPopSize <= 100 ? 100 : allowedPopSize * 0.9;
+    allowedPopSize = allowedPopSize <= 100 ? std::min(100ul, initialPop.size())
+                                           : allowedPopSize * 0.9;
   }
 
   if (clc::ve_pushp) {
@@ -1647,6 +1673,7 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
   fileAppendContent("rank/" + clc::ve_technique + "_" + "time.csv",
                     std::to_string(secondsPhase1) + ";" +
                         std::to_string(secondsPhase2) + "\n");
+  //dump dominance stat
   fileDumpContent("rank/" + clc::ve_technique + "_" + "dominance.csv",
                   "dominancePhase1;dominancePhase2;increment\n");
   fileAppendContent(
@@ -1654,12 +1681,14 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
       std::to_string(dominancePhase1) + ";" + std::to_string(dominancePhase2) +
           ";" + std::to_string(dominancePhase2 - dominancePhase1) + "\n");
 
-  //<x,y,individual>
-  std::vector<std::tuple<size_t, size_t, std::unordered_set<std::string>>> ret;
+  //organize the return structure
+  std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>> ret;
+
   for (auto &individual : generateParetoFront(pop, allGenes)) {
     auto score = evalIndividual(individual, allGenes);
-    ret.emplace_back(score.first, score.second, individual);
+    ret.emplace_back(score.first, score.second / maxObjs.second, individual);
   }
+
   if (clc::ve_genRand) {
     genAndDumpRandomClusters(generateParetoFront(pop, allGenes), allGenes,
                              beforePushMetricFrontData, pushing, 50);

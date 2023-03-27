@@ -96,26 +96,18 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   std::unordered_map<std::string, size_t> tokenToSize;
   std::vector<std::string> tokens;
 
-  if (clc::ve_technique == "sr") {
-    //Statement reduction
-    for (size_t i = 0; i < clc::ve_nStatements; i++) {
-      tokens.push_back("s" + std::to_string(i));
-    }
-  } else if (clc::ve_technique == "vbr") {
-    //Variable Bit reduction
-    csv::CSVReader reader(clc::ve_infoList);
-    csv::CSVRow row;
-    while (reader.read_row(row)) {
-      tokens.push_back(row[0].get());
-      tokenToSize[row[0].get()] = std::stoul(row[1].get());
-    }
-  } else if (clc::ve_technique == "br") {
+  if (clc::ve_technique == "br") {
     //Bit reduction
     csv::CSVReader reader(clc::ve_infoList);
     csv::CSVRow row;
     while (reader.read_row(row)) {
       tokens.push_back(row[0].get());
       tokenToSize[row[0].get()] = std::stoul(row[1].get());
+    }
+  } else if (clc::ve_technique == "sr") {
+    //Statement reduction
+    for (size_t i = 0; i < clc::ve_nStatements; i++) {
+      tokens.push_back("s" + std::to_string(i));
     }
   }
 
@@ -134,9 +126,7 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
       std::vector<std::string> selectedTokens;
       selectedTokens.push_back(tokens[elaborated]);
 
-      if (clc::ve_technique == "vbr") {
-        getDiffVBR(tokenToDiff, tokenToSize, selectedTokens, assertions, 0);
-      } else if (clc::ve_technique == "br") {
+      if (clc::ve_technique == "br") {
         getDiffBR(tokenToDiff, tokenToSize, selectedTokens, assertions, 0);
       } else if (clc::ve_technique == "sr") {
         getDiffSR(tokenToDiff, selectedTokens, assertions, 0);
@@ -230,18 +220,17 @@ int main(int arg, char *argv[]) {
     dumpDiffs(tokenToDiff);
   }
 
-  secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
-
   //dump temporal statistics
   {
-    std::ofstream outfile("rank/"+clc::ve_technique + "_" + "time.csv");
+    secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
+    std::ofstream outfile("rank/" + clc::ve_technique + "_" + "time.csv");
     outfile << "timeToEvaluate;timeClusterigP1;timeClusterigP2" << std::endl;
     outfile << secondsEvaluate << ";";
     outfile.close();
   }
 
   //abs
-  dumpScore(tokenToDiff, 0);
+  cluster(tokenToDiff, 0);
 
   return 0;
 }
@@ -282,8 +271,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_recover_diff = 1;
   }
 
-  if (result.count("recover-cls")) {
-    clc::ve_recover_cls = 1;
+  if (result.count("plot-dominance")) {
+    clc::ve_plotDominance = 1;
   }
   if (result.count("gen-rand")) {
     clc::ve_genRand = 1;
