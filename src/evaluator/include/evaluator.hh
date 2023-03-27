@@ -14,6 +14,7 @@ extern std::string ve_infoList;
 extern std::string ve_dumpTo;
 extern size_t ve_nStatements;
 extern size_t ve_maxPushTime;
+extern size_t ve_minPushTime;
 extern int ve_cluster;
 extern bool ve_print_failing_ass;
 extern bool ve_recover_diff;
@@ -28,6 +29,7 @@ extern std::string ve_pushp_design;
 extern bool ve_only_sim;
 extern std::string ve_cls_type;
 extern bool ve_genRand;
+extern size_t ve_minTime;
 } // namespace clc
 
 struct Diff {

@@ -57,6 +57,8 @@ bool ve_only_sim=0;
 bool ve_genRand=0;
 std::string ve_cls_type = "rand";
 size_t ve_maxPushTime=-1;
+size_t ve_minPushTime=0;
+size_t ve_minTime=0;
 } // namespace clc
 
 using namespace harm;
@@ -794,6 +796,7 @@ void dumpScore(std::unordered_map<std::string, Diff> &tokenToDiff,
         initialPop.push_back(individual);
       }
     }
+
 
     ret = nsga2(arrangedElements, 100000,clc::ve_nsga2_mi, initialPop);
 

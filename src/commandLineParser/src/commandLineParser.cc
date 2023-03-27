@@ -171,6 +171,8 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                               ("gen-rand", "")
                               ("pushp", "design you want to push", cxxopts::value<std::string>(), "<String>")
                               ("max-push-time", "max time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+                              ("min-push-time", "min time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+                              ("min-time", "min time to push the pareto frontier without the metric (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
                               ("only-sim", "")
                               ("help", "Show options");
 

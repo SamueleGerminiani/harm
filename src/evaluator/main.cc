@@ -6,6 +6,7 @@
 #include "csv.hpp"
 #include "evaluator.hh"
 #include "globals.hh"
+#include "utils.hh"
 #include <filesystem>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -188,6 +189,7 @@ int main(int arg, char *argv[]) {
   srand(1);
   //signal(SIGINT, stopExecution);
 
+  size_t secondsEvaluate = 0;
   parseCommandLineArguments(arg, argv);
 
   TraceReader *traceReader = nullptr;
@@ -200,6 +202,8 @@ int main(int arg, char *argv[]) {
   }
 
   std::unordered_map<std::string, Diff> tokenToDiff;
+
+  dirtyTimerSeconds("startEvaluate", 1);
 
   if (!clc::ve_recover_diff) {
     //get diffs
@@ -224,6 +228,16 @@ int main(int arg, char *argv[]) {
     recoverDiffs(tokenToDiff);
   } else {
     dumpDiffs(tokenToDiff);
+  }
+
+  secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
+
+  //dump temporal statistics
+  {
+    std::ofstream outfile("rank/"+clc::ve_technique + "_" + "time.csv");
+    outfile << "timeToEvaluate;timeClusterigP1;timeClusterigP2" << std::endl;
+    outfile << secondsEvaluate << ";";
+    outfile.close();
   }
 
   //abs
@@ -297,6 +311,12 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("max-push-time")) {
     clc::ve_maxPushTime = result["max-push-time"].as<size_t>();
+  }
+  if (result.count("min-push-time")) {
+    clc::ve_minPushTime = result["min-push-time"].as<size_t>();
+  }
+  if (result.count("min-time")) {
+    clc::ve_minTime = result["min-time"].as<size_t>();
   }
   if (result.count("tech")) {
     clc::ve_technique = result["tech"].as<std::string>();
