@@ -78,21 +78,6 @@ TraceReader *parseTrace(std::string path) {
   return traceReader;
 }
 
-std::vector<size_t> findAllOccs(const std::string &str,
-                                const std::string &sub) {
-
-  std::vector<size_t>
-      positions; // holds all the positions that sub occurs within str
-
-  size_t pos = str.find(sub, 0);
-  while (pos != std::string::npos) {
-    positions.push_back(pos);
-    pos = str.find(sub, pos + 1);
-  }
-
-  return positions;
-}
-
 // read assertions from file
 std::vector<std::string> readAssertions(std::string assPath) {
   std::fstream ass(assPath);
@@ -131,6 +116,14 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
 #if enPB_ve
   pb.done(0);
 #endif
+  //debug
+  //size_t atct = 0;
+  //for (auto ass : ret) {
+  //  size_t ct[3][3] = {{0}};
+  //  ass->fillContingency(ct, 0);
+  //  atct += ct[0][0];
+  //}
+  //std::cout << "------------->"<<atct<<"/"<<(ret.size()*1002.f) << "\n";
   return ret;
 }
 
@@ -304,59 +297,6 @@ converToScores(std::unordered_map<std::string, Diff> &tokenToDiff,
   return scores;
 }
 
-void dumpParetoAllComb(
-    std::vector<std::vector<EvaluatorClusterElement>> clusters) {
-
-  std::vector<std::vector<size_t>> listOfCombs;
-  size_t maxClusters = 14;
-  size_t maxSize = 14;
-
-  std::vector<std::pair<size_t, size_t>> objectives;
-  std::vector<std::unordered_set<std::string>> pop;
-
-  for (size_t i = 1; i < clusters.size() && i <= maxSize; i++) {
-    std::cout << "================================[" << i << "]"
-              << "\n";
-    comb(clusters.size() > maxClusters ? maxClusters : clusters.size(), i,
-         listOfCombs);
-    for (auto &comb : listOfCombs) {
-      size_t nTokens = 0;
-      std::vector<std::vector<EvaluatorClusterElement>> selectedClusters;
-      //get conf label, conf size
-      for (auto &index : comb) {
-        nTokens += clusters[index].size();
-        selectedClusters.push_back(clusters[index]);
-      }
-
-      size_t nUniqueElements = getNUniqueElementsEvaluator(selectedClusters);
-
-      std::unordered_set<std::string> individual;
-      for (auto &c : selectedClusters) {
-        for (auto &[id, f] : c) {
-          individual.insert(id);
-        }
-        pop.push_back(individual);
-        objectives.emplace_back(nTokens, nUniqueElements);
-      }
-    }
-
-    listOfCombs.clear();
-  }
-
-  std::cout << "Dumping pareto front..."
-            << "\n";
-  auto ranks = generateDominanceRank(pop, objectives);
-  std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
-                    "_paretoFront.csv");
-  out << "nTokens, nUniqueInstances\n";
-  for (size_t i = 0; i < objectives.size(); i++) {
-    if (ranks[i] == 0) {
-      out << objectives[i].first << ";" << objectives[i].second << "\n";
-    }
-  }
-
-  out.close();
-}
 void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
 
   //prepare data for nsga2
@@ -406,9 +346,8 @@ void cluster_with_kmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
 
   auto scores = converToScores(tokenToDiff, normalize);
 
-  std::ofstream out(clc::ve_dumpTo + "/" +
-                    clc::ve_technique + (normalize ? "_nor" : "") +
-                    "_kmeans.csv");
+  std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
+                    (normalize ? "_nor" : "") + "_kmeans.csv");
 
   //prep for clustering
   std::vector<double> elements;

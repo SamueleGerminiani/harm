@@ -195,6 +195,7 @@ int main(int arg, char *argv[]) {
 
   dirtyTimerSeconds("startEvaluate", 1);
 
+ // size_t nAssertions;
   if (!clc::ve_recover_diff) {
     //get diffs
 
@@ -211,8 +212,15 @@ int main(int arg, char *argv[]) {
       // update the amount of evaluated assertions
       evaluated += clc::ve_chunkSize;
     }
+//    nAssertions=evaluated;
     delete trace;
   }
+  // debug
+ // size_t totATCF;
+ // for (auto &[id,diff] : tokenToDiff) {
+ //     totATCF=+diff._atcf;
+ // }
+ // std::cout << totATCF<<"/"<<nAssertions*1002<< " = "<<(double)totATCF/((double)nAssertions*1002.f)<< "\n";
 
   if (clc::ve_recover_diff) {
     recoverDiffs(tokenToDiff);
