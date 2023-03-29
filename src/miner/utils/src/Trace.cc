@@ -233,6 +233,30 @@ void Trace::_allocatePointers(std::vector<DataType> &variables) {
   }
 }
 
+unsigned int *Trace::getBooleanVariableValues(const std::string &name) const {
+  messageErrorIf(_varName2varValues.count(name) == 0 ||
+                     (_varName2Type.at(name) != expression::VarType::Bool),
+                 "Can't find boolean variable with name: " + name);
+  return reinterpret_cast<unsigned int *>(_varName2varValues.at(name));
+}
+
+ULogic *Trace::getLogicVariableValues(const std::string &name) const {
+  messageErrorIf(_varName2varValues.count(name) == 0 ||
+                     (_varName2Type.at(name) != expression::VarType::ULogic &&
+                      _varName2Type.at(name) != expression::VarType::SLogic),
+                 "Can't find logic variable with name: " + name);
+
+  return reinterpret_cast<ULogic *>(_varName2varValues.at(name));
+}
+
+Numeric *Trace::getNumericVariableValues(const std::string &name) const {
+  messageErrorIf(_varName2varValues.count(name) == 0 ||
+                     (_varName2Type.at(name) != expression::VarType::Numeric),
+                 "Can't find numeric variable with name: " + name);
+
+  return reinterpret_cast<Numeric *>(_varName2varValues.at(name));
+}
+
 expression::BooleanVariable *
 Trace::getBooleanVariable(const std::string &name) const {
   messageErrorIf(_varName2varValues.count(name) == 0 ||

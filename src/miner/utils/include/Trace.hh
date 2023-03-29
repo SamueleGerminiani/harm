@@ -1,8 +1,8 @@
 #pragma once
 
 #include "DataType.hh"
-#include "exp.hh"
 #include "Logic.hh"
+#include "exp.hh"
 
 #include <climits>
 #include <map>
@@ -52,6 +52,12 @@ public:
   /// @return An instance of ExpressionVariable<Numeric>
   expression::NumericVariable *
   getNumericVariable(const std::string &name) const;
+
+  unsigned int *getBooleanVariableValues(const std::string &name) const;
+
+  expression::ULogic *getLogicVariableValues(const std::string &name) const;
+
+  expression::Numeric *getNumericVariableValues(const std::string &name) const;
 
   /// @brief Assignment operator
   /// @param other The other trace to be copied.

@@ -111,13 +111,31 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
     }
   }
 
-  size_t elaborated = 0;
-  size_t runningProcesses = 0;
-  pid_t pids[tokens.size()];
+
+
+  //gather time units where ant is true on the golden trace
+  std::vector<std::pair<harm::Template *, std::vector<size_t>>> assertionsWithAntInstances;
+  size_t totATCT = 0;
+  for (auto &ass : assertions) {
+    assertionsWithAntInstances.emplace_back(ass, std::vector<size_t>());
+    for (size_t i = 0; i < ass->_trace->getLength(); i++) {
+      if (ass->evaluateAntNoCache(i) == Trinary::T) {
+        assertionsWithAntInstances.back().second.push_back(i);
+        totATCT++;
+      }
+    }
+  }
+  //  debug
+  //  std::cout << "----------->"<<totATCT/(assertions.size()*1000.f) << "\n";
+  //
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(1, std::string("Evaluating assertions... "), tokens.size(),
                  70);
   pb.display();
+
+  size_t elaborated = 0;
+  size_t runningProcesses = 0;
+  pid_t pids[tokens.size()];
 
   while (elaborated < tokens.size()) {
     runningProcesses++;
@@ -127,9 +145,10 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
       selectedTokens.push_back(tokens[elaborated]);
 
       if (clc::ve_technique == "br") {
-        getDiffBR(tokenToDiff, tokenToSize, selectedTokens, assertions, 0);
+        getDiffBR(tokenToDiff, tokenToSize, selectedTokens,
+                  assertionsWithAntInstances, 0);
       } else if (clc::ve_technique == "sr") {
-        getDiffSR(tokenToDiff, selectedTokens, assertions, 0);
+        getDiffSR(tokenToDiff, selectedTokens, assertionsWithAntInstances, 0);
       }
 
       dumpDiffs(tokenToDiff, elaborated);
@@ -195,7 +214,6 @@ int main(int arg, char *argv[]) {
 
   dirtyTimerSeconds("startEvaluate", 1);
 
- // size_t nAssertions;
   if (!clc::ve_recover_diff) {
     //get diffs
 
@@ -208,19 +226,12 @@ int main(int arg, char *argv[]) {
     // eval the assertions one chunk at a time (to avoid memory explosion)
     for (size_t i = 0; ((int)assStrs.size() - evaluated) > 0; i++) {
       std::cout << evaluated << "/" << assStrs.size() << " evaluated\n";
-      getDiffParallel(trace, assStrs, tokenToDiff, i, 16);
+      getDiffParallel(trace, assStrs, tokenToDiff, i, clc::maxThreads);
       // update the amount of evaluated assertions
       evaluated += clc::ve_chunkSize;
     }
-//    nAssertions=evaluated;
     delete trace;
   }
-  // debug
- // size_t totATCF;
- // for (auto &[id,diff] : tokenToDiff) {
- //     totATCF=+diff._atcf;
- // }
- // std::cout << totATCF<<"/"<<nAssertions*1002<< " = "<<(double)totATCF/((double)nAssertions*1002.f)<< "\n";
 
   if (clc::ve_recover_diff) {
     recoverDiffs(tokenToDiff);
@@ -364,9 +375,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
                          std::to_string(std::thread::hardware_concurrency()) +
                          " threads at most");
     clc::maxThreads = nt;
-    l3Constants::MAX_THREADS = nt;
-    l2Constants::MAX_THREADS = nt;
-    l1Constants::MAX_THREADS = nt;
   }
 
   messageErrorIf(clc::ve_technique == "vbr" && !result.count("info-list"),

@@ -127,10 +127,11 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
   return ret;
 }
 
-void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
-               std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions, bool enablePB) {
-
+void getDiffSR(
+    std::unordered_map<std::string, Diff> &stmToDiff,
+    std::vector<std::string> &ids,
+    std::vector<std::pair<harm::Template *, std::vector<size_t>>> &assertions,
+    bool enablePB) {
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
   if (enablePB) {
@@ -162,11 +163,15 @@ void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
 
     for (size_t assId = 0; assId < assertions.size(); assId++) {
 
-      auto &a = assertions[assId];
-      Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+      auto &a = assertions[assId].first;
+      auto &antInstances = assertions[assId].second;
+      //      Template *fAss = hparser::parseTemplate(a->getAssertion(), ft, "Spot", harm::DTLimits(), 0);
+      Template *fAss = new Template(*a);
+      fAss->changeTrace(ft);
 
-      for (size_t i = 0; i < fAss->_max_length; i++) {
-        if (fAss->evaluate(i) == Trinary::F) {
+      //      for (size_t i = 0; i < fAss->_max_length; i++) {
+      for (auto i : antInstances) {
+        if (fAss->evaluateNoCache(i) == Trinary::F) {
           atcf++;
           cov[i]++;
           covInstances.insert(std::to_string(assId) + "," + std::to_string(i));
@@ -187,10 +192,12 @@ void getDiffSR(std::unordered_map<std::string, Diff> &stmToDiff,
   clc::isilent = 0;
 }
 
-void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
-               std::unordered_map<std::string, size_t> &idToSize,
-               std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions, bool enablePB) {
+void getDiffBR(
+    std::unordered_map<std::string, Diff> &csvIdToDiff,
+    std::unordered_map<std::string, size_t> &idToSize,
+    std::vector<std::string> &ids,
+    std::vector<std::pair<harm::Template *, std::vector<size_t>>> &assertions,
+    bool enablePB) {
 
   progresscpp::ParallelProgressBar pb;
   if (enablePB) {
@@ -225,9 +232,12 @@ void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
       //eval assertions
       for (size_t assId = 0; assId < assertions.size(); assId++) {
 
-        auto &a = assertions[assId];
+        auto &a = assertions[assId].first;
+        auto &antInstances = assertions[assId].second;
 
-        Template *fAss = hparser::parseTemplate(a->getAssertion(), ft);
+        //Template *fAss = hparser::parseTemplate(a->getAssertion(), ft, "Spot", harm::DTLimits(), 0);
+        Template *fAss = new Template(*a);
+        fAss->changeTrace(ft);
 
         std::string idCSVformat = id + "," + std::to_string(idToSize.at(id)) +
                                   "," + std::to_string(i);
@@ -239,8 +249,9 @@ void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
 
         size_t &atcf = csvIdToDiff[idCSVformat]._atcf;
 
-        for (size_t i = 0; i < fAss->_max_length; i++) {
-          if (fAss->evaluate(i) == Trinary::F) {
+        //      for (size_t i = 0; i < fAss->_max_length; i++) {
+        for (auto i : antInstances) {
+          if (fAss->evaluateNoCache(i) == Trinary::F) {
             atcf++;
             cov[i]++;
             covInstances.insert(std::to_string(assId) + "," +

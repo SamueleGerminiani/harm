@@ -1,4 +1,5 @@
 #include "classes/atom/CachedProposition.hh"
+#include "message.hh"
 
 namespace expression {
 CachedProposition::CachedProposition(Proposition *prop) : _prop(prop) {

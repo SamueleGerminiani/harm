@@ -1,9 +1,11 @@
-#include "classes/atom/Atom.hh"
 #include "expUtils/expUtils.hh"
+#include "classes/atom/Atom.hh"
+#include "classes/atom/Variable.hh"
 #include "visitors/ColoredPrinterVisitor.hh"
 #include "visitors/CopyVisitor.hh"
 #include "visitors/CounterVisitor.hh"
 #include "visitors/PrinterVisitor.hh"
+#include "visitors/TraceChangerVisitor.hh"
 #include "visitors/VarExtractVisitor.hh"
 
 #include <algorithm>
@@ -101,3 +103,7 @@ std::vector<std::pair<std::string, size_t>> getVars(expression::Proposition &p,
   return varext.get_vars();
 }
 
+void changeTrace(expression::Proposition &p, harm::Trace *newTrace) {
+  expression::TraceChangerVisitor tg(newTrace);
+  p.acceptVisitor(tg);
+}

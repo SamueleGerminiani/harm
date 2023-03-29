@@ -398,7 +398,21 @@ Trinary Template::evaluate(size_t time) {
   return !_antCachedValues[time] ||
          ((shift >= _max_length) ? Trinary::U : _conCachedValues[(shift)]);
 }
-Trinary Template::evaluateAntNoChache(size_t time) {
+Trinary Template::evaluateNoCache(size_t time) {
+  size_t shift = 0;
+  Trinary antRes;
+  if (_applyDynamicShift) {
+    antRes = evalAutomatonDyShift(time, _ant, shift);
+  } else {
+    antRes = evalAutomaton(time, _ant);
+  }
+
+  shift += _constShift;
+  return !antRes ||
+         ((shift >= _max_length) ? Trinary::U
+                                 : evalAutomaton(shift, _con));
+}
+Trinary Template::evaluateAntNoCache(size_t time) {
   return evalAutomaton(time, _ant);
 }
 Trinary Template::evaluate_ant(size_t time) {

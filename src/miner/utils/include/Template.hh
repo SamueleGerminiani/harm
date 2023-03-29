@@ -34,7 +34,7 @@
 #include "spot/twaalgos/translate.hh"
 
 namespace harm {
-    class EdgeProposition;
+class EdgeProposition;
 
 /*! \class Template
     \brief Class representing an assertion template, the template can be
@@ -76,7 +76,11 @@ public:
   /** \brief evaluates only the antecedent ignoring the chaded values
    * \param time trace instant on which to evaluate 
    */
-  Trinary evaluateAntNoChache(size_t time);
+  Trinary evaluateAntNoCache(size_t time);
+  /** \brief evaluates ignoring the chaded values
+   * \param time trace instant on which to evaluate 
+   */
+  Trinary evaluateNoCache(size_t time);
   /** \brief evaluates only the consequent of the assertion
    * \param time trace instant on which to evaluate 
    */
@@ -187,8 +191,6 @@ private:
    */
   void build();
 
-
-
   /** \brief evaluates the formula implemented by the custom automaton
    */
   Trinary evalAutomaton(size_t time, Automaton *root) const;
@@ -213,7 +215,6 @@ private:
    */
   std::string findCauseInProposition(Proposition *ep, size_t time, bool goal);
 
-
   /*! \structure Range
     \brief utility data structure for cuts and threads in the evaluation algorithm
 */
@@ -225,7 +226,6 @@ private:
     size_t _start;
     size_t _length;
   };
-
 
   /** \brief evaluation: 1. this function handles the update of cached values and the dynamic or non-dynamic shift case 
    * \param what specifies if the function has to update the cached values of ant/con/both/none
@@ -265,7 +265,6 @@ private:
                 const Range &threadsRange);
 
 public:
-
   /** \brief fill the contingency table with the cached values
    * \param ct is a pointer to a suitable matrix
    */
@@ -294,6 +293,9 @@ public:
 
   void subPropInAssertion(Proposition *original, Proposition *newProp);
 
+  void dontUseCachedProps() { _useCachedProps = 0; }
+
+  void changeTrace(Trace *newTrace);
 
 private:
   // printers
@@ -391,6 +393,8 @@ private:
 
   /// available threads to implement level1 parallelism
   size_t _availThreads = 1;
+
+  bool _useCachedProps = 1;
 
   friend DTAnd;
   friend DTNext;

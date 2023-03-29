@@ -37,11 +37,16 @@ Template::Template(Hstring &templateFormula, harm::Trace *trace,
 Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
+  _useCachedProps=original._useCachedProps;
   for (auto &s : _templateFormula) {
     //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template, two instances of the same template should not have overlapping memory
     if (s._pp != nullptr) {
       if (s._t == Hstring::Stype::Inst) {
-        s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
+        if (_useCachedProps) {
+          s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
+        } else {
+          s._pp = new Proposition *(copy(**s._pp));
+        }
       } else {
         s._pp = new Proposition *(*s._pp);
       }
@@ -761,9 +766,11 @@ std::string Template::findCauseInEdgeProposition(EdgeProposition *ep,
   if (dynamic_cast<EdgePlaceholder *>(ep) != nullptr) {
     if (expPlaceholders) {
       Proposition *p = *dynamic_cast<EdgePlaceholder *>(ep)->_toProp;
-      if (dynamic_cast<CachedProposition *>(p) != nullptr) {
+      if (dynamic_cast<CachedProposition *>(p) != nullptr ||
+          dynamic_cast<Proposition *>(p) != nullptr) {
         return findCauseInProposition(
-            dynamic_cast<CachedProposition *>(p)->get(), time, goal);
+            _useCachedProps ? dynamic_cast<CachedProposition *>(p)->get() : p,
+            time, goal);
       } else {
         return findCauseInProposition(p, time, goal);
       }
@@ -1105,6 +1112,18 @@ std::string Template::printAutomaton(Automaton *aut) {
     }
   }
   return ret;
+}
+
+void Template::changeTrace(Trace *newTrace) {
+  messageErrorIf(
+      _useCachedProps,
+      "Cannot change the trace in a template when using CachedPropositions");
+  _trace = newTrace;
+
+  for (auto &[str, pp] : _iToProp) {
+    Proposition *p = *pp;
+    ::changeTrace(*p, newTrace);
+  }
 }
 
 } // namespace harm

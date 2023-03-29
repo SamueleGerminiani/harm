@@ -2,6 +2,7 @@
 #include "ProgressBar.hpp"
 #include "Semaphore.hh"
 #include "evaluator.hh"
+#include "globals.hh"
 #include "message.hh"
 #include "utils.hh"
 #include <algorithm>
@@ -477,7 +478,7 @@ inline std::vector<std::pair<size_t, size_t>> getObjectives(
         &allGenes) {
   std::vector<std::pair<size_t, size_t>> objectives(pop.size());
 
-  size_t nThreads = 16;
+  size_t nThreads = clc::maxThreads;
   Semaphore maxThreads(nThreads);
   Semaphore completed(0);
   size_t toBeServed = 0;

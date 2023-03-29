@@ -19,6 +19,7 @@ SET(EXP_SRCS
     src/visitors/ExpVisitor.cc
     src/visitors/CopyVisitor.cc
     src/visitors/VarExtractVisitor.cc
+    src/visitors/TraceChangerVisitor.cc
     )
 
 list(APPEND EXP_SRCS src/visitors/ExpToZ3Visitor.cc)

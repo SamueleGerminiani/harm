@@ -6,6 +6,10 @@
 #include "VarType.hh"
 #include "classes/atom/CachedAllNumeric.hh"
 
+namespace harm {
+class Trace;
+}
+
 std::ostream &operator<<(std::ostream &os, expression::Proposition &p);
 std::string prop2String(expression::Proposition &p);
 std::string num2String(expression::NumericExpression &n);
@@ -23,3 +27,5 @@ size_t getNumVariables(const std::vector<expression::Proposition *> &props);
 size_t getRepetitions(const std::vector<expression::Proposition *> &props);
 std::vector<std::pair<std::string, size_t>> getVars(expression::Proposition &p,
                                                     bool keepIndex = false);
+
+void changeTrace(expression::Proposition &p, harm::Trace *newTrace);

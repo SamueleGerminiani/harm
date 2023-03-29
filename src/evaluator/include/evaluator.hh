@@ -53,13 +53,12 @@ void cluster(std::unordered_map<std::string, Diff> &tokenToDiff,
 
 
 void getDiffSR(std::unordered_map<std::string, Diff> &idToDiff,
-               std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions, bool enablePB = true);
+               std::vector<std::string> &ids, std::vector<std::pair<harm::Template *,std::vector<size_t>>> &assertions, bool enablePB = true);
 
 void getDiffBR(std::unordered_map<std::string, Diff> &csvIdToDiff,
                std::unordered_map<std::string, size_t> &idToSize,
                std::vector<std::string> &ids,
-               std::vector<harm::Template *> &assertions, bool enablePB = true);
+                std::vector<std::pair<harm::Template *,std::vector<size_t>>> &assertions, bool enablePB = true);
 
 std::vector<harm::Template *> parseAssertions(std::vector<std::string> assStrs,
                                               harm::Trace *trace, size_t start,

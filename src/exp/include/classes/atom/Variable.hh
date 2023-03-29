@@ -7,7 +7,6 @@
 namespace expression {
 
 // Forwards declaration
-class PeTraceChanger;
 
 /// @brief ExpressionVariable<ULogic> declaration.
 /// This class represents a Logic variable.
@@ -50,7 +49,7 @@ class LogicVariable : public Atom<ULogic> {
 
     std::string getName(){return _name;}
     // declare friend class to allow it access private variables
-    friend class PeTraceChanger;
+    friend class TraceChangerVisitor;
 
   private:
     // A pointer to variable's values
@@ -104,7 +103,7 @@ class NumericVariable : public Atom<Numeric> {
 
     std::string getName(){return _name;}
     // declare friend class to allow it access private variables
-    friend class PeTraceChanger;
+    friend class TraceChangerVisitor;
 
   private:
     // A pointer to variable's values
@@ -151,7 +150,7 @@ class BooleanVariable : public Atom<bool> {
 
 
     // declare friend class to allow it access private variables
-    friend class PeTraceChanger;
+    friend class TraceChangerVisitor;
 
   private:
     // A pointer to variable's values

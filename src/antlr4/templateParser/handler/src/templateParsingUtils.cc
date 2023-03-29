@@ -34,7 +34,13 @@ harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
     std::cout << formula << "\n";
   exit(0);
     */
-    return new harm::Template(templateFormula, trace, limits);
+    harm::Template *newTemp =
+        new harm::Template(templateFormula, trace, limits);
+    if (!useCache) {
+      newTemp->dontUseCachedProps();
+    }
+    return newTemp;
+
   } else if (language == "SVA") {
   } else if (language == "PSL") {
   } else {
