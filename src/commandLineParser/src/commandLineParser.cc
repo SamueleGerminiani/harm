@@ -50,9 +50,11 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
                   "do not populate assertions with values (saves memory)")(
         "interactive", "enable interactive assertion ranking")(
         "split-logic", "split bitvectors into boolean variabes")
-        ( "dont-print-ass", "do not print the mined assertions")(
-        "silent", "disable all outputs")("wsilent", "disable all warning")(
-        "isilent", "disable all info")("psilent", "disable all progress bars")(
+        ( "dont-print-ass", "do not print the mined assertions")
+        ("silent", "disable all outputs")("wsilent", "disable all warning")(
+        "isilent", "disable all info")
+        ("psilent", "disable all progress bars")
+        (
         "cls-alg", "type of clustering algorithm; <kmeans>, <kde> kernel density "
         "estimation, <hc> hierarchical (default is kmeans)",
         cxxopts::value<std::string>(), "<String>")("help", "Show options")(
@@ -165,15 +167,17 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
                 "The number of statements when yousing statement reduction",
                 cxxopts::value<size_t>(),
                 "<uint>")
-                              ("print-failing-ass", "")
                               ("recover-diff", "")
                               ("gen-rand", "")
                               ("pushp", "design you want to push", cxxopts::value<std::string>(), "<String>")
                               ("max-push-time", "max time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
                               ("min-push-time", "min time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
                               ("min-time", "min time to push the pareto frontier without the metric (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
-                              ("only-sim", "")
-                              ("plot-dominance", "")
+                              ("only-sim", "run only phase 2 of the nsga2")
+                              ("plot-dominance", "plot the pareto dominance over time when running nsga2")
+        ("silent", "disable all outputs")("wsilent", "disable all warning")(
+        "isilent", "disable all info")
+        ("psilent", "disable all progress bars")
                               ("help", "Show options");
 
     auto result = options.parse(argc, argv);

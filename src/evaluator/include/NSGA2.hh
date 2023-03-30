@@ -27,7 +27,7 @@ inline std::string
 serializeIndividual(const std::unordered_set<std::string> &individual) {
   std::set<std::string> sorted_individual(individual.begin(), individual.end());
   std::stringstream ss;
-  for (auto &token : sorted_individual) {
+  for (const auto &token : sorted_individual) {
     ss << token << ",";
   }
   return ss.str();
@@ -80,10 +80,12 @@ toDefineSR(const std::unordered_set<std::string> &individual) {
 
 inline std::pair<size_t, size_t> evalIndividual(
     const std::unordered_set<std::string> &individual,
-    const std::unordered_map<std::string, std::unordered_set<std::string>> &allGenes,
+    const std::unordered_map<std::string, std::unordered_set<std::string>>
+        &allGenes,
     size_t t_id = 0, bool switchEval = false) {
 
-  static std::unordered_map<std::string, std::pair<size_t, size_t>> cachedIndividual;
+  static std::unordered_map<std::string, std::pair<size_t, size_t>>
+      cachedIndividual;
   static std::mutex cacheGuard;
   static bool simulate = false;
 
@@ -95,15 +97,16 @@ inline std::pair<size_t, size_t> evalIndividual(
   }
 
   std::string si = serializeIndividual(individual);
-  if (cachedIndividual.count(si)) {
-    return cachedIndividual.at(si);
+
+  if (countGuard(cachedIndividual, si, cacheGuard)) {
+    return atGuard(cachedIndividual, si, cacheGuard);
   }
 
   if (!simulate) {
-    std::unordered_set<std::string> uniqueFeatures;
 
+    std::unordered_set<std::string> uniqueFeatures;
     for (const auto &gene : individual) {
-      for (auto &feature : allGenes.at(gene)) {
+      for (const auto &feature : allGenes.at(gene)) {
         uniqueFeatures.insert(feature);
       }
     }
@@ -111,9 +114,10 @@ inline std::pair<size_t, size_t> evalIndividual(
     auto ret = std::make_pair<size_t, size_t>(individual.size(),
                                               uniqueFeatures.size());
 
-    messageErrorIf(ret.first==0,"?");
+    messageErrorIf(ret.first == 0, "?");
+    std::string si = serializeIndividual(individual);
     cacheGuard.lock();
-    cachedIndividual[serializeIndividual(individual)] = ret;
+    cachedIndividual[si] = ret;
     cacheGuard.unlock();
 
     return ret;
@@ -127,36 +131,38 @@ inline std::pair<size_t, size_t> evalIndividual(
       std::string work = "work" + std::to_string(t_id);
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineBR(individual);
-      systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work +
-              "/\""
-              " +define+IN_PATH=\"" +
-              "../simulator/IO/in/" +
-              "\" -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+      systemCustom(
+          ("$MODELSIM_BIN/vlog -work " + work + " " + define +
+           " +define+OUT_PATH=\"" + work +
+           "/\""
+           " +define+IN_PATH=\"" +
+           "../simulator/IO/in/" +
+           "\" -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
+           (printOut ? "" : "> /dev/null"))
+              .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("python3 ../simulator/scripts/sobel_IO_to_jpeg.py " + work +
-              "/512x512sobel_out_nbits.txt  " + work + "/img.jpeg" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    "/512x512sobel_out_nbits.txt  " + work + "/img.jpeg" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("python3 -W ignore ../simulator/scripts/calc_SSIM_WP.py "
-              "../simulator/imgs/BR_cluster/golden.jpeg " +
-              work + "/img.jpeg " + work + "/out.txt" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    "../simulator/imgs/BR_cluster/golden.jpeg " +
+                    work + "/img.jpeg " + work + "/out.txt" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/out.txt");
       double ssim;
       inputFile >> ssim;
       inputFile.close();
       ssim = ssim < 0.f ? 0.f : ssim;
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(),
                                                 (1.f - ssim) * 10000);
       //debug
@@ -173,28 +179,28 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineSR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work +
-              "/\""
-              " +define+IN_PATH=\"" +
-              "../simulator/IO/in/" +
-              "\" -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work +
+                    "/\""
+                    " +define+IN_PATH=\"" +
+                    "../simulator/IO/in/" +
+                    "\" -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("python3 ../simulator/scripts/sobel_IO_to_jpeg.py " + work +
-              "/512x512sobel_out_nbits.txt  " + work + "/img.jpeg" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    "/512x512sobel_out_nbits.txt  " + work + "/img.jpeg" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("python3 -W ignore ../simulator/scripts/calc_SSIM_WP.py "
-              "../simulator/imgs/SR_cluster/golden.jpeg " +
-              work + "/img.jpeg " + work + "/out.txt" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    "../simulator/imgs/SR_cluster/golden.jpeg " +
+                    work + "/img.jpeg " + work + "/out.txt" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/out.txt");
       double ssim;
@@ -217,20 +223,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineBR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/theta/BR_cluster/golden.csv " +
-              work + "/output.csv \"2,3\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/theta/BR_cluster/golden.csv " +
+                    work + "/output.csv \"2,3\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -238,7 +244,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //    systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -253,20 +260,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineSR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/theta/SR_cluster/golden.csv " +
-              work + "/output.csv \"2,3\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/theta/SR_cluster/golden.csv " +
+                    work + "/output.csv \"2,3\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -274,7 +281,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //    systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -289,20 +297,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineBR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/filtered/BR_cluster/golden.csv " +
-              work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/filtered/BR_cluster/golden.csv " +
+                    work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -310,7 +318,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //    systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -325,20 +334,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineSR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/filtered/SR_cluster/golden.csv " +
-              work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/filtered/SR_cluster/golden.csv " +
+                    work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -346,7 +355,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -361,20 +371,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineBR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/sum/BR_cluster/golden.csv " +
-              work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/sum/BR_cluster/golden.csv " +
+                    work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -382,7 +392,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //    systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -398,20 +409,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineSR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/sum/SR_cluster/golden.csv " +
-              work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/sum/SR_cluster/golden.csv " +
+                    work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -419,7 +430,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -434,20 +446,20 @@ inline std::pair<size_t, size_t> evalIndividual(
       systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
       auto define = toDefineBR(individual);
       systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-              " +define+OUT_PATH=\"" + work + "/\"" +
-              " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    " +define+OUT_PATH=\"" + work + "/\"" +
+                    " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
       systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-              ".adder_tb -c -voptargs=\"+acc\" -do \"run "
-              "-all; quit\"" +
-              (printOut ? "" : "> /dev/null"))
-                 .c_str());
+                    ".adder_tb -c -voptargs=\"+acc\" -do \"run "
+                    "-all; quit\"" +
+                    (printOut ? "" : "> /dev/null"))
+                       .c_str());
 
       systemCustom(("./../simulator/scripts/getError/getError.x "
-              "../simulator/sum/BR_cluster/golden.csv " +
-              work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                 .c_str());
+                    "../simulator/sum/BR_cluster/golden.csv " +
+                    work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
+                       .c_str());
 
       std::ifstream inputFile(work + "/err.csv");
       double err;
@@ -455,7 +467,8 @@ inline std::pair<size_t, size_t> evalIndividual(
       inputFile.close();
       err = err < 0.f ? 0.f : err;
       //    systemCustom(("cat " + work + "/err.csv").c_str());
-      systemCustom(("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
+      systemCustom(
+          ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
       auto ret = std::make_pair<size_t, size_t>(individual.size(), err * 10000);
       //std::cout <<err<< "------------------->"<<ret.second << "\n";
       //    messageErrorIf(ret.first==0,"?");
@@ -478,12 +491,12 @@ inline std::vector<std::pair<size_t, size_t>> getObjectives(
         &allGenes) {
   std::vector<std::pair<size_t, size_t>> objectives(pop.size());
 
-  size_t nThreads = clc::maxThreads;
-  Semaphore maxThreads(nThreads);
+  Semaphore maxThreads(clc::maxThreads);
   Semaphore completed(0);
-  size_t toBeServed = 0;
+  //FIXME: unexplainable race condition
   progresscpp::ParallelProgressBar pb;
-  pb.addInstance(0, "Calculating objectives...", pop.size(), 70);
+  //  pb.addInstance(0, "Calculating objectives...", pop.size(), 70);
+  std::cout << "Calculating objectives..." << "\n";
 
   for (size_t toBeServed = 0; toBeServed < pop.size(); toBeServed++) {
 
@@ -492,15 +505,15 @@ inline std::vector<std::pair<size_t, size_t>> getObjectives(
     std::thread([&objectives, toBeServed, &maxThreads, &pop, &allGenes,
                  &completed, &pb]() {
       objectives[toBeServed] =
-          evalIndividual(pop[toBeServed], allGenes, toBeServed);
+          evalIndividual(pop.at(toBeServed), allGenes, toBeServed);
       maxThreads.addNotifyOnce(1);
       completed.addNotifyOnce(1);
-      pb.increment(0);
-      pb.display();
+      //    pb.increment(0);
+      //    pb.display();
     }).detach();
   }
   completed.wait(pop.size());
-  pb.done(0);
+  //pb.done(0);
 
   return objectives;
 }
@@ -534,7 +547,6 @@ inline std::vector<size_t> generateDominanceRank(
 
   return rank;
 }
-
 
 inline std::vector<std::vector<std::unordered_set<std::string>>> generateFronts(
     const std::vector<std::unordered_set<std::string>> &individuals,
@@ -1175,7 +1187,7 @@ void inline plotBeforeAfter(
       pipe,
       "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s', \
                   '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'dark-violet' title '%s'\n",
-      series2Title.c_str(),series1Title.c_str());
+      series2Title.c_str(), series1Title.c_str());
 
   for (const auto &p : data2) {
     fprintf(pipe, "%lu %f\n", p.first, p.second);
@@ -1423,10 +1435,11 @@ inline void genAndDumpRandomClusters(
       (pushing ? std::string("Error") : std::string("Damage")), "",
       "Before push", "After push", "Random", std::make_pair(0.f, maxObjs.first),
       std::make_pair(0.f, 1.f), 1,
-      "rank/" + clc::ve_technique + "_" + "bar.csv",
-      "rank/" + clc::ve_technique + "_bar.png");
+      clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "bar.csv",
+      clc::ve_dumpTo + "/" + clc::ve_technique + "_bar.png");
 
-  std::ofstream out("rank/" + clc::ve_technique + "_randCandidates.csv");
+  std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
+                    "_randCandidates.csv");
 
   std::sort(randomRepresentatives.begin(), randomRepresentatives.end(),
             [](std::unordered_set<std::string> &e1,
@@ -1557,7 +1570,6 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
                       std::make_pair(0.f, 1.f), 1);
     }
 
-    auto stop = std::chrono::steady_clock::now();
     auto duration = dirtyTimerSeconds("startIteration", 0);
 
     std::cout << "Iteration: " << i << "th\n";
@@ -1583,10 +1595,19 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
             front_plot_data, "Number of tokens", std::string("Damage"),
             "Dominance " + std::to_string(dominance * 100) + "%",
             std::make_pair(0.f, maxObjs.first), std::make_pair(0.f, 1.f), 1,
-            "rank/" + clc::ve_technique + "_" + "damage.cvs",
-            "rank/" + clc::ve_technique + "_damage.png");
+            clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "damage.cvs",
+            clc::ve_dumpTo + "/" + clc::ve_technique + "_damage.png");
 
         if (clc::ve_pushp) {
+            std::cout<<"######  #     #  #####  #     # ### #     #  #####\n";
+            std::cout<<"#     # #     # #     # #     #  #  ##    # #     #\n";
+            std::cout<<"#     # #     # #       #     #  #  # #   # #\n";
+            std::cout<<"######  #     #  #####  #######  #  #  #  # #  ####\n";
+            std::cout<<"#       #     #       # #     #  #  #   # # #     #\n";
+            std::cout<<"#       #     # #     # #     #  #  #    ## #     #\n";
+            std::cout<<"#        #####   #####  #     # ### #     #  #####\n";
+
+
           //dump frontier before push
           dirtyTimerSeconds("startPush", 1);
           pushing = 1;
@@ -1627,14 +1648,15 @@ nsga2(const std::unordered_map<std::string, std::unordered_set<std::string>>
             << "\n";
 
   //dump temporal statistics
-  fileAppendContent("rank/" + clc::ve_technique + "_" + "time.csv",
+  fileAppendContent(clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "time.csv",
                     std::to_string(secondsPhase1) + ";" +
                         std::to_string(secondsPhase2) + "\n");
   //dump dominance stat
-  fileDumpContent("rank/" + clc::ve_technique + "_" + "dominance.csv",
+  fileDumpContent(clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
+                      "dominance.csv",
                   "dominancePhase1;dominancePhase2;increment\n");
   fileAppendContent(
-      "rank/" + clc::ve_technique + "_" + "dominance.csv",
+      clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "dominance.csv",
       std::to_string(dominancePhase1) + ";" + std::to_string(dominancePhase2) +
           ";" + std::to_string(dominancePhase2 - dominancePhase1) + "\n");
 

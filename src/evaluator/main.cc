@@ -96,6 +96,7 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   std::unordered_map<std::string, size_t> tokenToSize;
   std::vector<std::string> tokens;
 
+  size_t numberOfTokens=0;
   if (clc::ve_technique == "br") {
     //Bit reduction
     csv::CSVReader reader(clc::ve_infoList);
@@ -103,18 +104,20 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
     while (reader.read_row(row)) {
       tokens.push_back(row[0].get());
       tokenToSize[row[0].get()] = std::stoul(row[1].get());
+      numberOfTokens+=tokenToSize.at(row[0].get());
     }
   } else if (clc::ve_technique == "sr") {
     //Statement reduction
     for (size_t i = 0; i < clc::ve_nStatements; i++) {
       tokens.push_back("s" + std::to_string(i));
+      numberOfTokens++;
     }
   }
-
-
+  std::cout << "Number of tokens: " << numberOfTokens<< "\n";
 
   //gather time units where ant is true on the golden trace
-  std::vector<std::pair<harm::Template *, std::vector<size_t>>> assertionsWithAntInstances;
+  std::vector<std::pair<harm::Template *, std::vector<size_t>>>
+      assertionsWithAntInstances;
   size_t totATCT = 0;
   for (auto &ass : assertions) {
     assertionsWithAntInstances.emplace_back(ass, std::vector<size_t>());
@@ -242,7 +245,8 @@ int main(int arg, char *argv[]) {
   //dump temporal statistics
   {
     secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
-    std::ofstream outfile("rank/" + clc::ve_technique + "_" + "time.csv");
+    std::ofstream outfile(clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
+                          "time.csv");
     outfile << "timeToEvaluate;timeClusterigP1;timeClusterigP2" << std::endl;
     outfile << secondsEvaluate << ";";
     outfile.close();
@@ -282,9 +286,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("info-list")) {
     clc::ve_infoList = result["info-list"].as<std::string>();
   }
-  if (result.count("print-failing-ass")) {
-    clc::ve_print_failing_ass = 1;
-  }
 
   if (result.count("recover-diff")) {
     clc::ve_recover_diff = 1;
@@ -307,14 +308,12 @@ void parseCommandLineArguments(int argc, char *args[]) {
 
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
-    std::cout << "Path: " << clc::ve_assPath << "\n";
   }
   if (result.count("cluster")) {
     clc::ve_cluster = std::stol(result["cluster"].as<std::string>());
     std::cout << "Clusters: " << clc::ve_cluster << "\n";
   }
   if (result.count("n-stm")) {
-    std::cout << "nStatements: " << result["n-stm"].as<size_t>() << "\n";
     clc::ve_nStatements = result["n-stm"].as<size_t>();
   }
   if (result.count("max-push-time")) {
@@ -328,33 +327,25 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("tech")) {
     clc::ve_technique = result["tech"].as<std::string>();
-    messageErrorIf(clc::ve_technique != "sr" && clc::ve_technique != "vbr" &&
-                       clc::ve_technique != "br",
+    messageErrorIf(clc::ve_technique != "sr" && clc::ve_technique != "br",
                    "Unknown technique");
-    std::cout << "Technique: " << clc::ve_technique << "\n";
   }
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
-    messageErrorIf(clc::ve_cls_type != "rand" && clc::ve_cls_type != "comb" &&
-                       clc::ve_cls_type != "nsga2" &&
-                       clc::ve_cls_type != "kmeans" &&
-                       clc::ve_cls_type != "nsga2pop",
+    messageErrorIf(clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans",
                    "Unknown clustering technique");
   }
   if (result.count("dump-to")) {
     clc::ve_dumpTo = result["dump-to"].as<std::string>();
-    std::cout << "Dump to path: " << clc::ve_dumpTo << "\n";
   }
 
   if (result.count("vcd")) {
     clc::parserType = "vcd";
     clc::ve_tracePath = result["vcd"].as<std::string>();
-    std::cout << "Trace path: " << clc::ve_tracePath << "\n";
   }
   if (result.count("csv")) {
     clc::parserType = "csv";
     clc::ve_tracePath = result["csv"].as<std::string>();
-    std::cout << "Trace path: " << clc::ve_tracePath << "\n";
   }
   if (result.count("cs")) {
     clc::ve_chunkSize = std::stoul(result["cs"].as<std::string>());
@@ -365,7 +356,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();
-    std::cout << "clk: " << clc::clk << "\n";
   }
 
   if (result.count("max-threads")) {
@@ -377,11 +367,31 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::maxThreads = nt;
   }
 
-  messageErrorIf(clc::ve_technique == "vbr" && !result.count("info-list"),
-                 "No info-list specified");
-  messageErrorIf(clc::ve_technique == "br" && !result.count("info-list"),
-                 "No info-list specified");
+  if (result.count("silent")) {
+    clc::silent = true;
+    // disable cout
+    std::cout.rdbuf(NULL);
+  }
+  if (result.count("isilent")) {
+    clc::isilent = true;
+  }
+  if (result.count("wsilent")) {
+    clc::wsilent = true;
+  }
+  if (result.count("psilent")) {
+    clc::psilent = true;
+  }
+
+  messageErrorIf(
+      clc::ve_technique == "br" && !result.count("info-list"),
+      "No info-list specified for the bit-width reduction technique");
   messageErrorIf(
       clc::ve_technique == "sr" && clc::ve_nStatements <= 0,
       "You must specify the number of statements for the sr technique");
+
+  std::cout << "Assertion file: " << clc::ve_assPath << "\n";
+  std::cout << "Dump to: " << clc::ve_dumpTo << "\n";
+  std::cout << "Golden trace: " << clc::ve_tracePath << "\n";
+  std::cout << "Faulty traces directory: " << clc::ve_ftPath << "\n";
+  std::cout << "Technique: " << clc::ve_technique << "\n";
 }

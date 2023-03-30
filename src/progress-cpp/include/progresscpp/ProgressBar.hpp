@@ -11,10 +11,17 @@
 #include <vector>
 
 namespace progresscpp {
+
+inline void jumpBack(size_t times) {
+  for (size_t i = 0; i < times; i++) {
+    std::cout << "\033[A";
+    std::cout << "\33[2K";
+  }
+}
+
 class ProgressBar {
 private:
   unsigned int ticks = 0;
-
   unsigned int total_ticks;
   unsigned int bar_width;
   const char complete_char = '=';
@@ -27,10 +34,6 @@ private:
   std::string _message = "";
 
 public:
-  ProgressBar(unsigned int total, unsigned int width, char complete,
-              char incomplete, const std::string &message)
-      : total_ticks{total}, bar_width{width}, complete_char{complete},
-        incomplete_char{incomplete}, _message(message) {}
 
   ProgressBar(unsigned int total, unsigned int width,
               const std::string &message)
@@ -43,20 +46,25 @@ public:
     _enableCounter = 1;
     _genericCounter = 0;
   }
+
   void disableCounter() {
     _enableCounter = 0;
     _genericCounter = 0;
   }
+
   void incrementCounter() { _genericCounter++; }
+
   void incrementCounter(size_t n) { _genericCounter += n; }
 
   void setMessage(const std::string &message) { _message = message; }
+
   std::string getMessage() {
     return _message +
            (_enableCounter ? " " + std::to_string(_genericCounter) : "");
   }
 
   bool isFinished() { return _finished; }
+
   void display() const {
     float progress = (float)ticks / total_ticks;
     size_t pos = (int)(bar_width * progress);
@@ -85,25 +93,26 @@ public:
   void done() { _finished = true; }
 };
 
-inline void jumpBack(size_t times) {
-  for (size_t i = 0; i < times; i++) {
-    std::cout << "\033[A";
-    std::cout << "\33[2K";
-  }
-}
+
 class ParallelProgressBar {
 public:
   virtual ~ParallelProgressBar() {}
   void addInstance(size_t id, const std::string &message, unsigned int total,
                    unsigned int width) {
     std::lock_guard<std::mutex> lock{_pbGuard};
+    //add the instance
     _instances.insert({{id, ProgressBar(total, width, message)}});
+
+    //print unless progress bars are disables
     if (!clc::psilent) {
       std::cout << _instances.at(id).getMessage() << "\n";
       _instances.at(id).display();
     }
+
+    //keep track of the printing order
     _order.push_back(id);
   }
+
   void increment(size_t id) {
     std::lock_guard<std::mutex> lock{_pbGuard};
     ++_instances.at(id);
@@ -112,40 +121,32 @@ public:
     std::lock_guard<std::mutex> lock{_pbGuard};
     _instances.at(id).increment(n);
   }
-  void print() {
-    if (clc::psilent) {
-      return;
-    }
-    jumpBack(_instances.size() * 2);
-
-    for (auto &id : _order) {
-      std::cout << _instances.at(id).getMessage() << "\n";
-      _instances.at(id).display();
-    }
-  }
   void display() {
     std::lock_guard<std::mutex> lock{_pbGuard};
+
+    //print unless with are going too fast according to _displatPrintDelay
     if ((size_t)std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - _prevDisplayTime)
             .count() > _displayPrintDelay) {
-      print();
+      printToOut();
       _prevDisplayTime = std::chrono::steady_clock::now();
     }
   }
   void done(size_t id) {
     std::lock_guard<std::mutex> lock{_pbGuard};
     _instances.at(id).done();
+    //move the completed instance to the top
     auto it2 = std::find(begin(_order), end(_order), id);
     size_t e2 = std::distance(_order.begin(), it2);
     std::swap(_order[e2], _order[0]);
-    print();
+    printToOut();
     _instances.erase(id);
     _order.erase(begin(_order));
   }
 
   void done() {
     std::lock_guard<std::mutex> lock{_pbGuard};
-    print();
+    printToOut();
 
     if (!clc::psilent) {
       std::cout << std::endl;
@@ -153,22 +154,53 @@ public:
     _order.clear();
     _instances.clear();
   }
-  void enableCounter(size_t id) { _instances.at(id).enableCounter(); }
-  void disableCounter(size_t id) { _instances.at(id).disableCounter(); }
-  void incrementCounter(size_t id) { _instances.at(id).incrementCounter(); }
-  void incrementCounter(size_t id, size_t n) {
-    _instances.at(id).incrementCounter(n);
-  }
+  //change the message in the progress bar
   void changeMessage(size_t id, const std::string &message) {
+    _pbGuard.lock();
     _instances.at(id).setMessage(message);
+    _pbGuard.unlock();
     display();
+  }
+  void enableCounter(size_t id) {
+    std::lock_guard<std::mutex> lock{_pbGuard};
+    _instances.at(id).enableCounter();
+  }
+  void disableCounter(size_t id) {
+    std::lock_guard<std::mutex> lock{_pbGuard};
+    _instances.at(id).disableCounter();
+  }
+  void incrementCounter(size_t id) {
+    std::lock_guard<std::mutex> lock{_pbGuard};
+    _instances.at(id).incrementCounter();
+  }
+  void incrementCounter(size_t id, size_t n) {
+    std::lock_guard<std::mutex> lock{_pbGuard};
+    _instances.at(id).incrementCounter(n);
   }
 
 private:
+  void printToOut() {
+    //print unless progress bars are disabled
+    if (clc::psilent) {
+      return;
+    }
+
+    //bring cout to the begining of the progress bar
+    jumpBack(_instances.size() * 2);
+
+    //print following the order
+    for (auto &id : _order) {
+      std::cout << _instances.at(id).getMessage() << std::endl;
+      _instances.at(id).display();
+    }
+
+  }
+
   std::unordered_map<size_t, ProgressBar> _instances;
   std::mutex _pbGuard;
   std::vector<size_t> _order;
   std::chrono::steady_clock::time_point _prevDisplayTime;
+  //print at most once every x milliseconds
   const size_t _displayPrintDelay = 100;
 };
 
