@@ -112,7 +112,11 @@ void ManualDefinition::mineContexts(Trace *trace,
       auto exp = getAttributeValue(templateTag, "exp", "");
       auto check = getAttributeValue(templateTag, "check", "0");
       auto dtLimitsStr =
-          getAttributeValue(templateTag, "dtLimits", "3W,3D,3A,!O,N,0.1E,R");
+          getAttributeValue(templateTag, "dtLimits", "3W,3D,3A,!O,N,-0.1E,R");
+      messageWarningIf(getAttributeValue(templateTag, "dtLimits", "") == "",
+                       "dtLimits is undefined in template '" + exp +
+                           "', using default "
+                           "'3W,3D,3A,!O,N,0.1E,R'");
       DTLimits dtLimits = hparser::parseLimits(dtLimitsStr);
       //  debug
       // std::cout << "maxDepth:" << dtLimits._maxDepth << "\n";

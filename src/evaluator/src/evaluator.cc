@@ -326,7 +326,8 @@ void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
     initialPop.push_back(std::unordered_set<std::string>({gene}));
   }
 
-  ret = nsga2(allGenes, 100000, clc::ve_nsga2_mi, initialPop);
+  NSGA2 nsga2;
+  ret = nsga2.run(allGenes, 100000, clc::ve_nsga2_mi, initialPop);
 
   std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                     std::string("_nsga2") + ".csv");

@@ -1,4 +1,5 @@
 #pragma once
+#include "message.hh"
 #include "rapidxml.hh"
 #include "rapidxml_utils.hh"
 #include <string>
