@@ -37,7 +37,7 @@ Template::Template(Hstring &templateFormula, harm::Trace *trace,
 Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
-  _useCachedProps=original._useCachedProps;
+  _useCachedProps = original._useCachedProps;
   for (auto &s : _templateFormula) {
     //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template, two instances of the same template should not have overlapping memory
     if (s._pp != nullptr) {
@@ -860,6 +860,7 @@ void Template::check() {
   evaluate(0);
   size_t ct[3][3] = {{0}};
   fillContingency(ct, 0);
+
   if (!assHoldsOnTrace(harm::Location::AntCon)) {
     printContingency();
     auto cause = findCauseOfFailure();
@@ -909,9 +910,13 @@ void Template::check() {
     std::cout << "OK!"
               << "\n";
   }
-  if (_max_length < 30) {
+
+  {
+    size_t maxPrintableTrace = 50;
+    messageWarningIf(_trace->getLength() > maxPrintableTrace,
+                     "Printing only the first 50 elements");
     std::cout << "Ant: ";
-    for (size_t i = 0; i < _max_length; i++) {
+    for (size_t i = 0; i < maxPrintableTrace; i++) {
       std::cout << evaluate_ant(i) << "(" << i << ")"
                 << " ";
     }
@@ -920,7 +925,7 @@ void Template::check() {
     std::cout << "\n";
     std::cout << "Sft: ";
     if (_applyDynamicShift || _constShift > 0) {
-      for (size_t i = 0; i < _max_length; i++) {
+      for (size_t i = 0; i < maxPrintableTrace; i++) {
         std::cout << (!_applyDynamicShift ? 0 : _dynamicShiftCachedValues[i]) +
                          _constShift
                   << "(" << i << ")"
@@ -931,14 +936,14 @@ void Template::check() {
     std::cout << "\n";
 
     std::cout << "Con: ";
-    for (size_t i = 0; i < _max_length; i++) {
+    for (size_t i = 0; i < maxPrintableTrace; i++) {
       std::cout << evaluate_con(i) << "(" << i << ")"
                 << " ";
     }
     std::cout << "\n";
     std::cout << "\n";
     std::cout << "Ass: ";
-    for (size_t i = 0; i < _max_length; i++) {
+    for (size_t i = 0; i < maxPrintableTrace; i++) {
       std::cout << evaluate(i) << "(" << i << ")"
                 << " ";
     }

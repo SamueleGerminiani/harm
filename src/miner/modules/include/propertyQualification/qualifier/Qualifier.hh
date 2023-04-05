@@ -50,7 +50,7 @@ private:
   /** \brief find fault coverage
    */
   void faultBasedQualification(std::vector<Assertion *> selected, Trace *trace);
-  void fbqUsingFaultyTraces(std::vector<Assertion *> &selected);
+  void fbqUsingFaultyTraces(std::vector<Assertion *> &selected, Trace *trace);
   /** \brief faults are inserted direclty on the trace
    */
   void fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,

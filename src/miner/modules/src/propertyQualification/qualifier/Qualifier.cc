@@ -2,6 +2,7 @@
 
 #include "Assertion.hh"
 #include "CSVtraceReader.hh"
+#include "DTLimits.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "VCDtraceReader.hh"
@@ -683,7 +684,25 @@ void Qualifier::fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,
   progressBar.done(0);
 #endif
 }
-void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
+void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
+                                     Trace *originalTrace) {
+
+  progresscpp::ParallelProgressBar progressBarPS;
+  progressBarPS.addInstance(0,
+                            "Preparing fault-based qualification...",
+                            selected.size(), 70);
+  progressBarPS.display();
+  std::vector<Template *> noCacheTemplates;
+  for (Assertion *a : selected) {
+    noCacheTemplates.push_back(hparser::parseTemplate(
+        a->_toString.first, originalTrace, "Spot", harm::DTLimits(), 0));
+    noCacheTemplates.back()->dontUseCachedProps();
+    progressBarPS.increment(0);
+    progressBarPS.display();
+  }
+
+  progressBarPS.done(0);
+
   //silence warnings and infos (to silence the traceReader)
   clc::isilent = 1;
   clc::wsilent = 1;
@@ -705,12 +724,13 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
                std::to_string(j + 1) + "])");
 #endif
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
-    for (size_t i = 0; i < selected.size(); i++) {
-      auto &a = selected[i];
+    for (size_t i = 0; i < noCacheTemplates.size(); i++) {
+      auto &a = noCacheTemplates[i];
       //new assertion with faulty trace
-      Template *fAss = hparser::parseTemplate(a->_toString.first, ft);
+      Template *fAss = new Template(*a);
+      fAss->changeTrace(ft);
       //exploit l1 parallelism
-      fAss->setL1Threads((l1Constants::MAX_THREADS + 1) / 2);
+      //      fAss->setL1Threads((l1Constants::MAX_THREADS + 1) / 2);
       if (!fAss->assHoldsOnTrace(Location::AntCon)) {
         // new fault covered
         _aToF[i].push_back(j);
@@ -718,7 +738,7 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
         if (!clc::findMinSubset) {
           //stop search for this fault if do not want the optimal covering set
 #if enPB
-          progressBar.increment(0, selected.size() - i);
+          progressBar.increment(0, noCacheTemplates.size() - i);
           progressBar.display();
 #endif
           delete fAss;
@@ -762,14 +782,17 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected) {
   //    }
   //  }
   //
+  for (Template *t : noCacheTemplates) {
+    delete t;
+  }
 }
 void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
                                         Trace *trace) {
-  if (selected.size() > 10000) {
-    messageWarning(
-        "keeping only the top 10000 assertions for fault-based qualification");
-    selected.erase(std::begin(selected) + 9999, std::end(selected));
-  }
+//  if (selected.size() > 10000) {
+//    messageWarning(
+//        "keeping only the top 10000 assertions for fault-based qualification");
+//    selected.erase(std::begin(selected) + 9999, std::end(selected));
+//  }
 
   bool mode = !clc::faultyTraceFiles.empty();
   size_t nFaultsftm = 0;
@@ -781,7 +804,7 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
   _fToVar.clear();
 
   if (mode) {
-    fbqUsingFaultyTraces(selected);
+    fbqUsingFaultyTraces(selected, trace);
     hs::nFaults = clc::faultyTraceFiles.size();
   } else {
     fbqUsingFaultOnTraceMode(selected, trace, nFaultsftm);
