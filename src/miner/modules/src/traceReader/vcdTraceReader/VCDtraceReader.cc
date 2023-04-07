@@ -6,6 +6,7 @@
 #include "globals.hh"
 #include "message.hh"
 #include "minerUtils.hh"
+#include "misc.hh"
 
 #include <bitset>
 #include <cstdlib>
@@ -175,9 +176,9 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
 
   //hack to remove unknown scopes: they make the vcd parser fail
 #ifdef __linux__
-  system(("sed -i '/$scope unknown/d' " + file).c_str());
+  systemCustom(("sed -i '/$scope unknown/d' " + file).c_str());
 #elif __APPLE__
-  system(("sed -i '' '/$scope unknown/d' " + file).c_str());
+  systemCustom(("sed -i '' '/$scope unknown/d' " + file).c_str());
 #endif
 
   //external library

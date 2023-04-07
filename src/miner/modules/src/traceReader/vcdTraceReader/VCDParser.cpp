@@ -723,11 +723,11 @@ int parser::parse() {
         case 30:
 #line 186 "./src/VCDParser.ypp" // lalr1.cc:859
         {
-          current_time = yystack_[0].value.as<int>();
+          current_time = yystack_[0].value.as<size_t>();
           if (current_time > driver.end_time)
             YYACCEPT;
           if (current_time > driver.start_time)
-            driver.fh->add_timestamp(yystack_[0].value.as<int>());
+            driver.fh->add_timestamp(yystack_[0].value.as<size_t>());
         }
 #line 762 "./build/VCDParser.cpp" // lalr1.cc:859
         break;

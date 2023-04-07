@@ -17,3 +17,13 @@ inline int **copy_matrix(int **mat, int size1, int size2) {
   }
   return res;
 }
+void inline systemCustom(std::string command) {
+  int status = system(command.c_str());
+  if (status < 0) {
+    std::cout << "System error: " << '\n';
+  } else {
+    if (!WIFEXITED(status)) {
+      std::cout << "Program exited abnormaly\n";
+    }
+  }
+}
