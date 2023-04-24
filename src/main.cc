@@ -129,6 +129,16 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::maxAss = result["max-ass"].as<size_t>();
   }
 
+  if (result.count("sample-by-con")) {
+    messageErrorIf(!result.count("max-ass"),
+                   "'sample-by-con' must be used with 'max-ass'");
+    clc::sampleByCon = 1;
+  }
+
+  if (result.count("dump-vac-ass")) {
+    clc::dumpVacAss = result["dump-vac-ass"].as<std::string>();
+  }
+
   if (result.count("max-threads")) {
     size_t nt = result["max-threads"].as<size_t>();
     messageWarningIf(nt > std::thread::hardware_concurrency(),
@@ -229,6 +239,11 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(!std::filesystem::is_directory(clc::dumpPath),
                    "Can not find directory '" + clc::dumpPath + "'");
   }
+  if (result.count("include-ass")) {
+    clc::includeAss = result["include-ass"].as<std::string>();
+    messageErrorIf(!std::filesystem::exists(clc::includeAss),
+                   "Can not find file '" + clc::includeAss + "'");
+  }
   if (result.count("interactive")) {
     clc::intMode = true;
   }
@@ -285,7 +300,6 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
           << "\n";
     }
   }
-
 
   // c
   for (auto &dec : trace->getDeclarations()) {

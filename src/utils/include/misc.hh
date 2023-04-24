@@ -1,6 +1,8 @@
 #pragma once
 #include <ostream>
+#include <iostream>
 #include <string>
+
 template <typename T>
 inline std::string to_string_with_precision(const T a_value, const int n = 6) {
   std::ostringstream out;
@@ -26,4 +28,30 @@ void inline systemCustom(std::string command) {
       std::cout << "Program exited abnormaly\n";
     }
   }
+}
+
+inline std::string selectStringAfter(std::string str, std::string pattern) {
+  // Find the position of the pattern in the string
+  size_t pos = str.find(pattern);
+
+  // If the pattern is not found, return an empty string
+  if (pos == std::string::npos) {
+    return "";
+  }
+
+  // Return the substring after the pattern
+  return str.substr(pos + pattern.length());
+}
+
+inline bool patternExists(std::string str, std::string pattern) {
+    // Find the position of the pattern in the string
+    size_t pos = str.find(pattern);
+
+    // If the pattern is found, return true
+    if (pos != std::string::npos) {
+        return true;
+    }
+
+    // If the pattern is not found, return false
+    return false;
 }

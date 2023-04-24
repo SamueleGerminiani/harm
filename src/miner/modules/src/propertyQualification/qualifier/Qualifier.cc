@@ -487,7 +487,7 @@ void Qualifier::filterAssertionsWithMetrics(
                              [](Assertion *a) { return a == nullptr; }),
                    assertions.end());
 
-  messageInfo("Filtered " + std::to_string(filtered) + " assertions");
+  messageInfo("Metrics filtered " + std::to_string(filtered) + " assertions");
 }
 
 void Qualifier::printAssertions(Context &context,
@@ -688,8 +688,7 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
                                      Trace *originalTrace) {
 
   progresscpp::ParallelProgressBar progressBarPS;
-  progressBarPS.addInstance(0,
-                            "Preparing fault-based qualification...",
+  progressBarPS.addInstance(0, "Preparing fault-based qualification...",
                             selected.size(), 70);
   progressBarPS.display();
   std::vector<Template *> noCacheTemplates;
@@ -719,7 +718,8 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
     progressBar.changeMessage(
         0, "Fault coverage " +
                (std::to_string(_fToA.size()) + "/" +
-                std::to_string(clc::faultyTraceFiles.size())) +
+                std::to_string(clc::faultyTraceFiles.size())) + " ("+ to_string_with_precision((_fToA.size() / (double)j) * 100.f,2) +
+              "%)" +
                " (Elaborating " + clc::faultyTraceFiles[j] + " [" +
                std::to_string(j + 1) + "])");
 #endif
@@ -786,13 +786,47 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
     delete t;
   }
 }
+std::vector<Assertion *>
+sampleAssertionsByConDiversity(std::vector<Assertion *> selected, size_t n) {
+
+  std::vector<Assertion *> sampled;
+  //we want to keep the relative order of assertions
+  std::map<size_t, std::vector<Assertion *>> conToAss;
+  std::unordered_map<std::string, size_t> hashToId;
+  size_t id = 0;
+  for (auto a : selected) {
+    std::string impl = patternExists(a->_toString.first, "->") ? "->" : "=>";
+    std::string hash = selectStringAfter(a->_toString.first, impl);
+    if (!hashToId.count(hash)) {
+      hashToId[hash] = id++;
+    }
+    conToAss[hashToId.at(hash)].push_back(a);
+  }
+
+  size_t level = 0;
+  progresscpp::ParallelProgressBar pb;
+  pb.addInstance(0, "Sampling by con...", n, 70);
+  while (1) {
+    for (auto &[con, ass] : conToAss) {
+      if (ass.size() > level) {
+        sampled.push_back(ass[level]);
+        n--;
+        pb.increment(0);
+        pb.display();
+        if (n == 0) {
+          goto end;
+        }
+      }
+    }
+    level++;
+  }
+end:;
+  pb.done();
+  return sampled;
+}
+
 void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
                                         Trace *trace) {
-//  if (selected.size() > 10000) {
-//    messageWarning(
-//        "keeping only the top 10000 assertions for fault-based qualification");
-//    selected.erase(std::begin(selected) + 9999, std::end(selected));
-//  }
 
   bool mode = !clc::faultyTraceFiles.empty();
   size_t nFaultsftm = 0;
@@ -909,7 +943,7 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
     return std::vector<Assertion *>();
   }
   std::vector<Assertion *> assertions;
-  messageInfo("Found " + std::to_string(context._assertions.size()) +
+  messageInfo("Qualifying " + std::to_string(context._assertions.size()) +
               " assertions");
   if (context._assertions.size() > 10000) {
     assertions = extractUniqueAssertionsFast(context._assertions);
@@ -927,8 +961,11 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
   if (assertions.size() > clc::maxAss) {
     messageInfo("Keeping only the top " + std::to_string(clc::maxAss) +
                 " assertions");
-
-    assertions.erase(assertions.begin() + clc::maxAss, assertions.end());
+    if (clc::sampleByCon) {
+      assertions = sampleAssertionsByConDiversity(assertions, clc::maxAss);
+    } else {
+      assertions.erase(assertions.begin() + clc::maxAss, assertions.end());
+    }
   }
 
   return assertions;

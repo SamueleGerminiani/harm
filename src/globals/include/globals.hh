@@ -20,6 +20,7 @@ namespace clc {
 extern std::vector<std::string> traceFiles;
 extern std::vector<std::string> faultyTraceFiles;
 extern std::string ftmFile;
+extern std::string includeAss;
 extern std::string configFile;
 extern std::string parserType;
 extern std::string clk;
@@ -27,6 +28,7 @@ extern std::string outputLang;
 extern bool genTemp;
 extern size_t maxThreads;
 extern bool dumpAssToFile;
+extern std::string dumpVacAss;
 extern size_t maxAss;
 extern std::string dumpPath;
 extern bool findMinSubset;
@@ -43,6 +45,7 @@ extern bool psilent;
 extern std::string clsAlg;
 extern bool dumpStat;
 extern bool dontNormalize;
+extern bool sampleByCon;
 } // namespace clc
 
 // harm stat

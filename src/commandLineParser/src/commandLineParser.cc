@@ -18,10 +18,9 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
                        "for recursive add)",
                        cxxopts::value<std::string>(), "<String>")(
         "csv", ".csv trace file", cxxopts::value<std::string>(),
-        "<FILE>")("csv-dir", "path to a directory containing .csv traces",
-                  cxxopts::value<std::string>(),
-                  "<DIRECTORY>")("conf", ".xml configuration file",
-                                 cxxopts::value<std::string>(), "<FILE>")(
+        "<FILE>")
+                           ("csv-dir", "path to a directory containing .csv traces", cxxopts::value<std::string>(), "<DIRECTORY>")
+                           ("conf", ".xml configuration file", cxxopts::value<std::string>(), "<FILE>")(
         "clk", "clk signal", cxxopts::value<std::string>(), "<String>")(
         "sva", " output assertions in SystemVerilog Assertion format")(
         "fd", "path to the directory containing faulty traces",
@@ -43,16 +42,17 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "dump", "dump assertions to file")("dump-stat",
                                            "dump statistics to file")(
         "dump-to", "dump assertions to file with given path",
-        cxxopts::value<std::string>(), "<DIRECTORY>")(
-        "max-ass", "maximum number of assertions to keep after the ranking",
-        cxxopts::value<size_t>(),
-        "<uint>")("dont-fill-ass",
+        cxxopts::value<std::string>(), "<DIRECTORY>")( "max-ass", "maximum number of assertions to keep after the ranking", cxxopts::value<size_t>(), "<uint>")
+        ("dump-vac-ass", "dump vacuous assertions to file", cxxopts::value<std::string>(), "<FILE>")
+        ("include-ass", "create a new context 'external' with the assertions contained in the provided FILE (one assertion per line)", cxxopts::value<std::string>(), "<FILE>")
+        ("sample-by-con", "if the number of mined assertions exceeds the value provided by max-ass, assertions are selected favouring consequent diversity")
+                                               ("dont-fill-ass",
                   "do not populate assertions with values (saves memory)")(
         "interactive", "enable interactive assertion ranking")(
         "split-logic", "split bitvectors into boolean variabes")
         ( "dont-print-ass", "do not print the mined assertions")
-        ("silent", "disable all outputs")("wsilent", "disable all warning")(
-        "isilent", "disable all info")
+        ("silent", "disable all outputs")("wsilent", "disable all warnings")(
+        "isilent", "disable all infos")
         ("psilent", "disable all progress bars")
         (
         "cls-alg", "type of clustering algorithm; <kmeans>, <kde> kernel density "

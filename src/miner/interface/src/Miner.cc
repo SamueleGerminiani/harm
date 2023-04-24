@@ -45,8 +45,8 @@ void Miner::run() {
   _config.contextMiner->mineContexts(trace, contexts);
 
   for (Context *context : contexts) {
-    messageErrorIf(context->_templates.empty(),
-                   "No templates or assertions defined!");
+    messageWarningIf(context->_templates.empty(),
+                   "No templates defined in context '"+context->_name+"'");
 
     // handle "check" templates
     std::vector<Template *> toCheck;

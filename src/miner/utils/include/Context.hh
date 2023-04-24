@@ -23,8 +23,8 @@ public:
   Context();
   ~Context();
 
-  Context(std::string &name, const std::string &language = "Spot");
-  Context(std::string &name, std::vector<std::pair<expression::Proposition *, Location>> &props, std::vector<Template *> &templates, const std::string &language = "Spot");
+  Context(const std::string &name, const std::string &language = "Spot");
+  Context(const std::string &name, std::vector<std::pair<expression::Proposition *, Location>> &props, std::vector<Template *> &templates, const std::string &language = "Spot");
 
   std::string _name;
   std::vector<std::pair<expression::Proposition *, Location>> _props;

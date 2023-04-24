@@ -189,7 +189,7 @@ namespace VCDParser {
     T&
     as ()
     {
-      YYASSERT (*yytypeid_ == typeid (T));
+      //YYASSERT (*yytypeid_ == typeid (T));
       YYASSERT (sizeof (T) <= S);
       return *yyas_<T> ();
     }

@@ -29,10 +29,9 @@ TLMiner::TLMiner() : PropertyMiner() {}
 TLMiner::~TLMiner() {}
 
 void TLMiner::mineProperties(Context &context, Trace *trace) {
-#if dumpVacAss
-  std::ofstream vacFile("vac.txt", ios_base::out);
-  vacFile.close();
-#endif
+
+  _vacFile.open(clc::dumpVacAss, ios_base::out);
+  _vacFile.close();
 
   _traceLength = trace->getLength();
   messageInfo("CONTEXT: " + context._name);
@@ -75,6 +74,8 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
 
   //clear: necessary if TLMiner is reused (multiple contexts)
   clear();
+
+  messageWarningIf(_nVacAss>0,"Number of vacuous assertions found for context '"+context._name+"': "+std::to_string(_nVacAss));
 }
 
 void TLMiner::l3Handler(Context &context, size_t nThread) {
@@ -131,9 +132,8 @@ void TLMiner::l3Handler(Context &context, size_t nThread) {
     }
   }
 
-#if enPB
   _progressBar.done();
-#endif
+
   assert(l3avThreads.getAvailable() == nThread - 1);
 }
 void TLMiner::l2Handler(
@@ -158,11 +158,10 @@ void TLMiner::l2Handler(
   {
     std::lock_guard<std::mutex> lock{spotStupidity};
     t->genPermutations(_propsAnt, _propsCon, _propsAntCon);
-#if enPB
+
     _progressBar.addInstance(l3InstId, t->getColoredTemplate(),
                              t->nPermsGenerated(), 70);
     _progressBar.enableCounter(l3InstId);
-#endif
   }
 
   while (1) {
@@ -224,10 +223,10 @@ void TLMiner::l2Handler(
       break;
     }
     // Debug
-    //    #if enPB
+    //
     //          _progressBar.changeMessage(
     //              l3InstId, std::to_string(l3InstToNumThreads.at(l3InstId)));
-    //    #endif
+    //
   }
 
   for (size_t i = 0; i < templs.size(); i++) {
@@ -235,10 +234,10 @@ void TLMiner::l2Handler(
   }
 
   //debug
-  //#if enPB
+  //
   //    _progressBar.changeMessage(l3InstId, std::to_string(0));
   _progressBar.done(l3InstId);
-  //#endif
+  //
 
   std::lock_guard<std::mutex> lock{l3InstancesGuard};
   size_t nThreads = l3Instances.at(l3InstId)->getAvailable() + 1;
@@ -265,10 +264,10 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     }
 
     if (t->isVacuous(harm::Location::AntCon)) {
-#if enPB
+
       _progressBar.increment(l3InstId);
       _progressBar.display();
-#endif
+
       goto end;
     }
 
@@ -324,17 +323,16 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         assp.push_back(ass);
         messageErrorIf(!t->assHoldsOnTrace(harm::Location::None),
                        "dt assertion is false: " + t->getColoredAssertion());
+      } else {
+        _vacLock.lock();
+        _nVacAss++;
+        if (clc::dumpVacAss != "") {
+          std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
+          _vacFile << t->getDT()->prettyPrint(0).first + "\n";
+          _vacFile.close();
+        }
+        _vacLock.unlock();
       }
-#if dumpVacAss
-
-      else {
-        vacLock.lock();
-        std::ofstream vacFile("vac.txt", ios_base::app);
-        vacFile << t->getDT()->prettyPrint(0).first + "\n";
-        vacFile.close();
-        vacLock.unlock();
-      }
-#endif
       // clear the template of the current dt operands
       t->getDT()->removeItems();
       if (t->getDT()->isMultiDimensional()) {
@@ -372,17 +370,16 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         ass->_pRepetitions = getRepetitions(loadedProps);
         ass->fillValuesOffset(t);
         assp.push_back(ass);
+      } else {
+        _vacLock.lock();
+        _nVacAss++;
+        if (clc::dumpVacAss != "") {
+          std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
+          _vacFile << t->getDT()->prettyPrint(1).first + "\n";
+          _vacFile.close();
+        }
+        _vacLock.unlock();
       }
-#if dumpVacAss
-
-      else {
-        vacLock.lock();
-        std::ofstream vacFile("vac.txt", ios_base::app);
-        vacFile << t->getDT()->prettyPrint(1).first + "\n";
-        vacFile.close();
-        vacLock.unlock();
-      }
-#endif
 
       t->getDT()->removeItems();
       if (t->getDT()->isMultiDimensional()) {
@@ -393,10 +390,8 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       }
     }
 
-#if enPB
     _progressBar.increment(l3InstId);
     _progressBar.display();
-#endif
 
     //deallocate memory for negated candidate variables
     for (size_t i = 0; i < _propsDT.size(); i++) {
@@ -429,22 +424,21 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       assp.push_back(ass);
       messageErrorIf(ass->_ct[0][0] == 0, "!ATCT");
       messageErrorIf(ass->_ct[0][1] > 0, "ATCF");
-    }
-#if dumpVacAss
-    else {
-      if (t->isVacuous(harm::Location::AntCon)) {
-        vacLock.lock();
-        std::ofstream vacFile("vac.txt", ios_base::app);
-        vacFile << t->getAssertion() + "\n";
-        vacFile.close();
-        vacLock.unlock();
+
+    } else {
+      _vacLock.lock();
+      _nVacAss++;
+      if (clc::dumpVacAss != "") {
+        std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
+        _vacFile << t->getAssertion() + "\n";
+        _vacFile.close();
       }
+      _vacLock.unlock();
     }
-#endif
-#if enPB
+
     _progressBar.increment(l3InstId);
     _progressBar.display();
-#endif
+
   } // else
 
 end:;
@@ -453,9 +447,8 @@ end:;
     std::lock_guard<std::mutex> lock{_collectedAssertionsGuard};
     _collectedAssertions.push_back(assp);
   }
-#if enPB
+
   _progressBar.incrementCounter(l3InstId, assp.size());
-#endif
 
   //delete this instance and notify the upper level
   std::lock_guard<std::mutex> lock{l2InstancesGuard};

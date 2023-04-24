@@ -29,12 +29,12 @@ Context::~Context() {
   }
 }
 
-Context::Context(std::string &name, const std::string &language)
+Context::Context(const std::string &name, const std::string &language)
     : _name(name), _language(language) {
   // not todo
 }
 Context::Context(
-    std::string &name,
+    const std::string &name,
     std::vector<std::pair<expression::Proposition *, Location>> &props,
     std::vector<Template *> &templates, const std::string &language)
     : _name(name), _props(props), _templates(templates), _language(language) {

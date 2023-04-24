@@ -27,6 +27,7 @@ extern std::string outputLang;
 extern bool genTemp;
 extern size_t maxThreads;
 extern bool dumpAssToFile;
+extern bool dumpVacAss;
 extern bool noData;
 extern std::string dumpPath;
 extern bool findMinSubset;

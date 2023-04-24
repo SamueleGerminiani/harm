@@ -1,10 +1,12 @@
 #include "ManualDefinition.hh"
+#include "Assertion.hh"
 #include "Context.hh"
 #include "ProgressBar.hpp"
 #include "Template.hh"
 #include "Trace.hh"
 #include "classes/atom/Atom.hh"
 #include "dtLimitsParser.hh"
+#include "globals.hh"
 #include "metricParser.hh"
 #include "metricParsingUtils.hh"
 #include "minerUtils.hh"
@@ -19,13 +21,55 @@
 #include <utility>
 #include <vector>
 
-#define enPB 1
-
 namespace harm {
 
 using namespace rapidxml;
 ManualDefinition::ManualDefinition(std::string &configFile)
     : ContextMiner(configFile) {}
+
+void addAssertionsFromFile(std::string assPath, Trace *trace, Context *c) {
+
+  std::fstream ass(assPath);
+  std::string line = "";
+  std::vector<std::string> assStrs;
+  while (std::getline(ass, line)) {
+    assStrs.push_back(line);
+  }
+
+  messageInfo("Number of external assertions: " +
+              std::to_string(assStrs.size()) + "\n");
+
+  std::vector<Template *> templs;
+  progresscpp::ParallelProgressBar pb;
+  pb.addInstance(0, "Parsing assertions from file...", assStrs.size(), 70);
+
+  for (size_t i = 0; i < assStrs.size(); i++) {
+    Template *ass =
+        hparser::parseTemplate(assStrs[i], trace, "Spot", DTLimits(), 0);
+    // parallelize eval function with 2 threads
+    ass->setL1Threads(2);
+    // save
+    templs.push_back(ass);
+
+    pb.increment(0);
+    pb.display();
+  }
+  pb.done(0);
+
+  for (Template *t : templs) {
+    //create an assertion by making a snapshot of a template
+    Assertion *ass = new Assertion();
+    t->fillContingency(ass->_ct, 0);
+    ass->_toString =
+        std::make_pair(t->getAssertion(), t->getColoredAssertion());
+    auto loadedProps = t->getLoadedPropositions();
+    ass->_complexity = getNumVariables(loadedProps);
+    ass->_pRepetitions = getRepetitions(loadedProps);
+    ass->fillValues(t);
+    c->_assertions.push_back(ass);
+  }
+}
+
 ///used to parse the 'op' attribute in a numeric tag
 std::unordered_set<ClsOp> parseClsOp(std::string op) {
   std::unordered_set<ClsOp> ret;
@@ -113,9 +157,9 @@ void ManualDefinition::mineContexts(Trace *trace,
       auto check = getAttributeValue(templateTag, "check", "0");
       auto dtLimitsStr =
           getAttributeValue(templateTag, "dtLimits", "3W,3D,3A,!O,N,-0.1E,R");
-//      messageWarningIf(getAttributeValue(templateTag, "dtLimits", "") == "", "dtLimits is undefined in template '" + exp +
-//                           "', using default "
-//                           "'3W,3D,3A,!O,N,0.1E,R'");
+      //      messageWarningIf(getAttributeValue(templateTag, "dtLimits", "") == "", "dtLimits is undefined in template '" + exp +
+      //                           "', using default "
+      //                           "'3W,3D,3A,!O,N,0.1E,R'");
       DTLimits dtLimits = hparser::parseLimits(dtLimitsStr);
       //  debug
       // std::cout << "maxDepth:" << dtLimits._maxDepth << "\n";
@@ -180,11 +224,9 @@ void ManualDefinition::mineContexts(Trace *trace,
     getNodesFromName(contextTag, "numeric", numsTag);
 
     if (!numsTag.empty()) {
-#if enPB
       progresscpp::ParallelProgressBar pb;
       pb.addInstance(0, "Elaborating numerics (" + contextName + ")",
                      numsTag.size(), 70);
-#endif
       for (auto &numTag : numsTag) {
         CachedAllNumeric *nn;
         auto exp = getAttributeValue(numTag, "exp", "");
@@ -241,17 +283,27 @@ void ManualDefinition::mineContexts(Trace *trace,
         //delete nn if it is no longer used
         if (std::find(begin(locs), end(locs), Location::DecTree) == locs.end())
           delete nn;
-#if enPB
         pb.increment(0);
         pb.display();
-#endif
       }
-#if enPB
       pb.done(0);
-#endif
     }
 
     contexts.push_back(context);
+  }
+
+  if (clc::includeAss != "") {
+    auto pc = std::find_if(begin(contexts), end(contexts),
+                           [](Context *c) { return c->_name == "external"; });
+    Context *external_context;
+    if (pc == end(contexts)) {
+      external_context = new Context("external");
+      contexts.push_back(external_context);
+    } else {
+      messageInfo("Inserting external assertions into the 'external' context");
+      external_context = *pc;
+    }
+    addAssertionsFromFile(clc::includeAss, trace, external_context);
   }
 }
 

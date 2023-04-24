@@ -410,6 +410,7 @@ std::vector<Proposition *> DTNextAnd::unpack(std::vector<Proposition *> &pack) {
 
 std::pair<std::string, std::string> DTNextAnd::prettyPrint(bool offset) {
 
+
   std::vector<Hstring> dtOperators =
       _formulas[_currDepth].getAnt().getDTOperands();
 
@@ -422,7 +423,10 @@ std::pair<std::string, std::string> DTNextAnd::prettyPrint(bool offset) {
   size_t shift = 0;
   for (size_t i = 1; i < dtOperators.size() - 1; i++) {
     Hstring &dto = dtOperators[i];
-    if (!dynamic_cast<PropositionAnd *>(*dto._pp)->empty()) {
+    if (!dynamic_cast<PropositionAnd *>(*dto._pp)->empty() &&
+        dynamic_cast<BooleanConstant *>(
+            dynamic_cast<PropositionAnd *>(*dto._pp)->getItems()[0]) ==
+            nullptr) {
       //shifted operand
       dto._offset += shift;
       reducedOperands.emplace_back(dto);
@@ -460,6 +464,7 @@ std::pair<std::string, std::string> DTNextAnd::prettyPrint(bool offset) {
   //compose the reduced template
   auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + reducedTemplateAnt +
                          imp + con + Hstring(")", Hstring::Stype::G);
+
 
   return std::make_pair(reducedTemplate.toString(1),
                         reducedTemplate.toColoredString(1));

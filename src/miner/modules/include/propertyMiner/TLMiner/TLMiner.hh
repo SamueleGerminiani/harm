@@ -10,8 +10,8 @@
 #include <set>
 #include <unordered_set>
 #include <vector>
+#include <fstream>
 
-#define dumpVacAss 0
 #define enPB 1
 using namespace std;
 
@@ -62,9 +62,9 @@ private:
   std::mutex _collectedAssertionsGuard;
   progresscpp::ParallelProgressBar _progressBar;
   //debug
-#if dumpVacAss
-  std::mutex vacLock;
-#endif
+  std::mutex _vacLock;
+  std::ofstream _vacFile;
+  size_t _nVacAss=0;
   };
 
 } // namespace harm

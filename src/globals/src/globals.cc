@@ -16,6 +16,7 @@ namespace clc {
 std::vector<std::string> traceFiles;
 std::vector<std::string> faultyTraceFiles;
 std::string ftmFile = "";
+std::string includeAss="";
 std::string configFile = "";
 std::string parserType = "";
 std::string clk = "";
@@ -24,6 +25,7 @@ bool genTemp;
 size_t maxThreads = std::thread::hardware_concurrency();
 bool findMinSubset = false;
 bool dumpAssToFile = false;
+std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 std::string dumpPath = "";
 bool intMode = false;
@@ -39,6 +41,7 @@ bool psilent = false;
 std::string clsAlg = "kmeans";
 bool dumpStat = false;
 bool dontNormalize = false;
+bool sampleByCon = false;
 } // namespace clc
 
 // harm stat

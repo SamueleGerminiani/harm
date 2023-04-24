@@ -1153,7 +1153,6 @@ private:
 
     std::vector<std::vector<bool>> grid(gridX, std::vector<bool>(gridY, false));
 
-    // Mark all the dominated cells as true
     for (size_t i = 0; i < points.size(); i++) {
       size_t x = points[i].first;
       size_t y = points[i].second / divider;
