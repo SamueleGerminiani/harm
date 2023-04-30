@@ -250,15 +250,19 @@ The template expression has an additional parameter "check", if it is set to "1"
 * \-\-dont-normalize : discard assertions using the absolute value (not normalized) of filterig metrics 
 * \-\-isilent : disable all infos
 * \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
+* \-\-dump-vac-ass <FILE> : dump vacouse assertions to file
+* \-\-include-ass <FILE> : create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context
+* \-\-sample-by-con : if the number of mined assertions exceeds the value provided by --max-ass, assertions are selected favouring consequent diversity
 * \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn
 * \-\-name : <String> name of this execution (used when dumping statistics);
 * \-\-psilent : disable all progress bars
 * \-\-silent : disable all outputs
+* \-\-wsilent : disable all warnings
 * \-\-split-logic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate-config)
 * \-\-sva : output assertions in SystemVerilog Assertion format
 * \-\-vcd-r : recursively add signals for all sub-scopes
-* \-\-vcd-ss <string> :  select a scope of signals in the .vcd trace
-* \-\-wsilent : disable all warnings
+* \-\-vcd-ss <string> :  select a scope of signals in the .vcd traces
+
 
 
 ## API
