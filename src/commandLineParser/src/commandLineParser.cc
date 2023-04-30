@@ -44,7 +44,7 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
         "dump-to", "dump assertions to file with given path",
         cxxopts::value<std::string>(), "<DIRECTORY>")( "max-ass", "maximum number of assertions to keep after the ranking", cxxopts::value<size_t>(), "<uint>")
         ("dump-vac-ass", "dump vacuous assertions to file", cxxopts::value<std::string>(), "<FILE>")
-        ("include-ass", "create a new context 'external' with the assertions contained in the provided FILE (one assertion per line)", cxxopts::value<std::string>(), "<FILE>")
+        ("include-ass", "create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context", cxxopts::value<std::string>(), "<FILE>")
         ("sample-by-con", "if the number of mined assertions exceeds the value provided by max-ass, assertions are selected favouring consequent diversity")
                                                ("dont-fill-ass",
                   "do not populate assertions with values (saves memory)")(
