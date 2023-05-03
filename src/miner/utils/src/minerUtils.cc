@@ -275,7 +275,7 @@ buildAutomaton(spot::twa_graph_ptr &automata,
     fringe.pop_back();
 
     if (hashToId.count(currState->hash()) == 0) {
-      //create a link to retrieve the Node ( only if it doesn't already exist)
+      //create a link to retrieve the Node (only if it doesn't already exist)
       hashToId[currState->hash()] = stateCount++;
       retA->_idToNode[hashToId.at(currState->hash())] =
           new Automaton::Node(hashToId.at(currState->hash()), -1);
@@ -286,11 +286,11 @@ buildAutomaton(spot::twa_graph_ptr &automata,
     if (it->first() && (it->dst()->hash() == currState->hash()) &&
         !it->next()) {
       if (automata->state_is_accepting(currState)) {
-        // acceptance state:  the evaluation returns true
+        // acceptance state: the evaluation returns true
         retA->_idToNode.at(hashToId.at(currState->hash()))->_type = 1;
         retA->_accepting = retA->_idToNode.at(hashToId.at(currState->hash()));
       } else {
-        // rejecting state:  the evaluation returns false
+        // rejecting state: the evaluation returns false
         retA->_idToNode.at(hashToId.at(currState->hash()))->_type = 0;
         retA->_rejecting = retA->_idToNode.at(hashToId.at(currState->hash()));
       }
@@ -311,7 +311,7 @@ buildAutomaton(spot::twa_graph_ptr &automata,
           spot::parse_formula(spot::bdd_format_formula(bddDict, s->cond()));
 
       if (hashToId.count(s->dst()->hash()) == 0) {
-        //Again: create a link to retrieve the Node ( only if it doesn't exist already)
+        //Again: create a link to retrieve the Node (only if it doesn't exist already)
         hashToId[s->dst()->hash()] = stateCount++;
         retA->_idToNode[hashToId.at(s->dst()->hash())] =
             new Automaton::Node(hashToId.at(s->dst()->hash()), -1);

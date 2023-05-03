@@ -601,8 +601,8 @@ size_t Template::gatherInterestingValue(size_t time, int depth, int width) {
   size_t ret = -1;
 
   Automaton::Node *cn = _ant->_root;
-  //visit the automaton by evaluating the edges (which are propositions)
 
+  //visit the automaton by evaluating the edges (which are propositions)
   size_t currTime = time;
   while (currTime < _max_length) {
     for (const auto &edge : cn->_outEdges) {
@@ -1036,12 +1036,6 @@ bool Template::isFullyInstantiated() {
           getNumPlaceholders(harm::Location::Con) +
           getNumPlaceholders(harm::Location::AntCon)) == 0 &&
          _dtOp.second == nullptr;
-}
-Proposition *Template::getPropByToken(const std::string &token) {
-  if (_tokenToProp.count(token)) {
-    return *_tokenToProp.at(token);
-  }
-  return nullptr;
 }
 Automaton *Template::buildDiamondAutomaton(bool conNegated) {
   auto hant = _templateFormula.getAnt();

@@ -45,19 +45,12 @@ target_link_libraries(propertyMiner templateParser propositionParser miner_utils
 target_include_directories(propertyMiner PUBLIC include/propertyMiner/interface/
 	include/propertyMiner/TLMiner/)
 
-
-#estimator (used both in evaluator and in fault-based qualifier)
-SET(E_SRC ./../../evaluator/src/evaluator.cc)
-add_library(estimator ${E_SRC})
-target_include_directories(estimator PUBLIC ./../../evaluator/include/)
-target_link_libraries(estimator miner_utils templateParser propositionParser varParser traceReader)
-
 #Property Qualifier
 SET(CR_SRC src/propertyQualification/interface/PropertyQualifier.cc
 	src/propertyQualification/qualifier/Qualifier.cc)
 add_library(propertyQualification ${CR_SRC} )
 target_link_libraries(propertyQualification metricParser templateParser fort
-    traceReader miner_utils estimator)
+    traceReader miner_utils)
 
 target_include_directories(propertyQualification PUBLIC include/propertyQualification/interface/
 	include/propertyQualification/qualifier/)

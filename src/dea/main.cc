@@ -32,7 +32,7 @@ void parseCommandLineArguments(int argc, char *args[]);
 void dumpDiffs(const std::unordered_map<std::string, Diff> &tokenToDiff,
                size_t id = -1) {
 
-  std::string fileName = clc::ve_dumpTo + "/" + std::string("diff_") +
+  std::string fileName = clc::ve_ftPath + "/" + std::string("diff_") +
                          (id == -1 ? "" : std::to_string(id) + "_") +
                          clc::ve_technique + ".csv";
 
@@ -51,7 +51,7 @@ void dumpDiffs(const std::unordered_map<std::string, Diff> &tokenToDiff,
 void recoverDiffs(std::unordered_map<std::string, Diff> &tokenToDiff,
                   size_t id = -1) {
 
-  std::string fileName = clc::ve_dumpTo + "/" + std::string("diff_") +
+  std::string fileName = clc::ve_ftPath + "/" + std::string("diff_") +
                          (id == -1 ? "" : std::to_string(id) + "_") +
                          clc::ve_technique + ".csv";
 
@@ -96,41 +96,23 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   std::unordered_map<std::string, size_t> tokenToSize;
   std::vector<std::string> tokens;
 
-  size_t numberOfTokens=0;
-  if (clc::ve_technique == "br") {
-    //Bit reduction
-    csv::CSVReader reader(clc::ve_infoList);
-    csv::CSVRow row;
-    while (reader.read_row(row)) {
-      tokens.push_back(row[0].get());
-      tokenToSize[row[0].get()] = std::stoul(row[1].get());
-      numberOfTokens+=tokenToSize.at(row[0].get());
-    }
-  } else if (clc::ve_technique == "sr") {
-    //Statement reduction
-    for (size_t i = 0; i < clc::ve_nStatements; i++) {
-      tokens.push_back("s" + std::to_string(i));
-      numberOfTokens++;
-    }
+  for (auto &[at, diff] : tokenToDiff) {
+    tokens.push_back(at);
   }
-  std::cout << "Number of tokens: " << numberOfTokens<< "\n";
+  std::cout << "Number of tokens: " << tokens.size() << "\n";
 
   //gather time units where ant is true on the golden trace
   std::vector<std::pair<harm::Template *, std::vector<size_t>>>
       assertionsWithAntInstances;
-  size_t totATCT = 0;
   for (auto &ass : assertions) {
     assertionsWithAntInstances.emplace_back(ass, std::vector<size_t>());
     for (size_t i = 0; i < ass->_trace->getLength(); i++) {
       if (ass->evaluateAntNoCache(i) == Trinary::T) {
         assertionsWithAntInstances.back().second.push_back(i);
-        totATCT++;
       }
     }
   }
-  //  debug
-  //  std::cout << "----------->"<<totATCT/(assertions.size()*1000.f) << "\n";
-  //
+
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(1, std::string("Evaluating assertions... "), tokens.size(),
                  70);
@@ -147,16 +129,12 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
       std::vector<std::string> selectedTokens;
       selectedTokens.push_back(tokens[elaborated]);
 
-      if (clc::ve_technique == "br") {
-        getDiffBR(tokenToDiff, tokenToSize, selectedTokens,
-                  assertionsWithAntInstances, 0);
-      } else if (clc::ve_technique == "sr") {
-        getDiffSR(tokenToDiff, selectedTokens, assertionsWithAntInstances, 0);
-      }
-
+      getDiff(tokenToDiff, selectedTokens, assertionsWithAntInstances,
+              elaborated, 0);
       dumpDiffs(tokenToDiff, elaborated);
       exit(0);
     }
+
     while (runningProcesses == nProcs ||
            (elaborated == tokens.size() - 1 && runningProcesses > 0)) {
       int status;
@@ -204,26 +182,37 @@ int main(int arg, char *argv[]) {
   size_t secondsEvaluate = 0;
   parseCommandLineArguments(arg, argv);
 
-  TraceReader *traceReader = nullptr;
-  if (clc::parserType == "vcd") {
-    traceReader = new VCDtraceReader(clc::ve_tracePath, clc::clk);
-  } else if (clc::parserType == "csv") {
-    traceReader = new CSVtraceReader(clc::ve_tracePath);
-  } else {
-    messageError("Unknown parser type");
-  }
-
   std::unordered_map<std::string, Diff> tokenToDiff;
 
   dirtyTimerSeconds("startEvaluate", 1);
 
   if (!clc::ve_recover_diff) {
+
+    //gather at from file
+    std::fstream ass(clc::ve_atList);
+    std::string line = "";
+    while (std::getline(ass, line)) {
+      tokenToDiff[line];
+    }
+
     //get diffs
 
     // allocate trace
-    harm::Trace *trace = traceReader->readTrace();
+    std::string goldenTracePath = clc::ve_ftPath + "/golden" +
+                                  (clc::parserType == "vcd" ? ".vcd" : ".csv");
+    if (!std::filesystem::exists(goldenTracePath)) {
+      //simulate
+      messageInfo("Simulating golden design to retrieve the golden trace...");
+      systemCustom("bash " + clc::ve_shPath + " golden " + clc::ve_ftPath +
+                   (clc::ve_debugScript ? "" : " > /dev/null"));
 
-    auto assStrs = readAssertions(clc::ve_assPath);
+      messageErrorIf(!std::filesystem::exists(goldenTracePath),
+                     "Can not find golden trace after simulating");
+    }
+
+    Trace *trace = parseTrace(goldenTracePath);
+
+    auto assStrs = readAssertionsFromFile(clc::ve_assPath);
 
     int evaluated = 0;
     // eval the assertions one chunk at a time (to avoid memory explosion)
@@ -259,32 +248,20 @@ int main(int arg, char *argv[]) {
 }
 
 void parseCommandLineArguments(int argc, char *args[]) {
-  auto result = parseVarEstimator(argc, args);
+  auto result = parseDEA(argc, args);
 
   if (result.count("fd")) {
-    if (result.count("vcd")) {
-      clc::ve_ftPath = result["fd"].as<std::string>();
-      for (const auto &entry : std::filesystem::directory_iterator(
-               result["fd"].as<std::string>())) {
-        if (entry.path().extension() == ".vcd") {
-          clc::faultyTraceFiles.push_back(entry.path().u8string());
-        }
-      }
-
-    } else if (result.count("csv")) {
-      clc::ve_ftPath = result["fd"].as<std::string>();
-      for (const auto &entry : std::filesystem::directory_iterator(
-               result["fd"].as<std::string>())) {
-        if (entry.path().extension() == ".csv") {
-          clc::faultyTraceFiles.push_back(entry.path().u8string());
-        }
-      }
-    }
+    clc::ve_ftPath = result["fd"].as<std::string>();
   }
-  messageErrorIf(clc::faultyTraceFiles.empty(), "No faulty traces found!");
 
-  if (result.count("info-list")) {
-    clc::ve_infoList = result["info-list"].as<std::string>();
+  if (result.count("at-list")) {
+    clc::ve_atList = result["at-list"].as<std::string>();
+  }
+
+  if (result.count("bash")) {
+    clc::ve_shPath = result["bash"].as<std::string>();
+    messageErrorIf(!std::filesystem::exists(clc::ve_shPath),
+                   "Can not find script '" + clc::ve_shPath + "'");
   }
 
   if (result.count("recover-diff")) {
@@ -294,28 +271,35 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("plot-dominance")) {
     clc::ve_plotDominance = 1;
   }
+
   if (result.count("gen-rand")) {
     clc::ve_genRand = 1;
   }
 
-  if (result.count("pushp")) {
-    clc::ve_pushp = 1;
-    clc::ve_pushp_design = result["pushp"].as<std::string>();
+  if (result.count("push")) {
+    clc::ve_push = 1;
   }
   if (result.count("only-sim")) {
     clc::ve_only_sim = 1;
   }
 
+  if (result.count("debug-script")) {
+    clc::ve_debugScript = 1;
+  }
+
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
+    messageErrorIf(!std::filesystem::exists(clc::ve_assPath),
+                   "Can not find assertion file '" + clc::ve_assPath + "'");
   }
-  if (result.count("cluster")) {
-    clc::ve_cluster = std::stol(result["cluster"].as<std::string>());
-    std::cout << "Clusters: " << clc::ve_cluster << "\n";
+
+  if (result.count("max-clusters")) {
+    messageErrorIf(clc::ve_cls_type != "kmeans",
+                   "The cluster option must be used with 'kmeans'");
+    clc::ve_maxClusters = std::stol(result["cluster"].as<std::string>());
+    std::cout << "Clusters: " << clc::ve_maxClusters << "\n";
   }
-  if (result.count("n-stm")) {
-    clc::ve_nStatements = result["n-stm"].as<size_t>();
-  }
+
   if (result.count("max-push-time")) {
     clc::ve_maxPushTime = result["max-push-time"].as<size_t>();
   }
@@ -327,8 +311,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("tech")) {
     clc::ve_technique = result["tech"].as<std::string>();
-    messageErrorIf(clc::ve_technique != "sr" && clc::ve_technique != "br",
-                   "Unknown technique");
+  }
+  if (result.count("metric-name")) {
+    clc::ve_metricName = result["metric-name"].as<std::string>();
   }
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
@@ -337,23 +322,23 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("dump-to")) {
     clc::ve_dumpTo = result["dump-to"].as<std::string>();
+    messageErrorIf(!std::filesystem::is_directory(clc::ve_dumpTo),
+                   "Could not find directory '" + clc::ve_dumpTo + "'");
   }
 
   if (result.count("vcd")) {
     clc::parserType = "vcd";
-    clc::ve_tracePath = result["vcd"].as<std::string>();
   }
   if (result.count("csv")) {
     clc::parserType = "csv";
-    clc::ve_tracePath = result["csv"].as<std::string>();
   }
   if (result.count("cs")) {
     clc::ve_chunkSize = std::stoul(result["cs"].as<std::string>());
+    std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   }
   if (result.count("nsga2-mi")) {
     clc::ve_nsga2_mi = std::stod(result["nsga2-mi"].as<std::string>());
   }
-  std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();
   }
@@ -365,6 +350,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
                          std::to_string(std::thread::hardware_concurrency()) +
                          " threads at most");
     clc::maxThreads = nt;
+  }
+
+  if (result.count("metric-direction")) {
+    clc::ve_metricDirection = result["metric-direction"].as<size_t>();
   }
 
   if (result.count("silent")) {
@@ -382,16 +371,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::psilent = true;
   }
 
-  messageErrorIf(
-      clc::ve_technique == "br" && !result.count("info-list"),
-      "No info-list specified for the bit-width reduction technique");
-  messageErrorIf(
-      clc::ve_technique == "sr" && clc::ve_nStatements <= 0,
-      "You must specify the number of statements for the sr technique");
-
   std::cout << "Assertion file: " << clc::ve_assPath << "\n";
-  std::cout << "Dump to: " << clc::ve_dumpTo << "\n";
-  std::cout << "Golden trace: " << clc::ve_tracePath << "\n";
-  std::cout << "Faulty traces directory: " << clc::ve_ftPath << "\n";
+  std::cout << "Script: " << clc::ve_shPath << "\n";
   std::cout << "Technique: " << clc::ve_technique << "\n";
+  std::cout << "Trace type: " << clc::parserType << "\n";
+  std::cout << "Dump to: " << clc::ve_dumpTo << "\n";
+  std::cout << "Faulty traces directory: " << clc::ve_ftPath << "\n";
 }

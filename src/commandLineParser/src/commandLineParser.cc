@@ -8,58 +8,72 @@ cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
 
     std::string file = "";
 
-    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
-                          "<FILE>")(
+    options.add_options()("csv", ".csv trace", cxxopts::value<std::string>(),
+                          "<FILE>")("vcd", ".vcd trace",
+                                    cxxopts::value<std::string>(), "<FILE>")(
         "vcd-r", "recursively add signals for all sub-scopes")(
         "vcd-dir", "path to a directory containing .vcd traces",
         cxxopts::value<std::string>(),
         "<DIRECTORY>")("vcd-ss",
                        "select a scope of signals in the .vcd trace (use vcd-r "
                        "for recursive add)",
-                       cxxopts::value<std::string>(), "<String>")(
-        "csv", ".csv trace file", cxxopts::value<std::string>(),
-        "<FILE>")
-                           ("csv-dir", "path to a directory containing .csv traces", cxxopts::value<std::string>(), "<DIRECTORY>")
-                           ("conf", ".xml configuration file", cxxopts::value<std::string>(), "<FILE>")(
-        "clk", "clk signal", cxxopts::value<std::string>(), "<String>")(
-        "sva", " output assertions in SystemVerilog Assertion format")(
-        "fd", "path to the directory containing faulty traces",
-        cxxopts::value<std::string>(), "<DIRECTORY>")(
-        "ftm",
-        "'fault-on-trace mode', give the path to a file containing comma "
-        "seperated 'output variables', harm will perform fault coverage by "
-        "inserting stuck-at faults in the 'outputs' of the trace",
-        cxxopts::value<std::string>(), "<FILE>")(
-        "max-threads", "max number of threads that harm is allowed to spawn",
-        cxxopts::value<size_t>(),
-        "<uint>")("test-level", "test one level of the 3lp (1,2 or 3)",
-                  cxxopts::value<size_t>(), "<uint>")(
-        "generate-config", "generate template xml configuration")(
-        "dont-normalize", "discard assertions using the absolute value (not "
-                          "normalized) of filterig metrics ")(
-        "find-min-subset",
-        "find the minimum number of assertions covering all faults")(
-        "dump", "dump assertions to file")("dump-stat",
-                                           "dump statistics to file")(
-        "dump-to", "dump assertions to file with given path",
-        cxxopts::value<std::string>(), "<DIRECTORY>")( "max-ass", "maximum number of assertions to keep after the ranking", cxxopts::value<size_t>(), "<uint>")
-        ("dump-vac-ass", "dump vacuous assertions to file", cxxopts::value<std::string>(), "<FILE>")
-        ("include-ass", "create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context", cxxopts::value<std::string>(), "<FILE>")
-        ("sample-by-con", "if the number of mined assertions exceeds the value provided by max-ass, assertions are selected favouring consequent diversity")
-                                               ("dont-fill-ass",
-                  "do not populate assertions with values (saves memory)")(
-        "interactive", "enable interactive assertion ranking")(
-        "split-logic", "split bitvectors into boolean variabes")
-        ( "dont-print-ass", "do not print the mined assertions")
-        ("silent", "disable all outputs")("wsilent", "disable all warnings")(
-        "isilent", "disable all infos")
-        ("psilent", "disable all progress bars")
-        (
-        "cls-alg", "type of clustering algorithm; <kmeans>, <kde> kernel density "
-        "estimation, <hc> hierarchical (default is kmeans)",
-        cxxopts::value<std::string>(), "<String>")("help", "Show options")(
-        "name", "name of this execution (used when dumping statistics)",
-        cxxopts::value<std::string>(), "<String>");
+                       cxxopts::value<std::string>(), "<String>")
+
+        ("csv-dir", "path to a directory containing .csv traces",
+         cxxopts::value<std::string>(),
+         "<DIRECTORY>")("conf", ".xml configuration file",
+                        cxxopts::value<std::string>(), "<FILE>")(
+            "clk", "clk signal", cxxopts::value<std::string>(), "<String>")(
+            "sva", " output assertions in SystemVerilog Assertion format")(
+            "fd", "path to the directory containing faulty traces",
+            cxxopts::value<std::string>(), "<DIRECTORY>")(
+            "ftm",
+            "'fault-on-trace mode', give the path to a file containing comma "
+            "seperated 'output variables', harm will perform fault coverage by "
+            "inserting stuck-at faults in the 'outputs' of the trace",
+            cxxopts::value<std::string>(),
+            "<FILE>")("max-threads",
+                      "max number of threads that harm is allowed to spawn",
+                      cxxopts::value<size_t>(), "<uint>")(
+            "test-level", "test one level of the 3lp (1,2 or 3)",
+            cxxopts::value<size_t>(),
+            "<uint>")("generate-config", "generate template xml configuration")(
+            "dont-normalize",
+            "discard assertions using the absolute value (not "
+            "normalized) of filterig metrics ")(
+            "find-min-subset",
+            "find the minimum number of assertions covering all faults")(
+            "dump", "dump assertions to file")("dump-stat",
+                                               "dump statistics to file")(
+            "dump-to", "dump assertions to file with given path",
+            cxxopts::value<std::string>(), "<DIRECTORY>")(
+            "max-ass", "maximum number of assertions to keep after the ranking",
+            cxxopts::value<size_t>(),
+            "<uint>")("dump-vac-ass", "dump vacuous assertions to file",
+                      cxxopts::value<std::string>(), "<FILE>")(
+            "include-ass",
+            "create a new context 'external' with the assertions contained in "
+            "the provided FILE (one assertion per line), if a context named "
+            "'external' is present in the config file, then the assertions "
+            "will be added to that context",
+            cxxopts::value<std::string>(), "<FILE>")(
+            "sample-by-con",
+            "if the number of mined assertions exceeds the value provided by "
+            "max-ass, assertions are selected favouring consequent diversity")(
+            "dont-fill-ass",
+            "do not populate assertions with values (saves memory)")(
+            "interactive", "enable interactive assertion ranking")(
+            "split-logic", "split bitvectors into boolean variabes")(
+            "dont-print-ass", "do not print the mined assertions")(
+            "silent", "disable all outputs")("wsilent", "disable all warnings")(
+            "isilent", "disable all infos")("psilent",
+                                            "disable all progress bars")(
+            "cls-alg",
+            "type of clustering algorithm; <kmeans>, <kde> kernel density "
+            "estimation, <hc> hierarchical (default is kmeans)",
+            cxxopts::value<std::string>(), "<String>")("help", "Show options")(
+            "name", "name of this execution (used when dumping statistics)",
+            cxxopts::value<std::string>(), "<String>");
 
     auto result = options.parse(argc, argv);
 
@@ -133,52 +147,58 @@ cxxopts::ParseResult parseTraceGenerator(int argc, char *argv[]) {
   }
 }
 
-// evaluator
-cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
+// dea
+cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
   try {
     cxxopts::Options options(argv[0], "");
     options.positional_help("[optional args]").show_positional_help();
 
     std::string file = "";
 
-    options.add_options()("vcd", ".vcd trace", cxxopts::value<std::string>(),
-                          "<FILE>")("csv", ".csv trace",
-                                    cxxopts::value<std::string>(), "<FILE>")(
-        "ass-file", "", cxxopts::value<std::string>(),
-        "path to assertion file (one per each line)")(
-        "cluster", "", cxxopts::value<std::string>(),
-        "divide the score into N clusters")( "cs", "", cxxopts::value<std::string>(), "chunk-size number of assertions processed at a time (depends on the " "available memory) ")
-( "nsga2-mi", "", cxxopts::value<std::string>(), "minimum surface dominance increment to continue the nsga2 algo with an other iteration, default is 1% (1)")
-            ("tech", "", cxxopts::value<std::string>(), "axc technique used to perform the estimation")
-            ("cls-type", "", cxxopts::value<std::string>(), "technique used to perform the clustering")
-            ("clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+    options.add_options()("vcd", "vcd trace file type")("csv",
+                                                        "csv trace file type")
+        ("ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")
+        ("metric-name", "", cxxopts::value<std::string>(), "name of the metric (default is 'Metric')")
+        ( "max-clusters", "max number of clusters (must be used with kmeans)", cxxopts::value<std::string>(),
+        "divide the score into N clusters")(
+        "cs", "<INT>", cxxopts::value<std::string>(),
+        "chunk-size number of assertions processed at a time (to avoid memory explosion) ")(
+        "nsga2-mi", "<FLOAT>", cxxopts::value<std::string>(), "minimum surface dominance increment to continue the nsga2 algo with " "an other iteration, default is 1% (1)")(
+        "tech", "", cxxopts::value<std::string>(), "name axc technique used to perform the estimation (used to label the output files)")(
+        "cls-type", "", cxxopts::value<std::string>(),
+        "technique used to perform the clustering (nsga2, kmeans)")(
+        "clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+        ("at-list", "path to a file containing a list of approximation token ids",
+         cxxopts::value<std::string>(), "<FILE>")
 
-        ("info-list",
-         "path to a csv file containing the the variables with their size",
-         cxxopts::value<std::string>(), "<DIRECTORY>")
+            ("fd", "path to the directory containing the faulty traces (this is the second input of the script)",
+             cxxopts::value<std::string>(), "<DIRECTORY>")
+            ( "bash", "path to the bash script capable of simulating the design (will be called using the 'bash' command)", cxxopts::value<std::string>(), "<FILE>")
 
-            ("fd", "path to the directory containing faulty traces",
-             cxxopts::value<std::string>(),
-             "<DIRECTORY>")("vars", "path to the file containing the variables",
-                            cxxopts::value<std::string>(), "<FILE>")(
-                "max-threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")("dump-to", "dump ranking to file with given path",
-                          cxxopts::value<std::string>(), "<DIRECTORY>")(
-                "n-stm",
-                "The number of statements when yousing statement reduction",
+                    ("debug-script", "debug the input script (enables the script output)")
+                 ("max-threads",
+                "max number of threads that harm is allowed to spawn",
                 cxxopts::value<size_t>(),
-                "<uint>")
-                              ("recover-diff", "")
-                              ("gen-rand", "")
-                              ("pushp", "design you want to push", cxxopts::value<std::string>(), "<String>")
-                              ("max-push-time", "max time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
-                              ("min-push-time", "min time to push the pareto frontier (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
-                              ("min-time", "min time to push the pareto frontier without the metric (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
-                              ("only-sim", "run only phase 2 of the nsga2")
-                              ("plot-dominance", "plot the pareto dominance over time when running nsga2")
-        ("silent", "disable all outputs")("wsilent", "disable all warning")(
-        "isilent", "disable all info")
-        ("psilent", "disable all progress bars")
-                              ("help", "Show options");
+                "<uint>")("dump-to", "directory path to dump dea output (dea will not create the directory)",
+                          cxxopts::value<std::string>(),
+                          "<DIRECTORY>")("recover-diff", "reuse the evaluation result of the previous run")
+                    ("gen-rand", "add the random clusters to the front of non-dominated solutions")
+                    ("push", "push the front: executes phase 2 of the nsga2 clustering")
+                    ("max-push-time", "max time to push the pareto frontier of phase II of the nsga2 clustering (in seconds)",
+                            cxxopts::value<std::size_t>(), "<unint>")
+                    ("min-push-time", "min time to push the pareto frontier of phase II of the nsga2 clustering (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+                    ("min-time",
+                           "min time to push the pareto frontier of phase I of the nsga2 clustering "
+                           "(in seconds)",
+                           cxxopts::value<std::size_t>(), "<unint>")(
+                "only-sim", "run only phase 2 of the nsga2 clustering")(
+                "plot-dominance", "plot the pareto dominance over time when running nsga2")
+                    ("metric-direction", "if 0, metric direction is from 0 (best) to 1 (worst), else metric direction is from 1 (best) to 0 (worst), default is 0", cxxopts::value<std::size_t>(), "<unint>")
+                (
+                "silent", "disable all outputs")(
+                "wsilent", "disable all warning")("isilent",
+                                                  "disable all info")(
+                "psilent", "disable all progress bars")("help", "Show options");
 
     auto result = options.parse(argc, argv);
 
@@ -187,12 +207,15 @@ cxxopts::ParseResult parseVarEstimator(int argc, char *argv[]) {
       exit(0);
     }
     if (result.count("ass-file") == 0 || result.count("tech") == 0 ||
-        (result.count("vcd") == 0 && result.count("csv") == 0) ||
-        (result.count("vcd") == 1 && result.count("clk") == 0)) {
+        (result.count("vcd") == 1 && result.count("clk") == 0) ||
+        (result.count("vcd") == 0 && result.count("csv") == 0)) {
       std::cout << "Usage:\n evaluator --ass-file <FILE> --tech <string> "
-                   "--vcd <FILE>"
-                   " --clk <string>"
-                   " [--info-list | --n-stm]"
+                   "[--vcd --clk <string> | --csv]"
+                   " --at-list"
+                   " --ass-file"
+                   " --fd"
+                   " --tech"
+                   " --sh"
                 << "\n";
       exit(0);
     }

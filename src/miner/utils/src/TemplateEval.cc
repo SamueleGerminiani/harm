@@ -409,8 +409,7 @@ Trinary Template::evaluateNoCache(size_t time) {
 
   shift += _constShift;
   return !antRes ||
-         ((shift >= _max_length) ? Trinary::U
-                                 : evalAutomaton(shift, _con));
+         ((shift >= _max_length) ? Trinary::U : evalAutomaton(shift, _con));
 }
 Trinary Template::evaluateAntNoCache(size_t time) {
   return evalAutomaton(time, _ant);
@@ -501,6 +500,14 @@ bool Template::assHoldsOnTrace(harm::Location update) {
 
   for (size_t i = 0; i < _max_length; i++) {
     if (evaluate(i) == Trinary::F) {
+      return false;
+    }
+  }
+  return true;
+}
+bool Template::assHoldsOnTraceNoCache() {
+  for (size_t i = 0; i < _max_length; i++) {
+    if (evaluateNoCache(i) == Trinary::F) {
       return false;
     }
   }

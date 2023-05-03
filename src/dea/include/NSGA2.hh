@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -32,8 +33,8 @@ public:
   }
 
   double inline logScale(double value) {
-    if (value==0.f) {
-        return 0.f;
+    if (value == 0.f) {
+      return 0.f;
     }
     double base = 1.1f;
     return customLog(base, value + 1.f) *
@@ -78,6 +79,10 @@ public:
     dirtyTimerSeconds("startNSGA2", 1);
 
     if (clc::ve_only_sim) {
+      //simulate golden
+      messageInfo("Simulating the golden design...");
+      systemCustom("bash " + clc::ve_shPath + " golden " + clc::ve_ftPath +
+                   " 1 0" + (clc::ve_debugScript ? "" : " > /dev/null"));
       dirtyTimerSeconds("startPush", 1);
       _pushing = 1;
       _simulate = !_simulate;
@@ -126,7 +131,7 @@ public:
 
       if (_pushing) {
         plotBeforeAfter(beforePushMetricFrontData, front_plot_data,
-                        "Number of tokens", std::string("Error"),
+                        "Number of tokens", clc::ve_metricName,
                         "Dominance: " + std::to_string(dominance * 100) + "%",
                         "Before push", "After push",
                         std::make_pair(0.f, _maxObjs.first),
@@ -156,9 +161,9 @@ public:
 
       std::cout << "Iteration: " << i << "th\n";
       std::cout << "Duration: " << duration << "s\n";
-      std::cout << "PrevDominance:" << prevDominance << "\n";
-      std::cout << "Dominance:" << dominance << "\n";
-      std::cout << "Dominance increment :" << increment << "%\n";
+      std::cout << "PrevDominance: " << prevDominance << "\n";
+      std::cout << "Dominance: " << dominance << "\n";
+      std::cout << "Dominance increment: " << increment << "%\n";
 
       //terminal condition
       if (increment <= minIncrement) {
@@ -180,7 +185,7 @@ public:
               clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "damage.cvs",
               clc::ve_dumpTo + "/" + clc::ve_technique + "_damage.png");
 
-          if (clc::ve_pushp) {
+          if (clc::ve_push) {
             std::cout << "######  #     #  #####  #     # ### #     #  #####\n";
             std::cout
                 << "#     # #     # #     # #     #  #  ##    # #     #\n";
@@ -202,6 +207,11 @@ public:
             prevDominance = 0;
             dominance = DBL_MAX;
             saveParetoMetricBeforePush = 1;
+            //simulate golden
+            messageInfo("Simulating the golden design...");
+            systemCustom("bash " + clc::ve_shPath + " golden " +
+                         clc::ve_ftPath + " 1 0" +
+                         (clc::ve_debugScript ? "" : " > /dev/null"));
             continue;
           }
         }
@@ -223,7 +233,7 @@ public:
                            : allowedPopSize * 0.9;
     }
 
-    if (clc::ve_pushp) {
+    if (clc::ve_push) {
       secondsPhase2 = dirtyTimerSeconds("startPush", 0);
       dominancePhase2 = dominance;
     }
@@ -231,8 +241,7 @@ public:
       dominancePhase1 = dominance;
     }
 
-    std::cout << "NSGA2 has finished!"
-              << "\n";
+    messageInfo("NSGA2 has finished!");
 
     //dump temporal statistics
     fileAppendContent(clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
@@ -255,7 +264,11 @@ public:
 
     for (auto &individual : generateParetoFront(pop, allGenes)) {
       auto score = evalIndividual(individual, allGenes);
-      ret.emplace_back(score.first, score.second / _valuePrecision, individual);
+      double err_damage =
+          (_pushing && clc::ve_metricDirection)
+              ? 1.f - (double)score.second / (double)_valuePrecision
+              : (double)score.second / (double)_valuePrecision;
+      ret.emplace_back(score.first, err_damage, individual);
     }
 
     if (clc::ve_genRand) {
@@ -322,6 +335,19 @@ private:
     return define;
   }
 
+  std::string toScriptList(const std::unordered_set<std::string> &individual) {
+    std::string list = "";
+    std::unordered_map<std::string, std::string> idToMask;
+    std::unordered_map<std::string, size_t> idToSize;
+    for (auto &token : individual) {
+      list += token + ";";
+    }
+
+    list.pop_back();
+
+    return list;
+  }
+
   std::pair<size_t, size_t> evalIndividual(
       const std::unordered_set<std::string> &individual,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
@@ -346,11 +372,9 @@ private:
       auto ret = std::make_pair<size_t, size_t>(individual.size(),
                                                 uniqueFeatures.size());
 
-      //      std::cout << ret.second<<"------>" ;
+      ret.second =
+          ((double)ret.second / (double)_maxObjs.second) * _valuePrecision;
 
-      //ret.second = (size_t)logScale( ((double)ret.second / (double)_maxObjs.second) * _valuePrecision);
-      ret.second = ((double)ret.second / (double)_maxObjs.second) * _valuePrecision;
-      //     std::cout << ret.second << "\n";
       messageErrorIf(ret.first == 0, "?");
       std::string si = serializeIndividual(individual);
       _cacheGuard.lock();
@@ -361,377 +385,34 @@ private:
 
     } else {
 
-      bool printOut = 0;
+      systemCustom("bash " + clc::ve_shPath + " \"" + toScriptList(individual) +
+                   "\" " + clc::ve_ftPath + " 1 " + std::to_string(t_id) +
+                   (clc::ve_debugScript ? "" : " > /dev/null"));
 
-      if (clc::ve_pushp_design == "sobelBR") {
+      std::string metricFile =
+          clc::ve_ftPath + "/" + std::to_string(t_id) + ".txt";
 
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineBR(individual);
-        systemCustom(
-            ("$MODELSIM_BIN/vlog -work " + work + " " + define +
-             " +define+OUT_PATH=\"" + work +
-             "/\""
-             " +define+IN_PATH=\"" +
-             "../simulator/IO/in/" +
-             "\" -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-             (printOut ? "" : "> /dev/null"))
-                .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("python3 ../simulator/scripts/sobel_IO_to_jpeg.py " +
-                      work + "/512x512sobel_out_nbits.txt  " + work +
-                      "/img.jpeg" + (printOut ? "" : "> /dev/null"))
-                         .c_str());
+      messageErrorIf(!std::filesystem::exists(metricFile),
+                     "Can not find metric file '" + metricFile +
+                         "' after simulating!\n\n");
 
-        systemCustom(("python3 -W ignore ../simulator/scripts/calc_SSIM_WP.py "
-                      "../simulator/imgs/BR_cluster/golden.jpeg " +
-                      work + "/img.jpeg " + work + "/out.txt" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
+      std::ifstream inputFile(metricFile);
+      double metricValue;
+      inputFile >> metricValue;
+      inputFile.close();
 
-        std::ifstream inputFile(work + "/out.txt");
-        double ssim;
-        inputFile >> ssim;
-        inputFile.close();
-        ssim = ssim < 0.f ? 0.f : ssim;
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(
-            individual.size(), (1.f - ssim) * _valuePrecision);
-        //debug
-        //std::cout <<ssim<< "------------------->"<<ret.second << "\n";
-        //messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
+      systemCustom("rm " + metricFile);
 
-        return ret;
+      metricValue = metricValue < 0.f ? 0.f : metricValue;
+      metricValue = clc::ve_metricDirection ? 1.f - metricValue : metricValue;
 
-      } else if (clc::ve_pushp_design == "sobelSR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineSR(individual);
-        systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-                      " +define+OUT_PATH=\"" + work +
-                      "/\""
-                      " +define+IN_PATH=\"" +
-                      "../simulator/IO/in/" +
-                      "\" -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".sobel_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("python3 ../simulator/scripts/sobel_IO_to_jpeg.py " +
-                      work + "/512x512sobel_out_nbits.txt  " + work +
-                      "/img.jpeg" + (printOut ? "" : "> /dev/null"))
-                         .c_str());
+      auto ret = std::make_pair<size_t, size_t>(individual.size(),
+                                                metricValue * _valuePrecision);
+      _cacheGuard.lock();
+      _cachedIndividual[serializeIndividual(individual)] = ret;
+      _cacheGuard.unlock();
 
-        systemCustom(("python3 -W ignore ../simulator/scripts/calc_SSIM_WP.py "
-                      "../simulator/imgs/SR_cluster/golden.jpeg " +
-                      work + "/img.jpeg " + work + "/out.txt" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/out.txt");
-        double ssim;
-        inputFile >> ssim;
-        inputFile.close();
-        ssim = ssim < 0.f ? 0.f : ssim;
-        systemCustom(("rm -rf " + work).c_str());
-        auto ret = std::make_pair<size_t, size_t>(
-            individual.size(), (1.f - ssim) * _valuePrecision);
-        //std::cout <<ssim<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "invkBR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineBR(individual);
-        systemCustom(
-            ("$MODELSIM_BIN/vlog -work " + work + " " + define +
-             " +define+OUT_PATH=\"" + work + "/\"" +
-             " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-             (printOut ? "" : "> /dev/null"))
-                .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/theta/BR_cluster/golden.csv " +
-                      work + "/output.csv \"2,3\" " +
-                      ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //    systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "invkSR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineSR(individual);
-        systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-                      " +define+OUT_PATH=\"" + work + "/\"" +
-                      " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".inv_kin_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/theta/SR_cluster/golden.csv " +
-                      work + "/output.csv \"2,3\" " +
-                      ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //    systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "firBR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineBR(individual);
-        systemCustom(
-            ("$MODELSIM_BIN/vlog -work " + work + " " + define +
-             " +define+OUT_PATH=\"" + work + "/\"" +
-             " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-             (printOut ? "" : "> /dev/null"))
-                .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/filtered/BR_cluster/golden.csv " +
-                      work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //    systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "firSR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineSR(individual);
-        systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-                      " +define+OUT_PATH=\"" + work + "/\"" +
-                      " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".tb_FIR -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/filtered/SR_cluster/golden.csv " +
-                      work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "brentkBR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineBR(individual);
-        systemCustom(
-            ("$MODELSIM_BIN/vlog -work " + work + " " + define +
-             " +define+OUT_PATH=\"" + work + "/\"" +
-             " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-             (printOut ? "" : "> /dev/null"))
-                .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/sum/BR_cluster/golden.csv " +
-                      work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //    systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "brentkSR") {
-
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineSR(individual);
-        systemCustom(("$MODELSIM_BIN/vlog -work " + work + " " + define +
-                      " +define+OUT_PATH=\"" + work + "/\"" +
-                      " -sv ../simulator/rtl/sr/* ../simulator/rtl/tb/*" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".UBBKA_31_0_31_0_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/sum/SR_cluster/golden.csv " +
-                      work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else if (clc::ve_pushp_design == "reBR") {
-        std::string work = "work" + std::to_string(t_id);
-        systemCustom(("$MODELSIM_BIN/vlib " + work).c_str());
-        auto define = toDefineBR(individual);
-        systemCustom(
-            ("$MODELSIM_BIN/vlog -work " + work + " " + define +
-             " +define+OUT_PATH=\"" + work + "/\"" +
-             " -sv ../simulator/rtl/br_cluster/* ../simulator/rtl/tb/*" +
-             (printOut ? "" : "> /dev/null"))
-                .c_str());
-        systemCustom(("$MODELSIM_BIN/vsim -L " + work + " " + work +
-                      ".adder_tb -c -voptargs=\"+acc\" -do \"run "
-                      "-all; quit\"" +
-                      (printOut ? "" : "> /dev/null"))
-                         .c_str());
-
-        systemCustom(("./../simulator/scripts/getError/getError.x "
-                      "../simulator/sum/BR_cluster/golden.csv " +
-                      work + "/output.csv \"0\" " + ("> " + work + "/err.csv"))
-                         .c_str());
-
-        std::ifstream inputFile(work + "/err.csv");
-        double err;
-        inputFile >> err;
-        inputFile.close();
-        err = err < 0.f ? 0.f : err;
-        //    systemCustom(("cat " + work + "/err.csv").c_str());
-        systemCustom(
-            ("rm -rf " + work + (printOut ? "" : "> /dev/null")).c_str());
-        auto ret = std::make_pair<size_t, size_t>(individual.size(),
-                                                  err * _valuePrecision);
-        //std::cout <<err<< "------------------->"<<ret.second << "\n";
-        //    messageErrorIf(ret.first==0,"?");
-        _cacheGuard.lock();
-        _cachedIndividual[serializeIndividual(individual)] = ret;
-        _cacheGuard.unlock();
-
-        return ret;
-
-      } else {
-        messageError("Uknown pushp design");
-        return std::make_pair<size_t, size_t>(0, 0);
-      }
+      return ret;
     }
   }
 
@@ -743,7 +424,7 @@ private:
 
     Semaphore maxThreads(clc::maxThreads);
     Semaphore completed(0);
-    //FIXME: unexplainable race condition
+
     progresscpp::ParallelProgressBar pb;
     if (_pushing) {
       pb.addInstance(0, "Calculating objectives...", pop.size(), 70);
@@ -876,10 +557,25 @@ private:
           &allGenes,
       size_t sizeOfIndividual) {
 
-    std::unordered_set<std::string> individual;
-    while (individual.size() < sizeOfIndividual) {
-      individual.insert(getRandomItem(allGenes).first);
+    messageErrorIf(sizeOfIndividual > allGenes.size(),
+                   "requested size os higher than max");
+
+    std::vector<std::string> all;
+    for (auto &[id, genes] : allGenes) {
+      all.push_back(id);
     }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    // Shuffle the tokens
+    std::shuffle(all.begin(), all.end(), g);
+
+    std::unordered_set<std::string> individual;
+    for (size_t i = 0; i < sizeOfIndividual; i++) {
+      individual.insert(all[i]);
+    }
+
     return individual;
   }
 
@@ -1369,15 +1065,13 @@ private:
       }
     }
 
-    if (clc::ve_pushp_design == "sobelBR" ||
-        clc::ve_pushp_design == "sobelSR") {
+    if (clc::ve_metricDirection) {
       for (auto &[n, e] : data1) {
         e = 1.f - e;
       }
       for (auto &[n, e] : data2) {
         e = 1.f - e;
       }
-      ylabel = "SSIM";
     }
 
     // Set up gnuplot settings
@@ -1478,8 +1172,7 @@ private:
       }
     }
 
-    if (clc::ve_pushp_design == "sobelBR" ||
-        clc::ve_pushp_design == "sobelSR") {
+    if (clc::ve_metricDirection) {
       for (auto &[n, e] : data1) {
         e = 1.f - e;
       }
@@ -1489,7 +1182,6 @@ private:
       for (auto &[n, e] : data3) {
         e = 1.f - e;
       }
-      ylabel = "SSIM";
     }
 
     // Set up gnuplot settings
@@ -1606,6 +1298,8 @@ private:
       std::vector<std::pair<size_t, double>> &beforePushMetricFrontData,
       size_t reps = 10) {
 
+    messageInfo("Generating random clusters...");
+
     std::vector<std::pair<size_t, size_t>> originalObjectives;
     std::vector<std::pair<size_t, double>> originalData;
     std::vector<std::pair<size_t, double>> randomData;
@@ -1663,7 +1357,7 @@ private:
 
     plotBeforeAfterRandom(
         beforePushMetricFrontData, originalData, randomData, "Number of tokens",
-        (_pushing ? std::string("Error") : std::string("Damage")), "",
+        (_pushing ? clc::ve_metricName : std::string("Damage")), "",
         "Before push", "After push", "Random",
         std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f), 1,
         clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "bar.csv",

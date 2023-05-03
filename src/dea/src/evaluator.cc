@@ -18,6 +18,7 @@
 #include "message.hh"
 #include "propositionParsingUtils.hh"
 #include "templateParsingUtils.hh"
+#include "utils.hh"
 #include "varDeclarationParser.hh"
 #include <cmath>
 #include <filesystem>
@@ -37,25 +38,25 @@
 
 namespace clc {
 std::string ve_assPath = "";
+std::string ve_metricName = "Metric";
+bool ve_debugScript = 0;
+std::string ve_shPath = "";
 std::string ve_technique = "";
-std::string ve_tracePath = "";
 std::string ve_ftPath = "";
-std::string ve_infoList = "";
+std::string ve_atList = "";
 std::string ve_dumpTo = ".";
-size_t ve_nStatements = 0;
-int ve_cluster = 1;
+int ve_maxClusters = 10;
 bool ve_stopExecution = 0;
 // number of assertions processed each time
 size_t ve_chunkSize = 100000;
-bool ve_print_failing_ass = 0;
 bool ve_recover_diff = 0;
 double ve_nsga2_mi = 1.f;
-bool ve_pushp = 0;
-std::string ve_pushp_design = "";
+bool ve_push = 0;
 bool ve_only_sim = 0;
 bool ve_genRand = 0;
 bool ve_plotDominance = 0;
-std::string ve_cls_type = "rand";
+bool ve_metricDirection = 0;
+std::string ve_cls_type = "nsga2";
 size_t ve_maxPushTime = -1;
 size_t ve_minPushTime = 0;
 size_t ve_minTime = 0;
@@ -64,7 +65,7 @@ size_t ve_minTime = 0;
 using namespace harm;
 using namespace expression;
 
-TraceReader *parseTrace(std::string path) {
+Trace *parseTrace(std::string path) {
 
   TraceReader *traceReader = nullptr;
   if (clc::parserType == "vcd") {
@@ -75,11 +76,13 @@ TraceReader *parseTrace(std::string path) {
     messageError("Unknown parser type");
   }
 
-  return traceReader;
+  Trace *trace = traceReader->readTrace();
+  delete traceReader;
+  return trace;
 }
 
 // read assertions from file
-std::vector<std::string> readAssertions(std::string assPath) {
+std::vector<std::string> readAssertionsFromFile(std::string assPath) {
   std::fstream ass(assPath);
   std::string line = "";
   std::vector<std::string> assStrs;
@@ -103,6 +106,8 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
   for (size_t i = start; i < start + n && i < assStrs.size(); i++) {
     Template *ass =
         hparser::parseTemplate(assStrs[i], trace, "Spot", DTLimits(), 0);
+    messageErrorIf(!ass->assHoldsOnTraceNoCache(),
+                   "Assertion fails on golden trace");
     // parallelize eval function with 2 threads
     ass->setL1Threads(2);
     // save
@@ -127,11 +132,12 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
   return ret;
 }
 
-void getDiffSR(
-    std::unordered_map<std::string, Diff> &stmToDiff,
+void getDiff(
+    std::unordered_map<std::string, Diff> &idToDiff,
     std::vector<std::string> &ids,
     std::vector<std::pair<harm::Template *, std::vector<size_t>>> &assertions,
-    bool enablePB) {
+    size_t threadID, bool enablePB) {
+
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
   if (enablePB) {
@@ -142,34 +148,41 @@ void getDiffSR(
     // parse the ft
     std::string fn =
         clc::ve_ftPath + "/" + s + (clc::parserType == "vcd" ? ".vcd" : ".csv");
+
     if (enablePB) {
       pb.changeMessage(1, fn);
     }
+
     if (!std::filesystem::exists(fn)) {
-      //messageWarning("Can not find '" + fn + "'\n\n");
+      //simulate
+      systemCustom("bash " + clc::ve_shPath + " " + s + " " + clc::ve_ftPath +
+                   " 0 " + std::to_string(threadID) +
+                   (clc::ve_debugScript ? "" : " > /dev/null"));
+      //      systemCustom("bash " + clc::ve_shPath + " " + s + " 1000 " + clc::ve_ftPath + " 0 " + std::to_string(threadID));
+
       if (enablePB) {
         pb.increment(1);
       }
-      continue;
+      if (!std::filesystem::exists(fn)) {
+        messageWarning("Can not find '" + fn + "' after simulating!\n\n");
+        continue;
+      }
     }
-    TraceReader *tr = parseTrace(fn);
-    Trace *ft = tr->readTrace();
-    delete tr;
 
-    std::unordered_map<size_t, size_t> &cov = stmToDiff[s]._coverage;
-    size_t &atcf = stmToDiff[s]._atcf;
+    Trace *ft = parseTrace(fn);
+
+    std::unordered_map<size_t, size_t> &cov = idToDiff[s]._coverage;
+    size_t &atcf = idToDiff[s]._atcf;
     std::unordered_set<std::string> &covInstances =
-        stmToDiff[s]._coveredInstances;
+        idToDiff[s]._coveredInstances;
 
     for (size_t assId = 0; assId < assertions.size(); assId++) {
 
       auto &a = assertions[assId].first;
       auto &antInstances = assertions[assId].second;
-      //      Template *fAss = hparser::parseTemplate(a->getAssertion(), ft, "Spot", harm::DTLimits(), 0);
       Template *fAss = new Template(*a);
       fAss->changeTrace(ft);
 
-      //      for (size_t i = 0; i < fAss->_max_length; i++) {
       for (auto i : antInstances) {
         if (fAss->evaluateNoCache(i) == Trinary::F) {
           atcf++;
@@ -182,88 +195,6 @@ void getDiffSR(
     }
 
     delete ft;
-    if (enablePB) {
-      pb.increment(1);
-    }
-  }
-  if (enablePB) {
-    pb.done(1);
-  }
-  clc::isilent = 0;
-}
-
-void getDiffBR(
-    std::unordered_map<std::string, Diff> &csvIdToDiff,
-    std::unordered_map<std::string, size_t> &idToSize,
-    std::vector<std::string> &ids,
-    std::vector<std::pair<harm::Template *, std::vector<size_t>>> &assertions,
-    bool enablePB) {
-
-  progresscpp::ParallelProgressBar pb;
-  if (enablePB) {
-    pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
-  }
-  clc::isilent = 1;
-
-  for (auto &id : ids) {
-    //evaluate the assertions on the faulty trace generated with token id
-
-    //retrieve the faulty trace
-    for (size_t i = 0; i < idToSize.at(id); i++) {
-      std::string fn = clc::ve_ftPath + "/" + id + "_" + std::to_string(i) +
-                       (clc::parserType == "vcd" ? ".vcd" : ".csv");
-      if (enablePB) {
-        pb.changeMessage(1, fn);
-      }
-
-      if (!std::filesystem::exists(fn)) {
-        messageWarning("Can not find '" + fn + "'\n\n");
-        if (enablePB) {
-          pb.increment(1);
-        }
-        continue;
-      }
-
-      // parse the faulty trace
-      TraceReader *tr = parseTrace(fn);
-      Trace *ft = tr->readTrace();
-      delete tr;
-
-      //eval assertions
-      for (size_t assId = 0; assId < assertions.size(); assId++) {
-
-        auto &a = assertions[assId].first;
-        auto &antInstances = assertions[assId].second;
-
-        //Template *fAss = hparser::parseTemplate(a->getAssertion(), ft, "Spot", harm::DTLimits(), 0);
-        Template *fAss = new Template(*a);
-        fAss->changeTrace(ft);
-
-        std::string idCSVformat = id + "," + std::to_string(idToSize.at(id)) +
-                                  "," + std::to_string(i);
-        std::unordered_map<size_t, size_t> &cov =
-            csvIdToDiff[idCSVformat]._coverage;
-
-        std::unordered_set<std::string> &covInstances =
-            csvIdToDiff[idCSVformat]._coveredInstances;
-
-        size_t &atcf = csvIdToDiff[idCSVformat]._atcf;
-
-        //      for (size_t i = 0; i < fAss->_max_length; i++) {
-        for (auto i : antInstances) {
-          if (fAss->evaluateNoCache(i) == Trinary::F) {
-            atcf++;
-            cov[i]++;
-            covInstances.insert(std::to_string(assId) + "," +
-                                std::to_string(i));
-          }
-        }
-
-        delete fAss;
-      }
-
-      delete ft;
-    }
     if (enablePB) {
       pb.increment(1);
     }
@@ -332,21 +263,20 @@ void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
   std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                     std::string("_nsga2") + ".csv");
   //dump the scores
-  if (clc::ve_technique == "br") {
-    out << "token,size,bit,cluster,damage/error\n";
-  } else if (clc::ve_technique == "sr") {
-    out << "statement,cluster,score,damage/error\n";
-  }
+
+  out << "tokenID,clusterID,clusterSize," +
+             (clc::ve_push ? clc::ve_metricName : "Damage") + "\n";
+
   std::sort(
       ret.begin(), ret.end(),
       [](std::tuple<size_t, double, std::unordered_set<std::string>> &e1,
          std::tuple<size_t, double, std::unordered_set<std::string>> &e2) {
-        return std::get<1>(e1) < std::get<1>(e2);
+        return std::get<0>(e1) < std::get<0>(e2);
       });
   size_t cIndex = 0;
   for (auto &[f1, f2, tokens] : ret) {
     for (auto &token : tokens) {
-      out << token << "," << cIndex << "," << f2 << "\n";
+      out << token << "," << cIndex << "," << f1 << "," << f2 << "\n";
     }
     cIndex++;
   }
@@ -370,10 +300,10 @@ void cluster_with_kmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
   std::map<size_t, std::vector<std::pair<std::string, double>>> clusters_score;
 
   auto clusters_range =
-      clc::ve_cluster == -1
+      clc::ve_maxClusters == -1
           ? kmeansElbow(elements, 10, 0.1, 1)
-          : (clc::ve_cluster > 1
-                 ? kmeansElbow(elements, clc::ve_cluster, 0.01, 1)
+          : (clc::ve_maxClusters > 1
+                 ? kmeansElbow(elements, clc::ve_maxClusters, 0.01, 1)
                  : kmeansElbow(elements, 1, 0.01, 1));
 
   //fill the clusters with scores
@@ -388,28 +318,15 @@ void cluster_with_kmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
         v_s.first, v_s.second);
   }
 
-  if (clc::ve_technique == "br") {
-    out << "token,size,bit,cluster,score\n";
-    for (auto &[id, scores] : clusters_score) {
-      for (auto &[token, score] : scores) {
-        if (!normalize) {
-          out << token << "," << id << "," << (int)score << "\n";
-        } else {
-          out << token << "," << std::fixed << std::setprecision(4) << id << ","
-              << (double)score << "\n";
-        }
-      }
-    }
-  } else if (clc::ve_technique == "sr") {
-    out << "statement,cluster,score\n";
-    for (auto &[id, scores] : clusters_score) {
-      for (auto &[token, score] : scores) {
-        if (!normalize) {
-          out << token << "," << id << "," << (int)score << "\n";
-        } else {
-          out << token << "," << std::fixed << std::setprecision(4) << id << ","
-              << (double)score << "\n";
-        }
+  out << "tokenID,clusterID,score\n";
+
+  for (auto &[id, scores] : clusters_score) {
+    for (auto &[token, score] : scores) {
+      if (!normalize) {
+        out << token << "," << id << "," << (int)score << "\n";
+      } else {
+        out << token << "," << std::fixed << std::setprecision(4) << id << ","
+            << (double)score << "\n";
       }
     }
   }
@@ -438,18 +355,6 @@ void cluster_with_kmeans(std::unordered_map<std::string, Diff> &tokenToDiff,
     size_t nUniqueElements = getNUniqueElementsEvaluator(c);
     objectives.emplace_back(individual.size(), nUniqueElements);
   }
-
-  std::cout << "Dumping pareto front..."
-            << "\n";
-
-  std::ofstream pout(clc::ve_dumpTo + "/" + clc::ve_technique +
-                     "_paretoFront.csv");
-  pout << "nTokens, nUniqueInstances\n";
-  for (size_t i = 0; i < objectives.size(); i++) {
-    pout << objectives[i].first << ";" << objectives[i].second << "\n";
-  }
-
-  pout.close();
 }
 
 void cluster(std::unordered_map<std::string, Diff> &tokenToDiff,

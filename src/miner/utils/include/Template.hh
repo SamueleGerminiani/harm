@@ -176,6 +176,8 @@ public:
 
   /** \brief returns true if the assertion holds on the input trace, false otherwise */
   bool assHoldsOnTrace(harm::Location update);
+  /** \brief returns true if the assertion holds on the input trace (do not use cached values), false otherwise */
+  bool assHoldsOnTraceNoCache();
   /** \brief returns true if the assertion (offset) holds on the input trace, false otherwise */
   bool assHoldsOnTraceOffset(harm::Location update);
   /** \brief returns true if the assertion is vacuouse, false otherwise */
@@ -194,6 +196,8 @@ private:
   /** \brief evaluates the formula implemented by the custom automaton
    */
   Trinary evalAutomaton(size_t time, Automaton *root) const;
+  /** \brief evaluates the formula implemented by the custom automaton (used with dynamic shift operators such as |->)
+   */
   Trinary evalAutomatonDyShift(size_t time, Automaton *root, size_t &dShift);
 
   /** \brief utility method of getDepth
@@ -285,10 +289,16 @@ public:
    */
   void check();
 
-  Proposition *getPropByToken(const std::string &token);
+  /** \brief return an automaton implementing ant && con
+   */
   Automaton *buildDiamondAutomaton(bool conNegated = 0);
+
+  /** \brief returns the antecedent in automaton form
+   */
   Automaton *getAntecedentAutomaton();
 
+  /** \brief check if the instance at time 'timechoice is fundemental to make the ant true in the DTO
+   */
   size_t gatherInterestingValue(size_t time, int depth, int width);
 
   void subPropInAssertion(Proposition *original, Proposition *newProp);
