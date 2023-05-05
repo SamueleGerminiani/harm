@@ -170,6 +170,13 @@ getSignalsInScope(VCDScope *rootScope, size_t commonPrefixSize = 0,
   return _nameToSignal;
 }
 
+VCDBit getSingleBitValue(VCDTimedValue *tv) {
+  if (tv->value->get_value_vector() != nullptr) {
+    return (*tv->value->get_value_vector())[0];
+  } else {
+    return tv->value->get_value_bit();
+  }
+}
 Trace *VCDtraceReader::readTrace(const std::string file) {
 
   messageInfo("Parsing " + file);
@@ -346,7 +353,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   //find the length of the trace
   size_t traceLength = 0;
   for (auto &v_t : *clkV) {
-    if (v_t->value->get_value_bit() == VCDBit::VCD_1) {
+    if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
       traceLength++;
     }
   }
@@ -367,7 +374,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
       const size_t lastChange = sigV->size() - 1;
       for (auto &v_t : *clkV) {
 
-        if (v_t->value->get_value_bit() == VCDBit::VCD_1) {
+        if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
           while (index < lastChange && v_t->time >= (*sigV)[index + 1]->time) {
             index++;
           }
@@ -396,7 +403,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
 
         for (auto &v_t : *clkV) {
 
-          if (v_t->value->get_value_bit() == VCDBit::VCD_1) {
+          if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
             for (size_t i = 0; i < n_vv.second.size(); i++) {
               while (index[i] < lastChange[i] &&
                      v_t->time >= (*sigsV[i])[index[i] + 1]->time) {
@@ -407,8 +414,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
             for (size_t i = 0; i < signal.size(); i++) {
 
               if (i >= (signal.size() - n_vv.second.size()) &&
-                  (*sigsV[i])[index[i]]->value->get_value_bit() ==
-                      VCDBit::VCD_1) {
+                  getSingleBitValue((*sigsV[i])[index[i]]) == VCDBit::VCD_1) {
                 val += '1';
               } else {
                 val += '0';
@@ -434,7 +440,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
         const size_t lastChange = sigV->size() - 1;
         for (auto &v_t : *clkV) {
 
-          if (v_t->value->get_value_bit() == VCDBit::VCD_1) {
+          if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
             while (index < lastChange &&
                    v_t->time >= (*sigV)[index + 1]->time) {
               index++;
@@ -458,7 +464,6 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
 
         delete l;
       } else {
-        // FIXME: this should be removable
         expression::BooleanVariable *p;
         size_t bitIndex = n_vv.second.size() - 1;
         for (auto sigV : n_vv.second) {
@@ -474,14 +479,14 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
           const size_t lastChange = sigV->size() - 1;
           for (auto &v_t : *clkV) {
 
-            if (v_t->value->get_value_bit() == VCDBit::VCD_1) {
+            if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
               while (index < lastChange &&
                      v_t->time >= (*sigV)[index + 1]->time) {
                 index++;
               }
 
-              p->assign(time, (*sigV)[index]->value->get_value_bit() ==
-                                  VCDBit::VCD_1);
+              p->assign(time,
+                        getSingleBitValue((*sigV)[index]) == VCDBit::VCD_1);
               time++;
             }
           }
