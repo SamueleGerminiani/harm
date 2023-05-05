@@ -107,7 +107,8 @@ std::vector<Template *> parseAssertions(std::vector<std::string> assStrs,
     Template *ass =
         hparser::parseTemplate(assStrs[i], trace, "Spot", DTLimits(), 0);
     messageErrorIf(!ass->assHoldsOnTraceNoCache(),
-                   "Assertion fails on golden trace");
+                   "Assertion '" + ass->getAssertion() +
+                       "' fails on golden trace");
     // parallelize eval function with 2 threads
     ass->setL1Threads(2);
     // save

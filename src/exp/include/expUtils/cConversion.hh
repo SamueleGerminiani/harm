@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <utility>
+#include <iostream>
 
 namespace expression {
 inline std::pair<VarType, size_t>
@@ -14,12 +15,6 @@ applyCStandardConversion(const std::pair<VarType, size_t> &e1,
   std::pair<VarType, size_t> curr_e1 = e1;
   std::pair<VarType, size_t> curr_e2 = e2;
 
-  // DEBUG
-  /*
-  std::cout<<"INPUT:\n";
-  std::cout<<curr_e1.first<<","<<(int)curr_e1.second<<" &&
-  "<<curr_e2.first<<","<<(int)curr_e2.second<<"\n";
-  */
 
   // Float & Double
   if (e1.first == VarType::Numeric) {
@@ -104,12 +99,6 @@ applyCStandardConversion(const std::pair<VarType, size_t> &e1,
     }
   }
 
-  // DEBUG
-  /*
-  std::cout<<"OUTPUT:\n";
-  std::cout<<curr_e1.first<<","<<(int)curr_e2.second<<" &&
-  "<<curr_e1.first<<","<<(int)curr_e2.second<<"\n";
-  */
   messageErrorIf(
       !(curr_e1.first == curr_e2.first && curr_e1.second == curr_e2.second),
       "C conversion error");

@@ -7,7 +7,6 @@
 #include "Template.hh"
 #include "VCDtraceReader.hh"
 #include "colors.hh"
-#include "expUtils/VarType.hh"
 #include "fort.hpp"
 #include "globals.hh"
 #include "message.hh"
@@ -296,6 +295,7 @@ std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
   if (clc::dumpAssToFile && !rankedAssertions.empty()) {
     dumpAssToFile(context, trace, rankedAssertions);
   }
+
   return rankedAssertions;
 }
 

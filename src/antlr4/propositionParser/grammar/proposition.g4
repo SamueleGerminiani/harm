@@ -59,7 +59,7 @@ logicAtom
 logicConstant
     : VERILOG_BINARY
     | GCC_BINARY
-    | NUMERIC
+    | NUMERIC CONST_SUFFIX?
     | HEX
     ;
 
@@ -71,6 +71,11 @@ SIGN
     :
     'u'
     | 's';
+
+CONST_SUFFIX
+    :
+    'll'
+    | 'ull';
 
 
 // ------------------------------------------ NUMERIC

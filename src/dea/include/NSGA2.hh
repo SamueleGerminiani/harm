@@ -77,6 +77,7 @@ public:
     double prevDominance = 0;
     double dominance = DBL_MAX;
     dirtyTimerSeconds("startNSGA2", 1);
+    dirtyTimerSeconds("plotRate", 1);
 
     if (clc::ve_only_sim) {
       //simulate golden
@@ -405,6 +406,9 @@ private:
 
       metricValue = metricValue < 0.f ? 0.f : metricValue;
       metricValue = clc::ve_metricDirection ? 1.f - metricValue : metricValue;
+
+      //debug
+      //std::cout << metricValue << "\n";
 
       auto ret = std::make_pair<size_t, size_t>(individual.size(),
                                                 metricValue * _valuePrecision);
@@ -970,6 +974,12 @@ private:
 
     static FILE *pipe = nullptr;
 
+    if (dirtyTimerSeconds("plotRate", 0) > plotRate) {
+      dirtyTimerSeconds("plotRate", 1);
+    } else {
+      return;
+    }
+
     if (!dontClose || pipe == nullptr) {
       //    systemCustom("killall gnuplot");
       pipe = popen("gnuplot -persistent", "r");
@@ -1387,4 +1397,5 @@ private:
   bool _simulate = false;
   std::pair<size_t, size_t> _maxObjs;
   size_t _valuePrecision = 10000;
+  size_t plotRate=1;
 };

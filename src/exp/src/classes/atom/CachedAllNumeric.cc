@@ -21,8 +21,8 @@ CachedAllNumeric::CachedAllNumeric(
   _loge = nullptr;
 }
 CachedAllNumeric::CachedAllNumeric(
-    LogicExpression *loge,
-    double clsEffort, const std::unordered_set<harm::ClsOp> &clsOps)
+    LogicExpression *loge, double clsEffort,
+    const std::unordered_set<harm::ClsOp> &clsOps)
     : _loge(loge), _clsEffort(clsEffort), _clsOps(clsOps) {
   if (loge->getType().first == VarType::ULogic) {
     _cachedul = new ULogic[loge->getMaxTime()];
@@ -32,7 +32,7 @@ CachedAllNumeric::CachedAllNumeric(
   } else {
     _cachedsl = new SLogic[loge->getMaxTime()];
     for (size_t i = 0; i < loge->getMaxTime(); i++) {
-      _cachedsl[i] = loge->evaluate(i);
+      _cachedsl[i] = (SLogic)loge->evaluate(i);
     }
   }
   _nume = nullptr;
@@ -59,15 +59,19 @@ CachedAllNumeric::EvalRet CachedAllNumeric::evaluate(size_t time) {
   EvalRet r;
   if (_nume != nullptr) {
     if (getType().second == 32) {
-      r._f = _nume->evaluate(time);
+      //r._f = _nume->evaluate(time);
+      r._f = _cachedf[time];
     } else {
-      r._d = _nume->evaluate(time);
+      //r._d = _nume->evaluate(time);
+      r._d = _cachedd[time];
     }
   } else {
     if (getType().first == VarType::ULogic) {
-      r._u = _loge->evaluate(time);
+      //r._u = _loge->evaluate(time);
+      r._u = _cachedul[time];
     } else {
-      r._s = _loge->evaluate(time);
+      //r._s = (SLogic)_loge->evaluate(time);
+      r._s = _cachedsl[time];
     }
   }
   return r;

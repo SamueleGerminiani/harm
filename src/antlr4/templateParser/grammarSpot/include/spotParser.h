@@ -1,5 +1,5 @@
 
-// Generated from spot.g4 by ANTLR 4.10.1
+// Generated from spot.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -17,12 +17,12 @@ public:
     NEXT = 14, UNTIL = 15, RELEASE = 16, DOTS = 17, IMPL = 18, IMPL2 = 19, 
     IFF = 20, XOR = 21, BIND1 = 22, BIND2 = 23, SEREIMPL1 = 24, SEREIMPL2 = 25, 
     ASS = 26, DELAY = 27, SCOL = 28, COL = 29, FIRST_MATCH = 30, SIGN = 31, 
-    LGPAREN = 32, RGPAREN = 33, LCPAREN = 34, RCPAREN = 35, LPAREN = 36, 
-    RPAREN = 37, VARIABLE = 38, NUMERIC = 39, VERILOG_BINARY = 40, GCC_BINARY = 41, 
-    HEX = 42, BOOLEAN = 43, PLUS = 44, MINUS = 45, TIMES = 46, DIV = 47, 
-    GT = 48, GE = 49, LT = 50, LE = 51, EQ = 52, NEQ = 53, BAND = 54, BOR = 55, 
-    BXOR = 56, NEG = 57, LSHIFT = 58, RSHIFT = 59, AND = 60, OR = 61, NOT = 62, 
-    WS = 63
+    CONST_SUFFIX = 32, LGPAREN = 33, RGPAREN = 34, LCPAREN = 35, RCPAREN = 36, 
+    LPAREN = 37, RPAREN = 38, VARIABLE = 39, NUMERIC = 40, VERILOG_BINARY = 41, 
+    GCC_BINARY = 42, HEX = 43, BOOLEAN = 44, PLUS = 45, MINUS = 46, TIMES = 47, 
+    DIV = 48, GT = 49, GE = 50, LT = 51, LE = 52, EQ = 53, NEQ = 54, BAND = 55, 
+    BOR = 56, BXOR = 57, NEG = 58, LSHIFT = 59, RSHIFT = 60, AND = 61, OR = 62, 
+    NOT = 63, WS = 64
   };
 
   enum {
@@ -384,6 +384,7 @@ public:
     antlr4::tree::TerminalNode *VERILOG_BINARY();
     antlr4::tree::TerminalNode *GCC_BINARY();
     antlr4::tree::TerminalNode *NUMERIC();
+    antlr4::tree::TerminalNode *CONST_SUFFIX();
     antlr4::tree::TerminalNode *HEX();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;

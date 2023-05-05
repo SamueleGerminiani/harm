@@ -82,7 +82,8 @@ void PropositionParserHandler::enterLogicConstant(
                    "Constant '" + conStr.substr(0, conStr.size()) +
                        "' exceeds the maximum length of 64 bits" +
                        printErrorMessage());
-    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
+    ULogic value =
+        std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
     auto *c = new LogicConstant(value, VarType::ULogic, (conStr.size() - 2) * 4,
                                 _trace->getLength());
     _logicExpressions.push(c);
@@ -94,18 +95,49 @@ void PropositionParserHandler::enterLogicConstant(
       conStr = conStr.substr(0, res);
     }
 
-    if (conStr.front()=='-') {
+    if (ctx->CONST_SUFFIX() == nullptr) {
       // Store the logic as 2s complement int
-      ULogic value = std::stoll(conStr);
+      ULogic value;
+      try {
+        value = std::stoll(conStr);
+      } catch (const std::out_of_range &e) {
+        messageError("Integer overflow when converting '" + conStr + "'" +
+                     printErrorMessage());
+      }
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
       _logicExpressions.push(c);
     } else {
-      // Store the logic as classic unsigned binary
-      ULogic value = std::stoull(conStr);
-      auto *c =
-          new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
-      _logicExpressions.push(c);
+      if (ctx->CONST_SUFFIX()->getText() == "ll") {
+        // Store the logic as 2s complement int
+        ULogic value;
+        try {
+          value = std::stoll(conStr);
+        } catch (const std::out_of_range &e) {
+          messageError("Integer overflow when converting '" + conStr + "'" +
+                       printErrorMessage());
+        }
+        auto *c =
+            new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
+        _logicExpressions.push(c);
+
+      } else if (ctx->CONST_SUFFIX()->getText() == "ull") {
+        // Store the logic as classic unsigned binary
+        ULogic value;
+        try {
+          value = std::stoull(conStr);
+        } catch (const std::out_of_range &e) {
+          messageError("Integer overflow when converting '" + conStr + "'" +
+                       printErrorMessage());
+        }
+        auto *c =
+            new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
+        _logicExpressions.push(c);
+
+      } else {
+        messageError("Unsupported suffix '" + ctx->CONST_SUFFIX()->getText() +
+                     "'" + printErrorMessage());
+      }
     }
     return;
   }
