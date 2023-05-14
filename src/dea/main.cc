@@ -315,6 +315,11 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("metric-name")) {
     clc::ve_metricName = result["metric-name"].as<std::string>();
   }
+  if (result.count("metric-search-interval")) {
+    double lower = std::stod(result["metric-search-interval"].as<std::vector<std::string>>()[0]);
+    double upper = std::stod(result["metric-search-interval"].as<std::vector<std::string>>()[1]);
+    clc::ve_metricInterval = std::make_pair(lower, upper);
+  }
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
     messageErrorIf(clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans",

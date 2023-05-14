@@ -30,6 +30,7 @@ extern std::string ve_cls_type;
 extern bool ve_genRand;
 extern size_t ve_minTime;
 extern bool ve_plotDominance;
+extern std::pair<double, double> ve_metricInterval;
 } // namespace clc
 
 struct Diff {

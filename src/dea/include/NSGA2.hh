@@ -27,6 +27,24 @@
 class NSGA2 {
 
 public:
+  struct Individual {
+  public:
+    Individual() = default;
+    Individual(const std::unordered_set<std::string> &_genes,
+               const std::pair<size_t, size_t> &objective, const size_t &rank)
+        : _genes(_genes), _objective(objective), _rank(rank) {
+      //not todo
+    }
+    Individual(const std::unordered_set<std::string> &_genes) : _genes(_genes) {
+      //not todo
+    }
+
+  public:
+    std::unordered_set<std::string> _genes;
+    std::pair<size_t, size_t> _objective;
+    size_t _rank = 0;
+  };
+
   NSGA2() = default;
   double customLog(double base, double x) {
     return std::log(x) / std::log(base);
@@ -41,12 +59,11 @@ public:
            (_valuePrecision / customLog(base, _valuePrecision + 1.f));
   }
 
-  std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>>
+  std::vector<std::tuple<size_t, double, Individual>>
   run(const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
+          &geneToAssTime,
       size_t maxIterations = 100, double minIncrement = 1.f,
-      const std::vector<std::unordered_set<std::string>> &initialPop =
-          std::vector<std::unordered_set<std::string>>()) {
+      const std::vector<Individual> &initialPop = std::vector<Individual>()) {
 
     //clear all gnuplot windows
     systemCustom("killall gnuplot");
@@ -60,13 +77,13 @@ public:
     double maxDominance = -1;
 
     //get max possible value for the objectives (all token together)
-    _maxObjs = getMaxObjectivesValues(allGenes);
+    _maxObjs = getMaxObjectivesValues(geneToAssTime);
     bool saveParetoMetricBeforePush = 0;
     std::vector<std::pair<size_t, double>> beforePushMetricFrontData;
-    std::vector<std::unordered_set<std::string>> pop;
+    std::vector<Individual> pop;
 
     if (initialPop.empty()) {
-      pop = samplePopulation(allGenes, 1, allGenes.size());
+      pop = samplePopulation(geneToAssTime, 1, geneToAssTime.size());
     } else {
       pop = initialPop;
     }
@@ -77,6 +94,7 @@ public:
     double prevDominance = 0;
     double dominance = DBL_MAX;
     dirtyTimerSeconds("startNSGA2", 1);
+
     dirtyTimerSeconds("plotRate", 1);
 
     if (clc::ve_only_sim) {
@@ -91,26 +109,26 @@ public:
     }
 
     for (size_t i = 0; i < maxIterations; i++) {
-      std::cout << "Population size " << allowedPopSize << "\n";
+      std::cout << "Population size " << pop.size() << "\n";
       //keep track how long each iteratin takes
       dirtyTimerSeconds("startIteration", 1);
 
       //skip the first iteration
       if (i > 0) {
         //mutation on the entire population
-        mutatePop(pop, allGenes);
-        addOffspring(pop, allGenes);
+        mutatePop(pop, geneToAssTime);
+        addOffspring(pop, geneToAssTime);
         removeDuplicates(pop);
       }
 
-      auto fronts = generateFronts(pop, allGenes);
+      auto fronts = generateFronts(pop, geneToAssTime);
+      selectElites(fronts, geneToAssTime, pop, allowedPopSize);
 
-      selectElites(fronts, allGenes, pop, allowedPopSize);
-
+      //prepare data for printing
       std::vector<std::pair<size_t, size_t>> chart_data;
-      for (auto &individual : generateParetoFront(pop, allGenes)) {
-        auto score = evalIndividual(individual, allGenes);
-        chart_data.push_back(score);
+      for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
+        evalIndividual(individual, geneToAssTime);
+        chart_data.push_back(individual._objective);
       }
 
       dominance = getDominatedSurface(
@@ -120,7 +138,6 @@ public:
       //convert damage/error to double, and normalize it
       std::vector<std::pair<size_t, double>> front_plot_data;
       for (const auto &[x, y] : chart_data) {
-        //front_plot_data.emplace_back(x, (((double)y / (double)_maxObjs.second)));
         front_plot_data.emplace_back(x, ((double)y / _valuePrecision));
       }
 
@@ -260,31 +277,30 @@ public:
             std::to_string(dominancePhase2 - dominancePhase1) + "\n");
 
     //organize the return structure
-    std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>>
-        ret;
+    std::vector<std::tuple<size_t, double, Individual>> ret;
 
-    for (auto &individual : generateParetoFront(pop, allGenes)) {
-      auto score = evalIndividual(individual, allGenes);
+    for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
+      evalIndividual(individual, geneToAssTime);
       double err_damage =
           (_pushing && clc::ve_metricDirection)
-              ? 1.f - (double)score.second / (double)_valuePrecision
-              : (double)score.second / (double)_valuePrecision;
-      ret.emplace_back(score.first, err_damage, individual);
+              ? 1.f - (double)individual._objective.second /
+                          (double)_valuePrecision
+              : (double)individual._objective.second / (double)_valuePrecision;
+      ret.emplace_back(individual._objective.first, err_damage, individual);
     }
 
     if (clc::ve_genRand) {
-      genAndDumpRandomClusters(generateParetoFront(pop, allGenes), allGenes,
-                               beforePushMetricFrontData, 50);
+      genAndDumpRandomClusters(generateParetoFront(pop, geneToAssTime),
+                               geneToAssTime, beforePushMetricFrontData, 50);
     }
 
     return ret;
   }
 
 private:
-  std::string
-  serializeIndividual(const std::unordered_set<std::string> &individual) {
-    std::set<std::string> sorted_individual(individual.begin(),
-                                            individual.end());
+  std::string serializeIndividual(const Individual &individual) {
+    std::set<std::string> sorted_individual(individual._genes.begin(),
+                                            individual._genes.end());
     std::stringstream ss;
     for (const auto &token : sorted_individual) {
       ss << token << ",";
@@ -349,45 +365,47 @@ private:
     return list;
   }
 
-  std::pair<size_t, size_t> evalIndividual(
-      const std::unordered_set<std::string> &individual,
+  void evalIndividual(
+      Individual &individual,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
+          &geneToAssTime,
       size_t t_id = 0) {
 
     std::string si = serializeIndividual(individual);
 
     if (countGuard(_cachedIndividual, si, _cacheGuard)) {
-      return atGuard(_cachedIndividual, si, _cacheGuard);
+      individual._objective = atGuard(_cachedIndividual, si, _cacheGuard);
+      return;
     }
 
     if (!_simulate) {
 
       std::unordered_set<std::string> uniqueFeatures;
-      for (const auto &gene : individual) {
-        for (const auto &feature : allGenes.at(gene)) {
+      for (const auto &gene : individual._genes) {
+        for (const auto &feature : geneToAssTime.at(gene)) {
           uniqueFeatures.insert(feature);
         }
       }
 
-      auto ret = std::make_pair<size_t, size_t>(individual.size(),
+      auto obj = std::make_pair<size_t, size_t>(individual._genes.size(),
                                                 uniqueFeatures.size());
 
-      ret.second =
-          ((double)ret.second / (double)_maxObjs.second) * _valuePrecision;
+      obj.second =
+          ((double)obj.second / (double)_maxObjs.second) * _valuePrecision;
 
-      messageErrorIf(ret.first == 0, "?");
+      messageErrorIf(obj.first == 0, "?");
       std::string si = serializeIndividual(individual);
       _cacheGuard.lock();
-      _cachedIndividual[si] = ret;
+      _cachedIndividual[si] = obj;
       _cacheGuard.unlock();
 
-      return ret;
+      individual._objective = obj;
 
     } else {
 
-      systemCustom("bash " + clc::ve_shPath + " \"" + toScriptList(individual) +
-                   "\" " + clc::ve_ftPath + " 1 " + std::to_string(t_id) +
+      systemCustom("bash " + clc::ve_shPath + " \"" +
+                   toScriptList(individual._genes) + "\" " + clc::ve_ftPath +
+                   " 1 " + std::to_string(t_id) +
                    (clc::ve_debugScript ? "" : " > /dev/null"));
 
       std::string metricFile =
@@ -410,21 +428,19 @@ private:
       //debug
       //std::cout << metricValue << "\n";
 
-      auto ret = std::make_pair<size_t, size_t>(individual.size(),
+      auto obj = std::make_pair<size_t, size_t>(individual._genes.size(),
                                                 metricValue * _valuePrecision);
       _cacheGuard.lock();
-      _cachedIndividual[serializeIndividual(individual)] = ret;
+      _cachedIndividual[serializeIndividual(individual)] = obj;
       _cacheGuard.unlock();
-
-      return ret;
+      individual._objective = obj;
     }
   }
 
-  std::vector<std::pair<size_t, size_t>> getObjectives(
-      const std::vector<std::unordered_set<std::string>> &pop,
+  void evalIndividuals(
+      std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
-    std::vector<std::pair<size_t, size_t>> objectives(pop.size());
+          &geneToAssTime) {
 
     Semaphore maxThreads(clc::maxThreads);
     Semaphore completed(0);
@@ -441,10 +457,9 @@ private:
 
       maxThreads.wait();
 
-      std::thread([this, &objectives, toBeServed, &maxThreads, &pop, &allGenes,
+      std::thread([this, toBeServed, &maxThreads, &pop, &geneToAssTime,
                    &completed, &pb]() {
-        objectives[toBeServed] =
-            evalIndividual(pop.at(toBeServed), allGenes, toBeServed);
+        evalIndividual(pop[toBeServed], geneToAssTime, toBeServed);
         maxThreads.addNotifyOnce(1);
         completed.addNotifyOnce(1);
         if (_pushing) {
@@ -457,87 +472,109 @@ private:
     if (_pushing) {
       pb.done(0);
     }
-
-    return objectives;
   }
 
-  std::vector<size_t> generateDominanceRank(
-      const std::vector<std::unordered_set<std::string>> &individuals,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+  void trimPop(std::vector<Individual> &pop) {
 
-    int n = individuals.size();
+    size_t lower =
+        (size_t)((clc::ve_metricDirection ? (1.f - clc::ve_metricInterval.second)
+                                          : clc::ve_metricInterval.first) *
+                 (double)_valuePrecision);
+    size_t upper =
+        (size_t)((clc::ve_metricDirection ? (1.f - clc::ve_metricInterval.first)
+                                          : clc::ve_metricInterval.second) *
+                 (double)_valuePrecision);
+
+    for (size_t i = 0; i < pop.size(); i++) {
+      auto &ind = pop[i];
+      if (ind._objective.second < lower || ind._objective.second > upper) {
+        ind._genes.clear();
+      }
+    }
+
+    pop.erase(std::remove_if(begin(pop), end(pop),
+                             [](Individual &e) { return e._genes.empty(); }),
+              pop.end());
+  }
+
+  void generateDominanceRank(
+      std::vector<Individual> &pop,
+      const std::unordered_map<std::string, std::unordered_set<std::string>>
+          &geneToAssTime) {
 
     // Store the objective values for each individual
-    std::vector<std::pair<size_t, size_t>> objectives =
-        getObjectives(individuals, allGenes);
+    evalIndividuals(pop, geneToAssTime);
 
-    // Store the dominance rank for each individual
-    std::vector<size_t> rank(n, 0);
+    //init the ranks
+    for (auto &ind : pop) {
+      ind._rank = 0;
+    }
 
-    for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
+    if (_pushing) {
+      trimPop(pop);
+    }
+
+    for (size_t i = 0; i < pop.size(); i++) {
+      for (size_t j = 0; j < pop.size(); j++) {
         if (i == j)
           continue;
-        auto &a = objectives[i];
-        auto &b = objectives[j];
+
+        auto &a = pop[i]._objective;
+        auto &b = pop[j]._objective;
+
         if ((a.first <= b.first && a.second >= b.second) &&
             (a.first < b.first || a.second > b.second)) {
-          rank[i]++;
+          pop[i]._rank++;
         }
       }
     }
-
-    return rank;
   }
 
-  std::vector<std::vector<std::unordered_set<std::string>>> generateFronts(
-      const std::vector<std::unordered_set<std::string>> &individuals,
+  std::vector<std::vector<Individual>> generateFronts(
+      const std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+          &geneToAssTime) {
 
-    int n = individuals.size();
+    //we do not want to break pop
+    std::vector<Individual> pop_copy = pop;
 
-    auto rank = generateDominanceRank(individuals, allGenes);
+    generateDominanceRank(pop_copy, geneToAssTime);
 
-    if (!_pushing) {
-      //log scale for damage
-    }
+    std::vector<std::vector<Individual>> fronts(pop_copy.size());
 
-    // Store the list of individuals in each front
-    std::vector<std::vector<std::unordered_set<std::string>>> fronts(n);
-    for (int i = 0; i < n; i++) {
-      fronts[rank[i]].push_back(individuals[i]);
+    // Store the list of pop in each front
+    for (auto &ind : pop_copy) {
+      fronts.at(ind._rank).push_back(ind);
     }
 
     // Remove empty fronts
-    fronts.erase(
-        std::remove_if(
-            fronts.begin(), fronts.end(),
-            [](const std::vector<std::unordered_set<std::string>> &front) {
-              return front.empty();
-            }),
-        fronts.end());
+    fronts.erase(std::remove_if(fronts.begin(), fronts.end(),
+                                [](const std::vector<Individual> &front) {
+                                  return front.empty();
+                                }),
+                 fronts.end());
 
     return fronts;
   }
-  std::vector<std::unordered_set<std::string>> generateParetoFront(
-      const std::vector<std::unordered_set<std::string>> &individuals,
+  std::vector<Individual> generateParetoFront(
+      const std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+          &geneToAssTime) {
 
-    int n = individuals.size();
-    auto rank = generateDominanceRank(individuals, allGenes);
-    std::vector<std::unordered_set<std::string>> topFront;
+    //we do not want to break pop
+    std::vector<Individual> pop_copy = pop;
+    generateDominanceRank(pop_copy, geneToAssTime);
 
-    for (int i = 0; i < n; i++) {
-      if (rank[i] == 0) {
-        topFront.push_back(individuals[i]);
+    std::vector<Individual> topFront;
+
+    for (auto &ind : pop_copy) {
+      if (ind._rank == 0) {
+        topFront.push_back(ind);
       }
     }
-
     return topFront;
   }
+
   bool getRandomBool() {
     std::time_t seed = std::time(nullptr) + getpid();
     std::default_random_engine generator(seed);
@@ -556,43 +593,45 @@ private:
     std::advance(it, randomIndex);
     return *it;
   }
-  std::unordered_set<std::string> getRandomIndividual(
+  Individual getRandomIndividual(
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
-      size_t sizeOfIndividual) {
+          &geneToAssTime,
+      size_t numberOfGenes) {
 
-    messageErrorIf(sizeOfIndividual > allGenes.size(),
-                   "requested size os higher than max");
+    messageErrorIf(numberOfGenes == 0, "requested number of genes is 0");
+    messageErrorIf(numberOfGenes > geneToAssTime.size(),
+                   "requested number of genes is higher than max");
 
-    std::vector<std::string> all;
-    for (auto &[id, genes] : allGenes) {
-      all.push_back(id);
+    std::vector<std::string> allGenes;
+    for (auto &[id, genes] : geneToAssTime) {
+      allGenes.push_back(id);
     }
 
     std::random_device rd;
     std::mt19937 g(rd());
 
     // Shuffle the tokens
-    std::shuffle(all.begin(), all.end(), g);
+    std::shuffle(allGenes.begin(), allGenes.end(), g);
 
-    std::unordered_set<std::string> individual;
-    for (size_t i = 0; i < sizeOfIndividual; i++) {
-      individual.insert(all[i]);
+    Individual individual;
+    for (size_t i = 0; i < numberOfGenes; i++) {
+      individual._genes.insert(allGenes[i]);
     }
 
     return individual;
   }
 
-  std::vector<std::unordered_set<std::string>> samplePopulation(
+  std::vector<Individual> samplePopulation(
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
+          &geneToAssTime,
       size_t sizeOfIndividual, size_t sizeOfPop) {
-    std::vector<std::unordered_set<std::string>> population;
+
+    std::vector<Individual> population;
 
     for (size_t i = 0; i < sizeOfPop; i++) {
-      std::unordered_set<std::string> individual;
+      Individual individual;
       for (size_t j = 0; j < sizeOfIndividual; j++) {
-        individual.insert(getRandomItem(allGenes).first);
+        individual._genes.insert(getRandomItem(geneToAssTime).first);
       }
       population.push_back(individual);
     }
@@ -600,66 +639,68 @@ private:
   }
 
   //remove twins
-  void removeDuplicates(std::vector<std::unordered_set<std::string>> &pop) {
+  void removeDuplicates(std::vector<Individual> &pop) {
 
     std::unordered_set<std::string> uniqueStrings;
     for (auto &individual : pop) {
       std::string key = "";
-      for (auto &gene : individual) {
+      for (auto &gene : individual._genes) {
         key += gene;
       }
       if (uniqueStrings.count(key)) {
         //mark as deleted
-        individual.clear();
+        individual._genes.clear();
       } else {
         uniqueStrings.insert(key);
       }
     }
 
     //erase marked
-    pop.erase(std::remove_if(pop.begin(), pop.end(),
-                             [](const std::unordered_set<std::string> &e) {
-                               return e.empty();
-                             }),
-              pop.end());
+    pop.erase(
+        std::remove_if(pop.begin(), pop.end(),
+                       [](const Individual &e) { return e._genes.empty(); }),
+        pop.end());
   }
 
   void crowdSort(
-      std::vector<std::unordered_set<std::string>> &pop,
+      std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+          &geneToAssTime) {
 
-    std::vector<std::pair<size_t, size_t>> objValues(pop.size());
     size_t min[2] = {(size_t)-1, (size_t)-1};
     size_t max[2] = {0, 0};
     size_t diff[2] = {0, 0};
 
-    // Evaluate all individuals in the population
+    // Evaluate all pop in the population
     for (size_t i = 0; i < pop.size(); i++) {
-      objValues[i] = evalIndividual(pop[i], allGenes);
-      min[0] = objValues[i].first < min[0] ? objValues[i].first : min[0];
-      max[0] = objValues[i].first > max[0] ? objValues[i].first : max[0];
-      min[1] = objValues[i].second < min[1] ? objValues[i].second : min[1];
-      max[1] = objValues[i].second > max[1] ? objValues[i].second : max[1];
+      evalIndividual(pop[i], geneToAssTime);
+      min[0] =
+          pop[i]._objective.first < min[0] ? pop[i]._objective.first : min[0];
+      max[0] =
+          pop[i]._objective.first > max[0] ? pop[i]._objective.first : max[0];
+      min[1] =
+          pop[i]._objective.second < min[1] ? pop[i]._objective.second : min[1];
+      max[1] =
+          pop[i]._objective.second > max[1] ? pop[i]._objective.second : max[1];
     }
     diff[0] = max[0] - min[0];
     diff[1] = max[1] - min[1];
 
-    // Initialize the crowding distance of all individuals to zero
+    // Initialize the crowding distance of all pop to zero
     std::vector<double> crowdingDist(pop.size(), 0.0);
 
-    // Sort the individuals in each rank based on objective function values
+    // Sort the pop in each rank based on objective function values
     for (size_t k = 0; k < 2; k++) {
       //init
       std::vector<size_t> sortedIndividuals(pop.size());
       std::iota(sortedIndividuals.begin(), sortedIndividuals.end(), 0);
 
       std::sort(sortedIndividuals.begin(), sortedIndividuals.end(),
-                [&k, &objValues](const size_t &i, const size_t &j) {
+                [&k, &pop](const size_t &i, const size_t &j) {
                   if (k == 0) {
-                    return objValues[i].first < objValues[j].first;
+                    return pop[i]._objective.first < pop[j]._objective.first;
                   } else {
-                    return objValues[i].second < objValues[j].second;
+                    return pop[i]._objective.second < pop[j]._objective.second;
                   }
                 });
 
@@ -671,14 +712,14 @@ private:
       for (size_t i = 1; i < pop.size() - 1; i++) {
         if (k == 0) {
           crowdingDist[sortedIndividuals[i]] +=
-              diff[k] > 0 ? (objValues[sortedIndividuals[i + 1]].first -
-                             objValues[sortedIndividuals[i - 1]].first) /
+              diff[k] > 0 ? (pop[sortedIndividuals[i + 1]]._objective.first -
+                             pop[sortedIndividuals[i - 1]]._objective.first) /
                                 (float)(diff[k])
                           : 0.f;
         } else {
           crowdingDist[sortedIndividuals[i]] +=
-              diff[k] > 0 ? (objValues[sortedIndividuals[i + 1]].second -
-                             objValues[sortedIndividuals[i - 1]].second) /
+              diff[k] > 0 ? (pop[sortedIndividuals[i + 1]]._objective.second -
+                             pop[sortedIndividuals[i - 1]]._objective.second) /
                                 (float)(diff[k])
                           : 0.f;
         }
@@ -686,13 +727,13 @@ private:
     }
 
     //need to associate the individual with a score for sorting
-    std::vector<std::pair<std::unordered_set<std::string>, double>> popWithCD;
+    std::vector<std::pair<Individual, double>> popWithCD;
     for (size_t i = 0; i < pop.size(); i++) {
-      popWithCD.emplace_back(pop[i], crowdingDist[i]);
+      popWithCD.push_back(std::make_pair(pop[i], crowdingDist[i]));
     }
     std::sort(popWithCD.begin(), popWithCD.end(),
-              [](std::pair<std::unordered_set<std::string>, double> &e1,
-                 std::pair<std::unordered_set<std::string>, double> &e2) {
+              [](std::pair<Individual, double> &e1,
+                 std::pair<Individual, double> &e2) {
                 return e1.second > e2.second;
               });
 
@@ -704,37 +745,38 @@ private:
   }
 
   void selectElites(
-      std::vector<std::vector<std::unordered_set<std::string>>> &fronts,
+      std::vector<std::vector<Individual>> &fronts,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
-      std::vector<std::unordered_set<std::string>> &population,
-      size_t allowedPopSize) {
+          &geneToAssTime,
+      std::vector<Individual> &pop, size_t allowedPopSize) {
 
-    population.clear();
+    pop.clear();
 
-    //used to avoid repetitions of individuals with the same score
+    //used to avoid repetitions of pop with the same score
     std::set<std::pair<size_t, size_t>> alreadyInUse;
 
     for (auto &front : fronts) {
-      if (front.size() + population.size() <= allowedPopSize) {
+      if (front.size() + pop.size() <= allowedPopSize) {
         //front fits entirely
-        for (const auto &individual : front) {
-          auto score = evalIndividual(individual, allGenes);
-          if (!alreadyInUse.count(score)) {
-            alreadyInUse.insert(score);
-            population.push_back(individual);
+        for (auto &individual : front) {
+          evalIndividual(individual, geneToAssTime);
+          if (!alreadyInUse.count(individual._objective)) {
+            alreadyInUse.insert(individual._objective);
+            pop.push_back(individual);
           }
         }
-      } else if (population.size() < allowedPopSize) {
+      } else if (pop.size() < allowedPopSize) {
         //front does not fit, need crowd sorting
-        crowdSort(front, allGenes);
-        for (const auto &individual : front) {
-          auto score = evalIndividual(individual, allGenes);
-          if (!alreadyInUse.count(score)) {
-            alreadyInUse.insert(score);
-            population.push_back(individual);
+        crowdSort(front, geneToAssTime);
+        for (auto &individual : front) {
+          evalIndividual(individual, geneToAssTime);
+          //check if already in use
+          if (!alreadyInUse.count(individual._objective)) {
+            alreadyInUse.insert(individual._objective);
+            pop.push_back(individual);
           }
-          if (population.size() == allowedPopSize) {
+
+          if (pop.size() == allowedPopSize) {
             return;
           }
         }
@@ -742,12 +784,10 @@ private:
     }
   }
 
-  std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>
-  tournamentSelection(const std::vector<std::unordered_set<std::string>> &pop,
-                      const std::vector<size_t> &rank) {
+  std::pair<Individual, Individual>
+  tournamentSelection(const std::vector<Individual> &pop) {
 
-    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>>
-        parents;
+    std::pair<Individual, Individual> parents;
 
     //select first parent
     std::random_device rd1;
@@ -762,7 +802,7 @@ private:
       b1 = dist(rng1);
     }
 
-    parents.first = rank[a1] > rank[b1] ? pop[b1] : pop[a1];
+    parents.first = pop[a1]._rank > pop[b1]._rank ? pop[b1] : pop[a1];
 
     //select second parent
     std::random_device rd2;
@@ -775,47 +815,46 @@ private:
       a2 = dist(rng2);
       b2 = dist(rng2);
     }
-    parents.second = rank[a2] > rank[b2] ? pop[b2] : pop[a2];
+    parents.second = pop[a2]._rank > pop[b2]._rank ? pop[b2] : pop[a2];
 
     return parents;
   }
 
-  std::unordered_set<std::string>
-  crossover(std::pair<std::unordered_set<std::string>,
-                      std::unordered_set<std::string>> &parents) {
+  Individual crossover(std::pair<Individual, Individual> &parents) {
 
     std::unordered_set<std::string> kidGenes;
 
     //merge the genes
-
-    for (auto &gene : parents.first) {
+    for (auto &gene : parents.first._genes) {
       kidGenes.insert(gene);
     }
-    for (auto &gene : parents.second) {
+    for (auto &gene : parents.second._genes) {
       kidGenes.insert(gene);
     }
 
     return kidGenes;
   }
 
+  //Not used
   void mutateIndividual(
-      std::unordered_set<std::string> &child,
+      Individual &child,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {}
+          &geneToAssTime) {}
 
   void mutatePop(
-      std::vector<std::unordered_set<std::string>> &pop,
+      std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
-    std::vector<std::unordered_set<std::string>> mutatedPop = pop;
+          &geneToAssTime) {
+    std::vector<Individual> mutatedPop = pop;
     for (auto &ind : pop) {
       if (getRandomBool()) {
         //add a random individual of the same size
-        mutatedPop.push_back(samplePopulation(allGenes, ind.size(), 1).front());
+        mutatedPop.push_back(
+            samplePopulation(geneToAssTime, ind._genes.size(), 1).front());
       } else {
         //create a new individual with a single random element
         auto tmpInd = ind;
-        tmpInd.insert(getRandomItem(allGenes).first);
+        tmpInd._genes.insert(getRandomItem(geneToAssTime).first);
         mutatedPop.push_back(tmpInd);
       }
     }
@@ -823,18 +862,22 @@ private:
   }
 
   void addOffspring(
-      std::vector<std::unordered_set<std::string>> &pop,
+      std::vector<Individual> &pop,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+          &geneToAssTime) {
 
-    std::vector<std::unordered_set<std::string>> offSpring;
+    std::vector<Individual> offSpring;
 
-    auto rank = generateDominanceRank(pop, allGenes);
+    //we do not want to break pop
+    std::vector<Individual> pop_copy = pop;
+
+    generateDominanceRank(pop_copy, geneToAssTime);
+
     //each iteration generates and adds one child
-    for (size_t i = 0; i < pop.size(); i++) {
-      auto parents = tournamentSelection(pop, rank);
+    for (size_t i = 0; i < pop_copy.size() && pop_copy.size() > 1; i++) {
+      auto parents = tournamentSelection(pop_copy);
       auto child = crossover(parents);
-      mutateIndividual(child, allGenes);
+      mutateIndividual(child, geneToAssTime);
       offSpring.push_back(child);
     }
     //add the offpring to the elite population
@@ -974,7 +1017,8 @@ private:
 
     static FILE *pipe = nullptr;
 
-    if (dirtyTimerSeconds("plotRate", 0) > plotRate) {
+    if (pngFilePath.has_value() || dumpFilePath.has_value() ||
+        dirtyTimerSeconds("plotRate", 0) > plotRate) {
       dirtyTimerSeconds("plotRate", 1);
     } else {
       return;
@@ -1290,83 +1334,80 @@ private:
 
   std::pair<size_t, size_t> getMaxObjectivesValues(
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes) {
+          &geneToAssTime) {
 
     std::unordered_set<std::string> uniqueInstances;
-    for (auto &[id, instances] : allGenes) {
+    for (auto &[id, instances] : geneToAssTime) {
       for (auto &i : instances) {
         uniqueInstances.insert(i);
       }
     }
-    return std::make_pair(allGenes.size(), uniqueInstances.size());
+    return std::make_pair(geneToAssTime.size(), uniqueInstances.size());
   }
 
   void genAndDumpRandomClusters(
-      const std::vector<std::unordered_set<std::string>> &paretoFront,
+      std::vector<Individual> paretoFront,
       const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &allGenes,
+          &geneToAssTime,
       std::vector<std::pair<size_t, double>> &beforePushMetricFrontData,
       size_t reps = 10) {
 
     messageInfo("Generating random clusters...");
 
-    std::vector<std::pair<size_t, size_t>> originalObjectives;
-    std::vector<std::pair<size_t, double>> originalData;
+    std::vector<std::pair<size_t, double>> afterPushData;
     std::vector<std::pair<size_t, double>> randomData;
-    std::vector<std::unordered_set<std::string>> randomRepresentatives;
+    //    std::vector<Individual> randomRepresentatives;
 
-    //keep track the elaborated individuals
+    //keep track the elaborated pop
     size_t geObIndex = 0;
 
     for (auto &individual : paretoFront) {
-      originalObjectives.push_back(evalIndividual(individual, allGenes));
+      evalIndividual(individual, geneToAssTime);
+      afterPushData.emplace_back(
+          individual._objective.first,
+          (((double)individual._objective.second / _valuePrecision)));
 
-      //gather random individuals
-      std::vector<std::unordered_set<std::string>> randomIndividuals;
+      //gather random pop
+      std::vector<Individual> randomIndividuals;
       for (size_t i = 0; i < reps; i++) {
         randomIndividuals.push_back(
-            getRandomIndividual(allGenes, individual.size()));
+            getRandomIndividual(geneToAssTime, individual._genes.size()));
       }
 
       double avgRandom = 0.f;
 
-      std::vector<std::pair<double, std::unordered_set<std::string>>>
-          candidatesRand;
+      std::vector<std::pair<double, Individual>> candidatesRand;
 
       std::cout << geObIndex++ << "/" << paretoFront.size() << "\n";
-      //eval random individuals
-      std::vector<std::pair<size_t, size_t>> objectives =
-          getObjectives(randomIndividuals, allGenes);
 
-      for (size_t i = 0; i < objectives.size(); i++) {
-        double rnd = (((double)objectives[i].second / _valuePrecision));
+      //eval random pop
+      evalIndividuals(randomIndividuals, geneToAssTime);
+
+      for (auto &ind : randomIndividuals) {
+        double rnd = (((double)ind._objective.second / _valuePrecision));
         avgRandom += rnd;
-        candidatesRand.emplace_back(rnd, randomIndividuals[i]);
+        //        candidatesRand.emplace_back(rnd, ind);
       }
 
-      avgRandom /= objectives.size();
+      avgRandom /= (double)randomIndividuals.size();
 
       //sort by distance from the avg
-      std::sort(
-          begin(candidatesRand), end(candidatesRand),
-          [&avgRandom](std::pair<double, std::unordered_set<std::string>> &e1,
-                       std::pair<double, std::unordered_set<std::string>> &e2) {
-            return std::abs(e1.first - avgRandom) <
-                   std::abs(e2.first - avgRandom);
-          });
+      //      std::sort(begin(candidatesRand), end(candidatesRand),
+      //                [&avgRandom](std::pair<double, Individual> &e1,
+      //                             std::pair<double, Individual> &e2) {
+      //                  return std::abs(e1.first - avgRandom) <
+      //                         std::abs(e2.first - avgRandom);
+      //                });
 
       //store a good rand candidate (close to the average)
-      randomRepresentatives.push_back(candidatesRand.front().second);
+      //      randomRepresentatives.push_back(candidatesRand.front().second);
 
-      randomData.emplace_back(individual.size(), avgRandom);
-    }
-
-    for (const auto &[x, y] : originalObjectives) {
-      originalData.emplace_back(x, (((double)y / _valuePrecision)));
+      randomData.emplace_back(individual._genes.size(), avgRandom);
     }
 
     plotBeforeAfterRandom(
-        beforePushMetricFrontData, originalData, randomData, "Number of tokens",
+        beforePushMetricFrontData, afterPushData, randomData,
+        "Number of tokens",
         (_pushing ? clc::ve_metricName : std::string("Damage")), "",
         "Before push", "After push", "Random",
         std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f), 1,
@@ -1376,20 +1417,20 @@ private:
     std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                       "_randCandidates.csv");
 
-    std::sort(randomRepresentatives.begin(), randomRepresentatives.end(),
-              [](std::unordered_set<std::string> &e1,
-                 std::unordered_set<std::string> &e2) {
-                return e1.size() < e2.size();
-              });
+    //  std::sort(randomRepresentatives.begin(), randomRepresentatives.end(),
+    //            [](Individual &e1, Individual &e2) {
+    //              return e1._genes.size() < e2._genes.size();
+    //            });
 
-    //dump verilog defines
-    out << "size,define\n";
-    for (auto &rp : randomRepresentatives) {
-      out << rp.size() << ","
-          << (clc::ve_technique == "br" ? toDefineBR(rp, 0) : toDefineSR(rp))
-          << "\n";
-    }
-    out.close();
+    //  //dump verilog defines
+    //  out << "size,define\n";
+    //  for (auto &rp : randomRepresentatives) {
+    //    out << rp._genes.size() << ","
+    //        << (clc::ve_technique == "br" ? toDefineBR(rp._genes, 0)
+    //                                      : toDefineSR(rp._genes))
+    //        << "\n";
+    //  }
+    //  out.close();
   }
   bool _pushing = 0;
   std::unordered_map<std::string, std::pair<size_t, size_t>> _cachedIndividual;
@@ -1397,5 +1438,5 @@ private:
   bool _simulate = false;
   std::pair<size_t, size_t> _maxObjs;
   size_t _valuePrecision = 10000;
-  size_t plotRate=1;
+  size_t plotRate = 1;
 };

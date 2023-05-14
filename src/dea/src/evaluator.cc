@@ -60,6 +60,7 @@ std::string ve_cls_type = "nsga2";
 size_t ve_maxPushTime = -1;
 size_t ve_minPushTime = 0;
 size_t ve_minTime = 0;
+std::pair<double, double> ve_metricInterval = std::make_pair(0.0f, 1.f);
 } // namespace clc
 
 using namespace harm;
@@ -142,7 +143,7 @@ void getDiff(
   progresscpp::ParallelProgressBar pb;
   clc::isilent = 1;
   if (enablePB) {
-    pb.addInstance(1, std::string("Evaluating assertions... "), ids.size(), 70);
+    pb.addInstance(1, std::string("Evaluating assertions..."), ids.size(), 70);
   }
 
   for (auto &s : ids) {
@@ -159,7 +160,6 @@ void getDiff(
       systemCustom("bash " + clc::ve_shPath + " " + s + " " + clc::ve_ftPath +
                    " 0 " + std::to_string(threadID) +
                    (clc::ve_debugScript ? "" : " > /dev/null"));
-      //      systemCustom("bash " + clc::ve_shPath + " " + s + " 1000 " + clc::ve_ftPath + " 0 " + std::to_string(threadID));
 
       if (enablePB) {
         pb.increment(1);
@@ -243,9 +243,9 @@ converToScores(std::unordered_map<std::string, Diff> &tokenToDiff,
 void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
 
   //prepare data for nsga2
-  std::vector<std::unordered_set<std::string>> initialPop;
+  std::vector<NSGA2::Individual> initialPop;
   //return is a vector of clusters <size,error/damage,tokens>
-  std::vector<std::tuple<size_t, double, std::unordered_set<std::string>>> ret;
+  std::vector<std::tuple<size_t, double, NSGA2::Individual>> ret;
 
   //group up all the genes <approximation tokens AT>
   std::unordered_map<std::string, std::unordered_set<std::string>> allGenes;
@@ -270,13 +270,13 @@ void cluster_with_nsga2(std::unordered_map<std::string, Diff> &tokenToDiff) {
 
   std::sort(
       ret.begin(), ret.end(),
-      [](std::tuple<size_t, double, std::unordered_set<std::string>> &e1,
-         std::tuple<size_t, double, std::unordered_set<std::string>> &e2) {
+      [](std::tuple<size_t, double, NSGA2::Individual> &e1,
+         std::tuple<size_t, double, NSGA2::Individual> &e2) {
         return std::get<0>(e1) < std::get<0>(e2);
       });
   size_t cIndex = 0;
   for (auto &[f1, f2, tokens] : ret) {
-    for (auto &token : tokens) {
+    for (auto &token : tokens._genes) {
       out << token << "," << cIndex << "," << f1 << "," << f2 << "\n";
     }
     cIndex++;

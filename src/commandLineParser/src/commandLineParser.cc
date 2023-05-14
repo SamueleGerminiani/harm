@@ -159,6 +159,7 @@ cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
                                                         "csv trace file type")
         ("ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")
         ("metric-name", "", cxxopts::value<std::string>(), "name of the metric (default is 'Metric')")
+        ("metric-search-interval", "", cxxopts::value<std::vector<std::string>>(), "narrow the search of the nsga2 algo phase 2 clustering to a specified interval 'lower,upper' (default is '0.0,1.0')")
         ( "max-clusters", "max number of clusters (must be used with kmeans)", cxxopts::value<std::string>(),
         "divide the score into N clusters")(
         "cs", "<INT>", cxxopts::value<std::string>(),
