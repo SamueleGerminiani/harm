@@ -144,6 +144,9 @@ OUTPUT: No output expected by DEA
 	
 --help : show the options
 
+## Benchmarks
+	
+* The directory dea_benchmarks contains several examples of using DEA to perform design exploration
 
 
 
