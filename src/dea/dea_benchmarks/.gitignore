@@ -1,0 +1,16 @@
+*.swp
+tags
+Session.vim
+compile_commands.json
+.vdcode/*
+*.srctrlbm
+*.srctrldb
+*.srctrlprj
+.vscode
+.cache/*
+.cache
+*.vcd
+*.csv
+transcript
+*work*
+

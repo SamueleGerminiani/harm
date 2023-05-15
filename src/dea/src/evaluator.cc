@@ -38,10 +38,10 @@
 
 namespace clc {
 std::string ve_assPath = "";
-std::string ve_metricName = "Metric";
+std::string ve_metricName = "<Metric>";
 bool ve_debugScript = 0;
 std::string ve_shPath = "";
-std::string ve_technique = "";
+std::string ve_technique = "<Technique>";
 std::string ve_ftPath = "";
 std::string ve_atList = "";
 std::string ve_dumpTo = ".";

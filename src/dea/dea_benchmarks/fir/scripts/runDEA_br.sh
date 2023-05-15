@@ -1,0 +1,18 @@
+$HARM_ROOT/build/dea \
+--csv \
+--clk "clk" \
+--fd traces/ \
+--ass-file ass/axc_ass.txt \
+--tech "br" \
+--metric-name "Error" \
+--bash "scripts/simulateBR.sh" \
+--at-list info/brIDS.txt \
+--dump-to dea_out/ \
+--push \
+--cls-type "nsga2" \
+--nsga2-mi 0.01 \
+--min-time 60 \
+--max-push-time 3600 \
+--metric-direction 0 \
+--gen-rand \
+--max-threads 16  

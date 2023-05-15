@@ -207,16 +207,24 @@ cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
       std::cout << options.help({"", "Group"}) << std::endl;
       exit(0);
     }
-    if (result.count("ass-file") == 0 || result.count("tech") == 0 ||
-        (result.count("vcd") == 1 && result.count("clk") == 0) ||
-        (result.count("vcd") == 0 && result.count("csv") == 0)) {
-      std::cout << "Usage:\n evaluator --ass-file <FILE> --tech <string> "
-                   "[--vcd --clk <string> | --csv]"
-                   " --at-list"
-                   " --ass-file"
-                   " --fd"
-                   " --tech"
-                   " --sh"
+    if (!result.count("ass-file") ||
+        (result.count("vcd") && !result.count("clk")) ||
+        (!result.count("vcd") && !result.count("csv")) ||
+        (!result.count("ass-file")) ||
+        (!result.count("at-list")) ||
+        (!result.count("fd")) ||
+        (!result.count("bash")) ||
+        (!result.count("dump-to"))
+      
+       ) {
+
+      std::cout << "Usage:\n evaluator"
+                   " [--vcd --clk <string> | --csv]\n"
+                   " --ass-file <ASSERTIONS FILE>\n"
+                   " --at-list <AT FILE>\n"
+                   " --bash <BASH SCRIPT>\n"
+                   " --fd <FAULTY TRACES DIRECTORY>\n"
+                   " --dump-to <DEA OUTPUT DIRECTORY>"
                 << "\n";
       exit(0);
     }

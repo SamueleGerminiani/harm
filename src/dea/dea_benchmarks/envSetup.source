@@ -1,0 +1,6 @@
+#Path to the root directory of HARM
+export HARM_ROOT=/home/sam/harm/
+#Path to the directory containing the Modelsim binaries
+export MODELSIM_BIN=/home/sam/modeltech/bin/
+#Path to this repository root
+export BENCHMARK_ROOT=/home/sam/dea_benchmarks/

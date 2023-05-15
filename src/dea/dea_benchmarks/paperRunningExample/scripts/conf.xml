@@ -1,0 +1,18 @@
+<harm>
+
+    <context name="axc">
+        <numeric op="r,e,ge,le" clsEffort="0.2" exp="x" loc="dt"/>
+        <numeric op="r,e,ge,le" clsEffort="0.2" exp="y" loc="dt"/>
+        <numeric op="r,e,ge,le" clsEffort="0.01" exp="sum" loc="c"/>
+        <!--
+        -->
+        <template bdtLimits="2A,-0.1E" exp="G({..&&..}|->(P0))" /> 
+
+        <sort name="frequency" exp="atct/traceLength"/>
+        <sort name="causality" exp="1-afct/traceLength"/>
+    </context>
+
+</harm>
+
+
+

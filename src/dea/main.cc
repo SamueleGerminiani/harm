@@ -316,8 +316,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_metricName = result["metric-name"].as<std::string>();
   }
   if (result.count("metric-search-interval")) {
-    double lower = std::stod(result["metric-search-interval"].as<std::vector<std::string>>()[0]);
-    double upper = std::stod(result["metric-search-interval"].as<std::vector<std::string>>()[1]);
+    double lower = std::stod(
+        result["metric-search-interval"].as<std::vector<std::string>>()[0]);
+    double upper = std::stod(
+        result["metric-search-interval"].as<std::vector<std::string>>()[1]);
     clc::ve_metricInterval = std::make_pair(lower, upper);
   }
   if (result.count("cls-type")) {
@@ -355,6 +357,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
                          std::to_string(std::thread::hardware_concurrency()) +
                          " threads at most");
     clc::maxThreads = nt;
+  } else {
+    clc::maxThreads = 1;
   }
 
   if (result.count("metric-direction")) {

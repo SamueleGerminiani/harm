@@ -1,0 +1,18 @@
+$HARM_ROOT/build/dea \
+--csv \
+--clk "clk" \
+--fd traces/ \
+--ass-file ass/axc_ass.txt \
+--tech "sr" \
+--metric-name "Error" \
+--bash "scripts/simulateSR.sh" \
+--at-list info/srIDS.txt \
+--dump-to dea_out/ \
+--push \
+--cls-type "nsga2" \
+--nsga2-mi 0.1 \
+--min-time 30 \
+--min-push-time 60 \
+--metric-direction 0 \
+--gen-rand \
+--max-threads 16  

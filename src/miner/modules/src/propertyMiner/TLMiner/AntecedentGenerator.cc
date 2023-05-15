@@ -225,8 +225,7 @@ inline void AntecedentGenerator::findCandidates(
 }
 
 inline std::vector<size_t>
-AntecedentGenerator::gatherInterestingValues(Template *t, CachedAllNumeric *cn,
-                                             int depth) {
+AntecedentGenerator::gatherInterestingValues(Template *t, int depth) {
   std::vector<size_t> ivs;
   for (size_t i = 0; i < t->_max_length; i++) {
     size_t iv = t->gatherInterestingValue(i, depth, -1);
@@ -274,7 +273,7 @@ AntecedentGenerator::gatherPropositionsFromNumerics(
   std::vector<Proposition *> props;
 
   // 1. Gather IV
-  std::vector<size_t> ivs = gatherInterestingValues(t, cn, depth);
+  std::vector<size_t> ivs = gatherInterestingValues(t, depth);
   // 2. Generation of propositions
   if (!ivs.empty()) {
     props = genPropsThroughClustering(ivs, cn, t->_max_length);

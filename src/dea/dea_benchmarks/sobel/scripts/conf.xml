@@ -1,0 +1,23 @@
+<harm>
+      <context name="axc">
+        <numeric clsEffort="0.01" exp="p0" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p1" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p2" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p3" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p5" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p6" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p7" loc="dt"/>
+        <numeric clsEffort="0.01" exp="p8" loc="dt"/>
+        <numeric clsEffort="0.001" exp="out" loc="c"/>
+        <template dtLimits="9A,-0.1E"exp="G({..&&..}|->P0)" />
+
+        <sort name="frequency" exp="atct/traceLength"/>
+        <sort name="causality" exp="1-afct/traceLength"/>
+    </context>
+
+
+
+</harm>
+
+
+

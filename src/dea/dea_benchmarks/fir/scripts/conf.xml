@@ -1,0 +1,25 @@
+<harm>
+        <!--
+    <context name="axc1">
+        <numeric op="ge,le,e" clsEffort="0.1" exp="in" loc="dt"/>
+        <numeric op="ge,le,e" clsEffort="0.01" exp="out" loc="c"/>
+        <template dtLimits="1A,-0.1E" exp="G({..&&..}|->X[17](P0))" /> 
+
+        <sort name="frequency" exp="1-atct/traceLength"/>
+    </context>
+        -->
+
+    <context name="axc">
+        <numeric op="r,e,le,ge" clsEffort="0.0001" exp="in" loc="dt"/>
+        <numeric op="r,e,le,ge" clsEffort="0.0001" exp="out" loc="c"/>
+        <!--
+        <sort name="causality" exp="1-afct/traceLength"/>
+        -->
+        <template dtLimits="1A,0.1E" exp="G({..&&..}|->X[17](P0))" /> 
+
+        <sort name="frequency" exp="1-atct/traceLength"/>
+    </context>
+</harm>
+
+
+
