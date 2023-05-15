@@ -7,16 +7,6 @@ This repo contains working benchmarks to automatically perform design exploratio
 * DEA tool: https://github.com/SamueleGerminiani/harm (DEA is part of HARM)
 * Modelsim (vlib,vlog,vsim): https://eda.sw.siemens.com/en-US/ic/modelsim/
 
-## Build
-
-To build DEA, you need to run 
-
-```
-make dea
-```
-
-inside the HARM repo (harm/build/).
-
 ## How to run the experiments
 
 * Initialise the enviroment variables
