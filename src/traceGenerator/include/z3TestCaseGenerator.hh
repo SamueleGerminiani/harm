@@ -4,6 +4,7 @@
 #include "z3.h"
 
 #include "visitors/ExpToZ3Visitor.hh"
+#include "message.hh"
 
 #include <bitset>
 #include <iomanip>

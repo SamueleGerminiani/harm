@@ -180,12 +180,12 @@ add_executable(traceGenerator EXCLUDE_FROM_ALL ${TG_MAIN_SRC})
 target_link_libraries(traceGenerator commandLineParser templateParser propositionParser varParser traceReader ${Z3_LIBRARY})
 
 #dea
-add_executable(dea EXCLUDE_FROM_ALL src/dea/main.cc)
-SET(EVALUATOR_SRC ./src/dea/src/evaluator.cc)
-add_library(evaluator ${EVALUATOR_SRC})
-target_include_directories(evaluator PUBLIC ./src/dea/include/)
-target_link_libraries(evaluator miner_utils templateParser propositionParser varParser traceReader)
-target_link_libraries(dea evaluator commandLineParser traceReader)
+if (DEA)
+    message("Enabling DEA...")
+    add_subdirectory(src/dea)
+endif()
+
+
 
 
 ### TESTS & EXAMPLES ###
