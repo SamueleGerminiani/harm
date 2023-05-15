@@ -1,7 +1,3 @@
-  
-  
-  
-
 ## DEA
 
 The official repo of the DEA (Design Exploration for AxC) tool
@@ -14,7 +10,7 @@ The official repo of the DEA (Design Exploration for AxC) tool
 [Quick start](#quick-start)
 1. [Build the project](#build-the-project)
 
-[How to use the miner](#how-to-use-the-miner)
+[How to use DEA](#how-to-use-dea)
 
 [Optional arguments](#optional-arguments)
 
@@ -65,7 +61,7 @@ dea [--vcd --clk "clk_signal" | --csv] --ass-file "assertions_file.txt" --at-lis
 DEA requires as input a bash script (--bash option) to simulate the target design.
 DEA does not care how the user implements the script as long as the following requirements are satisfied.
 
-The scripts receives four inputs (in this order): 
+The script receives four inputs (in this order): 
 1. FaultList: a string representing a list of IDs of the form "ID1;ID2;...;IDN" where each IDi is a line of the file provided with the --at-list option
 2. Out: a string representing the path to the directory provided with the --dump-to option
 3. Mode: a binary value (0 or 1)
@@ -98,7 +94,58 @@ OUTPUT: No output expected by DEA
 ````
 
 * WARNING: the ThreadID input should always be set to 0 if the script does not support multi-threading! Use the --max-threads option to set the number of available threads.
-* DEA will not use the script to generate the faulty traces (and the golden trace) if their are already present in the Out directory.
+* DEA will not use the script to generate the faulty traces (and the golden trace) if they are already present in the Out directory.
+
+# Optional arguments
+
+--metric-name : name of the metric (default is 'Metric')
+
+--metric-search-interval : narrow the search of the nsga2 algo phase 2 clustering to a specified interval 'lower,upper' (default is '0.0,1.0')
+
+--max-clusters : divide the score into N clusters max number of clusters (must be used with kmeans)
+
+--cs : chunk-size number of assertions processed at a time (to avoid memory explosion) <INT>
+	
+--nsga2-mi : minimum surface dominance increment to continue the nsga2 algo with an other iteration, default is 1% (1) <FLOAT>
+	
+--tech : name axc technique used to perform the estimation (used to label the output files)
+	
+--cls-type : technique used to perform the clustering (nsga2, kmeans)
+	
+--debug-script : debug the input script (enables the script console output)
+	
+--max-threads uint : max number of threads that harm is allowed to spawn
+	
+--recover-diff : reuse the evaluation result of the previous run
+	
+--gen-rand : add the random clusters to the front of non-dominated solutions
+	
+--push : push the front: executes phase 2 of the nsga2 clustering
+	
+--max-push-time unint : max time to push the pareto front of phase II of the nsga2 clustering (in seconds)
+	
+--min-push-time unint : min time to push the pareto front of phase II of the nsga2 clustering (in seconds)
+	
+--min-time unint : min time to push the pareto front of phase I of the nsga2 clustering (in seconds)
+	
+--only-sim : run only phase 2 of the nsga2 clustering
+	
+--plot-dominance : plot the pareto dominance over time when running nsga2
+	
+--metric-direction unint : if 0, metric direction is from 0 (best) to 1(worst), else metric direction is from 1(best) to 0 (worst), default is 0
+	
+--silent : disable all outputs
+	
+--wsilent : disable all warning
+	
+--isilent : disable all info
+	
+--psilent : disable all progress bars
+	
+--help : show the options
+
+
+
 
 
 
