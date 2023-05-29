@@ -2,6 +2,8 @@
 
 The official repo of the DEA (Design Exploration for AxC) tool
 
+<img src="icon.png" alt="drawing" width="200"/>
+
 
 ## Table of contents
 
