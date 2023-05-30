@@ -100,7 +100,7 @@ ctest -V -R
 # How to use the miner  
 HARM has two main inputs, a trace in the form of a vcd/csv file and a set of hints.
 Hints consist of a set of propositions, templates and metrics; they are defined in a separate xml configuration file. 
-The user can find several working examples in the "tests" directory.
+The user can find several working examples in the "examples" directory.
 
 ## Run with a vcd trace
 
