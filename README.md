@@ -256,6 +256,7 @@ The template expression has an additional parameter "check", if it is set to "1"
 * \-\-isilent : disable all infos
 * \-\-max-ass <uint> : the maximum number of assertions to keep after the ranking
 * \-\-dump-vac-ass <FILE> : dump vacouse assertions to file
+* \-\-keep-vac-ass <FILE> : do not discard vacuous assertions
 * \-\-include-ass <FILE> : create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context
 * \-\-sample-by-con : if the number of mined assertions exceeds the value provided by --max-ass, assertions are selected favouring consequent diversity
 * \-\-max-threads <uint> : max number of threads that HARM is allowed to spawn

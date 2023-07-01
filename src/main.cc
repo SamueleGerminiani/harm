@@ -139,6 +139,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::dumpVacAss = result["dump-vac-ass"].as<std::string>();
   }
 
+  if (result.count("keep-vac-ass")) {
+    clc::keepVacAss = 1;
+  }
+
   if (result.count("max-threads")) {
     size_t nt = result["max-threads"].as<size_t>();
     messageWarningIf(nt > std::thread::hardware_concurrency(),

@@ -75,7 +75,9 @@ void TLMiner::mineProperties(Context &context, Trace *trace) {
   //clear: necessary if TLMiner is reused (multiple contexts)
   clear();
 
-  messageWarningIf(_nVacAss>0,"Number of vacuous assertions found for context '"+context._name+"': "+std::to_string(_nVacAss));
+  messageWarningIf(_nVacAss > 0,
+                   "Number of vacuous assertions found for context '" +
+                       context._name + "': " + std::to_string(_nVacAss));
 }
 
 void TLMiner::l3Handler(Context &context, size_t nThread) {
@@ -268,7 +270,9 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       _progressBar.increment(l3InstId);
       _progressBar.display();
 
-      goto end;
+      if (!clc::keepVacAss) {
+        goto end;
+      }
     }
 
     AntecedentGenerator antGen;
@@ -308,7 +312,9 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
       assert(!t->getDT()->getItems().empty());
 
       //check for vacuity
-      if (!t->isVacuous(Location::Ant)) {
+      bool isVacuous = t->isVacuous(Location::Ant);
+
+      if (!isVacuous || clc::keepVacAss) {
 
         //create a new assertion by making a snapshot of a template
         auto prettyAss = t->getDT()->prettyPrint(0);
@@ -323,15 +329,9 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         assp.push_back(ass);
         messageErrorIf(!t->assHoldsOnTrace(harm::Location::None),
                        "dt assertion is false: " + t->getColoredAssertion());
-      } else {
-        _vacLock.lock();
-        _nVacAss++;
-        if (clc::dumpVacAss != "") {
-          std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
-          _vacFile << t->getDT()->prettyPrint(0).first + "\n";
-          _vacFile.close();
+        if (isVacuous) {
+          dumpVac(prettyAss.first);
         }
-        _vacLock.unlock();
       }
       // clear the template of the current dt operands
       t->getDT()->removeItems();
@@ -360,7 +360,10 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
 
       assert(!t->getDT()->getItems().empty());
 
-      if (!t->isVacuousOffset(Location::Ant)) {
+      bool isVacuousOffset = t->isVacuousOffset(Location::Ant);
+
+      if (!isVacuousOffset || clc::keepVacAss) {
+
         auto prettyAss = t->getDT()->prettyPrint(1);
         Assertion *ass = new Assertion();
         t->fillContingency(ass->_ct, 1);
@@ -370,15 +373,10 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         ass->_pRepetitions = getRepetitions(loadedProps);
         ass->fillValuesOffset(t);
         assp.push_back(ass);
-      } else {
-        _vacLock.lock();
-        _nVacAss++;
-        if (clc::dumpVacAss != "") {
-          std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
-          _vacFile << t->getDT()->prettyPrint(1).first + "\n";
-          _vacFile.close();
+
+        if (isVacuousOffset) {
+          dumpVac(prettyAss.first);
         }
-        _vacLock.unlock();
       }
 
       t->getDT()->removeItems();
@@ -409,31 +407,29 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
   else {
     // If the template does not have a dt
 
-    if (!t->isVacuous(harm::Location::AntCon) &&
-        t->assHoldsOnTrace(harm::Location::None)) {
+    if (t->assHoldsOnTrace(harm::Location::None)) {
 
-      //create a new assertion by making a snapshot of a template
-      Assertion *ass = new Assertion();
-      t->fillContingency(ass->_ct, 0);
-      ass->_toString =
-          std::make_pair(t->getAssertion(), t->getColoredAssertion());
-      auto loadedProps = t->getLoadedPropositions();
-      ass->_complexity = getNumVariables(loadedProps);
-      ass->_pRepetitions = getRepetitions(loadedProps);
-      ass->fillValues(t);
-      assp.push_back(ass);
-      messageErrorIf(ass->_ct[0][0] == 0, "!ATCT");
-      messageErrorIf(ass->_ct[0][1] > 0, "ATCF");
+      bool isVacuous = t->isVacuous(Location::AntCon);
 
-    } else {
-      _vacLock.lock();
-      _nVacAss++;
-      if (clc::dumpVacAss != "") {
-        std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
-        _vacFile << t->getAssertion() + "\n";
-        _vacFile.close();
+      if (!isVacuous || clc::keepVacAss) {
+
+        //create a new assertion by making a snapshot of a template
+        Assertion *ass = new Assertion();
+        t->fillContingency(ass->_ct, 0);
+        ass->_toString =
+            std::make_pair(t->getAssertion(), t->getColoredAssertion());
+        auto loadedProps = t->getLoadedPropositions();
+        ass->_complexity = getNumVariables(loadedProps);
+        ass->_pRepetitions = getRepetitions(loadedProps);
+        ass->fillValues(t);
+        assp.push_back(ass);
+        messageErrorIf(ass->_ct[0][0] == 0, "!ATCT");
+        messageErrorIf(ass->_ct[0][1] > 0, "ATCF");
+
+        if (isVacuous) {
+          dumpVac(ass->_toString.first);
+        }
       }
-      _vacLock.unlock();
     }
 
     _progressBar.increment(l3InstId);
@@ -457,6 +453,17 @@ end:;
   l2avThreads->addNotifyOnce(nThreads);
 }
 
+void TLMiner::dumpVac(const std::string &assStr) {
+
+  _vacLock.lock();
+  _nVacAss++;
+  if (clc::dumpVacAss != "") {
+    std::ofstream _vacFile(clc::dumpVacAss, ios_base::app);
+    _vacFile << assStr + "\n";
+    _vacFile.close();
+  }
+  _vacLock.unlock();
+}
 void TLMiner::clear() {
   _propsAnt.clear();
   _propsCon.clear();

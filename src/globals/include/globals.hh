@@ -28,6 +28,7 @@ extern std::string outputLang;
 extern bool genTemp;
 extern size_t maxThreads;
 extern bool dumpAssToFile;
+extern bool keepVacAss;
 extern std::string dumpVacAss;
 extern size_t maxAss;
 extern std::string dumpPath;

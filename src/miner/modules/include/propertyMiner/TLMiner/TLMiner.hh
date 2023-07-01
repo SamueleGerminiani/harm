@@ -5,12 +5,12 @@
 #include "PropertyMiner.hh"
 #include "Semaphore.hh"
 #include "visitors/visitors.hh"
+#include <fstream>
 #include <map>
 #include <mutex>
 #include <set>
 #include <unordered_set>
 #include <vector>
-#include <fstream>
 
 #define enPB 1
 using namespace std;
@@ -40,7 +40,8 @@ public:
   void l2Handler(Template *t, size_t l3InstId,
                  std::unordered_map<size_t, Semaphore *> &l3Instances,
                  Semaphore &l3avThreads, std::mutex &spotStupidity,
-                 std::mutex &l3InstancesGuard, std::unordered_map<size_t, size_t>  &l3InstToNumThreads);
+                 std::mutex &l3InstancesGuard,
+                 std::unordered_map<size_t, size_t> &l3InstToNumThreads);
   /// @brief implements level 1 of parallelization (Evaluation function)
   void l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
                  Semaphore *l2avThreads,
@@ -50,6 +51,8 @@ public:
   /// @brief clears the utility vars and the gathered assertions
   void clear();
 
+  void dumpVac(const std::string &assStr);
+
 private:
   std::vector<Proposition *> _propsCon;
   std::vector<Proposition *> _propsAnt;
@@ -58,13 +61,13 @@ private:
   std::vector<CachedAllNumeric *> _numerics;
 
   size_t _traceLength;
-  std::vector<std::vector<Assertion*>> _collectedAssertions;
+  std::vector<std::vector<Assertion *>> _collectedAssertions;
   std::mutex _collectedAssertionsGuard;
   progresscpp::ParallelProgressBar _progressBar;
   //debug
   std::mutex _vacLock;
   std::ofstream _vacFile;
-  size_t _nVacAss=0;
-  };
+  size_t _nVacAss = 0;
+};
 
 } // namespace harm

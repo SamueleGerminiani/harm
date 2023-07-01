@@ -25,6 +25,7 @@ bool genTemp;
 size_t maxThreads = std::thread::hardware_concurrency();
 bool findMinSubset = false;
 bool dumpAssToFile = false;
+bool keepVacAss = false;
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 std::string dumpPath = "";
