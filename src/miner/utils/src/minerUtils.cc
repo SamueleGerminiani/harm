@@ -332,6 +332,9 @@ buildAutomaton(spot::twa_graph_ptr &automata,
   // set the initial state of the automaton
   retA->_root = retA->_idToNode.at(0);
 
+  //messageErrorIf(retA->_rejecting==nullptr, "Automaton misses the rejecting state");
+  messageErrorIf(retA->_accepting==nullptr, "Automaton misses the accepting state");
+
   return retA;
 }
 

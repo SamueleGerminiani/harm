@@ -423,7 +423,7 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
         ass->_pRepetitions = getRepetitions(loadedProps);
         ass->fillValues(t);
         assp.push_back(ass);
-        messageErrorIf(ass->_ct[0][0] == 0, "!ATCT");
+        messageErrorIf(ass->_ct[0][0] == 0 && !clc::keepVacAss, "!ATCT");
         messageErrorIf(ass->_ct[0][1] > 0, "ATCF");
 
         if (isVacuous) {

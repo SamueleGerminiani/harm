@@ -38,6 +38,7 @@ Template::Template(const Template &original) {
   _templateFormula = original._buildTemplateFormula;
   _trace = original._trace;
   _useCachedProps = original._useCachedProps;
+  std::unordered_map<std::string, Proposition **> _phToPP;
   for (auto &s : _templateFormula) {
     //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template, two instances of the same template should not have overlapping memory
     if (s._pp != nullptr) {
@@ -48,7 +49,10 @@ Template::Template(const Template &original) {
           s._pp = new Proposition *(copy(**s._pp));
         }
       } else {
-        s._pp = new Proposition *(*s._pp);
+        if (!_phToPP.count(s._s)) {
+          _phToPP[s._s] = new Proposition *(*s._pp);
+        }
+        s._pp = _phToPP.at(s._s);
       }
     }
   }
@@ -529,8 +533,8 @@ void Template::build() {
   auto conAutomaton = generateDeterministicSpotAutomaton(con.f);
 
   // debug
-  // print_hoa(std::cout, antAutomaton) << '\n';
-  // print_hoa(std::cout, conAutomaton) << '\n';
+  //print_hoa(std::cout, antAutomaton) << '\n';
+  //print_hoa(std::cout, conAutomaton) << '\n';
 
   // generare a custom automata to implement the evaluation function of the template
   _ant = buildAutomaton(antAutomaton, _tokenToProp);
@@ -850,7 +854,7 @@ void Template::printContingency() {
 void Template::check() {
   messageErrorIf(!isFullyInstantiated(),
                  "Checking is available only for fully instantiated templates "
-                 "(assertions)!");
+                 "(assertions)");
   std::cout << "==============================================================="
                "==========="
             << "\n";
@@ -916,7 +920,8 @@ void Template::check() {
     messageWarningIf(_trace->getLength() > maxPrintableTrace,
                      "Printing only the first 50 elements");
     std::cout << "Ant: ";
-    for (size_t i = 0; i < maxPrintableTrace; i++) {
+    for (size_t i = 0; i < std::min(maxPrintableTrace, _trace->getLength());
+         i++) {
       std::cout << evaluate_ant(i) << "(" << i << ")"
                 << " ";
     }
@@ -925,7 +930,8 @@ void Template::check() {
     std::cout << "\n";
     std::cout << "Sft: ";
     if (_applyDynamicShift || _constShift > 0) {
-      for (size_t i = 0; i < maxPrintableTrace; i++) {
+      for (size_t i = 0; i < std::min(maxPrintableTrace, _trace->getLength());
+           i++) {
         std::cout << (!_applyDynamicShift ? 0 : _dynamicShiftCachedValues[i]) +
                          _constShift
                   << "(" << i << ")"
@@ -936,14 +942,16 @@ void Template::check() {
     std::cout << "\n";
 
     std::cout << "Con: ";
-    for (size_t i = 0; i < maxPrintableTrace; i++) {
+    for (size_t i = 0; i < std::min(maxPrintableTrace, _trace->getLength());
+         i++) {
       std::cout << evaluate_con(i) << "(" << i << ")"
                 << " ";
     }
     std::cout << "\n";
     std::cout << "\n";
     std::cout << "Ass: ";
-    for (size_t i = 0; i < maxPrintableTrace; i++) {
+    for (size_t i = 0; i < std::min(maxPrintableTrace, _trace->getLength());
+         i++) {
       std::cout << evaluate(i) << "(" << i << ")"
                 << " ";
     }

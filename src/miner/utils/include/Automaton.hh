@@ -40,7 +40,7 @@ public:
 
   std::unordered_map<size_t, Node *> _idToNode;
   Node *_root;
-  Node *_accepting;
-  Node *_rejecting;
+  Node *_accepting=nullptr;
+  Node *_rejecting=nullptr;
 };
 } // namespace harm
