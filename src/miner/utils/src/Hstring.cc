@@ -1,24 +1,24 @@
 
 #include "Hstring.hh"
 
-Hstring::Hstring(std::string s, Stype t, expression::Proposition **pp)
-    : _s(s), _t(t), _pp(pp), _offset(-1) {
-  _append.push_back(*this);
-}
-Hstring::Hstring() : _s(""), _t(Stype::Temp), _pp(nullptr), _offset(-1) {
-  _append.push_back(*this);
+Hstring::Hstring(
+    std::string s, Stype t, expression::Proposition **pp, int offset,
+    expression::Function<expression::Proposition, expression::Proposition> *f,
+    const std::string &sep) {
+  Hstring hs;
+  hs._s = s;
+  hs._t = t;
+  hs._pp = pp;
+  hs._offset = offset;
+  hs._f = f;
+  hs._sep = sep;
+  _append.push_back(hs);
 }
 Hstring Hstring::operator+(const Hstring &right) {
-  auto left = *this;
-  if (right._append.empty()) {
-      //single char
-    left._append.push_back(right);
-  } else {
-      //string
-    for (const auto &i : right._append) {
-      left._append.push_back(i);
-    }
-  }
+  Hstring left = *this;
+  left._append.insert(left._append.end(), right._append.begin(),
+                      right._append.end());
+
   return left;
 }
 size_t Hstring::size() { return _append.size(); }
@@ -35,7 +35,8 @@ bool Hstring::exists(std::string toFind) {
 }
 
 std::string Hstring::toColoredString(bool sub) {
-    messageErrorIf(_append.empty(),"Attempted to print a char or an empty string");
+  messageErrorIf(_append.empty(), "Attempted to print an empty Hstring");
+
   std::string ret = "";
   for (auto &e : _append) {
     switch (e._t) {
@@ -47,6 +48,12 @@ std::string Hstring::toColoredString(bool sub) {
       break;
     case Stype::Ph:
       ret += VAR((sub ? prop2ColoredString(**e._pp) : e._s));
+      break;
+    case Stype::Inst:
+      ret += prop2ColoredString(**e._pp);
+      break;
+    case Stype::Function:
+      ret += e._f->toColoredString(sub);
       break;
     case Stype::DTAnd:
       if (!sub || dynamic_cast<expression::PropositionAnd *>(*e._pp)->empty()) {
@@ -92,9 +99,6 @@ std::string Hstring::toColoredString(bool sub) {
         ret += TEMP("..#&..");
       }
       break;
-    case Stype::Inst:
-      ret += prop2ColoredString(**e._pp);
-      break;
     case Stype::Imp:
       ret += TIMPL(e._s);
       break;
@@ -104,7 +108,7 @@ std::string Hstring::toColoredString(bool sub) {
   return ret;
 }
 std::string Hstring::toString(bool sub) {
-    messageErrorIf(_append.empty(),"Attempted to print a char or an empty string");
+  messageErrorIf(_append.empty(), "Attempted to print an empty Hstring");
 
   std::string ret = "";
   for (auto &e : _append) {
@@ -117,6 +121,12 @@ std::string Hstring::toString(bool sub) {
       break;
     case Stype::Ph:
       ret += (sub ? prop2String(**e._pp) : e._s);
+      break;
+    case Stype::Inst:
+      ret += prop2String(**e._pp);
+      break;
+    case Stype::Function:
+      ret += e._f->toString(sub);
       break;
     case Stype::DTAnd:
       if (!sub || dynamic_cast<expression::PropositionAnd *>(*e._pp)->empty()) {
@@ -161,9 +171,6 @@ std::string Hstring::toString(bool sub) {
         ret += ("..#&..");
       }
       break;
-    case Stype::Inst:
-      ret += prop2String(**e._pp);
-      break;
     case Stype::Imp:
       ret += e._s;
       break;
@@ -186,6 +193,9 @@ std::string Hstring::toSpotString() {
       ret += e._s;
       break;
     case Stype::Ph:
+      ret += e._s;
+      break;
+    case Stype::Imp:
       ret += e._s;
       break;
     case Stype::DTAnd:
@@ -212,7 +222,7 @@ std::string Hstring::toSpotString() {
     case Stype::Inst:
       ret += e._s;
       break;
-    case Stype::Imp:
+    case Stype::Function:
       ret += e._s;
       break;
     default:;
@@ -222,30 +232,41 @@ std::string Hstring::toSpotString() {
 }
 
 Hstring Hstring::getAnt() {
+  auto imp_it = std::find_if(_append.begin(), _append.end(),
+                             [](Hstring &e) { return e._t == Stype::Imp; });
+
+  messageErrorIf(imp_it == _append.end(),
+                 "No implication found in Hstring: " + this->toSpotString());
+
   Hstring ret;
-  size_t i = 1;
-  while (_append[i]._t != Stype::Imp) {
-    ret._append.push_back(_append[i++]);
-  }
+  ret._append.insert(ret._append.end(), _append.begin() + 1, imp_it);
+
   return ret;
 }
 Hstring Hstring::getCon() {
-  Hstring ret;
-  size_t i = 1;
-  while (_append[i++]._t != Stype::Imp)
-    ;
 
-  while (i < size() - 1) {
-    ret._append.push_back(_append[i++]);
-  }
+  auto imp_it = std::find_if(_append.begin(), _append.end(),
+                             [](Hstring &e) { return e._t == Stype::Imp; });
+
+  messageErrorIf(imp_it == _append.end(),
+                 "No implication found in Hstring: " + this->toSpotString());
+
+  Hstring ret;
+  ret._append.insert(ret._append.end(), imp_it+1, _append.end()-1);
+
   return ret;
 }
 Hstring Hstring::getImp() {
-  size_t i = 0;
-  while (_append[i++]._t != Stype::Imp)
-    ;
+  auto imp_it = std::find_if(_append.begin(), _append.end(),
+                             [](Hstring &e) { return e._t == Stype::Imp; });
 
-  return _append[i - 1];
+  messageErrorIf(imp_it == _append.end(),
+                 "No implication found in Hstring: " + this->toSpotString());
+
+  Hstring hs;
+  hs._append.push_back(*imp_it);
+  
+  return hs;
 }
 std::vector<Hstring>::iterator Hstring::begin() { return _append.begin(); }
 
@@ -289,7 +310,8 @@ std::vector<Hstring> Hstring::getDTOperands() {
 
 void Hstring::insert(std::vector<Hstring>::iterator where,
                      const Hstring &toInsert) {
-  _append.insert(where, toInsert);
+  _append.insert(where, toInsert._append.begin(),
+                      toInsert._append.end());
 }
 std::ostream &operator<<(std::ostream &os, const Hstring::Stype &t) {
 
@@ -320,6 +342,9 @@ std::ostream &operator<<(std::ostream &os, const Hstring::Stype &t) {
     break;
   case Hstring::Stype::Ph:
     os << "Ph";
+    break;
+  case Hstring::Stype::Function:
+    os << "Function";
     break;
   }
   return os;

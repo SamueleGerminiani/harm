@@ -275,6 +275,7 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     }
     return;
   }
+
   if (ctx->placeholder() != nullptr) {
     std::string ph = "P" + ctx->placeholder()->NUMERIC()->getText();
     if (!_phToProp.count(ph)) {
@@ -288,6 +289,44 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     }
     return;
   }
+
+  if (ctx->FUNCTION() != nullptr) {
+
+      messageErrorIf(ctx->nonTemporalExp()==nullptr ,"Function nonTemporalExp is not defined\n"+printErrorMessage());
+    std::string expInside = "";
+
+    if (ctx->nonTemporalExp()->placeholder()!=nullptr) {
+      std::string expInside = ctx->nonTemporalExp()->getText();
+      if (!_phToProp.count(expInside)) {
+        _phToProp[expInside] = new Proposition *(nullptr);
+      }
+
+      Hstring s("fun_" + expInside, Hstring::Stype::Function);
+      s[0]._f = new PropositionStable(_phToProp.at(expInside), expInside,
+                                   VarType::Bool, 1, _trace->getLength());
+
+      _subFormulas.push(ctx->NOT() != nullptr ? Hstring("!", Hstring::Stype::Temp) + s : s);
+    } else {
+      messageErrorIf(ctx->nonTemporalExp()->boolean()==nullptr ,"Function boolean is not defined\n"+printErrorMessage());
+      Proposition *p = parsePropositionAlreadyTyped(
+          ctx->nonTemporalExp()->getText(), _trace);
+      std::string pStr = prop2String(*p);
+      if (!_propStrToInst.count(pStr)) {
+        expInside = "_inst_" + std::to_string(instCount++);
+        _propStrToInst[pStr] = expInside;
+      }
+
+      Hstring s("fun_" + expInside, Hstring::Stype::Function);
+      s[0]._f = new PropositionStable(
+          _useCache ? new Proposition *(new CachedProposition(p))
+                    : new Proposition *(p),
+          expInside, VarType::Bool, 1, _trace->getLength());
+      _subFormulas.push(s);
+    }
+
+    return;
+  }
+
   if (ctx->dt_next() != nullptr) {
     messageErrorIf(dtCount > 0,
                    "More than one dt operator defined\n" + printErrorMessage());

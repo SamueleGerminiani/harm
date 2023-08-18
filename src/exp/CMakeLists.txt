@@ -10,7 +10,7 @@ SET(EXP_SRCS
     src/classes/expression/Expression.cc
     src/classes/expression/BitSelector.cc
     src/classes/expression/TypeCast.cc
-    src/classes/temporal/PastOperator.cc
+    src/classes/function/Function.cc
     src/expUtils/expUtils.cc
     #visitors
     src/visitors/PrinterVisitor.cc

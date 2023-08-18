@@ -1,5 +1,6 @@
 #pragma once
 
+#include "classes/function/function.hh"
 #include "colors.hh"
 #include "exp.hh"
 
@@ -17,11 +18,12 @@ public:
     DTNext,
     DTNCReps,
     DTNextAnd,
-    G
+    G,
+    Function
   };
 
-  Hstring(std::string s, Stype t, expression::Proposition **pp = nullptr);
-  Hstring();
+  Hstring(std::string s, Stype t, expression::Proposition **pp = nullptr, int offset = 0,expression::Function<expression::Proposition,expression::Proposition> *f=nullptr, const std::string &sep = "");
+  Hstring()=default;
 
   ~Hstring() = default;
 
@@ -50,11 +52,12 @@ public:
 
   std::string _s;
   Stype _t;
-  expression::Proposition **_pp;
   int _offset;
   std::string _sep;
+  expression::Proposition **_pp = nullptr;
+  expression::Function<expression::Proposition,expression::Proposition> *_f = nullptr;
 
 private:
   std::vector<Hstring> _append;
 };
-  std::ostream & operator<<(std::ostream &os,const Hstring::Stype &t);
+std::ostream &operator<<(std::ostream &os, const Hstring::Stype &t);

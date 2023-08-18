@@ -28,6 +28,9 @@ public:
   virtual void enterTformula(spotParser::TformulaContext * /*ctx*/) override { }
   virtual void exitTformula(spotParser::TformulaContext * /*ctx*/) override { }
 
+  virtual void enterNonTemporalExp(spotParser::NonTemporalExpContext * /*ctx*/) override { }
+  virtual void exitNonTemporalExp(spotParser::NonTemporalExpContext * /*ctx*/) override { }
+
   virtual void enterPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
   virtual void exitPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
 

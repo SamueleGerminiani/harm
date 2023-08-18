@@ -32,8 +32,13 @@ harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
     DEBUG
     std::cout << treeFragAnt->toStringTree(&parser) << "\n";
     std::cout << formula << "\n";
-  exit(0);
+    std::cout << templateFormula.toColoredString(0) << "\n";
+    std::cout << templateFormula.toString(0) << "\n";
+    std::cout << templateFormula.toColoredString(1) << "\n";
+    std::cout << templateFormula.toString(1) << "\n";
+    std::cout << templateFormula.toSpotString() << "\n";
     */
+
     harm::Template *newTemp =
         new harm::Template(templateFormula, trace, limits);
     if (!useCache) {

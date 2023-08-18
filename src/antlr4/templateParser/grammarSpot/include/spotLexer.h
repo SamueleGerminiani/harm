@@ -13,16 +13,16 @@ class  spotLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
-    T__7 = 8, T__8 = 9, DT_AND = 10, SEP = 11, EVENTUALLY = 12, ALWAYS = 13, 
-    NEXT = 14, UNTIL = 15, RELEASE = 16, DOTS = 17, IMPL = 18, IMPL2 = 19, 
-    IFF = 20, XOR = 21, BIND1 = 22, BIND2 = 23, SEREIMPL1 = 24, SEREIMPL2 = 25, 
-    ASS = 26, DELAY = 27, SCOL = 28, COL = 29, FIRST_MATCH = 30, SIGN = 31, 
-    CONST_SUFFIX = 32, LGPAREN = 33, RGPAREN = 34, LCPAREN = 35, RCPAREN = 36, 
-    LPAREN = 37, RPAREN = 38, VARIABLE = 39, NUMERIC = 40, VERILOG_BINARY = 41, 
-    GCC_BINARY = 42, HEX = 43, BOOLEAN = 44, PLUS = 45, MINUS = 46, TIMES = 47, 
-    DIV = 48, GT = 49, GE = 50, LT = 51, LE = 52, EQ = 53, NEQ = 54, BAND = 55, 
-    BOR = 56, BXOR = 57, NEG = 58, LSHIFT = 59, RSHIFT = 60, AND = 61, OR = 62, 
-    NOT = 63, WS = 64
+    T__7 = 8, T__8 = 9, DT_AND = 10, SEP = 11, FUNCTION = 12, EVENTUALLY = 13, 
+    ALWAYS = 14, NEXT = 15, UNTIL = 16, RELEASE = 17, DOTS = 18, IMPL = 19, 
+    IMPL2 = 20, IFF = 21, XOR = 22, BIND1 = 23, BIND2 = 24, SEREIMPL1 = 25, 
+    SEREIMPL2 = 26, ASS = 27, DELAY = 28, SCOL = 29, COL = 30, FIRST_MATCH = 31, 
+    SIGN = 32, CONST_SUFFIX = 33, LGPAREN = 34, RGPAREN = 35, LCPAREN = 36, 
+    RCPAREN = 37, LPAREN = 38, RPAREN = 39, VARIABLE = 40, NUMERIC = 41, 
+    VERILOG_BINARY = 42, GCC_BINARY = 43, HEX = 44, BOOLEAN = 45, PLUS = 46, 
+    MINUS = 47, TIMES = 48, DIV = 49, GT = 50, GE = 51, LT = 52, LE = 53, 
+    EQ = 54, NEQ = 55, BAND = 56, BOR = 57, BXOR = 58, NEG = 59, LSHIFT = 60, 
+    RSHIFT = 61, AND = 62, OR = 63, NOT = 64, WS = 65
   };
 
   explicit spotLexer(antlr4::CharStream *input);

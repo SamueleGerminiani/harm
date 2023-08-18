@@ -26,6 +26,9 @@ public:
   virtual void enterTformula(spotParser::TformulaContext *ctx) = 0;
   virtual void exitTformula(spotParser::TformulaContext *ctx) = 0;
 
+  virtual void enterNonTemporalExp(spotParser::NonTemporalExpContext *ctx) = 0;
+  virtual void exitNonTemporalExp(spotParser::NonTemporalExpContext *ctx) = 0;
+
   virtual void enterPlaceholder(spotParser::PlaceholderContext *ctx) = 0;
   virtual void exitPlaceholder(spotParser::PlaceholderContext *ctx) = 0;
 

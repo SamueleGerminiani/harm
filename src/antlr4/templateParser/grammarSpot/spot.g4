@@ -16,7 +16,8 @@ formula : tformula IMPL tformula
 	    | LGPAREN sere RGPAREN SEREIMPL2 tformula
 	;
 
-sere : boolean | (NOT)? placeholder | DT_AND 
+sere : boolean | (NOT)? placeholder | (NOT)? FUNCTION LPAREN nonTemporalExp RPAREN
+     | DT_AND 
 	 | LPAREN sere RPAREN
 	 | LGPAREN sere RGPAREN
 	 | sere BOR sere
@@ -46,6 +47,9 @@ tformula: boolean | placeholder | DT_AND
 	| LGPAREN sere RGPAREN
 	;
 
+nonTemporalExp:
+placeholder | boolean;
+
 placeholder: 'P' NUMERIC ;
 
 DT_AND
@@ -63,6 +67,10 @@ dt_NCReps
     : '..[->' NUMERIC ']' SEP '..';
 
 SEP:'@:' | '@;';
+
+FUNCTION
+: '$stable';
+
 
 EVENTUALLY
     : 'F'

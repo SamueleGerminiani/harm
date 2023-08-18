@@ -57,9 +57,9 @@ DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
   generateFormulas();
 
   //  debug
-  //  for (auto &f : _formulas) {
-  //    std::cout << f.toSpotString() << "\n";
-  //  }
+    //for (auto &f : _formulas) {
+    //  std::cout << f.toSpotString() << "\n";
+    //}
 
   //   Check for parallel depth
   handleParallelDepth();

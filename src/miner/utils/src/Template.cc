@@ -484,7 +484,7 @@ void Template::build() {
   }
 
   //retrieve the implication of the template
-  std::string imp = himpl._s;
+  std::string imp = himpl[0]._s;
   // remove unwanted spaces in the string representation of the implication
   imp.erase(remove_if(imp.begin(), imp.end(), isspace), imp.end());
   // set the shifts according to the type of implication
@@ -1047,7 +1047,6 @@ bool Template::isFullyInstantiated() {
 }
 Automaton *Template::buildDiamondAutomaton(bool conNegated) {
   auto hant = _templateFormula.getAnt();
-  auto himpl = _templateFormula.getImp();
   auto hcon = _templateFormula.getCon();
 
   std::string imp = "";
