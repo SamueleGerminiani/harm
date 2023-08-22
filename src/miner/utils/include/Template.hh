@@ -333,6 +333,8 @@ private:
   /// link of all user instantiated placeholders to their respective
   /// propositions
   std::unordered_map<std::string, Proposition **> _iToProp;
+  /// link of all functions to their respective pointers
+  std::unordered_map<std::string, Function<Proposition,Proposition>*> _tokenToFun;
   /// links all the dt operators to their respective propositions
   std::pair<std::string, DTOperator *> _dtOp = {"", nullptr};
 

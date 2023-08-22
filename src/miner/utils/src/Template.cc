@@ -39,20 +39,39 @@ Template::Template(const Template &original) {
   _trace = original._trace;
   _useCachedProps = original._useCachedProps;
   std::unordered_map<std::string, Proposition **> _phToPP;
+  std::unordered_map<std::string, Proposition **> _instToPP;
+  std::unordered_map<std::string, Function<Proposition, Proposition> *>
+      _tokenToFF;
   for (auto &s : _templateFormula) {
     //we need to reinizializes/copy all the propositions in the templateFormula to the new copy of the template, two instances of the same template should not have overlapping memory
     if (s._pp != nullptr) {
       if (s._t == Hstring::Stype::Inst) {
-        if (_useCachedProps) {
-          s._pp = new Proposition *(new CachedProposition(copy(**s._pp)));
-        } else {
-          s._pp = new Proposition *(copy(**s._pp));
+        if (!_instToPP.count(s._s)) {
+          _instToPP[s._s] =
+              _useCachedProps
+                  ? new Proposition *(new CachedProposition(copy(**s._pp)))
+                  : new Proposition *(copy(**s._pp));
         }
-      } else {
+        s._pp = _instToPP.at(s._s);
+      } else if (s._t == Hstring::Stype::Ph) {
         if (!_phToPP.count(s._s)) {
           _phToPP[s._s] = new Proposition *(*s._pp);
         }
         s._pp = _phToPP.at(s._s);
+      } else if (s._t == Hstring::Stype::Function) {
+        if (!_tokenToFF.count(s._s)) {
+          auto *f = s._f->cloneBare();
+          if (!_phToPP.count(f->getPlaceholder())) {
+            _phToPP[f->getPlaceholder()] = new Proposition *(*s._pp);
+          }
+          f->setPlaceholderPointer(_phToPP.at(f->getPlaceholder()));
+          _tokenToFF[s._s] = f;
+        }
+        s._f = _tokenToFF.at(s._s);
+
+      } else {
+        messageError("Hstring with instantiated _pp is not a proposition or a "
+                     "placeholder");
       }
     }
   }
@@ -104,13 +123,19 @@ Template::~Template() {
     delete[] _cachedDynShiftsP;
   }
 
-  // inst props are used only in a specific template: must be deleted in all instances of a template
-  for (auto &ph_pp : _iToProp) {
-    delete *ph_pp.second;
+  // inst props are unique of a specific template: must be deleted with the template
+  for (auto &[ph, pp] : _iToProp) {
+    delete *pp;
   }
 
-  for (auto &ph_pp : _tokenToProp) {
-    delete ph_pp.second;
+  // functions are unique of a specific template: must be deleted with the template
+  for (auto &[t, f] : _tokenToFun) {
+    delete f;
+  }
+
+  //the placeholder's pointers are unique of a specific template: must be deleted with the template
+  for (auto &[ph, pp] : _tokenToProp) {
+    delete pp;
   }
 }
 

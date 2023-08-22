@@ -322,6 +322,7 @@ void PermGenerator::genPermutations(size_t antP, size_t conP, size_t antConP,
 
   auto hcon = templateFormula.getCon();
   auto hant = templateFormula.getAnt();
+  auto himp = templateFormula.getImp();
 
   // retrieve placeholders to location
   std::unordered_set<std::string> antPhs;
@@ -349,7 +350,7 @@ void PermGenerator::genPermutations(size_t antP, size_t conP, size_t antConP,
 
   // rebuild the formula
   spot::formula wholeForm =
-      spot::parse_infix_psl(hant.toSpotString() + "->" + hcon.toSpotString()).f;
+      spot::parse_infix_psl(hant.toSpotString() + himp[0]._s + hcon.toSpotString()).f;
 
   // assign an index to each placeholders
   size_t index = 0;

@@ -92,13 +92,44 @@ std::string Stable<OT, ET>::toColoredString(bool sub) {
 }
 
 template <typename OT, typename ET> Stable<OT, ET>::~Stable() {
-  if (_isTemporal) {
-    delete _op;
-  } else {
+  if (!_isTemporal) {
     delete *_op;
     delete _op;
   }
 }
+template <typename OT, typename ET>
+Stable<OT, ET>::Stable(const Stable &other) {
+  OT *tmp = copy(**_op);
+  _op = new OT *(tmp);
+  _ph = other._ph;
+  _type = other._type;
+  _size = other._size;
+  _max_time = other._max_time;
+  _isTemporal = other._isTemporal;
+}
+template <typename OT, typename ET>
+Function<OT, ET> *Stable<OT, ET>::cloneBare() {
+  Stable<OT, ET> *ret = new Stable<OT, ET>(*this);
+  ret->_ph = _ph;
+  ret->_type = _type;
+  ret->_size = _size;
+  ret->_max_time = _max_time;
+  ret->_isTemporal = _isTemporal;
+  return ret;
+}
+template <typename OT, typename ET> Function<OT, ET> *Stable<OT, ET>::clone() {
+  return new Stable<OT, ET>(*this);
+}
+template <typename OT, typename ET>
+std::string Stable<OT, ET>::getPlaceholder() {
+    messageErrorIf(!_isTemporal, "Function is not temporal");
+    return _ph;
+}
+template <typename OT, typename ET>
+  void Stable<OT, ET>::setPlaceholderPointer(OT** pp) {
+      _op=pp;
+  
+  }
 //------------------------------------------------
 
 } // namespace expression

@@ -2,6 +2,7 @@
 
 #include "Hstring.hh"
 #include "Trace.hh"
+#include "classes/function/Function.hh"
 #include "exp.hh"
 #include "spotBaseListener.h"
 
@@ -34,9 +35,13 @@ private:
   harm::Trace *_trace;
   Hstring _templateFormula;
   std::unordered_map<std::string, expression::Proposition **> _phToProp;
+  std::unordered_map<std::string, expression::Proposition **> _instToProp;
+  std::unordered_map<std::string, expression::Function<expression::Proposition,expression::Proposition> * > _funIDtoFun;
   std::unordered_map<std::string, std::string> _propStrToInst;
+  std::unordered_map<std::string, std::string> _funStrToFunID;
   size_t dtCount = 0;
   size_t instCount = 0;
+  size_t funCount = 0;
   std::vector<std::string> _errorMessages;
   std::string printErrorMessage();
 
@@ -46,6 +51,9 @@ private:
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;
   virtual void exitTformula(spotParser::TformulaContext *ctx) override;
   virtual void exitSere(spotParser::SereContext *ctx) override;
+  std::string handleNewPP(const std::string &ph);
+  std::string handleNewInst(const std::string &prop);
+  std::string handleNewFunc(const std::string &funStr,const std::string &nonTemporalExp, bool containsPH);
 };
 
 } // namespace hparser

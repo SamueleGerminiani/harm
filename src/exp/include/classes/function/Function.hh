@@ -23,10 +23,15 @@ public:
   /// @brief Destructor.
   virtual ~Function() override = default;
 
+  Function(const Function &other) = delete;
+
+  virtual Function* cloneBare() = 0;
+  virtual Function* clone() = 0;
+
   /// @brief Returns the value of the atom in the given simulation time
   /// @param time The simulation time
   /// @return The value of the atom
-  virtual ReturnType evaluate(size_t time) override =0 ;
+  virtual ReturnType evaluate(size_t time) override = 0;
 
   virtual void acceptVisitor(ExpVisitor &vis) override = 0;
 
@@ -40,6 +45,8 @@ public:
 
   virtual std::string toString(bool sub = false) = 0;
   virtual std::string toColoredString(bool sub = false) = 0;
+  virtual std::string getPlaceholder() = 0;
+  virtual void setPlaceholderPointer(OT** pp) = 0;
 
 protected:
   /// @brief Constructor of an Function
@@ -59,14 +66,23 @@ public:
   Stable(OT *op, VarType type, size_t size, size_t max_time = 0);
   Stable(OT **op, std::string ph, VarType type, size_t size,
          size_t max_time = 0);
+  Stable(const Stable &other);
   ~Stable() override;
+  virtual Function<OT,ET> * cloneBare() override;
+  virtual Function<OT,ET> * clone() override;
   bool evaluate(size_t time) override;
   void acceptVisitor(ExpVisitor &vis) override;
   std::string toString(bool sub = false) override;
   std::string toColoredString(bool sub = false) override;
+  std::string getPlaceholder() override;
+  void setPlaceholderPointer(OT** pp) override;
   //not todo
 private:
+  Stable();
   using Function<OT, ET>::_isTemporal;
+  using Function<OT, ET>::_type;
+  using Function<OT, ET>::_size;
+  using Function<OT, ET>::_max_time;
   OT **_op;
   std::string _ph = "";
 };

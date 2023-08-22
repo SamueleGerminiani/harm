@@ -251,9 +251,10 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
             std::cout << "\t\t\tLindex: " << v1->lindex << "\n";
             std::cout << "\t\t\tRindex: " << v1->rindex << "\n";
             std::cout << "\t\t\tHash: " << v1->hash << "\n";
+            std::cout << "---------------------------------" << "\n";
           }
-          assert(0);
-          exit(1);
+          messageError("the sub-part of a splitted signal must be of size "
+                       "equal to 1");
         }
       }
     }
