@@ -174,7 +174,7 @@ getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal;
   if (!recursive) {
     for (auto signal : rootScope->signals) {
-      messageWarningIf(_nameToSignal.count(signal->reference),
+      messageWarningIf(_nameToSignal.count(signal->reference) && signal->size!=1,
                        "Multiple definitions of signal '" + signal->reference +
                            "' in trace!");
       if (isIgnored(signal->type)) {
@@ -203,7 +203,7 @@ getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
           std::accumulate(scopeName.begin(), scopeName.end(), std::string{}) +
           signal->reference;
 
-      messageWarningIf(_nameToSignal.count(name),
+      messageWarningIf(_nameToSignal.count(name) && signal->size!=1,
                        "Multiple definitions of signal '" + name +
                            "' in trace!");
       _nameToSignal[name].push_back(signal);
