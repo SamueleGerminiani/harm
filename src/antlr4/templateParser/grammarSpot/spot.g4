@@ -1,8 +1,9 @@
 grammar spot;
 import proposition;
 
-file : ALWAYS formula EOF
-| ALWAYS LPAREN formula RPAREN EOF;
+file : ALWAYS LPAREN formula RPAREN EOF 
+| ALWAYS formula EOF
+;
 
 
 
@@ -16,7 +17,7 @@ formula : tformula IMPL tformula
 	    | LGPAREN sere RGPAREN SEREIMPL2 tformula
 	;
 
-sere : boolean | (NOT)? placeholder | (NOT)? FUNCTION LPAREN nonTemporalExp RPAREN
+sere : boolean | (NOT)? PLACEHOLDER | (NOT)? FUNCTION LPAREN nonTemporalExp RPAREN
      | DT_AND 
 	 | LPAREN sere RPAREN
 	 | LGPAREN sere RGPAREN
@@ -25,16 +26,15 @@ sere : boolean | (NOT)? placeholder | (NOT)? FUNCTION LPAREN nonTemporalExp RPAR
 	 | sere AND sere
 	 | sere SCOL sere
 	 | sere COL sere
-	 | sere LCPAREN TIMES NUMERIC? DOTS? NUMERIC? RCPAREN
+	 | sere LCPAREN TIMES LOGIC_CONSTANT? DOTS? LOGIC_CONSTANT? RCPAREN
 	 | sere LCPAREN PLUS RCPAREN
-	 | sere LCPAREN ASS NUMERIC DOTS? NUMERIC? RCPAREN
-	 | sere LCPAREN IMPL NUMERIC DOTS? NUMERIC? RCPAREN
-	 | DELAY LCPAREN? NUMERIC DOTS? NUMERIC? RCPAREN? sere
-	 | sere DELAY LCPAREN? NUMERIC? DOTS? NUMERIC? RCPAREN? sere
-     | dt_next | dt_next_and | dt_NCReps
+	 | sere LCPAREN ASS LOGIC_CONSTANT DOTS? LOGIC_CONSTANT? RCPAREN
+	 | sere LCPAREN IMPL LOGIC_CONSTANT DOTS? LOGIC_CONSTANT? RCPAREN
+	 | sere DELAY LCPAREN? LOGIC_CONSTANT? DOTS? LOGIC_CONSTANT? RCPAREN? sere
+     | DT_NEXT | DT_NEXT_AND | DT_NCREPS
 	 ;
 
-tformula: boolean | placeholder | DT_AND
+tformula: boolean | PLACEHOLDER | DT_AND
 	| LPAREN tformula RPAREN 
 	| NOT tformula 
 	| tformula AND tformula 
@@ -48,22 +48,23 @@ tformula: boolean | placeholder | DT_AND
 	;
 
 nonTemporalExp:
-placeholder | boolean;
+PLACEHOLDER | boolean;
 
-placeholder: 'P' NUMERIC ;
+PLACEHOLDER: 'P' NUMERIC ;
 
 DT_AND
     : '..&&..'
     ;
 
-dt_next
+DT_NEXT
     : '..##' NUMERIC '..'
     ;
 
-dt_next_and
+DT_NEXT_AND
     : '..#' NUMERIC '&' '..'
     ;
-dt_NCReps
+
+DT_NCREPS
     : '..[->' NUMERIC ']' SEP '..';
 
 SEP:'@:' | '@;';

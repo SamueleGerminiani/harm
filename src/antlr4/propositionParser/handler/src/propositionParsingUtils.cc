@@ -1,18 +1,39 @@
 #include "propositionParsingUtils.hh"
 #include "PropositionParserHandler.hh"
 #include "propositionLexer.h"
+#include <deque>
+#include <regex>
 
-namespace hparser{
+namespace hparser {
 using namespace expression;
-expression::Proposition *parseProposition(std::string formula, harm::Trace *trace){
-  // formula="ePage == PAGE_MAIN && c8val==M_TEST+M_NULL";
+expression::Proposition *parseProposition(std::string formula,
+                                          harm::Trace *trace) {
 
-  auto decls=trace->getDeclarations();
-  addTypeToProposition(formula, decls);
+  auto decls = trace->getDeclarations();
+  addTypeToExp(formula, decls);
 
   // parse typed propositions
   hparser::PropositionParserHandler listener(trace);
-  listener.addErrorMessage("\t\t\tIn formula: "+formula);
+  listener.addErrorMessage("\t\t\tIn formula: " + formula);
+  antlr4::ANTLRInputStream input(formula);
+  propositionLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  propositionParser parser(&tokens);
+  antlr4::tree::ParseTree *treeFragAnt = parser.file();
+  antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
+  /*
+  DEBUG
+  exit(0);
+  */
+  std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
+  return listener.getProposition();
+}
+expression::Proposition *parsePropositionAlreadyTyped(std::string formula,
+                                                      harm::Trace *trace) {
+
+  // parse typed propositions
+  hparser::PropositionParserHandler listener(trace);
+  listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
@@ -26,44 +47,51 @@ expression::Proposition *parseProposition(std::string formula, harm::Trace *trac
   */
   return listener.getProposition();
 }
-expression::Proposition *parsePropositionAlreadyTyped(std::string formula, harm::Trace *trace){
+void handleHex(std::deque<bool> &changes, const std::string &formula) {
+  std::string toSearch = "0x";
+  std::vector<size_t> indexes;
 
-  // parse typed propositions
-  hparser::PropositionParserHandler listener(trace);
-  listener.addErrorMessage("\t\t\tIn formula: "+formula);
-  antlr4::ANTLRInputStream input(formula);
-  propositionLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  propositionParser parser(&tokens);
-  antlr4::tree::ParseTree *treeFragAnt = parser.file();
-  antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
-  /*
-  std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
-  DEBUG
-  exit(0);
-  */
-  return listener.getProposition();
+  // Get the first occurrence
+  size_t pos = formula.find(toSearch);
+  // Repeat till end is reached
+  while (pos != std::string::npos) {
+    // Add position to the vector
+    indexes.push_back(pos);
+    // Get the next occurrence from the current position
+    pos = formula.find(toSearch, pos + toSearch.size());
+  }
+
+  std::regex hex("[A-Fa-f0-9]");
+
+  for (size_t index : indexes) {
+    size_t current_index = index + 2;
+    if (current_index >= formula.size()) {
+      break;
+    }
+    while (std::regex_match(std::string(1, formula[current_index]), hex)) {
+      changes[current_index++] = true;
+    }
+  }
 }
-void addTypeToProposition(std::string &formula,
-                          std::vector<harm::VarDeclaration> varDeclarations) {
+void addTypeToExp(std::string &formula,
+                  std::vector<harm::VarDeclaration> varDeclarations) {
   /*all this code is to solve the problem of
   adding types to the variables in the formula:
   The complexity of the code is to handle the following problems:*/
   //(1) A variable can be used mutiple times non sequentially(need to parse
-  // the string n times) (2) A variable can contain the words bool, logic,
+  // the string n times) (2) A variable can contain reserved words such as bool, logic,
   // numeric (3) A variable name can be contained in an other variable, ex.
   // state, next_state
 
-
   /*now that with have all the variables, we can insert the types in the
   formula*/
+
   varDeclarations.push_back(std::make_tuple("true", VarType::Bool, 1));
   varDeclarations.push_back(std::make_tuple("false", VarType::Bool, 1));
 
   // match the longest variables first to solve (3)
   std::sort(begin(varDeclarations), end(varDeclarations),
-            [](harm::VarDeclaration &e1,
-               harm::VarDeclaration &e2) {
+            [](harm::VarDeclaration &e1, harm::VarDeclaration &e2) {
               return std::get<0>(e1).size() > std::get<0>(e2).size();
             });
 
@@ -74,6 +102,12 @@ void addTypeToProposition(std::string &formula,
 
   std::deque<bool> changes(formula.size());
 
+  // Exclude hex values from substitutions
+  handleHex(changes, formula);
+
+
+  std::string startVar= "«";
+  std::string endVar= "»";
   // Substitute each variable in the formula (if present)
   for (auto varDec : varDeclarations) {
     std::string nameType = "";
@@ -82,20 +116,20 @@ void addTypeToProposition(std::string &formula,
       if (std::get<0>(varDec) == "true" || std::get<0>(varDec) == "false") {
         nameType = "@" + std::get<0>(varDec);
       } else {
-        nameType = " <" + std::get<0>(varDec) + ",bool>";
+        nameType = " «" + std::get<0>(varDec) + ",bool»";
       }
       break;
     case VarType::ULogic:
-      nameType = " <" + std::get<0>(varDec) + ",logic(u," +
-                 std::to_string(std::get<2>(varDec)) + ")>";
+      nameType = " «" + std::get<0>(varDec) + ",logic(u," +
+                 std::to_string(std::get<2>(varDec)) + ")»";
       break;
     case VarType::SLogic:
-      nameType = " <" + std::get<0>(varDec) + ",logic(s," +
-                 std::to_string(std::get<2>(varDec)) + ")>";
+      nameType = " «" + std::get<0>(varDec) + ",logic(s," +
+                 std::to_string(std::get<2>(varDec)) + ")»";
       break;
     case VarType::Numeric:
-      nameType = " <" + std::get<0>(varDec) + ",numeric(" +
-                 std::to_string(std::get<2>(varDec)) + ")>";
+      nameType = " «" + std::get<0>(varDec) + ",numeric(" +
+                 std::to_string(std::get<2>(varDec)) + ")»";
       break;
     default:
       messageError("Variable is of \'Uknown type\'");
@@ -168,6 +202,7 @@ void addTypeToProposition(std::string &formula,
 
     assert(changes.size() == formula.size());
   } // end var
-//        std::cout << "After: " << formula << "\n";
+        std::cout << "After: " << formula << "\n";
+
 }
-}
+} // namespace hparser

@@ -16,13 +16,17 @@ void VarDeclarationParserHandler::enterVarDec(
     varDeclarationParser::VarDecContext *ctx) {
 
   auto type = std::make_pair(
-      ctx->vartype()->getText(),
-      (ctx->NUMERIC().empty()
+      ctx->VARTYPE()->getText(),
+      (ctx->LOGIC_CONSTANT().empty()
            ? 0
-           : std::max(std::stoul(ctx->NUMERIC()[0]->getText()),
-                      std::stoul(ctx->NUMERIC()[1]->getText()))));
+           : std::max(std::stoul(ctx->LOGIC_CONSTANT()[0]->getText()),
+                      std::stoul(ctx->LOGIC_CONSTANT()[1]->getText()))));
 
-  _varDecl = std::make_pair(ctx->name()->getText(), type);
+  std::string name=ctx->Name()->getText();
+  name = name.substr(2, name.size() - 4);
+
+
+  _varDecl = std::make_pair(name, type);
 }
 std::string VarDeclarationParserHandler::printErrorMessage() {
   std::stringstream ss;

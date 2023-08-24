@@ -3,7 +3,7 @@
 #include "Trace.hh"
 
 namespace hparser{
-void addTypeToProposition(std::string &formula,
+void addTypeToExp(std::string &formula,
                           std::vector<harm::VarDeclaration> varDeclarations) ;
 
 expression::Proposition *parseProposition(std::string formula, harm::Trace *trace);

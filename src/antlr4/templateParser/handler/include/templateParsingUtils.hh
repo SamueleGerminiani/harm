@@ -8,8 +8,7 @@ class Template;
 }
 
 namespace hparser {
-void addTypeToTemplate(std::string &formula,
-                       std::vector<harm::VarDeclaration> varDeclarations);
+//void addTypeToTemplate(std::string &formula, std::vector<harm::VarDeclaration> varDeclarations);
 
 harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
                               const std::string &language = "Spot",

@@ -22,16 +22,18 @@ boolean
     ;
 
 booleanAtom
-    : booleanConstant
-    | booleanVariable
+    : BOOLEAN_CONSTANT
+    | BOOLEAN_VARIABLE
     ;
 
-booleanConstant
-    : BOOLEAN
+BOOLEAN_CONSTANT
+    : '@true' 
+    | '@false'
     ;
 
-booleanVariable
-    : '<' variable ',bool>' 
+
+BOOLEAN_VARIABLE
+    : START_VAR VARIABLE ',bool' END_VAR 
     ;
 
 // ------------------------------------------ LOGIC
@@ -52,19 +54,19 @@ logic
 bitSelect: '[' NUMERIC (':' NUMERIC)? ']';
 
 logicAtom
-    : logicConstant
-    | logicVariable
+    : LOGIC_CONSTANT
+    | LOGIC_VARIABLE
     ;
 
-logicConstant
+LOGIC_CONSTANT
     : VERILOG_BINARY
     | GCC_BINARY
     | NUMERIC CONST_SUFFIX?
     | HEX
     ;
 
-logicVariable
-    : '<' variable ',logic(' SIGN ',' NUMERIC ')>' 
+LOGIC_VARIABLE
+    : START_VAR VARIABLE ',logic(' SIGN ',' NUMERIC ')' END_VAR
     ;
 
 SIGN
@@ -88,24 +90,20 @@ numeric
     ;
 
 numericAtom
-    : numericConstant
-    | numericVariable
+    : NUMERIC_CONSTANT
+    | NUMERIC_VARIABLE
     ;
 
-numericConstant
+NUMERIC_CONSTANT
     :  NUMERIC
     ;
 
-numericVariable
-    : '<' variable ',numeric(' NUMERIC ')>' 
+NUMERIC_VARIABLE
+    : START_VAR VARIABLE ',numeric(' NUMERIC ')' END_VAR 
     ;
 
 
 
-
-variable
-    : VARIABLE
-    ;
 
 LGPAREN
     : '{'
@@ -132,15 +130,12 @@ RPAREN
 
 
 //==== Token VARIABLE ==========================================================
-VARIABLE
-   : ('::')? VALID_ID_START VALID_ID_CHAR* 
+fragment VARIABLE
+   : VALID_ID_START VALID_ID_CHAR* 
    ;
 
-
-
 fragment VALID_ID_START
-    : 'P' (('a' .. 'z')| ('A' .. 'Z') | ('_'))
-	| (('a' .. 'z')| ('A' .. 'O')| ('Q' .. 'W')| ('Y' .. 'Z') | ('_')) ;
+    : (('a' .. 'z')| ('A' .. 'Z') | ('_'));
 
 fragment VALID_ID_CHAR
     : ('a' .. 'z') 
@@ -148,8 +143,33 @@ fragment VALID_ID_CHAR
     | ('0' .. '9')
     | ('.')
     | ('_')
-    | ('::')
+    | (':')
+    | (']')
+    | ('[')
+    | ('(')
+    | (')')
+    | ('{')
+    | ('}')
     ;
+
+//VARIABLE
+//   : ('::')? VALID_ID_START VALID_ID_CHAR* 
+//   ;
+//
+//
+//
+//fragment VALID_ID_START
+//    : 'P' (('a' .. 'z')| ('A' .. 'Z') | ('_'))
+//	| (('a' .. 'z')| ('A' .. 'O')| ('Q' .. 'W')| ('Y' .. 'Z') | ('_')) ;
+//
+//fragment VALID_ID_CHAR
+//    : ('a' .. 'z') 
+//    | ('A' .. 'Z')
+//    | ('0' .. '9')
+//    | ('.')
+//    | ('_')
+//    | ('::')
+//    ;
 //------------------------------------------------------------------------------
 
 
@@ -172,13 +192,11 @@ fragment VALID_ID_CHAR
     | '0x' (('0' .. '9') | ('A' .. 'F'))+ 
     ;
 
-    BOOLEAN
-    : '@true' 
-    | '@false'
-    ;
-
 
 //------------------------------------------------------------------------------
+
+fragment START_VAR: '«';
+fragment END_VAR: '»';
 
 
 //==== Arithmetic Operators ====================================================

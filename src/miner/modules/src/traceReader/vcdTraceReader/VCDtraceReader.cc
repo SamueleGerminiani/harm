@@ -8,6 +8,7 @@
 #include "minerUtils.hh"
 #include "misc.hh"
 
+#include <algorithm>
 #include <bitset>
 #include <cstdlib>
 #include <fstream>
@@ -51,50 +52,63 @@ static DataType toDataType(std::string name, std::string type, size_t size) {
   return ret;
 }
 
-///utility function to find the prefix common to all variables (improves readability)
-static size_t findCommonPrefixLength(VCDScope *vcd_scope) {
-  std::deque<VCDScope *> scopes;
-  std::vector<std::string> scopeName;
-  std::string name = "";
-  // find common prefix
-  size_t commonPrefixSize = 0;
-  scopes.push_back(vcd_scope);
-  while (!scopes.empty()) {
-    VCDScope *currScope = scopes.front();
-    scopeName.push_back(currScope->name + "::");
-    if (!currScope->signals.empty()) {
-      std::string commonPrefix =
-          (std::accumulate(scopeName.begin(), scopeName.end(), std::string{}));
-      commonPrefixSize = commonPrefix.size();
-      return commonPrefixSize;
-      break;
+static bool isScopeUniqueChildren(VCDScope *scope) {
+  std::unordered_set<std::string> names;
+  for (auto &child : scope->parent->children) {
+    if (names.count(child->name)) {
+      return false;
     }
-    if (!currScope->children.empty()) {
-      // add children
-      for (auto s : currScope->children) {
-        scopes.push_front(s);
-      }
+    names.insert(child->name);
+  }
+  return true;
+}
+static VCDScope *findChildWithMostSignals(VCDScope *scope) {
+  //gather children with same name as scope
+  std::vector<VCDScope *> children;
+  for (auto &child : scope->parent->children) {
+    if (child->name == scope->name) {
+      children.push_back(child);
     }
   }
-  messageError("No signals in scope '" + vcd_scope->name + "'");
-  return 0;
+
+  auto max = std::max_element(children.begin(), children.end(),
+                              [](VCDScope *a, VCDScope *b) {
+                                return a->signals.size() < b->signals.size();
+                              });
+  //debug
+  // std::cout << (*max)->name << "\n";
+  // std::cout << (*max)->signals.size() << "\n";
+  return *max;
 }
 
-///find scope 'scope' in the given vcd file
-static VCDScope *findScope(VCDFile *vcd_trace, const std::string &scope) {
+///find VCDScope 'scope' in the given vcd file
+static std::pair<std::string, VCDScope *> findScope(VCDFile *vcd_trace,
+                                                    const std::string &scope) {
   std::deque<VCDScope *> scopes;
   std::vector<std::string> scopeName;
   scopes.push_front(vcd_trace->root_scope);
+  std::pair<std::string, VCDScope *> candidate =
+      std::make_pair(std::string(), nullptr);
   while (!scopes.empty()) {
     VCDScope *currScope = scopes.front();
     scopeName.push_back(currScope->name + "::");
     scopes[0] = nullptr;
 
-    std::string name =
+    //debug
+    //    std::cout << std::string(scopeName.size(), '\t') << currScope->name << ": " << currScope->signals.size() << " \n";
+
+    std::string full_name =
         std::accumulate(scopeName.begin(), scopeName.end(), std::string{});
-    name.erase(name.size() - 2, 2);
-    if (name == scope) {
-      return currScope;
+    full_name.erase(full_name.size() - 2, 2);
+
+    if (full_name == scope) {
+      if (!isScopeUniqueChildren(currScope)) {
+        messageWarning(
+            "Scope '" + full_name +
+            "' is not unique, using the one containing the most signals");
+        return std::make_pair(full_name, findChildWithMostSignals(currScope));
+      }
+      return std::make_pair(full_name, currScope);
     }
 
     if (!currScope->children.empty()) {
@@ -110,20 +124,56 @@ static VCDScope *findScope(VCDFile *vcd_trace, const std::string &scope) {
     }
   }
 
-  messageError("Scope '" + scope + "' not found !");
-  return nullptr;
+  messageErrorIf(candidate.second == nullptr,
+                 "Scope '" + scope + "' not found !");
+  return candidate;
+}
+static bool isIgnored(VCDVarType type) {
+
+  if (type == VCDVarType::VCD_VAR_PARAMETER) {
+    return 1;
+  }
+  return 0;
+}
+
+static std::unordered_map<std::string, std::vector<VCDSignal *>>
+trimCommonPrefix(const std::unordered_map<std::string, std::vector<VCDSignal *>>
+                     &nameToSignal) {
+  //find common prefix ending with :
+  std::string commonPrefix = "";
+  for (auto &[name, signals] : nameToSignal) {
+    if (commonPrefix.empty()) {
+      commonPrefix = name;
+    } else {
+      commonPrefix =
+          commonPrefix.substr(0, std::mismatch(commonPrefix.begin(),
+                                               commonPrefix.end(), name.begin())
+                                         .first -
+                                     commonPrefix.begin());
+    }
+    //debug
+    //std::cout << commonPrefix << "\n";
+  }
+
+  if (commonPrefix == "" or commonPrefix.back() != ':') {
+      return nameToSignal;;
+  }
+  std::unordered_map<std::string, std::vector<VCDSignal *>> ret;
+  //trim common prefix
+  for (auto &[name, signals] : nameToSignal) {
+    ret[name.substr(commonPrefix.size())] = nameToSignal.at(name);
+  }
+
+  return ret;
 }
 
 ///retrieve the signals in the given scope 'rootScope', return type
 static std::unordered_map<std::string, std::vector<VCDSignal *>>
-getSignalsInScope(VCDScope *rootScope, size_t commonPrefixSize = 0,
-                  bool recursive = 1) {
+getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal;
   if (!recursive) {
     for (auto signal : rootScope->signals) {
-      // ignore
-      if (signal->type ==
-          VCDVarType::VCD_VAR_PARAMETER /*|| signal->size > 64*/) {
+      if (isIgnored(signal->type)) {
         continue;
       }
       _nameToSignal[signal->reference].push_back(signal);
@@ -137,20 +187,17 @@ getSignalsInScope(VCDScope *rootScope, size_t commonPrefixSize = 0,
   scopes.push_back(rootScope);
   while (!scopes.empty()) {
     VCDScope *currScope = scopes.front();
-    scopeName.push_back(currScope->name + "::");
+    scopeName.push_back(scopeName.empty() ? "" : currScope->name + "::");
     scopes[0] = nullptr;
 
     for (auto signal : currScope->signals) {
-      // ignore
-      if (signal->type ==
-          VCDVarType::VCD_VAR_PARAMETER /*|| signal->size > 64*/) {
+      if (isIgnored(signal->type)) {
         continue;
       }
 
       std::string name =
           std::accumulate(scopeName.begin(), scopeName.end(), std::string{}) +
           signal->reference;
-      name.erase(0, commonPrefixSize);
 
       _nameToSignal[name].push_back(signal);
     }
@@ -194,28 +241,31 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   Trace *trace = nullptr;
 
   messageErrorIf(!vcd_trace, "VCD parser failed on trace " + file);
-
-  VCDScope *rootScope = nullptr;
+  std::pair<std::string, VCDScope *> rootScope;
   if (clc::selectedScope != "") {
     rootScope = findScope(vcd_trace, clc::selectedScope);
+    //debug
+    //messageInfo("Found scope: " + rootScope.first);
   } else {
-    rootScope = vcd_trace->root_scope;
+    rootScope =
+        std::make_pair(vcd_trace->root_scope->name, vcd_trace->root_scope);
   }
 
-  //change the name of this 'run' of harm (used when printing/dumping stats), only if the user did not already define a name, same thing for the scope
-  if (hs::name == "") {
-    if (clc::selectedScope == "") {
-      hs::name = rootScope->name;
-    } else {
-      hs::name = clc::selectedScope;
-    }
-  }
+  //  //change the name of this 'run' of harm (used when printing/dumping stats), only if the user did not already define a name, same thing for the scope
+  //  if (hs::name == "") {
+  //    if (clc::selectedScope == "") {
+  //      hs::name = rootScope->name;
+  //    } else {
+  //      hs::name = clc::selectedScope;
+  //    }
+  //  }
 
   //retrieve the signals in the given scope
   //note that one signal 'name' might be related to multiple 'VCDSignal', this happens when there are split signals, for example: sig1 -> {sig1[0],sig1[1],sig2[3]}
-  size_t commonPrefixSize = findCommonPrefixLength(rootScope);
+  //size_t commonPrefixSize = findCommonPrefixLength(rootScope.second);
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal =
-      getSignalsInScope(rootScope, commonPrefixSize, clc::vcdRecursive);
+      getSignalsInScope(rootScope.second, clc::vcdRecursive);
+  _nameToSignal = trimCommonPrefix(_nameToSignal);
 
   //sort the split signals in ascending order of index
   for (auto &n_s : _nameToSignal) {
@@ -251,7 +301,8 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
             std::cout << "\t\t\tLindex: " << v1->lindex << "\n";
             std::cout << "\t\t\tRindex: " << v1->rindex << "\n";
             std::cout << "\t\t\tHash: " << v1->hash << "\n";
-            std::cout << "---------------------------------" << "\n";
+            std::cout << "---------------------------------"
+                      << "\n";
           }
           messageError("the sub-part of a splitted signal must be of size "
                        "equal to 1");
@@ -259,18 +310,6 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
       }
     }
   }
-  // FIXME: can we definitely remove this?
-  // remove signals with size > 64
-  // std::vector<std::string> gt64names;
-  // for (auto &n_vv : _nameToValues) {
-  //  if (n_vv.second.size() > 64) {
-  //    gt64names.push_back(n_vv.first);
-  //  }
-  //}
-  // for (auto n : gt64names) {
-  //  _nameToValues.erase(n);
-  //  _nameToSignal.erase(n);
-  //}
 
   //harm dose not support logic types larger than 64 bits
   std::vector<std::string> gt64names;
@@ -347,9 +386,9 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   //----------- generate variables end----------------------
 
   //debug
-  //    for (auto &e : vars) {
-  //      std::cout << e.getName() << "," << (int)e.getSize() << "\n";
-  //    }
+  //  for (auto &e : vars) {
+  //    std::cout << e.getName() << "," << (int)e.getSize() << "\n";
+  //  }
 
   //find the length of the trace
   size_t traceLength = 0;

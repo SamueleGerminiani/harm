@@ -41,19 +41,11 @@ private:
   void exitBoolean(propositionParser::BooleanContext *ctx) override;
   virtual void exitLogic(propositionParser::LogicContext *ctx) override;
   virtual void exitNumeric(propositionParser::NumericContext *ctx) override;
-  void
-  enterBooleanVariable(propositionParser::BooleanVariableContext *ctx) override;
-  virtual void
-  enterLogicVariable(propositionParser::LogicVariableContext *ctx) override;
-  virtual void
-  enterNumericVariable(propositionParser::NumericVariableContext *ctx) override;
 
+  void enterBooleanAtom(propositionParser::BooleanAtomContext *ctx) override;
   virtual void
-  enterBooleanConstant(propositionParser::BooleanConstantContext *ctx) override;
-  virtual void
-  enterLogicConstant(propositionParser::LogicConstantContext *ctx) override;
-  virtual void
-  enterNumericConstant(propositionParser::NumericConstantContext *ctx) override;
+  enterLogicAtom(propositionParser::LogicAtomContext *ctx) override;
+  virtual void enterNumericAtom(propositionParser::NumericAtomContext *ctx) override;
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;
 };

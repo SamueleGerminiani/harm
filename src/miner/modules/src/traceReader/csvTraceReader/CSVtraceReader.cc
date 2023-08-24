@@ -39,18 +39,44 @@ DataType toDataType(std::string name, std::string type, size_t size) {
 
   return ret;
 }
+static void addPrefixAndPostfixToLastWord(std::string& input, const std::string& prefix, const std::string& postfix) {
+    if (input.empty()) {
+        return;
+    }
+
+    auto lastSpacePos = std::find_if(input.rbegin(), input.rend(), ::isspace);
+
+    if (lastSpacePos != input.rend()) {
+        auto startPos = lastSpacePos.base();
+        std::string lastWord(startPos, input.end());
+        input.replace(startPos, input.end(), prefix + lastWord + postfix);
+    } else {
+        input = prefix + input + postfix;
+    }
+}
 
 ///parse a variable declaration
 std::pair<std::string, std::pair<std::string, size_t>>
 parseVariable(std::string varDecl) {
+    addPrefixAndPostfixToLastWord(varDecl, "«", "»");
   hparser::VarDeclarationParserHandler listenerLocDec;
   listenerLocDec.addErrorMessage("\t\t\tIn declaration: " + varDecl);
   antlr4::ANTLRInputStream inputLocDec(varDecl);
   varDeclarationLexer lexerLocDec(&inputLocDec);
   CommonTokenStream tokensLocDec(&lexerLocDec);
   varDeclarationParser parserPrecLocDec(&tokensLocDec);
+//    //print tokens
+//    std::map<size_t, std::string> indexToToken;
+//    for (auto [token,index] : parserPrecLocDec.getTokenTypeMap()) {
+//        indexToToken[index] = token;
+//    }
+//    for (auto &i : lexerLocDec.getAllTokens()) {
+//        std::cout << i->toString() <<" "<<indexToToken.at(i->getType())<<"\n";
+//    }
   tree::ParseTree *treeLocDec = parserPrecLocDec.file();
   tree::ParseTreeWalker::DEFAULT.walk(&listenerLocDec, treeLocDec);
+//  std::cout <<listenerLocDec.getVarDeclaration().first  << "\n";
+//  std::cout <<listenerLocDec.getVarDeclaration().second.second  << "\n";
 
   return listenerLocDec.getVarDeclaration();
 }

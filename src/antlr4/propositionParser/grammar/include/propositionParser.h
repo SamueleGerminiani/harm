@@ -12,21 +12,18 @@
 class  propositionParser : public antlr4::Parser {
 public:
   enum {
-    T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, SIGN = 7, 
-    CONST_SUFFIX = 8, LGPAREN = 9, RGPAREN = 10, LCPAREN = 11, RCPAREN = 12, 
-    LPAREN = 13, RPAREN = 14, VARIABLE = 15, NUMERIC = 16, VERILOG_BINARY = 17, 
-    GCC_BINARY = 18, HEX = 19, BOOLEAN = 20, PLUS = 21, MINUS = 22, TIMES = 23, 
-    DIV = 24, GT = 25, GE = 26, LT = 27, LE = 28, EQ = 29, NEQ = 30, BAND = 31, 
-    BOR = 32, BXOR = 33, NEG = 34, LSHIFT = 35, RSHIFT = 36, AND = 37, OR = 38, 
-    NOT = 39, WS = 40
+    T__0 = 1, BOOLEAN_CONSTANT = 2, BOOLEAN_VARIABLE = 3, LOGIC_CONSTANT = 4, 
+    LOGIC_VARIABLE = 5, SIGN = 6, CONST_SUFFIX = 7, NUMERIC_CONSTANT = 8, 
+    NUMERIC_VARIABLE = 9, LGPAREN = 10, RGPAREN = 11, LCPAREN = 12, RCPAREN = 13, 
+    LPAREN = 14, RPAREN = 15, NUMERIC = 16, VERILOG_BINARY = 17, GCC_BINARY = 18, 
+    HEX = 19, PLUS = 20, MINUS = 21, TIMES = 22, DIV = 23, GT = 24, GE = 25, 
+    LT = 26, LE = 27, EQ = 28, NEQ = 29, BAND = 30, BOR = 31, BXOR = 32, 
+    NEG = 33, LSHIFT = 34, RSHIFT = 35, AND = 36, OR = 37, NOT = 38, WS = 39
   };
 
   enum {
-    RuleFile = 0, RuleBoolean = 1, RuleBooleanAtom = 2, RuleBooleanConstant = 3, 
-    RuleBooleanVariable = 4, RuleLogic = 5, RuleBitSelect = 6, RuleLogicAtom = 7, 
-    RuleLogicConstant = 8, RuleLogicVariable = 9, RuleNumeric = 10, RuleNumericAtom = 11, 
-    RuleNumericConstant = 12, RuleNumericVariable = 13, RuleVariable = 14, 
-    RuleRelop = 15
+    RuleFile = 0, RuleBoolean = 1, RuleBooleanAtom = 2, RuleLogic = 3, RuleBitSelect = 4, 
+    RuleLogicAtom = 5, RuleNumeric = 6, RuleNumericAtom = 7, RuleRelop = 8
   };
 
   explicit propositionParser(antlr4::TokenStream *input);
@@ -49,18 +46,11 @@ public:
   class FileContext;
   class BooleanContext;
   class BooleanAtomContext;
-  class BooleanConstantContext;
-  class BooleanVariableContext;
   class LogicContext;
   class BitSelectContext;
   class LogicAtomContext;
-  class LogicConstantContext;
-  class LogicVariableContext;
   class NumericContext;
   class NumericAtomContext;
-  class NumericConstantContext;
-  class NumericVariableContext;
-  class VariableContext;
   class RelopContext; 
 
   class  FileContext : public antlr4::ParserRuleContext {
@@ -109,8 +99,8 @@ public:
   public:
     BooleanAtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    BooleanConstantContext *booleanConstant();
-    BooleanVariableContext *booleanVariable();
+    antlr4::tree::TerminalNode *BOOLEAN_CONSTANT();
+    antlr4::tree::TerminalNode *BOOLEAN_VARIABLE();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -118,33 +108,6 @@ public:
   };
 
   BooleanAtomContext* booleanAtom();
-
-  class  BooleanConstantContext : public antlr4::ParserRuleContext {
-  public:
-    BooleanConstantContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *BOOLEAN();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  BooleanConstantContext* booleanConstant();
-
-  class  BooleanVariableContext : public antlr4::ParserRuleContext {
-  public:
-    BooleanVariableContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *LT();
-    VariableContext *variable();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  BooleanVariableContext* booleanVariable();
 
   class  LogicContext : public antlr4::ParserRuleContext {
   public:
@@ -196,8 +159,8 @@ public:
   public:
     LogicAtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    LogicConstantContext *logicConstant();
-    LogicVariableContext *logicVariable();
+    antlr4::tree::TerminalNode *LOGIC_CONSTANT();
+    antlr4::tree::TerminalNode *LOGIC_VARIABLE();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -205,39 +168,6 @@ public:
   };
 
   LogicAtomContext* logicAtom();
-
-  class  LogicConstantContext : public antlr4::ParserRuleContext {
-  public:
-    LogicConstantContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *VERILOG_BINARY();
-    antlr4::tree::TerminalNode *GCC_BINARY();
-    antlr4::tree::TerminalNode *NUMERIC();
-    antlr4::tree::TerminalNode *CONST_SUFFIX();
-    antlr4::tree::TerminalNode *HEX();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  LogicConstantContext* logicConstant();
-
-  class  LogicVariableContext : public antlr4::ParserRuleContext {
-  public:
-    LogicVariableContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *LT();
-    VariableContext *variable();
-    antlr4::tree::TerminalNode *SIGN();
-    antlr4::tree::TerminalNode *NUMERIC();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  LogicVariableContext* logicVariable();
 
   class  NumericContext : public antlr4::ParserRuleContext {
   public:
@@ -266,8 +196,8 @@ public:
   public:
     NumericAtomContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    NumericConstantContext *numericConstant();
-    NumericVariableContext *numericVariable();
+    antlr4::tree::TerminalNode *NUMERIC_CONSTANT();
+    antlr4::tree::TerminalNode *NUMERIC_VARIABLE();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -275,47 +205,6 @@ public:
   };
 
   NumericAtomContext* numericAtom();
-
-  class  NumericConstantContext : public antlr4::ParserRuleContext {
-  public:
-    NumericConstantContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *NUMERIC();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  NumericConstantContext* numericConstant();
-
-  class  NumericVariableContext : public antlr4::ParserRuleContext {
-  public:
-    NumericVariableContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *LT();
-    VariableContext *variable();
-    antlr4::tree::TerminalNode *NUMERIC();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  NumericVariableContext* numericVariable();
-
-  class  VariableContext : public antlr4::ParserRuleContext {
-  public:
-    VariableContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *VARIABLE();
-
-    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
-    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
-   
-  };
-
-  VariableContext* variable();
 
   class  RelopContext : public antlr4::ParserRuleContext {
   public:

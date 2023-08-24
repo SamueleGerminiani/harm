@@ -7,6 +7,8 @@ namespace harm {
 ContextMiner::ContextMiner(std::string &configFile)
     : _configuration(nullptr), _xmlFile(nullptr), _doc(nullptr) {
 
+  messageInfo("Parsing configuration file " + configFile);
+
   // find root node
   try {
     _xmlFile = new rapidxml::file<>(configFile.c_str());

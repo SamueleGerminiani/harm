@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.10.1
+// Generated from varDeclaration.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -22,11 +22,29 @@ public:
   virtual void enterVarDec(varDeclarationParser::VarDecContext * /*ctx*/) override { }
   virtual void exitVarDec(varDeclarationParser::VarDecContext * /*ctx*/) override { }
 
-  virtual void enterName(varDeclarationParser::NameContext * /*ctx*/) override { }
-  virtual void exitName(varDeclarationParser::NameContext * /*ctx*/) override { }
+  virtual void enterBoolean(varDeclarationParser::BooleanContext * /*ctx*/) override { }
+  virtual void exitBoolean(varDeclarationParser::BooleanContext * /*ctx*/) override { }
 
-  virtual void enterVartype(varDeclarationParser::VartypeContext * /*ctx*/) override { }
-  virtual void exitVartype(varDeclarationParser::VartypeContext * /*ctx*/) override { }
+  virtual void enterBooleanAtom(varDeclarationParser::BooleanAtomContext * /*ctx*/) override { }
+  virtual void exitBooleanAtom(varDeclarationParser::BooleanAtomContext * /*ctx*/) override { }
+
+  virtual void enterLogic(varDeclarationParser::LogicContext * /*ctx*/) override { }
+  virtual void exitLogic(varDeclarationParser::LogicContext * /*ctx*/) override { }
+
+  virtual void enterBitSelect(varDeclarationParser::BitSelectContext * /*ctx*/) override { }
+  virtual void exitBitSelect(varDeclarationParser::BitSelectContext * /*ctx*/) override { }
+
+  virtual void enterLogicAtom(varDeclarationParser::LogicAtomContext * /*ctx*/) override { }
+  virtual void exitLogicAtom(varDeclarationParser::LogicAtomContext * /*ctx*/) override { }
+
+  virtual void enterNumeric(varDeclarationParser::NumericContext * /*ctx*/) override { }
+  virtual void exitNumeric(varDeclarationParser::NumericContext * /*ctx*/) override { }
+
+  virtual void enterNumericAtom(varDeclarationParser::NumericAtomContext * /*ctx*/) override { }
+  virtual void exitNumericAtom(varDeclarationParser::NumericAtomContext * /*ctx*/) override { }
+
+  virtual void enterRelop(varDeclarationParser::RelopContext * /*ctx*/) override { }
+  virtual void exitRelop(varDeclarationParser::RelopContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

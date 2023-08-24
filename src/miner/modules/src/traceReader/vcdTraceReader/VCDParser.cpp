@@ -591,6 +591,7 @@ int parser::parse() {
           // PUSH the current scope stack.
 
           VCDScope *new_scope = new VCDScope();
+
           new_scope->name = yystack_[1].value.as<std::string>();
           new_scope->type = yystack_[2].value.as<VCDScopeType>();
           new_scope->parent = driver.scopes.top();
@@ -703,6 +704,7 @@ int parser::parse() {
           }
 
           VCDScope *scope = driver.scopes.top();
+
           new_signal->scope = driver.scopes.top();
           scope->signals.push_back(new_signal);
 

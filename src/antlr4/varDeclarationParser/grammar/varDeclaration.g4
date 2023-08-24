@@ -1,12 +1,12 @@
 grammar varDeclaration;
+import proposition;
 
 file : varDec EOF;
 
-varDec : vartype ('[' NUMERIC ':' NUMERIC ']')? name;
+varDec : VARTYPE ('[' LOGIC_CONSTANT ':' LOGIC_CONSTANT ']')? Name ;
 
-name : NAME;
+Name : START_VAR VARIABLE END_VAR;
 
-vartype : VARTYPE;
 
 VARTYPE:
   'bool' 
@@ -35,25 +35,6 @@ VARTYPE:
     'bit'
 ; 
 
-NAME
-   : VALID_ID_START VALID_ID_CHAR*
-   ;
-
-fragment VALID_ID_START
-    : ('a' .. 'z')
-    | ('A' .. 'Z')
-    | ('_')
-    ;
-
-fragment VALID_ID_CHAR
-    : VALID_ID_START
-    | ('0' .. '9')
-    | ('.')
-    ;
-
-    NUMERIC
-    : ('0' .. '9') + 
-    ;
 
 // Ignore: \r, \n, \t
 WS : [ \t\r\n] -> skip;

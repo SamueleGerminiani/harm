@@ -31,29 +31,11 @@ public:
   virtual void enterNonTemporalExp(spotParser::NonTemporalExpContext * /*ctx*/) override { }
   virtual void exitNonTemporalExp(spotParser::NonTemporalExpContext * /*ctx*/) override { }
 
-  virtual void enterPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
-  virtual void exitPlaceholder(spotParser::PlaceholderContext * /*ctx*/) override { }
-
-  virtual void enterDt_next(spotParser::Dt_nextContext * /*ctx*/) override { }
-  virtual void exitDt_next(spotParser::Dt_nextContext * /*ctx*/) override { }
-
-  virtual void enterDt_next_and(spotParser::Dt_next_andContext * /*ctx*/) override { }
-  virtual void exitDt_next_and(spotParser::Dt_next_andContext * /*ctx*/) override { }
-
-  virtual void enterDt_NCReps(spotParser::Dt_NCRepsContext * /*ctx*/) override { }
-  virtual void exitDt_NCReps(spotParser::Dt_NCRepsContext * /*ctx*/) override { }
-
   virtual void enterBoolean(spotParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(spotParser::BooleanContext * /*ctx*/) override { }
 
   virtual void enterBooleanAtom(spotParser::BooleanAtomContext * /*ctx*/) override { }
   virtual void exitBooleanAtom(spotParser::BooleanAtomContext * /*ctx*/) override { }
-
-  virtual void enterBooleanConstant(spotParser::BooleanConstantContext * /*ctx*/) override { }
-  virtual void exitBooleanConstant(spotParser::BooleanConstantContext * /*ctx*/) override { }
-
-  virtual void enterBooleanVariable(spotParser::BooleanVariableContext * /*ctx*/) override { }
-  virtual void exitBooleanVariable(spotParser::BooleanVariableContext * /*ctx*/) override { }
 
   virtual void enterLogic(spotParser::LogicContext * /*ctx*/) override { }
   virtual void exitLogic(spotParser::LogicContext * /*ctx*/) override { }
@@ -64,26 +46,11 @@ public:
   virtual void enterLogicAtom(spotParser::LogicAtomContext * /*ctx*/) override { }
   virtual void exitLogicAtom(spotParser::LogicAtomContext * /*ctx*/) override { }
 
-  virtual void enterLogicConstant(spotParser::LogicConstantContext * /*ctx*/) override { }
-  virtual void exitLogicConstant(spotParser::LogicConstantContext * /*ctx*/) override { }
-
-  virtual void enterLogicVariable(spotParser::LogicVariableContext * /*ctx*/) override { }
-  virtual void exitLogicVariable(spotParser::LogicVariableContext * /*ctx*/) override { }
-
   virtual void enterNumeric(spotParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(spotParser::NumericContext * /*ctx*/) override { }
 
   virtual void enterNumericAtom(spotParser::NumericAtomContext * /*ctx*/) override { }
   virtual void exitNumericAtom(spotParser::NumericAtomContext * /*ctx*/) override { }
-
-  virtual void enterNumericConstant(spotParser::NumericConstantContext * /*ctx*/) override { }
-  virtual void exitNumericConstant(spotParser::NumericConstantContext * /*ctx*/) override { }
-
-  virtual void enterNumericVariable(spotParser::NumericVariableContext * /*ctx*/) override { }
-  virtual void exitNumericVariable(spotParser::NumericVariableContext * /*ctx*/) override { }
-
-  virtual void enterVariable(spotParser::VariableContext * /*ctx*/) override { }
-  virtual void exitVariable(spotParser::VariableContext * /*ctx*/) override { }
 
   virtual void enterRelop(spotParser::RelopContext * /*ctx*/) override { }
   virtual void exitRelop(spotParser::RelopContext * /*ctx*/) override { }

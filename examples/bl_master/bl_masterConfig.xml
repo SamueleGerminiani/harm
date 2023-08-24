@@ -14,25 +14,12 @@
 		<prop exp="wb_we" loc="dt, c"/>
 		<prop exp="ready_from_bus" loc="dt, c"/>
 		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-		<prop exp="wb_rst" loc="a, c"/>
-
+		<numeric exp="address" loc="a, c"/>
         <!--
         <template dtLimits="3A,0.1E" exp="G({$stable(wb_we) ; !wb_we}-> X(wb_cyc))" /> 
-        <template dtLimits="3A,0.1E" exp="G({$stable(P0) ; !P0}-> X(P1))" /> 
+        <template check="1" dtLimits="3A,0.1E" exp="G({wb_we ##[0..5] wb_we}|-> X(wb_cyc))" /> 
         -->
+
 
 
 		<template dtLimits="3A,0.1E" exp="G({..&&..}|-> X(P0))" /> 
@@ -40,7 +27,6 @@
 		<template dtLimits="3A,-0.1E,S,O" exp="G({..#1&..}|-> X(P0))" />
 		<template dtLimits="5A,-0.1E,R,O" exp="G({..##1..}|-> X(P0))" />
 		<template dtLimits="2A,0E,R" exp="G({..#1&..}|-> X(P0))" />
-
 
 		<sort name="causality" exp="1-afct/traceLength"/>
 		<sort name="frequency" exp="atct/traceLength"/>

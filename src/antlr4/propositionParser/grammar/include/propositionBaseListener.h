@@ -25,12 +25,6 @@ public:
   virtual void enterBooleanAtom(propositionParser::BooleanAtomContext * /*ctx*/) override { }
   virtual void exitBooleanAtom(propositionParser::BooleanAtomContext * /*ctx*/) override { }
 
-  virtual void enterBooleanConstant(propositionParser::BooleanConstantContext * /*ctx*/) override { }
-  virtual void exitBooleanConstant(propositionParser::BooleanConstantContext * /*ctx*/) override { }
-
-  virtual void enterBooleanVariable(propositionParser::BooleanVariableContext * /*ctx*/) override { }
-  virtual void exitBooleanVariable(propositionParser::BooleanVariableContext * /*ctx*/) override { }
-
   virtual void enterLogic(propositionParser::LogicContext * /*ctx*/) override { }
   virtual void exitLogic(propositionParser::LogicContext * /*ctx*/) override { }
 
@@ -40,26 +34,11 @@ public:
   virtual void enterLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
   virtual void exitLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
 
-  virtual void enterLogicConstant(propositionParser::LogicConstantContext * /*ctx*/) override { }
-  virtual void exitLogicConstant(propositionParser::LogicConstantContext * /*ctx*/) override { }
-
-  virtual void enterLogicVariable(propositionParser::LogicVariableContext * /*ctx*/) override { }
-  virtual void exitLogicVariable(propositionParser::LogicVariableContext * /*ctx*/) override { }
-
   virtual void enterNumeric(propositionParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(propositionParser::NumericContext * /*ctx*/) override { }
 
   virtual void enterNumericAtom(propositionParser::NumericAtomContext * /*ctx*/) override { }
   virtual void exitNumericAtom(propositionParser::NumericAtomContext * /*ctx*/) override { }
-
-  virtual void enterNumericConstant(propositionParser::NumericConstantContext * /*ctx*/) override { }
-  virtual void exitNumericConstant(propositionParser::NumericConstantContext * /*ctx*/) override { }
-
-  virtual void enterNumericVariable(propositionParser::NumericVariableContext * /*ctx*/) override { }
-  virtual void exitNumericVariable(propositionParser::NumericVariableContext * /*ctx*/) override { }
-
-  virtual void enterVariable(propositionParser::VariableContext * /*ctx*/) override { }
-  virtual void exitVariable(propositionParser::VariableContext * /*ctx*/) override { }
 
   virtual void enterRelop(propositionParser::RelopContext * /*ctx*/) override { }
   virtual void exitRelop(propositionParser::RelopContext * /*ctx*/) override { }

@@ -2,6 +2,7 @@
 #include "propositionParser.hh"
 #include "propositionParsingUtils.hh"
 #include <sstream>
+#include <string>
 
 using namespace expression;
 
@@ -171,6 +172,11 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
   }
 }
 
+static void removeParentheses(std::string &input) {
+  input.erase(std::remove(input.begin(), input.end(), '('), input.end());
+  input.erase(std::remove(input.begin(), input.end(), ')'), input.end());
+}
+
 void SpotParserHandler::exitTformula(spotParser::TformulaContext *ctx) {
 
   if (ctx->boolean() != nullptr) {
@@ -180,8 +186,8 @@ void SpotParserHandler::exitTformula(spotParser::TformulaContext *ctx) {
     return;
   }
 
-  if (ctx->placeholder() != nullptr) {
-    std::string ph = handleNewPP(ctx->placeholder()->getText());
+  if (ctx->PLACEHOLDER() != nullptr) {
+    std::string ph = handleNewPP(ctx->PLACEHOLDER()->getText());
     _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     return;
   }
@@ -291,6 +297,25 @@ void SpotParserHandler::exitTformula(spotParser::TformulaContext *ctx) {
     return;
   }
 }
+
+static size_t retrieveNumberFromDTO(const std::string &input) {
+  auto start = std::find_if(input.begin(), input.end(), ::isdigit);
+
+  messageErrorIf(start == input.end(), "No number found in DTO: " + input);
+
+  auto end = std::find_if_not(start, input.end(), ::isdigit);
+
+  return std::stoull(std::string(start, end));
+}
+std::string retrieveColonOrSemicolonFromDTO(const std::string &input) {
+  auto colonOrSemicolonPos = std::find_if(
+      input.begin(), input.end(), [](char c) { return c == ':' || c == ';'; });
+
+  messageErrorIf(colonOrSemicolonPos == input.end(),
+                 "Colon ':' or semicolon ';' not found in DTO " + input);
+
+  return std::string(1, *colonOrSemicolonPos);
+}
 void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
   if (ctx->boolean() != nullptr) {
     std::string inst = handleNewInst(ctx->boolean()->getText());
@@ -299,8 +324,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
 
-  if (ctx->placeholder() != nullptr) {
-    std::string ph = handleNewPP(ctx->placeholder()->getText());
+  if (ctx->PLACEHOLDER() != nullptr) {
+    std::string ph = handleNewPP(ctx->PLACEHOLDER()->getText());
     if (ctx->NOT() == nullptr) {
       _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     } else {
@@ -316,10 +341,12 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
                    "Function nonTemporalExp is not defined\n" +
                        printErrorMessage());
 
-    //std::string signature = ctx->FUNCTION()->getText() + "(" + ctx->nonTemporalExp()->getText() + ")";
+    std::string signature = ctx->FUNCTION()->getText() + "(" +
+                            ctx->nonTemporalExp()->getText() + ")";
     std::string funStr = ctx->getText();
-    if (ctx->nonTemporalExp()->placeholder() != nullptr) {
-      std::string funID = handleNewFunc(funStr, ctx->nonTemporalExp()->getText(), 1);
+    if (ctx->nonTemporalExp()->PLACEHOLDER() != nullptr) {
+      std::string funID =
+          handleNewFunc(funStr, ctx->nonTemporalExp()->getText(), 1);
       Hstring s(_funStrToFunID.at(funStr), Hstring::Stype::Function);
       s[0]._f = _funIDtoFun.at(funID);
       _subFormulas.push(
@@ -328,7 +355,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
       messageErrorIf(ctx->nonTemporalExp()->boolean() == nullptr,
                      "Function boolean is not defined\n" + printErrorMessage());
 
-      std::string funID = handleNewFunc(funStr, ctx->nonTemporalExp()->getText(), 0);
+      std::string funID =
+          handleNewFunc(funStr, ctx->nonTemporalExp()->getText(), 0);
       Hstring s(_funStrToFunID.at(funStr), Hstring::Stype::Function);
       s[0]._f = _funIDtoFun.at(funID);
       _subFormulas.push(s);
@@ -337,46 +365,36 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
 
-  if (ctx->dt_next() != nullptr) {
+  if (ctx->DT_NEXT() != nullptr) {
     messageErrorIf(dtCount > 0,
                    "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtNext" + std::to_string(dtCount++);
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNext, nullptr);
-    tmp._offset =
-        std::stoull(ctx->dt_next()->NUMERIC()->getText(), nullptr, 10);
-    tmp[0]._offset = tmp._offset;
+    tmp[0]._offset = retrieveNumberFromDTO(ctx->DT_NEXT()->getText());
     _subFormulas.push(tmp);
 
     return;
   }
-  if (ctx->dt_NCReps() != nullptr) {
+  if (ctx->DT_NCREPS() != nullptr) {
     messageErrorIf(dtCount > 0,
                    "More than one dt operator defined\n" + printErrorMessage());
-    std::string ph =
-        "dtNCReps0[->" + ctx->dt_NCReps()->NUMERIC()->getText() + "]:dtMock";
+    size_t number = retrieveNumberFromDTO(ctx->DT_NEXT()->getText());
+    std::string ph = "dtNCReps0[->" + std::to_string(number) + "]:dtMock";
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNCReps, nullptr);
-    tmp._offset =
-        std::stoull(ctx->dt_NCReps()->NUMERIC()->getText(), nullptr, 10);
+    tmp._offset = number;
     tmp[0]._offset = tmp._offset;
-    if (ctx->dt_NCReps()->SEP()->getText() == "@;") {
-      tmp._sep = ";";
-    } else if (ctx->dt_NCReps()->SEP()->getText() == "@:") {
-      tmp._sep = ":";
-    } else {
-      messageError("Unknown separator: " + ctx->dt_NCReps()->SEP()->getText() +
-                   printErrorMessage());
-    }
+    tmp._sep = retrieveColonOrSemicolonFromDTO(ctx->DT_NCREPS()->getText());
+
     _subFormulas.push(tmp);
 
     return;
   }
-  if (ctx->dt_next_and() != nullptr) {
+  if (ctx->DT_NEXT_AND() != nullptr) {
     messageErrorIf(dtCount > 0,
                    "More than one dt operator defined\n" + printErrorMessage());
     std::string ph = "dtNextAnd" + std::to_string(dtCount++);
     Hstring tmp = Hstring(ph, Hstring::Stype::DTNextAnd, nullptr);
-    tmp._offset =
-        std::stoull(ctx->dt_next_and()->NUMERIC()->getText(), nullptr, 10);
+    tmp._offset = retrieveNumberFromDTO(ctx->DT_NEXT_AND()->getText());
     tmp[0]._offset = tmp._offset;
     _subFormulas.push(tmp);
 
@@ -439,29 +457,29 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
     }
 
     if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-        ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
+        ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 2) {
       newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
                    Hstring("..", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->LOGIC_CONSTANT()[1]->getText(), Hstring::Stype::Temp) +
                    Hstring("] ", Hstring::Stype::Temp) + right;
       _subFormulas.push(newFormula);
     } else if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-               ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
+               ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 1) {
       newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
                    Hstring("..", Hstring::Stype::Temp) +
                    Hstring("] ", Hstring::Stype::Temp) + right;
       _subFormulas.push(newFormula);
     } else if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-               ctx->NUMERIC().size() == 1) {
+               ctx->LOGIC_CONSTANT().size() == 1) {
       newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
                    Hstring("] ", Hstring::Stype::Temp) + right;
       _subFormulas.push(newFormula);
     } else {
       newFormula = left + Hstring(" ##", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
                    Hstring(" ", Hstring::Stype::Temp) + right;
       _subFormulas.push(newFormula);
     }
@@ -469,29 +487,29 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
   }
 
   if (ctx->sere().size() == 1 && ctx->LCPAREN() != nullptr &&
-      ctx->ASS() != nullptr && !ctx->NUMERIC().empty() &&
+      ctx->ASS() != nullptr && !ctx->LOGIC_CONSTANT().empty() &&
       ctx->RCPAREN() != nullptr) {
-    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
+    if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 1) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
-    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
+    } else if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 2) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[1]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
     } else {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
@@ -500,29 +518,29 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
   }
 
   if (ctx->sere().size() == 1 && ctx->LCPAREN() != nullptr &&
-      ctx->IMPL() != nullptr && !ctx->NUMERIC().empty() &&
+      ctx->IMPL() != nullptr && !ctx->LOGIC_CONSTANT().empty() &&
       ctx->RCPAREN() != nullptr) {
-    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
+    if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 1) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
-    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
+    } else if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 2) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[1]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
     } else {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
@@ -532,27 +550,27 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
 
   if (ctx->LCPAREN() != nullptr && ctx->TIMES() != nullptr &&
       ctx->RCPAREN() != nullptr) {
-    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
+    if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 2) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[1]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
-    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
+    } else if (ctx->DOTS() != nullptr && ctx->LOGIC_CONSTANT().size() == 1) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
-    } else if (ctx->NUMERIC().size() == 1) {
+    } else if (ctx->LOGIC_CONSTANT().size() == 1) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring(ctx->LOGIC_CONSTANT()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
       _subFormulas.pop();
       _subFormulas.push(newFormula);
