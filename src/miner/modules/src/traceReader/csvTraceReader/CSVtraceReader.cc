@@ -88,6 +88,7 @@ Trace *CSVtraceReader::readTrace(const std::string file) {
   std::vector<BooleanVariable *> boolVars;
   std::vector<NumericVariable *> numVars;
   std::vector<LogicVariable *> logVars;
+  std::unordered_set<std::string> varNames;
   messageInfo("Parsing " + file);
 
   CSVFormat format;
@@ -95,8 +96,11 @@ Trace *CSVtraceReader::readTrace(const std::string file) {
   CSVReader reader(file, format);
   for (auto cn : reader.get_col_names()) {
     auto var = parseVariable(cn);
+    messageWarningIf(varNames.count(var.first), "Variable " + var.first + " already declared!");
+    varNames.insert(var.first);
     vars_dt.push_back(
         toDataType(var.first, var.second.first, var.second.second));
+
 
     if (vars_dt.back().getType() == VarType::Bool) {
       varIndexToBucket.push_back(VarType::Bool);

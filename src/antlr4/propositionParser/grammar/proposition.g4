@@ -18,7 +18,7 @@ boolean
     | booleanAtom
     | logic
     | numeric
-    | LPAREN boolean RPAREN
+    | LROUND boolean RROUND
     ;
 
 booleanAtom
@@ -48,36 +48,32 @@ logic
     | logic logop=BXOR logic
     | logic logop=BOR logic
     | logicAtom
-    | LPAREN logic RPAREN
+    | LROUND logic RROUND
     ;
 
-bitSelect: '[' NUMERIC (':' NUMERIC)? ']';
+bitSelect: '[' UINTEGER (':' UINTEGER)? ']';
 
 logicAtom
-    : LOGIC_CONSTANT
+    : logic_constant
     | LOGIC_VARIABLE
     ;
 
-LOGIC_CONSTANT
+logic_constant
     : VERILOG_BINARY
     | GCC_BINARY
-    | NUMERIC CONST_SUFFIX?
+    | SINTEGER CONST_SUFFIX?
+    | UINTEGER CONST_SUFFIX?
     | HEX
     ;
 
 LOGIC_VARIABLE
-    : START_VAR VARIABLE ',logic(' SIGN ',' NUMERIC ')' END_VAR
+    : START_VAR VARIABLE ',logic' END_VAR
     ;
 
-SIGN
-    :
-    'u'
-    | 's';
-
 CONST_SUFFIX
-    :
-    'll'
-    | 'ull';
+    : 'll'
+    | 'ull'
+    ;
 
 
 // ------------------------------------------ NUMERIC
@@ -86,7 +82,7 @@ numeric
     | numeric artop=(PLUS|MINUS) numeric
     | numericAtom
     | logic
-    | LPAREN numeric RPAREN
+    | LROUND numeric RROUND
     ;
 
 numericAtom
@@ -95,36 +91,36 @@ numericAtom
     ;
 
 NUMERIC_CONSTANT
-    :  NUMERIC
+    :  FLOAT
     ;
 
 NUMERIC_VARIABLE
-    : START_VAR VARIABLE ',numeric(' NUMERIC ')' END_VAR 
+    : START_VAR VARIABLE ',numeric' END_VAR 
     ;
 
 
 
 
-LGPAREN
+LCURLY
     : '{'
     ;
 
-RGPAREN
+RCURLY
     : '}'
     ;
-LCPAREN
+LSQUARED
     : '['
     ;
 
-RCPAREN
+RSQUARED
     : ']'
     ;
 
-LPAREN
+LROUND
     : '('
     ;
 
-RPAREN
+RROUND
     : ')'
     ;
 
@@ -152,30 +148,19 @@ fragment VALID_ID_CHAR
     | ('}')
     ;
 
-//VARIABLE
-//   : ('::')? VALID_ID_START VALID_ID_CHAR* 
-//   ;
-//
-//
-//
-//fragment VALID_ID_START
-//    : 'P' (('a' .. 'z')| ('A' .. 'Z') | ('_'))
-//	| (('a' .. 'z')| ('A' .. 'O')| ('Q' .. 'W')| ('Y' .. 'Z') | ('_')) ;
-//
-//fragment VALID_ID_CHAR
-//    : ('a' .. 'z') 
-//    | ('A' .. 'Z')
-//    | ('0' .. '9')
-//    | ('.')
-//    | ('_')
-//    | ('::')
-//    ;
-//------------------------------------------------------------------------------
-
 
 //==== Token constant ==========================================================
-    NUMERIC
-    : '-'? ('0' .. '9') + ('.' ('0' .. '9') +)?
+    SINTEGER
+    : '-' ('0' .. '9')+
+    ;
+
+    UINTEGER
+    : ('0' .. '9')+
+    ;
+
+    FLOAT
+    : '-'? ('0' .. '9')+ '.' ('0' .. '9')+
+    | '-'? ('0' .. '9')+ '.f'
     ;
 
     

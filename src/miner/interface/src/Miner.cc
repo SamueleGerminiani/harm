@@ -26,7 +26,6 @@ Miner::Miner(ModulesConfig &configuration) : _config(configuration) {
 }
 
 void Miner::run() {
-  _printWelcomeMessage();
 
   messageInfo("Miner started...");
 
@@ -138,26 +137,6 @@ void Miner::printStats() {
     of << "\n";
     of.close();
   }
-}
-void Miner::_printWelcomeMessage() {
-  std::cout << getIcon() << "\n";
-
-  //FIXME should we keep this?
-
-  //  std::string shift = "                             ";
-  //
-  //  std::cout << shift << "╭╮╱╭┳━━━┳━━━┳━╮╭━╮"
-  //            << "\n";
-  //  std::cout << shift << "┃┃╱┃┃╭━╮┃╭━╮┃┃╰╯┃┃"
-  //            << "\n";
-  //  std::cout << shift << "┃╰━╯┃┃╱┃┃╰━╯┃╭╮╭╮┃"
-  //            << "\n";
-  //  std::cout << shift << "┃╭━╮┃╰━╯┃╭╮╭┫┃┃┃┃┃"
-  //            << "\n";
-  //  std::cout << shift << "┃┃╱┃┃╭━╮┃┃┃╰┫┃┃┃┃┃"
-  //            << "\n";
-  //  std::cout << shift << "╰╯╱╰┻╯╱╰┻╯╰━┻╯╰╯╰╯"
-  //            << "\n";
 }
 
 } // namespace harm

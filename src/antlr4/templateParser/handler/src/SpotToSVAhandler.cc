@@ -26,105 +26,75 @@ void SpotToSVAhandler::exitFile(spotParser::FileContext *ctx) {
   _errorMessages.clear();
 }
 void SpotToSVAhandler::exitFormula(spotParser::FormulaContext *ctx) {
-  messageErrorIf(ctx->SEREIMPL1() == nullptr && ctx->SEREIMPL2() == nullptr &&
-                     ctx->BIND1() == nullptr && ctx->BIND2() == nullptr,
+  messageErrorIf(ctx->SEREIMPL() == nullptr && ctx->SEREIMPLO() == nullptr,
                  " The antecedent of a SVA assertion must be a SERE!");
 
   if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
-      ctx->LGPAREN() != nullptr && ctx->RGPAREN() != nullptr &&
-      ctx->BIND1() != nullptr) {
+      ctx->LCURLY() != nullptr && ctx->RCURLY() != nullptr &&
+      ctx->SEREIMPL() != nullptr) {
     auto formulaCon = _subFormulas.top();
     _subFormulas.pop();
     auto formulaAnt = _subFormulas.top();
 
     _subFormulas.pop();
 
-    _subFormulas.push(Hstring("(", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring(")", Hstring::Stype::Temp) +
-                      Hstring(" |-> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(
+        Hstring("(", Hstring::Stype::Temp) + formulaAnt +
+        Hstring(")", Hstring::Stype::Temp) +
+        Hstring(" " + ctx->SEREIMPL()->getText() + " ", Hstring::Stype::Imp) +
+        formulaCon);
     return;
   }
 
   if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
-      ctx->LGPAREN() != nullptr && ctx->RGPAREN() != nullptr &&
-      ctx->BIND2() != nullptr) {
+      ctx->LCURLY() != nullptr && ctx->RCURLY() != nullptr &&
+      ctx->SEREIMPLO() != nullptr) {
     auto formulaCon = _subFormulas.top();
     _subFormulas.pop();
     auto formulaAnt = _subFormulas.top();
     _subFormulas.pop();
-    _subFormulas.push(Hstring("(", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring(")", Hstring::Stype::Temp) +
-                      Hstring(" |=> ", Hstring::Stype::Imp) + formulaCon);
+    _subFormulas.push(
+        Hstring("(", Hstring::Stype::Temp) + formulaAnt +
+        Hstring(")", Hstring::Stype::Temp) +
+        Hstring(" " + ctx->SEREIMPLO()->getText() + " ", Hstring::Stype::Imp) +
+        formulaCon);
+  }
+}
+
+std::string SpotToSVAhandler::handleNewPP(const std::string &ph) {
+  if (!_phToProp.count(ph)) {
+    _phToProp[ph] = new Proposition *(nullptr);
   }
 
-  if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
-      ctx->LGPAREN() != nullptr && ctx->RGPAREN() != nullptr &&
-      ctx->SEREIMPL1() != nullptr) {
-    auto formulaCon = _subFormulas.top();
-    _subFormulas.pop();
-    auto formulaAnt = _subFormulas.top();
-    _subFormulas.pop();
-    _subFormulas.push(Hstring("(", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring(")", Hstring::Stype::Temp) +
-                      Hstring(" |-> ", Hstring::Stype::Imp) + formulaCon);
-    return;
+  return ph;
+}
+
+std::string SpotToSVAhandler::handleNewInst(const std::string &prop) {
+  if (_propStrToInst.count(prop)) {
+    return _propStrToInst.at(prop);
   }
 
-  if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
-      ctx->LGPAREN() != nullptr && ctx->RGPAREN() != nullptr &&
-      ctx->SEREIMPL2() != nullptr) {
-    auto formulaCon = _subFormulas.top();
-    _subFormulas.pop();
-    auto formulaAnt = Hstring("(", Hstring::Stype::Temp) + _subFormulas.top() +
-                      Hstring(")", Hstring::Stype::Temp);
-    _subFormulas.pop();
-    _subFormulas.push(Hstring("(", Hstring::Stype::Temp) + formulaAnt +
-                      Hstring(")", Hstring::Stype::Temp) +
-                      Hstring(" |=> ", Hstring::Stype::Imp) + formulaCon);
-    return;
-  }
+  Proposition *p = parsePropositionAlreadyTyped(prop, _trace);
+  std::string inst = "_inst_" + std::to_string(instCount++);
+  _propStrToInst[prop] = inst;
+  _instToProp[inst] = _useCache ? new Proposition *(new CachedProposition(p))
+                                : new Proposition *(p);
+
+  return inst;
 }
 
 void SpotToSVAhandler::exitTformula(spotParser::TformulaContext *ctx) {
 
   if (ctx->boolean() != nullptr) {
-    Proposition *p = parsePropositionAlreadyTyped(ctx->getText(), _trace);
-    std::string pStr = prop2String(*p);
-    if (!_propStrToInst.count(pStr)) {
-      std::string ph = "_inst_" + std::to_string(instCount++);
-      _propStrToInst[pStr] = ph;
-    }
-    if (_useCache) {
-      _subFormulas.push(Hstring(_propStrToInst.at(pStr), Hstring::Stype::Inst,
-                                new Proposition *(new CachedProposition(p))));
-    } else {
-
-      _subFormulas.push(Hstring(_propStrToInst.at(pStr), Hstring::Stype::Inst,
-                                new Proposition *(p)));
-    }
-    return;
-  }
-  //  if (ctx->placeholder() != nullptr) {
-  //    std::string ph = "P" + ctx->placeholder()->NUMERIC()->getText();
-  //    if (!_phToProp.count(ph)) {
-  //      _phToProp[ph] = new Proposition *(nullptr);
-  //    }
-  //    _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
-  //    return;
-  //  }
-  if (ctx->DT_AND() != nullptr) {
-    messageErrorIf(dtCount > 0,
-                   "More than one dt operator defined\n" + printErrorMessage());
-    std::string ph = "dtAnd" + std::to_string(dtCount++);
-    _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
+    std::string inst = handleNewInst(ctx->boolean()->getText());
+    _subFormulas.push(
+        Hstring(inst, Hstring::Stype::Inst, _instToProp.at(inst)));
     return;
   }
 
-  if (ctx->DT_AND() != nullptr) {
-    messageErrorIf(dtCount > 0,
-                   "More than one dt operator defined\n" + printErrorMessage());
-    std::string ph = "dtAnd" + std::to_string(dtCount++);
-    _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
+  if (ctx->PLACEHOLDER() != nullptr) {
+    std::string ph = handleNewPP(ctx->PLACEHOLDER()->getText());
+    _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     return;
   }
 
@@ -158,9 +128,9 @@ void SpotToSVAhandler::exitTformula(spotParser::TformulaContext *ctx) {
 
   if (ctx->tformula().size() == 1 && ctx->NEXT() != nullptr) {
     Hstring newFormula("", Hstring::Stype::Temp);
-    if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr) {
+    if (ctx->LSQUARED() != nullptr && ctx->RSQUARED() != nullptr) {
       newFormula = Hstring("nexttime[", Hstring::Stype::Temp) +
-                   Hstring(ctx->NUMERIC()->getText(), Hstring::Stype::Temp) +
+                   Hstring(ctx->UINTEGER()->getText(), Hstring::Stype::Temp) +
                    Hstring("](", Hstring::Stype::Temp) + _subFormulas.top() +
                    Hstring(")", Hstring::Stype::Temp);
     } else {
@@ -191,8 +161,8 @@ void SpotToSVAhandler::exitTformula(spotParser::TformulaContext *ctx) {
     return;
   }
 
-  if (ctx->tformula().size() == 1 && ctx->LPAREN() != nullptr &&
-      ctx->RPAREN() != nullptr) {
+  if (ctx->tformula().size() == 1 && ctx->LROUND() != nullptr &&
+      ctx->RROUND() != nullptr) {
     Hstring newFormula = Hstring("(", Hstring::Stype::Temp) +
                          _subFormulas.top() +
                          Hstring(")", Hstring::Stype::Temp);
@@ -201,8 +171,8 @@ void SpotToSVAhandler::exitTformula(spotParser::TformulaContext *ctx) {
     return;
   }
 
-  if (ctx->sere() != nullptr && ctx->LGPAREN() != nullptr &&
-      ctx->RGPAREN() != nullptr) {
+  if (ctx->sere() != nullptr && ctx->LCURLY() != nullptr &&
+      ctx->RCURLY() != nullptr) {
     Hstring newFormula = Hstring("(", Hstring::Stype::Temp) +
                          _subFormulas.top() +
                          Hstring(")", Hstring::Stype::Temp);
@@ -219,89 +189,24 @@ void SpotToSVAhandler::exitTformula(spotParser::TformulaContext *ctx) {
   }
 }
 void SpotToSVAhandler::exitSere(spotParser::SereContext *ctx) {
+
   if (ctx->boolean() != nullptr) {
-    Proposition *p = parsePropositionAlreadyTyped(ctx->getText(), _trace);
-    std::string pStr = prop2String(*p);
-    if (!_propStrToInst.count(pStr)) {
-      std::string ph = "_inst_" + std::to_string(instCount++);
-      _propStrToInst[pStr] = ph;
-    }
+    std::string inst = handleNewInst(ctx->boolean()->getText());
+    _subFormulas.push(
+        Hstring(inst, Hstring::Stype::Inst, _instToProp.at(inst)));
+    return;
+  }
 
-    if (_useCache) {
-      _subFormulas.push(Hstring(_propStrToInst.at(pStr), Hstring::Stype::Inst,
-                                new Proposition *(new CachedProposition(p))));
+  if (ctx->PLACEHOLDER() != nullptr) {
+    std::string ph = handleNewPP(ctx->PLACEHOLDER()->getText());
+    if (ctx->NOT() == nullptr) {
+      _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     } else {
-
-      _subFormulas.push(Hstring(_propStrToInst.at(pStr), Hstring::Stype::Inst,
-                                new Proposition *(p)));
+      _subFormulas.push(Hstring("!", Hstring::Stype::Temp) +
+                        Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
     }
     return;
   }
-  //  if (ctx->placeholder() != nullptr) {
-  //    std::string ph = "P" + ctx->placeholder()->NUMERIC()->getText();
-  //    if (!_phToProp.count(ph)) {
-  //      _phToProp[ph] = new Proposition *(nullptr);
-  //    }
-  //    if (ctx->NOT() == nullptr) {
-  //      _subFormulas.push(Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
-  //    } else {
-  //      _subFormulas.push(Hstring("!", Hstring::Stype::Temp) +
-  //                        Hstring(ph, Hstring::Stype::Ph, _phToProp.at(ph)));
-  //    }
-  //    return;
-  //  }
-  //  if (ctx->dt_next() != nullptr) {
-  //    messageErrorIf(dtCount > 0,
-  //                   "More than one dt operator defined\n" + printErrorMessage());
-  //    std::string ph = "dtNext" + std::to_string(dtCount++);
-  //    Hstring tmp = Hstring(ph, Hstring::Stype::DTNext, nullptr);
-  //    tmp._offset =
-  //        std::stoull(ctx->dt_next()->NUMERIC()->getText(), nullptr, 10);
-  //    tmp[0]._offset = tmp._offset;
-  //    _subFormulas.push(tmp);
-  //
-  //    return;
-  //  }
-  //  if (ctx->dt_NCReps() != nullptr) {
-  //    messageErrorIf(dtCount > 0,
-  //                   "More than one dt operator defined\n" + printErrorMessage());
-  //    std::string ph =
-  //        "dtNCReps0[->" + ctx->dt_NCReps()->NUMERIC()->getText() + "]:dtMock";
-  //    Hstring tmp = Hstring(ph, Hstring::Stype::DTNCReps, nullptr);
-  //    tmp._offset =
-  //        std::stoull(ctx->dt_NCReps()->NUMERIC()->getText(), nullptr, 10);
-  //    tmp[0]._offset = tmp._offset;
-  //    if (ctx->dt_NCReps()->SEP()->getText() == "@;") {
-  //      tmp._sep = ";";
-  //    } else if (ctx->dt_NCReps()->SEP()->getText() == "@:") {
-  //      tmp._sep = ":";
-  //    } else {
-  //      messageError("Unknown separator: " + ctx->dt_NCReps()->SEP()->getText() +
-  //                   printErrorMessage());
-  //    }
-  //    _subFormulas.push(tmp);
-  //
-  //    return;
-  //  }
-  //  if (ctx->dt_next_and() != nullptr) {
-  //    messageErrorIf(dtCount > 0,
-  //                   "More than one dt operator defined\n" + printErrorMessage());
-  //    std::string ph = "dtNextAnd" + std::to_string(dtCount++);
-  //    Hstring tmp = Hstring(ph, Hstring::Stype::DTNextAnd, nullptr);
-  //    tmp._offset =
-  //        std::stoull(ctx->dt_next_and()->NUMERIC()->getText(), nullptr, 10);
-  //    tmp[0]._offset = tmp._offset;
-  //    _subFormulas.push(tmp);
-  //
-  //    return;
-  //  }
-  //  if (ctx->DT_AND() != nullptr) {
-  //    messageErrorIf(dtCount > 0,
-  //                   "More than one dt operator defined\n" + printErrorMessage());
-  //    std::string ph = "dtAnd" + std::to_string(dtCount++);
-  //    _subFormulas.push(Hstring(ph, Hstring::Stype::DTAnd, nullptr));
-  //    return;
-  //  }
 
   if (ctx->sere().size() == 2 && ctx->AND() != nullptr) {
     Hstring newFormula =
@@ -331,8 +236,8 @@ void SpotToSVAhandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
 
-  if (ctx->sere().size() == 1 && ctx->LCPAREN() != nullptr &&
-      ctx->PLUS() != nullptr && ctx->RCPAREN() != nullptr) {
+  if (ctx->sere().size() == 1 && ctx->LSQUARED() != nullptr &&
+      ctx->PLUS() != nullptr && ctx->RSQUARED() != nullptr) {
     Hstring newFormula =
         _subFormulas.top() + Hstring("[+]", Hstring::Stype::Temp);
     _subFormulas.pop();
@@ -340,147 +245,147 @@ void SpotToSVAhandler::exitSere(spotParser::SereContext *ctx) {
     return;
   }
 
-//  if (ctx->DELAY() != nullptr) {
-//    Hstring newFormula;
-//    Hstring right = _subFormulas.top();
-//    _subFormulas.pop();
-//    ;
-//    Hstring left;
-//    if (ctx->sere().size() == 2) {
-//      left = _subFormulas.top();
-//      _subFormulas.pop();
-//    }
-//
-//    if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-//        ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
-//      newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-//                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//                   Hstring(":", Hstring::Stype::Temp) +
-//                   Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
-//                   Hstring("] ", Hstring::Stype::Temp) + right;
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-//               ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
-//      newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-//                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//                   Hstring(":", Hstring::Stype::Temp) +
-//                   Hstring("] ", Hstring::Stype::Temp) + right;
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->LCPAREN() != nullptr && ctx->RCPAREN() != nullptr &&
-//               ctx->NUMERIC().size() == 1) {
-//      newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
-//                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//                   Hstring("] ", Hstring::Stype::Temp) + right;
-//      _subFormulas.push(newFormula);
-//    } else {
-//      newFormula = left + Hstring(" ##", Hstring::Stype::Temp) +
-//                   Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//                   Hstring(" ", Hstring::Stype::Temp) + right;
-//      _subFormulas.push(newFormula);
-//    }
-//    return;
-//  }
-//
-//  if (ctx->sere().size() == 1 && ctx->LCPAREN() != nullptr &&
-//      ctx->ASS() != nullptr && !ctx->NUMERIC().empty() &&
-//      ctx->RCPAREN() != nullptr) {
-//    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    }
-//    return;
-//  }
-//
-//  if (ctx->sere().size() == 1 && ctx->LCPAREN() != nullptr &&
-//      ctx->IMPL() != nullptr && !ctx->NUMERIC().empty() &&
-//      ctx->RCPAREN() != nullptr) {
-//    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    }
-//    return;
-//  }
-//
-//  if (ctx->LCPAREN() != nullptr && ctx->TIMES() != nullptr &&
-//      ctx->RCPAREN() != nullptr) {
-//    if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 2) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[1]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->DOTS() != nullptr && ctx->NUMERIC().size() == 1) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring(":", Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else if (ctx->NUMERIC().size() == 1) {
-//      Hstring newFormula =
-//          _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
-//          Hstring(ctx->NUMERIC()[0]->getText(), Hstring::Stype::Temp) +
-//          Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    } else {
-//      Hstring newFormula = _subFormulas.top() +
-//                           Hstring("[*", Hstring::Stype::Temp) +
-//                           Hstring("]", Hstring::Stype::Temp);
-//      _subFormulas.pop();
-//      _subFormulas.push(newFormula);
-//    }
-//    return;
-//  }
+    if (ctx->DELAY() != nullptr) {
+      Hstring newFormula;
+      Hstring right = _subFormulas.top();
+      _subFormulas.pop();
+      ;
+      Hstring left;
+      if (ctx->sere().size() == 2) {
+        left = _subFormulas.top();
+        _subFormulas.pop();
+      }
+  
+      if (ctx->LSQUARED() != nullptr && ctx->RSQUARED() != nullptr &&
+          ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+        newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
+                     Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+                     Hstring(":", Hstring::Stype::Temp) +
+                     Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
+                     Hstring("] ", Hstring::Stype::Temp) + right;
+        _subFormulas.push(newFormula);
+      } else if (ctx->LSQUARED() != nullptr && ctx->RSQUARED() != nullptr &&
+                 ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+        newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
+                     Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+                     Hstring(":", Hstring::Stype::Temp) +
+                     Hstring("] ", Hstring::Stype::Temp) + right;
+        _subFormulas.push(newFormula);
+      } else if (ctx->LSQUARED() != nullptr && ctx->RSQUARED() != nullptr &&
+                 ctx->UINTEGER().size() == 1) {
+        newFormula = left + Hstring(" ##[", Hstring::Stype::Temp) +
+                     Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+                     Hstring("] ", Hstring::Stype::Temp) + right;
+        _subFormulas.push(newFormula);
+      } else {
+        newFormula = left + Hstring(" ##", Hstring::Stype::Temp) +
+                     Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+                     Hstring(" ", Hstring::Stype::Temp) + right;
+        _subFormulas.push(newFormula);
+      }
+      return;
+    }
+  
+    if (ctx->sere().size() == 1 && ctx->LSQUARED() != nullptr &&
+        ctx->ASS() != nullptr && !ctx->UINTEGER().empty() &&
+        ctx->RSQUARED() != nullptr) {
+      if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      }
+      return;
+    }
+  
+    if (ctx->sere().size() == 1 && ctx->LSQUARED() != nullptr &&
+        ctx->IMPL() != nullptr && !ctx->UINTEGER().empty() &&
+        ctx->RSQUARED() != nullptr) {
+      if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      }
+      return;
+    }
+  
+    if (ctx->LSQUARED() != nullptr && ctx->TIMES() != nullptr &&
+        ctx->RSQUARED() != nullptr) {
+      if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring(":", Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else if (ctx->UINTEGER().size() == 1) {
+        Hstring newFormula =
+            _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
+            Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+            Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      } else {
+        Hstring newFormula = _subFormulas.top() +
+                             Hstring("[*", Hstring::Stype::Temp) +
+                             Hstring("]", Hstring::Stype::Temp);
+        _subFormulas.pop();
+        _subFormulas.push(newFormula);
+      }
+      return;
+    }
 
-  if (ctx->sere().size() == 1 && ctx->LPAREN() != nullptr &&
-      ctx->RPAREN() != nullptr) {
+  if (ctx->sere().size() == 1 && ctx->LROUND() != nullptr &&
+      ctx->RROUND() != nullptr) {
     Hstring newFormula = Hstring("(", Hstring::Stype::Temp) +
                          _subFormulas.top() +
                          Hstring(")", Hstring::Stype::Temp);

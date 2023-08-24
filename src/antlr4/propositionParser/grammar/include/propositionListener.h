@@ -32,6 +32,9 @@ public:
   virtual void enterLogicAtom(propositionParser::LogicAtomContext *ctx) = 0;
   virtual void exitLogicAtom(propositionParser::LogicAtomContext *ctx) = 0;
 
+  virtual void enterLogic_constant(propositionParser::Logic_constantContext *ctx) = 0;
+  virtual void exitLogic_constant(propositionParser::Logic_constantContext *ctx) = 0;
+
   virtual void enterNumeric(propositionParser::NumericContext *ctx) = 0;
   virtual void exitNumeric(propositionParser::NumericContext *ctx) = 0;
 

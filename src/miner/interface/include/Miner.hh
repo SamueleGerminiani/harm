@@ -44,8 +44,6 @@ private:
 
   /// @brief Print the statistics of mining (stored in the hs:: namespace)
   void printStats();
-  /// @brief Print a message before executin the mining
-  void _printWelcomeMessage();
 };
 
 } // namespace harm

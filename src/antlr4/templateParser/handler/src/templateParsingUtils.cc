@@ -36,10 +36,10 @@ harm::Template *parseTemplate(std::string formula, harm::Trace *trace,
     //}
     antlr4::tree::ParseTree *treeFragAnt = parser.file();
     antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
-    std::cout << "-------------------------" << "\n";
     Hstring templateFormula = listener.getTemplateFormula();
     /*
     DEBUG
+    std::cout << templateFormula.toSpotString() << "\n";
     std::cout << treeFragAnt->toStringTree(&parser) << "\n";
     std::cout << formula << "\n";
     std::cout << templateFormula.toColoredString(0) << "\n";

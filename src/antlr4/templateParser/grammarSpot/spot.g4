@@ -1,71 +1,67 @@
 grammar spot;
 import proposition;
 
-file : ALWAYS LPAREN formula RPAREN EOF 
+file : ALWAYS LROUND formula RROUND EOF 
 | ALWAYS formula EOF
 ;
 
 
 
 formula : tformula IMPL tformula
-	    | tformula IMPL2 tformula
-	    | LGPAREN sere RGPAREN LCPAREN  RCPAREN IMPL tformula
-	    | LGPAREN sere RGPAREN LCPAREN  RCPAREN IMPL2 tformula
-	    | LGPAREN sere RGPAREN BIND1 tformula
-	    | LGPAREN sere RGPAREN BIND2 tformula
-	    | LGPAREN sere RGPAREN SEREIMPL1 tformula
-	    | LGPAREN sere RGPAREN SEREIMPL2 tformula
+	    | tformula IMPLO tformula
+	    | LCURLY sere RCURLY SEREIMPL tformula
+	    | LCURLY sere RCURLY SEREIMPLO tformula
 	;
 
-sere : boolean | (NOT)? PLACEHOLDER | (NOT)? FUNCTION LPAREN nonTemporalExp RPAREN
+sere : boolean | (NOT)? PLACEHOLDER | (NOT)? FUNCTION LROUND nonTemporalExp RROUND
      | DT_AND 
-	 | LPAREN sere RPAREN
-	 | LGPAREN sere RGPAREN
+	 | LROUND sere RROUND
+	 | LCURLY sere RCURLY
 	 | sere BOR sere
 	 | sere BAND sere
 	 | sere AND sere
 	 | sere SCOL sere
 	 | sere COL sere
-	 | sere LCPAREN TIMES LOGIC_CONSTANT? DOTS? LOGIC_CONSTANT? RCPAREN
-	 | sere LCPAREN PLUS RCPAREN
-	 | sere LCPAREN ASS LOGIC_CONSTANT DOTS? LOGIC_CONSTANT? RCPAREN
-	 | sere LCPAREN IMPL LOGIC_CONSTANT DOTS? LOGIC_CONSTANT? RCPAREN
-	 | sere DELAY LCPAREN? LOGIC_CONSTANT? DOTS? LOGIC_CONSTANT? RCPAREN? sere
+	 | sere LSQUARED TIMES UINTEGER? DOTS? UINTEGER? RSQUARED
+	 | sere LSQUARED PLUS RSQUARED
+	 | sere LSQUARED ASS UINTEGER DOTS? UINTEGER? RSQUARED
+	 | sere LSQUARED IMPL UINTEGER DOTS? UINTEGER? RSQUARED
+	 | sere DELAY LSQUARED? UINTEGER? DOTS? UINTEGER? RSQUARED? sere
      | DT_NEXT | DT_NEXT_AND | DT_NCREPS
 	 ;
 
 tformula: boolean | PLACEHOLDER | DT_AND
-	| LPAREN tformula RPAREN 
+	| LROUND tformula RROUND 
 	| NOT tformula 
 	| tformula AND tformula 
 	| tformula OR tformula 
 	| tformula XOR tformula 
 	| tformula UNTIL tformula 
 	| tformula RELEASE tformula
-	| NEXT LCPAREN NUMERIC RCPAREN tformula 
+	| NEXT LSQUARED UINTEGER RSQUARED tformula 
 	| NEXT tformula 
-	| LGPAREN sere RGPAREN
+	| LCURLY sere RCURLY
 	;
 
 nonTemporalExp:
 PLACEHOLDER | boolean;
 
-PLACEHOLDER: 'P' NUMERIC ;
+PLACEHOLDER: 'P' UINTEGER ;
 
 DT_AND
     : '..&&..'
     ;
 
 DT_NEXT
-    : '..##' NUMERIC '..'
+    : '..##' UINTEGER '..'
     ;
 
 DT_NEXT_AND
-    : '..#' NUMERIC '&' '..'
+    : '..#' UINTEGER '&' '..'
     ;
 
 DT_NCREPS
-    : '..[->' NUMERIC ']' SEP '..';
+    : '..[->' UINTEGER ']' SEP '..';
 
 SEP:'@:' | '@;';
 
@@ -98,7 +94,7 @@ IMPL
     : '->'
     ;
 
-IMPL2
+IMPLO
     : '=>'
     ;
 
@@ -110,19 +106,14 @@ XOR
     : 'xor'
     ;
 	
-BIND1
-    : '[]->'
-    ;
-
-BIND2
-    : '[]=>'
-    ;
-SEREIMPL1
+SEREIMPL
     : '|->'
+    | '[]->'
     ;
 
-SEREIMPL2
+SEREIMPLO
     : '|=>'
+    | '[]=>'
     ;
 
 ASS
@@ -141,8 +132,3 @@ COL
     : ':'
     ;
 
-FIRST_MATCH
-	:
-'first_match'
-	;
-	

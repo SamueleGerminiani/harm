@@ -9,6 +9,7 @@
 #include "exp.hh"
 #include "globals.hh"
 #include "templateParser.hh"
+#include "harmIcon.hh"
 
 #include <csignal>
 #include <filesystem>
@@ -23,6 +24,9 @@ static void genConfigFile(std::string &configFile, TraceReader *tr);
 int main(int arg, char *argv[]) {
   //enforce deterministic rand
   srand(1);
+
+  //print welcome message
+  std::cout << getIcon() << "\n";
 
   //it holds the employed modules
   Miner::ModulesConfig config;
@@ -285,7 +289,7 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
         ofs << "\t\t<prop exp=\"";
         ofs << std::get<0>(dec) + "[" + std::to_string(i) + "]";
         ofs << "\"";
-        ofs << " loc=\"a,dt\"/>"
+        ofs << " loc=\"c,dt\"/>"
             << "\n";
       }
 
@@ -294,72 +298,26 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
       ofs << "\t\t<prop exp=\"";
       ofs << std::get<0>(dec);
       ofs << "\"";
-      ofs << " loc=\"a,dt\"/>"
+      ofs << " loc=\"c,dt\"/>"
           << "\n";
     } else {
       ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
       ofs << std::get<0>(dec);
       ofs << "\"";
-      ofs << " loc=\"a,dt\"/>"
+      ofs << " loc=\"c,dt\"/>"
           << "\n";
     }
   }
 
-  // c
-  for (auto &dec : trace->getDeclarations()) {
-    if (clc::splitLogic && (std::get<1>(dec) == VarType::SLogic ||
-                            std::get<1>(dec) == VarType::ULogic)) {
-      for (size_t i = 0; i < std::get<2>(dec); i++) {
-        ofs << "\t\t<prop exp=\"";
-        ofs << std::get<0>(dec) + "[" + std::to_string(i) + "]";
-        ofs << "\"";
-        ofs << " loc=\"c\"/>"
-            << "\n";
-      }
-
-    } else if (std::get<2>(dec) == 1) {
-      // bool var
-      ofs << "\t\t<prop exp=\"";
-      ofs << std::get<0>(dec);
-      ofs << "\"";
-      ofs << " loc=\"c\"/>"
-          << "\n";
-    } else {
-      ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
-      ofs << std::get<0>(dec);
-      ofs << "\"";
-      ofs << " loc=\"c\"/>"
-          << "\n";
-    }
-  }
 
   ofs << "\n\n"
       << "\n";
-  ofs << "\t\t<template dtLimits=\"3A,-0.1E\" exp=\"G({..&&..}|-> "
-         "X(P0))\" /> "
-      << "\n";
-  ofs << "\t\t<template dtLimits=\"3D,3W,3A,-0.1E,R\" "
+  ofs << "\t\t<template dtLimits=\"5D,3W,15A,-0.1E,R\" "
          "exp=\"G({..#1&..}|-> X(P0))\" /> "
-      << "\n";
-  ofs << "\t\t<template dtLimits=\"3A,-0.1E,R\" "
-         "exp=\"G({..##1..}|-> X(P0))\" /> "
-      << "\n";
-  ofs << "\t\t<template dtLimits=\"3D,3W,3A,-0.1E,S\" "
-         "exp=\"G({..#1&..}|-> X(P0))\" /> "
-      << "\n";
-  ofs << "\t\t<template dtLimits=\"3A,-0.1E,S\" "
-         "exp=\"G({..##1..}|-> X(P0))\" /> "
       << "\n";
   ofs << "\n\n"
       << "\n";
 
-  //  FIXME: do we need this?
-  //  ofs << "\t<filter name=\"causality\" exp=\"1-afct/traceLength\" "
-  //         "threshold=\"0.5\"/>\n";
-  //  ofs << "\t<filter name=\"complexity\" exp=\"complexity\"
-  //  threshold=\"3\"/>\n"; ofs << "\t<filter name=\"pRepetitions\"
-  //  exp=\"1/(pRepetitions+1)\" "
-  //         "threshold=\"0.99\"/>\n";
   ofs << "\t\t<sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n";
   ofs << "\t\t<sort name=\"frequency\" exp=\"atct/traceLength\"/>\n";
   ofs << "	</context>"

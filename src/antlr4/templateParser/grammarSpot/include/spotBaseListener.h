@@ -46,6 +46,9 @@ public:
   virtual void enterLogicAtom(spotParser::LogicAtomContext * /*ctx*/) override { }
   virtual void exitLogicAtom(spotParser::LogicAtomContext * /*ctx*/) override { }
 
+  virtual void enterLogic_constant(spotParser::Logic_constantContext * /*ctx*/) override { }
+  virtual void exitLogic_constant(spotParser::Logic_constantContext * /*ctx*/) override { }
+
   virtual void enterNumeric(spotParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(spotParser::NumericContext * /*ctx*/) override { }
 

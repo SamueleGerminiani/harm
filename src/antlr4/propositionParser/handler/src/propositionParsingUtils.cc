@@ -24,8 +24,8 @@ expression::Proposition *parseProposition(std::string formula,
   /*
   DEBUG
   exit(0);
-  */
   std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
+  */
   return listener.getProposition();
 }
 expression::Proposition *parsePropositionAlreadyTyped(std::string formula,
@@ -116,20 +116,17 @@ void addTypeToExp(std::string &formula,
       if (std::get<0>(varDec) == "true" || std::get<0>(varDec) == "false") {
         nameType = "@" + std::get<0>(varDec);
       } else {
-        nameType = " «" + std::get<0>(varDec) + ",bool»";
+        nameType = startVar + std::get<0>(varDec) + ",bool"+endVar;
       }
       break;
     case VarType::ULogic:
-      nameType = " «" + std::get<0>(varDec) + ",logic(u," +
-                 std::to_string(std::get<2>(varDec)) + ")»";
+      nameType = startVar + std::get<0>(varDec) + ",logic"+endVar;
       break;
     case VarType::SLogic:
-      nameType = " «" + std::get<0>(varDec) + ",logic(s," +
-                 std::to_string(std::get<2>(varDec)) + ")»";
+      nameType = startVar + std::get<0>(varDec) + ",logic"+endVar;
       break;
     case VarType::Numeric:
-      nameType = " «" + std::get<0>(varDec) + ",numeric(" +
-                 std::to_string(std::get<2>(varDec)) + ")»";
+      nameType = startVar + std::get<0>(varDec) + ",numeric"+endVar;
       break;
     default:
       messageError("Variable is of \'Uknown type\'");
@@ -202,7 +199,8 @@ void addTypeToExp(std::string &formula,
 
     assert(changes.size() == formula.size());
   } // end var
-        std::cout << "After: " << formula << "\n";
+    //        debug
+//        std::cout << "After: " << formula << "\n";
 
 }
 } // namespace hparser

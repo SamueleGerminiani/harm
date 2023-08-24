@@ -34,6 +34,9 @@ public:
   virtual void enterLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
   virtual void exitLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
 
+  virtual void enterLogic_constant(propositionParser::Logic_constantContext * /*ctx*/) override { }
+  virtual void exitLogic_constant(propositionParser::Logic_constantContext * /*ctx*/) override { }
+
   virtual void enterNumeric(propositionParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(propositionParser::NumericContext * /*ctx*/) override { }
 

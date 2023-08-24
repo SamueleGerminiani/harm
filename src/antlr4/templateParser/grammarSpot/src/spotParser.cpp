@@ -44,160 +44,155 @@ void spotParserInitialize() {
   auto staticData = std::make_unique<SpotParserStaticData>(
     std::vector<std::string>{
       "file", "formula", "sere", "tformula", "nonTemporalExp", "boolean", 
-      "booleanAtom", "logic", "bitSelect", "logicAtom", "numeric", "numericAtom", 
-      "relop"
+      "booleanAtom", "logic", "bitSelect", "logicAtom", "logic_constant", 
+      "numeric", "numericAtom", "relop"
     },
     std::vector<std::string>{
       "", "", "'..&&..'", "", "", "", "", "'$stable'", "'F'", "'G'", "'X'", 
-      "'U'", "'R'", "'..'", "'->'", "'=>'", "'<->'", "'xor'", "'[]->'", 
-      "'[]=>'", "'|->'", "'|=>'", "'='", "'##'", "';'", "':'", "'first_match'", 
-      "", "", "", "", "", "", "", "", "'{'", "'}'", "'['", "']'", "'('", 
-      "')'", "", "", "", "", "'+'", "'-'", "'*'", "'/'", "'>'", "'>='", 
-      "'<'", "'<='", "'=='", "'!='", "'&'", "'|'", "'^'", "'~'", "'<<'", 
-      "'>>'", "'&&'", "'||'", "'!'"
+      "'U'", "'R'", "'..'", "'->'", "'=>'", "'<->'", "'xor'", "", "", "'='", 
+      "'##'", "';'", "':'", "", "", "", "", "", "", "'{'", "'}'", "'['", 
+      "']'", "'('", "')'", "", "", "", "", "", "", "'+'", "'-'", "'*'", 
+      "'/'", "'>'", "'>='", "'<'", "'<='", "'=='", "'!='", "'&'", "'|'", 
+      "'^'", "'~'", "'<<'", "'>>'", "'&&'", "'||'", "'!'"
     },
     std::vector<std::string>{
       "", "PLACEHOLDER", "DT_AND", "DT_NEXT", "DT_NEXT_AND", "DT_NCREPS", 
       "SEP", "FUNCTION", "EVENTUALLY", "ALWAYS", "NEXT", "UNTIL", "RELEASE", 
-      "DOTS", "IMPL", "IMPL2", "IFF", "XOR", "BIND1", "BIND2", "SEREIMPL1", 
-      "SEREIMPL2", "ASS", "DELAY", "SCOL", "COL", "FIRST_MATCH", "BOOLEAN_CONSTANT", 
-      "BOOLEAN_VARIABLE", "LOGIC_CONSTANT", "LOGIC_VARIABLE", "SIGN", "CONST_SUFFIX", 
-      "NUMERIC_CONSTANT", "NUMERIC_VARIABLE", "LGPAREN", "RGPAREN", "LCPAREN", 
-      "RCPAREN", "LPAREN", "RPAREN", "NUMERIC", "VERILOG_BINARY", "GCC_BINARY", 
-      "HEX", "PLUS", "MINUS", "TIMES", "DIV", "GT", "GE", "LT", "LE", "EQ", 
-      "NEQ", "BAND", "BOR", "BXOR", "NEG", "LSHIFT", "RSHIFT", "AND", "OR", 
-      "NOT", "WS"
+      "DOTS", "IMPL", "IMPLO", "IFF", "XOR", "SEREIMPL", "SEREIMPLO", "ASS", 
+      "DELAY", "SCOL", "COL", "BOOLEAN_CONSTANT", "BOOLEAN_VARIABLE", "LOGIC_VARIABLE", 
+      "CONST_SUFFIX", "NUMERIC_CONSTANT", "NUMERIC_VARIABLE", "LCURLY", 
+      "RCURLY", "LSQUARED", "RSQUARED", "LROUND", "RROUND", "SINTEGER", 
+      "UINTEGER", "FLOAT", "VERILOG_BINARY", "GCC_BINARY", "HEX", "PLUS", 
+      "MINUS", "TIMES", "DIV", "GT", "GE", "LT", "LE", "EQ", "NEQ", "BAND", 
+      "BOR", "BXOR", "NEG", "LSHIFT", "RSHIFT", "AND", "OR", "NOT", "WS"
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,64,368,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
-  	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,1,0,1,0,1,0,1,0,1,
-  	0,1,0,1,0,1,0,1,0,1,0,3,0,37,8,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  	1,1,1,1,1,1,1,1,3,1,87,8,1,1,2,1,2,1,2,3,2,92,8,2,1,2,1,2,3,2,96,8,2,
-  	1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,
-  	2,115,8,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,
-  	1,2,1,2,1,2,3,2,135,8,2,1,2,3,2,138,8,2,1,2,3,2,141,8,2,1,2,3,2,144,8,
-  	2,1,2,3,2,147,8,2,1,2,1,2,1,2,1,2,1,2,3,2,154,8,2,1,2,3,2,157,8,2,1,2,
-  	3,2,160,8,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,172,8,2,1,2,3,
-  	2,175,8,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,183,8,2,1,2,3,2,186,8,2,1,2,5,2,
-  	189,8,2,10,2,12,2,192,9,2,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,
-  	1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,3,3,215,8,3,1,3,1,3,1,3,1,3,1,
-  	3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,5,3,232,8,3,10,3,12,3,235,9,
-  	3,1,4,1,4,3,4,239,8,4,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,
-  	1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,
-  	5,1,5,1,5,1,5,1,5,3,5,275,8,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,
-  	1,5,1,5,5,5,289,8,5,10,5,12,5,292,9,5,1,6,1,6,1,7,1,7,1,7,1,7,1,7,1,7,
-  	1,7,1,7,3,7,304,8,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,
-  	7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,5,7,329,8,7,10,7,12,7,332,9,
-  	7,1,8,1,8,1,8,1,8,3,8,338,8,8,1,8,1,8,1,9,1,9,1,10,1,10,1,10,1,10,1,10,
-  	1,10,1,10,3,10,351,8,10,1,10,1,10,1,10,1,10,1,10,1,10,5,10,359,8,10,10,
-  	10,12,10,362,9,10,1,11,1,11,1,12,1,12,1,12,0,5,4,6,10,14,20,13,0,2,4,
-  	6,8,10,12,14,16,18,20,22,24,0,6,1,0,27,28,1,0,47,48,1,0,45,46,1,0,29,
-  	30,1,0,33,34,1,0,49,52,436,0,36,1,0,0,0,2,86,1,0,0,0,4,114,1,0,0,0,6,
-  	214,1,0,0,0,8,238,1,0,0,0,10,274,1,0,0,0,12,293,1,0,0,0,14,303,1,0,0,
-  	0,16,333,1,0,0,0,18,341,1,0,0,0,20,350,1,0,0,0,22,363,1,0,0,0,24,365,
-  	1,0,0,0,26,27,5,9,0,0,27,28,5,39,0,0,28,29,3,2,1,0,29,30,5,40,0,0,30,
-  	31,5,0,0,1,31,37,1,0,0,0,32,33,5,9,0,0,33,34,3,2,1,0,34,35,5,0,0,1,35,
-  	37,1,0,0,0,36,26,1,0,0,0,36,32,1,0,0,0,37,1,1,0,0,0,38,39,3,6,3,0,39,
-  	40,5,14,0,0,40,41,3,6,3,0,41,87,1,0,0,0,42,43,3,6,3,0,43,44,5,15,0,0,
-  	44,45,3,6,3,0,45,87,1,0,0,0,46,47,5,35,0,0,47,48,3,4,2,0,48,49,5,36,0,
-  	0,49,50,5,37,0,0,50,51,5,38,0,0,51,52,5,14,0,0,52,53,3,6,3,0,53,87,1,
-  	0,0,0,54,55,5,35,0,0,55,56,3,4,2,0,56,57,5,36,0,0,57,58,5,37,0,0,58,59,
-  	5,38,0,0,59,60,5,15,0,0,60,61,3,6,3,0,61,87,1,0,0,0,62,63,5,35,0,0,63,
-  	64,3,4,2,0,64,65,5,36,0,0,65,66,5,18,0,0,66,67,3,6,3,0,67,87,1,0,0,0,
-  	68,69,5,35,0,0,69,70,3,4,2,0,70,71,5,36,0,0,71,72,5,19,0,0,72,73,3,6,
-  	3,0,73,87,1,0,0,0,74,75,5,35,0,0,75,76,3,4,2,0,76,77,5,36,0,0,77,78,5,
-  	20,0,0,78,79,3,6,3,0,79,87,1,0,0,0,80,81,5,35,0,0,81,82,3,4,2,0,82,83,
-  	5,36,0,0,83,84,5,21,0,0,84,85,3,6,3,0,85,87,1,0,0,0,86,38,1,0,0,0,86,
-  	42,1,0,0,0,86,46,1,0,0,0,86,54,1,0,0,0,86,62,1,0,0,0,86,68,1,0,0,0,86,
-  	74,1,0,0,0,86,80,1,0,0,0,87,3,1,0,0,0,88,89,6,2,-1,0,89,115,3,10,5,0,
-  	90,92,5,63,0,0,91,90,1,0,0,0,91,92,1,0,0,0,92,93,1,0,0,0,93,115,5,1,0,
-  	0,94,96,5,63,0,0,95,94,1,0,0,0,95,96,1,0,0,0,96,97,1,0,0,0,97,98,5,7,
-  	0,0,98,99,5,39,0,0,99,100,3,8,4,0,100,101,5,40,0,0,101,115,1,0,0,0,102,
-  	115,5,2,0,0,103,104,5,39,0,0,104,105,3,4,2,0,105,106,5,40,0,0,106,115,
-  	1,0,0,0,107,108,5,35,0,0,108,109,3,4,2,0,109,110,5,36,0,0,110,115,1,0,
-  	0,0,111,115,5,3,0,0,112,115,5,4,0,0,113,115,5,5,0,0,114,88,1,0,0,0,114,
-  	91,1,0,0,0,114,95,1,0,0,0,114,102,1,0,0,0,114,103,1,0,0,0,114,107,1,0,
-  	0,0,114,111,1,0,0,0,114,112,1,0,0,0,114,113,1,0,0,0,115,190,1,0,0,0,116,
-  	117,10,13,0,0,117,118,5,56,0,0,118,189,3,4,2,14,119,120,10,12,0,0,120,
-  	121,5,55,0,0,121,189,3,4,2,13,122,123,10,11,0,0,123,124,5,61,0,0,124,
-  	189,3,4,2,12,125,126,10,10,0,0,126,127,5,24,0,0,127,189,3,4,2,11,128,
-  	129,10,9,0,0,129,130,5,25,0,0,130,189,3,4,2,10,131,132,10,4,0,0,132,134,
-  	5,23,0,0,133,135,5,37,0,0,134,133,1,0,0,0,134,135,1,0,0,0,135,137,1,0,
-  	0,0,136,138,5,29,0,0,137,136,1,0,0,0,137,138,1,0,0,0,138,140,1,0,0,0,
-  	139,141,5,13,0,0,140,139,1,0,0,0,140,141,1,0,0,0,141,143,1,0,0,0,142,
-  	144,5,29,0,0,143,142,1,0,0,0,143,144,1,0,0,0,144,146,1,0,0,0,145,147,
-  	5,38,0,0,146,145,1,0,0,0,146,147,1,0,0,0,147,148,1,0,0,0,148,189,3,4,
-  	2,5,149,150,10,8,0,0,150,151,5,37,0,0,151,153,5,47,0,0,152,154,5,29,0,
-  	0,153,152,1,0,0,0,153,154,1,0,0,0,154,156,1,0,0,0,155,157,5,13,0,0,156,
-  	155,1,0,0,0,156,157,1,0,0,0,157,159,1,0,0,0,158,160,5,29,0,0,159,158,
-  	1,0,0,0,159,160,1,0,0,0,160,161,1,0,0,0,161,189,5,38,0,0,162,163,10,7,
-  	0,0,163,164,5,37,0,0,164,165,5,45,0,0,165,189,5,38,0,0,166,167,10,6,0,
-  	0,167,168,5,37,0,0,168,169,5,22,0,0,169,171,5,29,0,0,170,172,5,13,0,0,
-  	171,170,1,0,0,0,171,172,1,0,0,0,172,174,1,0,0,0,173,175,5,29,0,0,174,
-  	173,1,0,0,0,174,175,1,0,0,0,175,176,1,0,0,0,176,189,5,38,0,0,177,178,
-  	10,5,0,0,178,179,5,37,0,0,179,180,5,14,0,0,180,182,5,29,0,0,181,183,5,
-  	13,0,0,182,181,1,0,0,0,182,183,1,0,0,0,183,185,1,0,0,0,184,186,5,29,0,
-  	0,185,184,1,0,0,0,185,186,1,0,0,0,186,187,1,0,0,0,187,189,5,38,0,0,188,
-  	116,1,0,0,0,188,119,1,0,0,0,188,122,1,0,0,0,188,125,1,0,0,0,188,128,1,
-  	0,0,0,188,131,1,0,0,0,188,149,1,0,0,0,188,162,1,0,0,0,188,166,1,0,0,0,
-  	188,177,1,0,0,0,189,192,1,0,0,0,190,188,1,0,0,0,190,191,1,0,0,0,191,5,
-  	1,0,0,0,192,190,1,0,0,0,193,194,6,3,-1,0,194,215,3,10,5,0,195,215,5,1,
-  	0,0,196,215,5,2,0,0,197,198,5,39,0,0,198,199,3,6,3,0,199,200,5,40,0,0,
-  	200,215,1,0,0,0,201,202,5,63,0,0,202,215,3,6,3,9,203,204,5,10,0,0,204,
-  	205,5,37,0,0,205,206,5,41,0,0,206,207,5,38,0,0,207,215,3,6,3,3,208,209,
-  	5,10,0,0,209,215,3,6,3,2,210,211,5,35,0,0,211,212,3,4,2,0,212,213,5,36,
-  	0,0,213,215,1,0,0,0,214,193,1,0,0,0,214,195,1,0,0,0,214,196,1,0,0,0,214,
-  	197,1,0,0,0,214,201,1,0,0,0,214,203,1,0,0,0,214,208,1,0,0,0,214,210,1,
-  	0,0,0,215,233,1,0,0,0,216,217,10,8,0,0,217,218,5,61,0,0,218,232,3,6,3,
-  	9,219,220,10,7,0,0,220,221,5,62,0,0,221,232,3,6,3,8,222,223,10,6,0,0,
-  	223,224,5,17,0,0,224,232,3,6,3,7,225,226,10,5,0,0,226,227,5,11,0,0,227,
-  	232,3,6,3,6,228,229,10,4,0,0,229,230,5,12,0,0,230,232,3,6,3,5,231,216,
-  	1,0,0,0,231,219,1,0,0,0,231,222,1,0,0,0,231,225,1,0,0,0,231,228,1,0,0,
-  	0,232,235,1,0,0,0,233,231,1,0,0,0,233,234,1,0,0,0,234,7,1,0,0,0,235,233,
-  	1,0,0,0,236,239,5,1,0,0,237,239,3,10,5,0,238,236,1,0,0,0,238,237,1,0,
-  	0,0,239,9,1,0,0,0,240,241,6,5,-1,0,241,242,5,63,0,0,242,275,3,10,5,15,
-  	243,244,3,14,7,0,244,245,3,24,12,0,245,246,3,14,7,0,246,275,1,0,0,0,247,
-  	248,3,20,10,0,248,249,3,24,12,0,249,250,3,20,10,0,250,275,1,0,0,0,251,
-  	252,3,14,7,0,252,253,5,53,0,0,253,254,3,14,7,0,254,275,1,0,0,0,255,256,
-  	3,20,10,0,256,257,5,53,0,0,257,258,3,20,10,0,258,275,1,0,0,0,259,260,
-  	3,14,7,0,260,261,5,54,0,0,261,262,3,14,7,0,262,275,1,0,0,0,263,264,3,
-  	20,10,0,264,265,5,54,0,0,265,266,3,20,10,0,266,275,1,0,0,0,267,275,3,
-  	12,6,0,268,275,3,14,7,0,269,275,3,20,10,0,270,271,5,39,0,0,271,272,3,
-  	10,5,0,272,273,5,40,0,0,273,275,1,0,0,0,274,240,1,0,0,0,274,243,1,0,0,
-  	0,274,247,1,0,0,0,274,251,1,0,0,0,274,255,1,0,0,0,274,259,1,0,0,0,274,
-  	263,1,0,0,0,274,267,1,0,0,0,274,268,1,0,0,0,274,269,1,0,0,0,274,270,1,
-  	0,0,0,275,290,1,0,0,0,276,277,10,10,0,0,277,278,5,53,0,0,278,289,3,10,
-  	5,11,279,280,10,7,0,0,280,281,5,54,0,0,281,289,3,10,5,8,282,283,10,6,
-  	0,0,283,284,5,61,0,0,284,289,3,10,5,7,285,286,10,5,0,0,286,287,5,62,0,
-  	0,287,289,3,10,5,6,288,276,1,0,0,0,288,279,1,0,0,0,288,282,1,0,0,0,288,
-  	285,1,0,0,0,289,292,1,0,0,0,290,288,1,0,0,0,290,291,1,0,0,0,291,11,1,
-  	0,0,0,292,290,1,0,0,0,293,294,7,0,0,0,294,13,1,0,0,0,295,296,6,7,-1,0,
-  	296,297,5,58,0,0,297,304,3,14,7,11,298,304,3,18,9,0,299,300,5,39,0,0,
-  	300,301,3,14,7,0,301,302,5,40,0,0,302,304,1,0,0,0,303,295,1,0,0,0,303,
-  	298,1,0,0,0,303,299,1,0,0,0,304,330,1,0,0,0,305,306,10,9,0,0,306,307,
-  	7,1,0,0,307,329,3,14,7,10,308,309,10,8,0,0,309,310,7,2,0,0,310,329,3,
-  	14,7,9,311,312,10,7,0,0,312,313,5,59,0,0,313,329,3,14,7,8,314,315,10,
-  	6,0,0,315,316,5,60,0,0,316,329,3,14,7,7,317,318,10,5,0,0,318,319,5,55,
-  	0,0,319,329,3,14,7,6,320,321,10,4,0,0,321,322,5,57,0,0,322,329,3,14,7,
-  	5,323,324,10,3,0,0,324,325,5,56,0,0,325,329,3,14,7,4,326,327,10,10,0,
-  	0,327,329,3,16,8,0,328,305,1,0,0,0,328,308,1,0,0,0,328,311,1,0,0,0,328,
-  	314,1,0,0,0,328,317,1,0,0,0,328,320,1,0,0,0,328,323,1,0,0,0,328,326,1,
-  	0,0,0,329,332,1,0,0,0,330,328,1,0,0,0,330,331,1,0,0,0,331,15,1,0,0,0,
-  	332,330,1,0,0,0,333,334,5,37,0,0,334,337,5,41,0,0,335,336,5,25,0,0,336,
-  	338,5,41,0,0,337,335,1,0,0,0,337,338,1,0,0,0,338,339,1,0,0,0,339,340,
-  	5,38,0,0,340,17,1,0,0,0,341,342,7,3,0,0,342,19,1,0,0,0,343,344,6,10,-1,
-  	0,344,351,3,22,11,0,345,351,3,14,7,0,346,347,5,39,0,0,347,348,3,20,10,
-  	0,348,349,5,40,0,0,349,351,1,0,0,0,350,343,1,0,0,0,350,345,1,0,0,0,350,
-  	346,1,0,0,0,351,360,1,0,0,0,352,353,10,5,0,0,353,354,7,1,0,0,354,359,
-  	3,20,10,6,355,356,10,4,0,0,356,357,7,2,0,0,357,359,3,20,10,5,358,352,
-  	1,0,0,0,358,355,1,0,0,0,359,362,1,0,0,0,360,358,1,0,0,0,360,361,1,0,0,
-  	0,361,21,1,0,0,0,362,360,1,0,0,0,363,364,7,4,0,0,364,23,1,0,0,0,365,366,
-  	7,5,0,0,366,25,1,0,0,0,33,36,86,91,95,114,134,137,140,143,146,153,156,
-  	159,171,174,182,185,188,190,214,231,233,238,274,288,290,303,328,330,337,
-  	350,358,360
+  	4,1,61,357,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,1,0,1,0,
+  	1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,0,39,8,0,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,61,8,1,1,2,
+  	1,2,1,2,3,2,66,8,2,1,2,1,2,3,2,70,8,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,
+  	1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,89,8,2,1,2,1,2,1,2,1,2,1,2,1,
+  	2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,1,2,3,2,109,8,2,1,2,3,2,
+  	112,8,2,1,2,3,2,115,8,2,1,2,3,2,118,8,2,1,2,3,2,121,8,2,1,2,1,2,1,2,1,
+  	2,1,2,3,2,128,8,2,1,2,3,2,131,8,2,1,2,3,2,134,8,2,1,2,1,2,1,2,1,2,1,2,
+  	1,2,1,2,1,2,1,2,1,2,3,2,146,8,2,1,2,3,2,149,8,2,1,2,1,2,1,2,1,2,1,2,1,
+  	2,3,2,157,8,2,1,2,3,2,160,8,2,1,2,5,2,163,8,2,10,2,12,2,166,9,2,1,3,1,
+  	3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,
+  	1,3,1,3,3,3,189,8,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,3,1,
+  	3,1,3,1,3,5,3,206,8,3,10,3,12,3,209,9,3,1,4,1,4,3,4,213,8,4,1,5,1,5,1,
+  	5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,
+  	1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,3,5,249,8,5,1,
+  	5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,1,5,5,5,263,8,5,10,5,12,5,266,
+  	9,5,1,6,1,6,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,3,7,278,8,7,1,7,1,7,1,7,1,
+  	7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,
+  	1,7,1,7,5,7,303,8,7,10,7,12,7,306,9,7,1,8,1,8,1,8,1,8,3,8,312,8,8,1,8,
+  	1,8,1,9,1,9,3,9,318,8,9,1,10,1,10,1,10,1,10,3,10,324,8,10,1,10,1,10,3,
+  	10,328,8,10,1,10,3,10,331,8,10,1,11,1,11,1,11,1,11,1,11,1,11,1,11,3,11,
+  	340,8,11,1,11,1,11,1,11,1,11,1,11,1,11,5,11,348,8,11,10,11,12,11,351,
+  	9,11,1,12,1,12,1,13,1,13,1,13,0,5,4,6,10,14,22,14,0,2,4,6,8,10,12,14,
+  	16,18,20,22,24,26,0,5,1,0,24,25,1,0,44,45,1,0,42,43,1,0,28,29,1,0,46,
+  	49,427,0,38,1,0,0,0,2,60,1,0,0,0,4,88,1,0,0,0,6,188,1,0,0,0,8,212,1,0,
+  	0,0,10,248,1,0,0,0,12,267,1,0,0,0,14,277,1,0,0,0,16,307,1,0,0,0,18,317,
+  	1,0,0,0,20,330,1,0,0,0,22,339,1,0,0,0,24,352,1,0,0,0,26,354,1,0,0,0,28,
+  	29,5,9,0,0,29,30,5,34,0,0,30,31,3,2,1,0,31,32,5,35,0,0,32,33,5,0,0,1,
+  	33,39,1,0,0,0,34,35,5,9,0,0,35,36,3,2,1,0,36,37,5,0,0,1,37,39,1,0,0,0,
+  	38,28,1,0,0,0,38,34,1,0,0,0,39,1,1,0,0,0,40,41,3,6,3,0,41,42,5,14,0,0,
+  	42,43,3,6,3,0,43,61,1,0,0,0,44,45,3,6,3,0,45,46,5,15,0,0,46,47,3,6,3,
+  	0,47,61,1,0,0,0,48,49,5,30,0,0,49,50,3,4,2,0,50,51,5,31,0,0,51,52,5,18,
+  	0,0,52,53,3,6,3,0,53,61,1,0,0,0,54,55,5,30,0,0,55,56,3,4,2,0,56,57,5,
+  	31,0,0,57,58,5,19,0,0,58,59,3,6,3,0,59,61,1,0,0,0,60,40,1,0,0,0,60,44,
+  	1,0,0,0,60,48,1,0,0,0,60,54,1,0,0,0,61,3,1,0,0,0,62,63,6,2,-1,0,63,89,
+  	3,10,5,0,64,66,5,60,0,0,65,64,1,0,0,0,65,66,1,0,0,0,66,67,1,0,0,0,67,
+  	89,5,1,0,0,68,70,5,60,0,0,69,68,1,0,0,0,69,70,1,0,0,0,70,71,1,0,0,0,71,
+  	72,5,7,0,0,72,73,5,34,0,0,73,74,3,8,4,0,74,75,5,35,0,0,75,89,1,0,0,0,
+  	76,89,5,2,0,0,77,78,5,34,0,0,78,79,3,4,2,0,79,80,5,35,0,0,80,89,1,0,0,
+  	0,81,82,5,30,0,0,82,83,3,4,2,0,83,84,5,31,0,0,84,89,1,0,0,0,85,89,5,3,
+  	0,0,86,89,5,4,0,0,87,89,5,5,0,0,88,62,1,0,0,0,88,65,1,0,0,0,88,69,1,0,
+  	0,0,88,76,1,0,0,0,88,77,1,0,0,0,88,81,1,0,0,0,88,85,1,0,0,0,88,86,1,0,
+  	0,0,88,87,1,0,0,0,89,164,1,0,0,0,90,91,10,13,0,0,91,92,5,53,0,0,92,163,
+  	3,4,2,14,93,94,10,12,0,0,94,95,5,52,0,0,95,163,3,4,2,13,96,97,10,11,0,
+  	0,97,98,5,58,0,0,98,163,3,4,2,12,99,100,10,10,0,0,100,101,5,22,0,0,101,
+  	163,3,4,2,11,102,103,10,9,0,0,103,104,5,23,0,0,104,163,3,4,2,10,105,106,
+  	10,4,0,0,106,108,5,21,0,0,107,109,5,32,0,0,108,107,1,0,0,0,108,109,1,
+  	0,0,0,109,111,1,0,0,0,110,112,5,37,0,0,111,110,1,0,0,0,111,112,1,0,0,
+  	0,112,114,1,0,0,0,113,115,5,13,0,0,114,113,1,0,0,0,114,115,1,0,0,0,115,
+  	117,1,0,0,0,116,118,5,37,0,0,117,116,1,0,0,0,117,118,1,0,0,0,118,120,
+  	1,0,0,0,119,121,5,33,0,0,120,119,1,0,0,0,120,121,1,0,0,0,121,122,1,0,
+  	0,0,122,163,3,4,2,5,123,124,10,8,0,0,124,125,5,32,0,0,125,127,5,44,0,
+  	0,126,128,5,37,0,0,127,126,1,0,0,0,127,128,1,0,0,0,128,130,1,0,0,0,129,
+  	131,5,13,0,0,130,129,1,0,0,0,130,131,1,0,0,0,131,133,1,0,0,0,132,134,
+  	5,37,0,0,133,132,1,0,0,0,133,134,1,0,0,0,134,135,1,0,0,0,135,163,5,33,
+  	0,0,136,137,10,7,0,0,137,138,5,32,0,0,138,139,5,42,0,0,139,163,5,33,0,
+  	0,140,141,10,6,0,0,141,142,5,32,0,0,142,143,5,20,0,0,143,145,5,37,0,0,
+  	144,146,5,13,0,0,145,144,1,0,0,0,145,146,1,0,0,0,146,148,1,0,0,0,147,
+  	149,5,37,0,0,148,147,1,0,0,0,148,149,1,0,0,0,149,150,1,0,0,0,150,163,
+  	5,33,0,0,151,152,10,5,0,0,152,153,5,32,0,0,153,154,5,14,0,0,154,156,5,
+  	37,0,0,155,157,5,13,0,0,156,155,1,0,0,0,156,157,1,0,0,0,157,159,1,0,0,
+  	0,158,160,5,37,0,0,159,158,1,0,0,0,159,160,1,0,0,0,160,161,1,0,0,0,161,
+  	163,5,33,0,0,162,90,1,0,0,0,162,93,1,0,0,0,162,96,1,0,0,0,162,99,1,0,
+  	0,0,162,102,1,0,0,0,162,105,1,0,0,0,162,123,1,0,0,0,162,136,1,0,0,0,162,
+  	140,1,0,0,0,162,151,1,0,0,0,163,166,1,0,0,0,164,162,1,0,0,0,164,165,1,
+  	0,0,0,165,5,1,0,0,0,166,164,1,0,0,0,167,168,6,3,-1,0,168,189,3,10,5,0,
+  	169,189,5,1,0,0,170,189,5,2,0,0,171,172,5,34,0,0,172,173,3,6,3,0,173,
+  	174,5,35,0,0,174,189,1,0,0,0,175,176,5,60,0,0,176,189,3,6,3,9,177,178,
+  	5,10,0,0,178,179,5,32,0,0,179,180,5,37,0,0,180,181,5,33,0,0,181,189,3,
+  	6,3,3,182,183,5,10,0,0,183,189,3,6,3,2,184,185,5,30,0,0,185,186,3,4,2,
+  	0,186,187,5,31,0,0,187,189,1,0,0,0,188,167,1,0,0,0,188,169,1,0,0,0,188,
+  	170,1,0,0,0,188,171,1,0,0,0,188,175,1,0,0,0,188,177,1,0,0,0,188,182,1,
+  	0,0,0,188,184,1,0,0,0,189,207,1,0,0,0,190,191,10,8,0,0,191,192,5,58,0,
+  	0,192,206,3,6,3,9,193,194,10,7,0,0,194,195,5,59,0,0,195,206,3,6,3,8,196,
+  	197,10,6,0,0,197,198,5,17,0,0,198,206,3,6,3,7,199,200,10,5,0,0,200,201,
+  	5,11,0,0,201,206,3,6,3,6,202,203,10,4,0,0,203,204,5,12,0,0,204,206,3,
+  	6,3,5,205,190,1,0,0,0,205,193,1,0,0,0,205,196,1,0,0,0,205,199,1,0,0,0,
+  	205,202,1,0,0,0,206,209,1,0,0,0,207,205,1,0,0,0,207,208,1,0,0,0,208,7,
+  	1,0,0,0,209,207,1,0,0,0,210,213,5,1,0,0,211,213,3,10,5,0,212,210,1,0,
+  	0,0,212,211,1,0,0,0,213,9,1,0,0,0,214,215,6,5,-1,0,215,216,5,60,0,0,216,
+  	249,3,10,5,15,217,218,3,14,7,0,218,219,3,26,13,0,219,220,3,14,7,0,220,
+  	249,1,0,0,0,221,222,3,22,11,0,222,223,3,26,13,0,223,224,3,22,11,0,224,
+  	249,1,0,0,0,225,226,3,14,7,0,226,227,5,50,0,0,227,228,3,14,7,0,228,249,
+  	1,0,0,0,229,230,3,22,11,0,230,231,5,50,0,0,231,232,3,22,11,0,232,249,
+  	1,0,0,0,233,234,3,14,7,0,234,235,5,51,0,0,235,236,3,14,7,0,236,249,1,
+  	0,0,0,237,238,3,22,11,0,238,239,5,51,0,0,239,240,3,22,11,0,240,249,1,
+  	0,0,0,241,249,3,12,6,0,242,249,3,14,7,0,243,249,3,22,11,0,244,245,5,34,
+  	0,0,245,246,3,10,5,0,246,247,5,35,0,0,247,249,1,0,0,0,248,214,1,0,0,0,
+  	248,217,1,0,0,0,248,221,1,0,0,0,248,225,1,0,0,0,248,229,1,0,0,0,248,233,
+  	1,0,0,0,248,237,1,0,0,0,248,241,1,0,0,0,248,242,1,0,0,0,248,243,1,0,0,
+  	0,248,244,1,0,0,0,249,264,1,0,0,0,250,251,10,10,0,0,251,252,5,50,0,0,
+  	252,263,3,10,5,11,253,254,10,7,0,0,254,255,5,51,0,0,255,263,3,10,5,8,
+  	256,257,10,6,0,0,257,258,5,58,0,0,258,263,3,10,5,7,259,260,10,5,0,0,260,
+  	261,5,59,0,0,261,263,3,10,5,6,262,250,1,0,0,0,262,253,1,0,0,0,262,256,
+  	1,0,0,0,262,259,1,0,0,0,263,266,1,0,0,0,264,262,1,0,0,0,264,265,1,0,0,
+  	0,265,11,1,0,0,0,266,264,1,0,0,0,267,268,7,0,0,0,268,13,1,0,0,0,269,270,
+  	6,7,-1,0,270,271,5,55,0,0,271,278,3,14,7,11,272,278,3,18,9,0,273,274,
+  	5,34,0,0,274,275,3,14,7,0,275,276,5,35,0,0,276,278,1,0,0,0,277,269,1,
+  	0,0,0,277,272,1,0,0,0,277,273,1,0,0,0,278,304,1,0,0,0,279,280,10,9,0,
+  	0,280,281,7,1,0,0,281,303,3,14,7,10,282,283,10,8,0,0,283,284,7,2,0,0,
+  	284,303,3,14,7,9,285,286,10,7,0,0,286,287,5,56,0,0,287,303,3,14,7,8,288,
+  	289,10,6,0,0,289,290,5,57,0,0,290,303,3,14,7,7,291,292,10,5,0,0,292,293,
+  	5,52,0,0,293,303,3,14,7,6,294,295,10,4,0,0,295,296,5,54,0,0,296,303,3,
+  	14,7,5,297,298,10,3,0,0,298,299,5,53,0,0,299,303,3,14,7,4,300,301,10,
+  	10,0,0,301,303,3,16,8,0,302,279,1,0,0,0,302,282,1,0,0,0,302,285,1,0,0,
+  	0,302,288,1,0,0,0,302,291,1,0,0,0,302,294,1,0,0,0,302,297,1,0,0,0,302,
+  	300,1,0,0,0,303,306,1,0,0,0,304,302,1,0,0,0,304,305,1,0,0,0,305,15,1,
+  	0,0,0,306,304,1,0,0,0,307,308,5,32,0,0,308,311,5,37,0,0,309,310,5,23,
+  	0,0,310,312,5,37,0,0,311,309,1,0,0,0,311,312,1,0,0,0,312,313,1,0,0,0,
+  	313,314,5,33,0,0,314,17,1,0,0,0,315,318,3,20,10,0,316,318,5,26,0,0,317,
+  	315,1,0,0,0,317,316,1,0,0,0,318,19,1,0,0,0,319,331,5,39,0,0,320,331,5,
+  	40,0,0,321,323,5,36,0,0,322,324,5,27,0,0,323,322,1,0,0,0,323,324,1,0,
+  	0,0,324,331,1,0,0,0,325,327,5,37,0,0,326,328,5,27,0,0,327,326,1,0,0,0,
+  	327,328,1,0,0,0,328,331,1,0,0,0,329,331,5,41,0,0,330,319,1,0,0,0,330,
+  	320,1,0,0,0,330,321,1,0,0,0,330,325,1,0,0,0,330,329,1,0,0,0,331,21,1,
+  	0,0,0,332,333,6,11,-1,0,333,340,3,24,12,0,334,340,3,14,7,0,335,336,5,
+  	34,0,0,336,337,3,22,11,0,337,338,5,35,0,0,338,340,1,0,0,0,339,332,1,0,
+  	0,0,339,334,1,0,0,0,339,335,1,0,0,0,340,349,1,0,0,0,341,342,10,5,0,0,
+  	342,343,7,1,0,0,343,348,3,22,11,6,344,345,10,4,0,0,345,346,7,2,0,0,346,
+  	348,3,22,11,5,347,341,1,0,0,0,347,344,1,0,0,0,348,351,1,0,0,0,349,347,
+  	1,0,0,0,349,350,1,0,0,0,350,23,1,0,0,0,351,349,1,0,0,0,352,353,7,3,0,
+  	0,353,25,1,0,0,0,354,355,7,4,0,0,355,27,1,0,0,0,37,38,60,65,69,88,108,
+  	111,114,117,120,127,130,133,145,148,156,159,162,164,188,205,207,212,248,
+  	262,264,277,302,304,311,317,323,327,330,339,347,349
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -256,16 +251,16 @@ tree::TerminalNode* spotParser::FileContext::ALWAYS() {
   return getToken(spotParser::ALWAYS, 0);
 }
 
-tree::TerminalNode* spotParser::FileContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::FileContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
 spotParser::FormulaContext* spotParser::FileContext::formula() {
   return getRuleContext<spotParser::FormulaContext>(0);
 }
 
-tree::TerminalNode* spotParser::FileContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::FileContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::FileContext::EOF() {
@@ -301,31 +296,31 @@ spotParser::FileContext* spotParser::file() {
     exitRule();
   });
   try {
-    setState(36);
+    setState(38);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 0, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(26);
-      match(spotParser::ALWAYS);
-      setState(27);
-      match(spotParser::LPAREN);
       setState(28);
-      formula();
+      match(spotParser::ALWAYS);
       setState(29);
-      match(spotParser::RPAREN);
+      match(spotParser::LROUND);
       setState(30);
+      formula();
+      setState(31);
+      match(spotParser::RROUND);
+      setState(32);
       match(spotParser::EOF);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(32);
-      match(spotParser::ALWAYS);
-      setState(33);
-      formula();
       setState(34);
+      match(spotParser::ALWAYS);
+      setState(35);
+      formula();
+      setState(36);
       match(spotParser::EOF);
       break;
     }
@@ -362,44 +357,28 @@ tree::TerminalNode* spotParser::FormulaContext::IMPL() {
   return getToken(spotParser::IMPL, 0);
 }
 
-tree::TerminalNode* spotParser::FormulaContext::IMPL2() {
-  return getToken(spotParser::IMPL2, 0);
+tree::TerminalNode* spotParser::FormulaContext::IMPLO() {
+  return getToken(spotParser::IMPLO, 0);
 }
 
-tree::TerminalNode* spotParser::FormulaContext::LGPAREN() {
-  return getToken(spotParser::LGPAREN, 0);
+tree::TerminalNode* spotParser::FormulaContext::LCURLY() {
+  return getToken(spotParser::LCURLY, 0);
 }
 
 spotParser::SereContext* spotParser::FormulaContext::sere() {
   return getRuleContext<spotParser::SereContext>(0);
 }
 
-tree::TerminalNode* spotParser::FormulaContext::RGPAREN() {
-  return getToken(spotParser::RGPAREN, 0);
+tree::TerminalNode* spotParser::FormulaContext::RCURLY() {
+  return getToken(spotParser::RCURLY, 0);
 }
 
-tree::TerminalNode* spotParser::FormulaContext::LCPAREN() {
-  return getToken(spotParser::LCPAREN, 0);
+tree::TerminalNode* spotParser::FormulaContext::SEREIMPL() {
+  return getToken(spotParser::SEREIMPL, 0);
 }
 
-tree::TerminalNode* spotParser::FormulaContext::RCPAREN() {
-  return getToken(spotParser::RCPAREN, 0);
-}
-
-tree::TerminalNode* spotParser::FormulaContext::BIND1() {
-  return getToken(spotParser::BIND1, 0);
-}
-
-tree::TerminalNode* spotParser::FormulaContext::BIND2() {
-  return getToken(spotParser::BIND2, 0);
-}
-
-tree::TerminalNode* spotParser::FormulaContext::SEREIMPL1() {
-  return getToken(spotParser::SEREIMPL1, 0);
-}
-
-tree::TerminalNode* spotParser::FormulaContext::SEREIMPL2() {
-  return getToken(spotParser::SEREIMPL2, 0);
+tree::TerminalNode* spotParser::FormulaContext::SEREIMPLO() {
+  return getToken(spotParser::SEREIMPLO, 0);
 }
 
 
@@ -431,45 +410,41 @@ spotParser::FormulaContext* spotParser::formula() {
     exitRule();
   });
   try {
-    setState(86);
+    setState(60);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 1, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(38);
-      tformula(0);
-      setState(39);
-      match(spotParser::IMPL);
       setState(40);
+      tformula(0);
+      setState(41);
+      match(spotParser::IMPL);
+      setState(42);
       tformula(0);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(42);
-      tformula(0);
-      setState(43);
-      match(spotParser::IMPL2);
       setState(44);
+      tformula(0);
+      setState(45);
+      match(spotParser::IMPLO);
+      setState(46);
       tformula(0);
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(46);
-      match(spotParser::LGPAREN);
-      setState(47);
-      sere(0);
       setState(48);
-      match(spotParser::RGPAREN);
+      match(spotParser::LCURLY);
       setState(49);
-      match(spotParser::LCPAREN);
+      sere(0);
       setState(50);
-      match(spotParser::RCPAREN);
+      match(spotParser::RCURLY);
       setState(51);
-      match(spotParser::IMPL);
+      match(spotParser::SEREIMPL);
       setState(52);
       tformula(0);
       break;
@@ -478,78 +453,14 @@ spotParser::FormulaContext* spotParser::formula() {
     case 4: {
       enterOuterAlt(_localctx, 4);
       setState(54);
-      match(spotParser::LGPAREN);
+      match(spotParser::LCURLY);
       setState(55);
       sere(0);
       setState(56);
-      match(spotParser::RGPAREN);
+      match(spotParser::RCURLY);
       setState(57);
-      match(spotParser::LCPAREN);
+      match(spotParser::SEREIMPLO);
       setState(58);
-      match(spotParser::RCPAREN);
-      setState(59);
-      match(spotParser::IMPL2);
-      setState(60);
-      tformula(0);
-      break;
-    }
-
-    case 5: {
-      enterOuterAlt(_localctx, 5);
-      setState(62);
-      match(spotParser::LGPAREN);
-      setState(63);
-      sere(0);
-      setState(64);
-      match(spotParser::RGPAREN);
-      setState(65);
-      match(spotParser::BIND1);
-      setState(66);
-      tformula(0);
-      break;
-    }
-
-    case 6: {
-      enterOuterAlt(_localctx, 6);
-      setState(68);
-      match(spotParser::LGPAREN);
-      setState(69);
-      sere(0);
-      setState(70);
-      match(spotParser::RGPAREN);
-      setState(71);
-      match(spotParser::BIND2);
-      setState(72);
-      tformula(0);
-      break;
-    }
-
-    case 7: {
-      enterOuterAlt(_localctx, 7);
-      setState(74);
-      match(spotParser::LGPAREN);
-      setState(75);
-      sere(0);
-      setState(76);
-      match(spotParser::RGPAREN);
-      setState(77);
-      match(spotParser::SEREIMPL1);
-      setState(78);
-      tformula(0);
-      break;
-    }
-
-    case 8: {
-      enterOuterAlt(_localctx, 8);
-      setState(80);
-      match(spotParser::LGPAREN);
-      setState(81);
-      sere(0);
-      setState(82);
-      match(spotParser::RGPAREN);
-      setState(83);
-      match(spotParser::SEREIMPL2);
-      setState(84);
       tformula(0);
       break;
     }
@@ -590,16 +501,16 @@ tree::TerminalNode* spotParser::SereContext::FUNCTION() {
   return getToken(spotParser::FUNCTION, 0);
 }
 
-tree::TerminalNode* spotParser::SereContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
 spotParser::NonTemporalExpContext* spotParser::SereContext::nonTemporalExp() {
   return getRuleContext<spotParser::NonTemporalExpContext>(0);
 }
 
-tree::TerminalNode* spotParser::SereContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::SereContext::DT_AND() {
@@ -614,12 +525,12 @@ spotParser::SereContext* spotParser::SereContext::sere(size_t i) {
   return getRuleContext<spotParser::SereContext>(i);
 }
 
-tree::TerminalNode* spotParser::SereContext::LGPAREN() {
-  return getToken(spotParser::LGPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::LCURLY() {
+  return getToken(spotParser::LCURLY, 0);
 }
 
-tree::TerminalNode* spotParser::SereContext::RGPAREN() {
-  return getToken(spotParser::RGPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::RCURLY() {
+  return getToken(spotParser::RCURLY, 0);
 }
 
 tree::TerminalNode* spotParser::SereContext::DT_NEXT() {
@@ -658,24 +569,24 @@ tree::TerminalNode* spotParser::SereContext::DELAY() {
   return getToken(spotParser::DELAY, 0);
 }
 
-tree::TerminalNode* spotParser::SereContext::LCPAREN() {
-  return getToken(spotParser::LCPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::LSQUARED() {
+  return getToken(spotParser::LSQUARED, 0);
 }
 
-std::vector<tree::TerminalNode *> spotParser::SereContext::LOGIC_CONSTANT() {
-  return getTokens(spotParser::LOGIC_CONSTANT);
+std::vector<tree::TerminalNode *> spotParser::SereContext::UINTEGER() {
+  return getTokens(spotParser::UINTEGER);
 }
 
-tree::TerminalNode* spotParser::SereContext::LOGIC_CONSTANT(size_t i) {
-  return getToken(spotParser::LOGIC_CONSTANT, i);
+tree::TerminalNode* spotParser::SereContext::UINTEGER(size_t i) {
+  return getToken(spotParser::UINTEGER, i);
 }
 
 tree::TerminalNode* spotParser::SereContext::DOTS() {
   return getToken(spotParser::DOTS, 0);
 }
 
-tree::TerminalNode* spotParser::SereContext::RCPAREN() {
-  return getToken(spotParser::RCPAREN, 0);
+tree::TerminalNode* spotParser::SereContext::RSQUARED() {
+  return getToken(spotParser::RSQUARED, 0);
 }
 
 tree::TerminalNode* spotParser::SereContext::TIMES() {
@@ -737,89 +648,89 @@ spotParser::SereContext* spotParser::sere(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(114);
+    setState(88);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 4, _ctx)) {
     case 1: {
-      setState(89);
+      setState(63);
       boolean(0);
       break;
     }
 
     case 2: {
-      setState(91);
+      setState(65);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if (_la == spotParser::NOT) {
-        setState(90);
+        setState(64);
         match(spotParser::NOT);
       }
-      setState(93);
+      setState(67);
       match(spotParser::PLACEHOLDER);
       break;
     }
 
     case 3: {
-      setState(95);
+      setState(69);
       _errHandler->sync(this);
 
       _la = _input->LA(1);
       if (_la == spotParser::NOT) {
-        setState(94);
+        setState(68);
         match(spotParser::NOT);
       }
-      setState(97);
+      setState(71);
       match(spotParser::FUNCTION);
-      setState(98);
-      match(spotParser::LPAREN);
-      setState(99);
+      setState(72);
+      match(spotParser::LROUND);
+      setState(73);
       nonTemporalExp();
-      setState(100);
-      match(spotParser::RPAREN);
+      setState(74);
+      match(spotParser::RROUND);
       break;
     }
 
     case 4: {
-      setState(102);
+      setState(76);
       match(spotParser::DT_AND);
       break;
     }
 
     case 5: {
-      setState(103);
-      match(spotParser::LPAREN);
-      setState(104);
+      setState(77);
+      match(spotParser::LROUND);
+      setState(78);
       sere(0);
-      setState(105);
-      match(spotParser::RPAREN);
+      setState(79);
+      match(spotParser::RROUND);
       break;
     }
 
     case 6: {
-      setState(107);
-      match(spotParser::LGPAREN);
-      setState(108);
+      setState(81);
+      match(spotParser::LCURLY);
+      setState(82);
       sere(0);
-      setState(109);
-      match(spotParser::RGPAREN);
+      setState(83);
+      match(spotParser::RCURLY);
       break;
     }
 
     case 7: {
-      setState(111);
+      setState(85);
       match(spotParser::DT_NEXT);
       break;
     }
 
     case 8: {
-      setState(112);
+      setState(86);
       match(spotParser::DT_NEXT_AND);
       break;
     }
 
     case 9: {
-      setState(113);
+      setState(87);
       match(spotParser::DT_NCREPS);
       break;
     }
@@ -828,7 +739,7 @@ spotParser::SereContext* spotParser::sere(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(190);
+    setState(164);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 18, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
@@ -836,18 +747,18 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(188);
+        setState(162);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(116);
+          setState(90);
 
           if (!(precpred(_ctx, 13))) throw FailedPredicateException(this, "precpred(_ctx, 13)");
-          setState(117);
+          setState(91);
           match(spotParser::BOR);
-          setState(118);
+          setState(92);
           sere(14);
           break;
         }
@@ -855,12 +766,12 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 2: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(119);
+          setState(93);
 
           if (!(precpred(_ctx, 12))) throw FailedPredicateException(this, "precpred(_ctx, 12)");
-          setState(120);
+          setState(94);
           match(spotParser::BAND);
-          setState(121);
+          setState(95);
           sere(13);
           break;
         }
@@ -868,12 +779,12 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 3: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(122);
+          setState(96);
 
           if (!(precpred(_ctx, 11))) throw FailedPredicateException(this, "precpred(_ctx, 11)");
-          setState(123);
+          setState(97);
           match(spotParser::AND);
-          setState(124);
+          setState(98);
           sere(12);
           break;
         }
@@ -881,12 +792,12 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 4: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(125);
+          setState(99);
 
           if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
-          setState(126);
+          setState(100);
           match(spotParser::SCOL);
-          setState(127);
+          setState(101);
           sere(11);
           break;
         }
@@ -894,12 +805,12 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 5: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(128);
+          setState(102);
 
           if (!(precpred(_ctx, 9))) throw FailedPredicateException(this, "precpred(_ctx, 9)");
-          setState(129);
+          setState(103);
           match(spotParser::COL);
-          setState(130);
+          setState(104);
           sere(10);
           break;
         }
@@ -907,62 +818,62 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 6: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(131);
+          setState(105);
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(132);
+          setState(106);
           match(spotParser::DELAY);
-          setState(134);
+          setState(108);
           _errHandler->sync(this);
 
           _la = _input->LA(1);
-          if (_la == spotParser::LCPAREN) {
-            setState(133);
-            match(spotParser::LCPAREN);
+          if (_la == spotParser::LSQUARED) {
+            setState(107);
+            match(spotParser::LSQUARED);
           }
-          setState(137);
+          setState(111);
           _errHandler->sync(this);
 
           switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 6, _ctx)) {
           case 1: {
-            setState(136);
-            match(spotParser::LOGIC_CONSTANT);
+            setState(110);
+            match(spotParser::UINTEGER);
             break;
           }
 
           default:
             break;
           }
-          setState(140);
+          setState(114);
           _errHandler->sync(this);
 
           _la = _input->LA(1);
           if (_la == spotParser::DOTS) {
-            setState(139);
+            setState(113);
             match(spotParser::DOTS);
           }
-          setState(143);
+          setState(117);
           _errHandler->sync(this);
 
           switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
           case 1: {
-            setState(142);
-            match(spotParser::LOGIC_CONSTANT);
+            setState(116);
+            match(spotParser::UINTEGER);
             break;
           }
 
           default:
             break;
           }
-          setState(146);
+          setState(120);
           _errHandler->sync(this);
 
           _la = _input->LA(1);
-          if (_la == spotParser::RCPAREN) {
-            setState(145);
-            match(spotParser::RCPAREN);
+          if (_la == spotParser::RSQUARED) {
+            setState(119);
+            match(spotParser::RSQUARED);
           }
-          setState(148);
+          setState(122);
           sere(5);
           break;
         }
@@ -970,26 +881,107 @@ spotParser::SereContext* spotParser::sere(int precedence) {
         case 7: {
           _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(149);
+          setState(123);
 
           if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
-          setState(150);
-          match(spotParser::LCPAREN);
-          setState(151);
+          setState(124);
+          match(spotParser::LSQUARED);
+          setState(125);
           match(spotParser::TIMES);
-          setState(153);
+          setState(127);
           _errHandler->sync(this);
 
           switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx)) {
           case 1: {
-            setState(152);
-            match(spotParser::LOGIC_CONSTANT);
+            setState(126);
+            match(spotParser::UINTEGER);
             break;
           }
 
           default:
             break;
           }
+          setState(130);
+          _errHandler->sync(this);
+
+          _la = _input->LA(1);
+          if (_la == spotParser::DOTS) {
+            setState(129);
+            match(spotParser::DOTS);
+          }
+          setState(133);
+          _errHandler->sync(this);
+
+          _la = _input->LA(1);
+          if (_la == spotParser::UINTEGER) {
+            setState(132);
+            match(spotParser::UINTEGER);
+          }
+          setState(135);
+          match(spotParser::RSQUARED);
+          break;
+        }
+
+        case 8: {
+          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
+          pushNewRecursionContext(_localctx, startState, RuleSere);
+          setState(136);
+
+          if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
+          setState(137);
+          match(spotParser::LSQUARED);
+          setState(138);
+          match(spotParser::PLUS);
+          setState(139);
+          match(spotParser::RSQUARED);
+          break;
+        }
+
+        case 9: {
+          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
+          pushNewRecursionContext(_localctx, startState, RuleSere);
+          setState(140);
+
+          if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
+          setState(141);
+          match(spotParser::LSQUARED);
+          setState(142);
+          match(spotParser::ASS);
+          setState(143);
+          match(spotParser::UINTEGER);
+          setState(145);
+          _errHandler->sync(this);
+
+          _la = _input->LA(1);
+          if (_la == spotParser::DOTS) {
+            setState(144);
+            match(spotParser::DOTS);
+          }
+          setState(148);
+          _errHandler->sync(this);
+
+          _la = _input->LA(1);
+          if (_la == spotParser::UINTEGER) {
+            setState(147);
+            match(spotParser::UINTEGER);
+          }
+          setState(150);
+          match(spotParser::RSQUARED);
+          break;
+        }
+
+        case 10: {
+          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
+          pushNewRecursionContext(_localctx, startState, RuleSere);
+          setState(151);
+
+          if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
+          setState(152);
+          match(spotParser::LSQUARED);
+          setState(153);
+          match(spotParser::IMPL);
+          setState(154);
+          match(spotParser::UINTEGER);
           setState(156);
           _errHandler->sync(this);
 
@@ -1002,93 +994,12 @@ spotParser::SereContext* spotParser::sere(int precedence) {
           _errHandler->sync(this);
 
           _la = _input->LA(1);
-          if (_la == spotParser::LOGIC_CONSTANT) {
+          if (_la == spotParser::UINTEGER) {
             setState(158);
-            match(spotParser::LOGIC_CONSTANT);
+            match(spotParser::UINTEGER);
           }
           setState(161);
-          match(spotParser::RCPAREN);
-          break;
-        }
-
-        case 8: {
-          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
-          pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(162);
-
-          if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(163);
-          match(spotParser::LCPAREN);
-          setState(164);
-          match(spotParser::PLUS);
-          setState(165);
-          match(spotParser::RCPAREN);
-          break;
-        }
-
-        case 9: {
-          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
-          pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(166);
-
-          if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(167);
-          match(spotParser::LCPAREN);
-          setState(168);
-          match(spotParser::ASS);
-          setState(169);
-          match(spotParser::LOGIC_CONSTANT);
-          setState(171);
-          _errHandler->sync(this);
-
-          _la = _input->LA(1);
-          if (_la == spotParser::DOTS) {
-            setState(170);
-            match(spotParser::DOTS);
-          }
-          setState(174);
-          _errHandler->sync(this);
-
-          _la = _input->LA(1);
-          if (_la == spotParser::LOGIC_CONSTANT) {
-            setState(173);
-            match(spotParser::LOGIC_CONSTANT);
-          }
-          setState(176);
-          match(spotParser::RCPAREN);
-          break;
-        }
-
-        case 10: {
-          _localctx = _tracker.createInstance<SereContext>(parentContext, parentState);
-          pushNewRecursionContext(_localctx, startState, RuleSere);
-          setState(177);
-
-          if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(178);
-          match(spotParser::LCPAREN);
-          setState(179);
-          match(spotParser::IMPL);
-          setState(180);
-          match(spotParser::LOGIC_CONSTANT);
-          setState(182);
-          _errHandler->sync(this);
-
-          _la = _input->LA(1);
-          if (_la == spotParser::DOTS) {
-            setState(181);
-            match(spotParser::DOTS);
-          }
-          setState(185);
-          _errHandler->sync(this);
-
-          _la = _input->LA(1);
-          if (_la == spotParser::LOGIC_CONSTANT) {
-            setState(184);
-            match(spotParser::LOGIC_CONSTANT);
-          }
-          setState(187);
-          match(spotParser::RCPAREN);
+          match(spotParser::RSQUARED);
           break;
         }
 
@@ -1096,7 +1007,7 @@ spotParser::SereContext* spotParser::sere(int precedence) {
           break;
         } 
       }
-      setState(192);
+      setState(166);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 18, _ctx);
     }
@@ -1127,8 +1038,8 @@ tree::TerminalNode* spotParser::TformulaContext::DT_AND() {
   return getToken(spotParser::DT_AND, 0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
 std::vector<spotParser::TformulaContext *> spotParser::TformulaContext::tformula() {
@@ -1139,8 +1050,8 @@ spotParser::TformulaContext* spotParser::TformulaContext::tformula(size_t i) {
   return getRuleContext<spotParser::TformulaContext>(i);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::TformulaContext::NOT() {
@@ -1151,28 +1062,28 @@ tree::TerminalNode* spotParser::TformulaContext::NEXT() {
   return getToken(spotParser::NEXT, 0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::LCPAREN() {
-  return getToken(spotParser::LCPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::LSQUARED() {
+  return getToken(spotParser::LSQUARED, 0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::NUMERIC() {
-  return getToken(spotParser::NUMERIC, 0);
+tree::TerminalNode* spotParser::TformulaContext::UINTEGER() {
+  return getToken(spotParser::UINTEGER, 0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::RCPAREN() {
-  return getToken(spotParser::RCPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::RSQUARED() {
+  return getToken(spotParser::RSQUARED, 0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::LGPAREN() {
-  return getToken(spotParser::LGPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::LCURLY() {
+  return getToken(spotParser::LCURLY, 0);
 }
 
 spotParser::SereContext* spotParser::TformulaContext::sere() {
   return getRuleContext<spotParser::SereContext>(0);
 }
 
-tree::TerminalNode* spotParser::TformulaContext::RGPAREN() {
-  return getToken(spotParser::RGPAREN, 0);
+tree::TerminalNode* spotParser::TformulaContext::RCURLY() {
+  return getToken(spotParser::RCURLY, 0);
 }
 
 tree::TerminalNode* spotParser::TformulaContext::AND() {
@@ -1238,74 +1149,74 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(214);
+    setState(188);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 19, _ctx)) {
     case 1: {
-      setState(194);
+      setState(168);
       boolean(0);
       break;
     }
 
     case 2: {
-      setState(195);
+      setState(169);
       match(spotParser::PLACEHOLDER);
       break;
     }
 
     case 3: {
-      setState(196);
+      setState(170);
       match(spotParser::DT_AND);
       break;
     }
 
     case 4: {
-      setState(197);
-      match(spotParser::LPAREN);
-      setState(198);
+      setState(171);
+      match(spotParser::LROUND);
+      setState(172);
       tformula(0);
-      setState(199);
-      match(spotParser::RPAREN);
+      setState(173);
+      match(spotParser::RROUND);
       break;
     }
 
     case 5: {
-      setState(201);
+      setState(175);
       match(spotParser::NOT);
-      setState(202);
+      setState(176);
       tformula(9);
       break;
     }
 
     case 6: {
-      setState(203);
+      setState(177);
       match(spotParser::NEXT);
-      setState(204);
-      match(spotParser::LCPAREN);
-      setState(205);
-      match(spotParser::NUMERIC);
-      setState(206);
-      match(spotParser::RCPAREN);
-      setState(207);
+      setState(178);
+      match(spotParser::LSQUARED);
+      setState(179);
+      match(spotParser::UINTEGER);
+      setState(180);
+      match(spotParser::RSQUARED);
+      setState(181);
       tformula(3);
       break;
     }
 
     case 7: {
-      setState(208);
+      setState(182);
       match(spotParser::NEXT);
-      setState(209);
+      setState(183);
       tformula(2);
       break;
     }
 
     case 8: {
-      setState(210);
-      match(spotParser::LGPAREN);
-      setState(211);
+      setState(184);
+      match(spotParser::LCURLY);
+      setState(185);
       sere(0);
-      setState(212);
-      match(spotParser::RGPAREN);
+      setState(186);
+      match(spotParser::RCURLY);
       break;
     }
 
@@ -1313,7 +1224,7 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(233);
+    setState(207);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
@@ -1321,18 +1232,18 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(231);
+        setState(205);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<TformulaContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleTformula);
-          setState(216);
+          setState(190);
 
           if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
-          setState(217);
+          setState(191);
           match(spotParser::AND);
-          setState(218);
+          setState(192);
           tformula(9);
           break;
         }
@@ -1340,12 +1251,12 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
         case 2: {
           _localctx = _tracker.createInstance<TformulaContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleTformula);
-          setState(219);
+          setState(193);
 
           if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(220);
+          setState(194);
           match(spotParser::OR);
-          setState(221);
+          setState(195);
           tformula(8);
           break;
         }
@@ -1353,12 +1264,12 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
         case 3: {
           _localctx = _tracker.createInstance<TformulaContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleTformula);
-          setState(222);
+          setState(196);
 
           if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(223);
+          setState(197);
           match(spotParser::XOR);
-          setState(224);
+          setState(198);
           tformula(7);
           break;
         }
@@ -1366,12 +1277,12 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
         case 4: {
           _localctx = _tracker.createInstance<TformulaContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleTformula);
-          setState(225);
+          setState(199);
 
           if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(226);
+          setState(200);
           match(spotParser::UNTIL);
-          setState(227);
+          setState(201);
           tformula(6);
           break;
         }
@@ -1379,12 +1290,12 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
         case 5: {
           _localctx = _tracker.createInstance<TformulaContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleTformula);
-          setState(228);
+          setState(202);
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(229);
+          setState(203);
           match(spotParser::RELEASE);
-          setState(230);
+          setState(204);
           tformula(5);
           break;
         }
@@ -1393,7 +1304,7 @@ spotParser::TformulaContext* spotParser::tformula(int precedence) {
           break;
         } 
       }
-      setState(235);
+      setState(209);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx);
     }
@@ -1449,27 +1360,31 @@ spotParser::NonTemporalExpContext* spotParser::nonTemporalExp() {
     exitRule();
   });
   try {
-    setState(238);
+    setState(212);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case spotParser::PLACEHOLDER: {
         enterOuterAlt(_localctx, 1);
-        setState(236);
+        setState(210);
         match(spotParser::PLACEHOLDER);
         break;
       }
 
       case spotParser::BOOLEAN_CONSTANT:
       case spotParser::BOOLEAN_VARIABLE:
-      case spotParser::LOGIC_CONSTANT:
       case spotParser::LOGIC_VARIABLE:
       case spotParser::NUMERIC_CONSTANT:
       case spotParser::NUMERIC_VARIABLE:
-      case spotParser::LPAREN:
+      case spotParser::LROUND:
+      case spotParser::SINTEGER:
+      case spotParser::UINTEGER:
+      case spotParser::VERILOG_BINARY:
+      case spotParser::GCC_BINARY:
+      case spotParser::HEX:
       case spotParser::NEG:
       case spotParser::NOT: {
         enterOuterAlt(_localctx, 2);
-        setState(237);
+        setState(211);
         boolean(0);
         break;
       }
@@ -1538,12 +1453,12 @@ spotParser::BooleanAtomContext* spotParser::BooleanContext::booleanAtom() {
   return getRuleContext<spotParser::BooleanAtomContext>(0);
 }
 
-tree::TerminalNode* spotParser::BooleanContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::BooleanContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
-tree::TerminalNode* spotParser::BooleanContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::BooleanContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::BooleanContext::AND() {
@@ -1597,102 +1512,102 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(274);
+    setState(248);
     _errHandler->sync(this);
     switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 23, _ctx)) {
     case 1: {
-      setState(241);
+      setState(215);
       match(spotParser::NOT);
-      setState(242);
+      setState(216);
       boolean(15);
       break;
     }
 
     case 2: {
-      setState(243);
+      setState(217);
       logic(0);
-      setState(244);
+      setState(218);
       relop();
-      setState(245);
+      setState(219);
       logic(0);
       break;
     }
 
     case 3: {
-      setState(247);
+      setState(221);
       numeric(0);
-      setState(248);
+      setState(222);
       relop();
-      setState(249);
+      setState(223);
       numeric(0);
       break;
     }
 
     case 4: {
-      setState(251);
+      setState(225);
       logic(0);
-      setState(252);
+      setState(226);
       match(spotParser::EQ);
-      setState(253);
+      setState(227);
       logic(0);
       break;
     }
 
     case 5: {
-      setState(255);
+      setState(229);
       numeric(0);
-      setState(256);
+      setState(230);
       match(spotParser::EQ);
-      setState(257);
+      setState(231);
       numeric(0);
       break;
     }
 
     case 6: {
-      setState(259);
+      setState(233);
       logic(0);
-      setState(260);
+      setState(234);
       match(spotParser::NEQ);
-      setState(261);
+      setState(235);
       logic(0);
       break;
     }
 
     case 7: {
-      setState(263);
+      setState(237);
       numeric(0);
-      setState(264);
+      setState(238);
       match(spotParser::NEQ);
-      setState(265);
+      setState(239);
       numeric(0);
       break;
     }
 
     case 8: {
-      setState(267);
+      setState(241);
       booleanAtom();
       break;
     }
 
     case 9: {
-      setState(268);
+      setState(242);
       logic(0);
       break;
     }
 
     case 10: {
-      setState(269);
+      setState(243);
       numeric(0);
       break;
     }
 
     case 11: {
-      setState(270);
-      match(spotParser::LPAREN);
-      setState(271);
+      setState(244);
+      match(spotParser::LROUND);
+      setState(245);
       boolean(0);
-      setState(272);
-      match(spotParser::RPAREN);
+      setState(246);
+      match(spotParser::RROUND);
       break;
     }
 
@@ -1700,7 +1615,7 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(290);
+    setState(264);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 25, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
@@ -1708,18 +1623,18 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(288);
+        setState(262);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 24, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(276);
+          setState(250);
 
           if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
-          setState(277);
+          setState(251);
           match(spotParser::EQ);
-          setState(278);
+          setState(252);
           boolean(11);
           break;
         }
@@ -1727,12 +1642,12 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
         case 2: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(279);
+          setState(253);
 
           if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(280);
+          setState(254);
           match(spotParser::NEQ);
-          setState(281);
+          setState(255);
           boolean(8);
           break;
         }
@@ -1740,12 +1655,12 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
         case 3: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(282);
+          setState(256);
 
           if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(283);
+          setState(257);
           antlrcpp::downCast<BooleanContext *>(_localctx)->booleanop = match(spotParser::AND);
-          setState(284);
+          setState(258);
           boolean(7);
           break;
         }
@@ -1753,12 +1668,12 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
         case 4: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(285);
+          setState(259);
 
           if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(286);
+          setState(260);
           antlrcpp::downCast<BooleanContext *>(_localctx)->booleanop = match(spotParser::OR);
-          setState(287);
+          setState(261);
           boolean(6);
           break;
         }
@@ -1767,7 +1682,7 @@ spotParser::BooleanContext* spotParser::boolean(int precedence) {
           break;
         } 
       }
-      setState(292);
+      setState(266);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 25, _ctx);
     }
@@ -1825,7 +1740,7 @@ spotParser::BooleanAtomContext* spotParser::booleanAtom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(293);
+    setState(267);
     _la = _input->LA(1);
     if (!(_la == spotParser::BOOLEAN_CONSTANT
 
@@ -1869,12 +1784,12 @@ spotParser::LogicAtomContext* spotParser::LogicContext::logicAtom() {
   return getRuleContext<spotParser::LogicAtomContext>(0);
 }
 
-tree::TerminalNode* spotParser::LogicContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::LogicContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
-tree::TerminalNode* spotParser::LogicContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::LogicContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::LogicContext::TIMES() {
@@ -1960,31 +1875,35 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(303);
+    setState(277);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case spotParser::NEG: {
-        setState(296);
+        setState(270);
         match(spotParser::NEG);
-        setState(297);
+        setState(271);
         logic(11);
         break;
       }
 
-      case spotParser::LOGIC_CONSTANT:
-      case spotParser::LOGIC_VARIABLE: {
-        setState(298);
+      case spotParser::LOGIC_VARIABLE:
+      case spotParser::SINTEGER:
+      case spotParser::UINTEGER:
+      case spotParser::VERILOG_BINARY:
+      case spotParser::GCC_BINARY:
+      case spotParser::HEX: {
+        setState(272);
         logicAtom();
         break;
       }
 
-      case spotParser::LPAREN: {
-        setState(299);
-        match(spotParser::LPAREN);
-        setState(300);
+      case spotParser::LROUND: {
+        setState(273);
+        match(spotParser::LROUND);
+        setState(274);
         logic(0);
-        setState(301);
-        match(spotParser::RPAREN);
+        setState(275);
+        match(spotParser::RROUND);
         break;
       }
 
@@ -1992,7 +1911,7 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
       throw NoViableAltException(this);
     }
     _ctx->stop = _input->LT(-1);
-    setState(330);
+    setState(304);
     _errHandler->sync(this);
     alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 28, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
@@ -2000,16 +1919,16 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(328);
+        setState(302);
         _errHandler->sync(this);
         switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 27, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(305);
+          setState(279);
 
           if (!(precpred(_ctx, 9))) throw FailedPredicateException(this, "precpred(_ctx, 9)");
-          setState(306);
+          setState(280);
           antlrcpp::downCast<LogicContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == spotParser::TIMES
@@ -2021,7 +1940,7 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(307);
+          setState(281);
           logic(10);
           break;
         }
@@ -2029,10 +1948,10 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 2: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(308);
+          setState(282);
 
           if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
-          setState(309);
+          setState(283);
           antlrcpp::downCast<LogicContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == spotParser::PLUS
@@ -2044,7 +1963,7 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(310);
+          setState(284);
           logic(9);
           break;
         }
@@ -2052,12 +1971,12 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 3: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(311);
+          setState(285);
 
           if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(312);
+          setState(286);
           antlrcpp::downCast<LogicContext *>(_localctx)->logop = match(spotParser::LSHIFT);
-          setState(313);
+          setState(287);
           logic(8);
           break;
         }
@@ -2065,12 +1984,12 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 4: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(314);
+          setState(288);
 
           if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(315);
+          setState(289);
           antlrcpp::downCast<LogicContext *>(_localctx)->logop = match(spotParser::RSHIFT);
-          setState(316);
+          setState(290);
           logic(7);
           break;
         }
@@ -2078,12 +1997,12 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 5: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(317);
+          setState(291);
 
           if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(318);
+          setState(292);
           antlrcpp::downCast<LogicContext *>(_localctx)->logop = match(spotParser::BAND);
-          setState(319);
+          setState(293);
           logic(6);
           break;
         }
@@ -2091,12 +2010,12 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 6: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(320);
+          setState(294);
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(321);
+          setState(295);
           antlrcpp::downCast<LogicContext *>(_localctx)->logop = match(spotParser::BXOR);
-          setState(322);
+          setState(296);
           logic(5);
           break;
         }
@@ -2104,12 +2023,12 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 7: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(323);
+          setState(297);
 
           if (!(precpred(_ctx, 3))) throw FailedPredicateException(this, "precpred(_ctx, 3)");
-          setState(324);
+          setState(298);
           antlrcpp::downCast<LogicContext *>(_localctx)->logop = match(spotParser::BOR);
-          setState(325);
+          setState(299);
           logic(4);
           break;
         }
@@ -2117,10 +2036,10 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
         case 8: {
           _localctx = _tracker.createInstance<LogicContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleLogic);
-          setState(326);
+          setState(300);
 
           if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
-          setState(327);
+          setState(301);
           bitSelect();
           break;
         }
@@ -2129,7 +2048,7 @@ spotParser::LogicContext* spotParser::logic(int precedence) {
           break;
         } 
       }
-      setState(332);
+      setState(306);
       _errHandler->sync(this);
       alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 28, _ctx);
     }
@@ -2148,20 +2067,20 @@ spotParser::BitSelectContext::BitSelectContext(ParserRuleContext *parent, size_t
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* spotParser::BitSelectContext::LCPAREN() {
-  return getToken(spotParser::LCPAREN, 0);
+tree::TerminalNode* spotParser::BitSelectContext::LSQUARED() {
+  return getToken(spotParser::LSQUARED, 0);
 }
 
-std::vector<tree::TerminalNode *> spotParser::BitSelectContext::NUMERIC() {
-  return getTokens(spotParser::NUMERIC);
+std::vector<tree::TerminalNode *> spotParser::BitSelectContext::UINTEGER() {
+  return getTokens(spotParser::UINTEGER);
 }
 
-tree::TerminalNode* spotParser::BitSelectContext::NUMERIC(size_t i) {
-  return getToken(spotParser::NUMERIC, i);
+tree::TerminalNode* spotParser::BitSelectContext::UINTEGER(size_t i) {
+  return getToken(spotParser::UINTEGER, i);
 }
 
-tree::TerminalNode* spotParser::BitSelectContext::RCPAREN() {
-  return getToken(spotParser::RCPAREN, 0);
+tree::TerminalNode* spotParser::BitSelectContext::RSQUARED() {
+  return getToken(spotParser::RSQUARED, 0);
 }
 
 tree::TerminalNode* spotParser::BitSelectContext::COL() {
@@ -2199,22 +2118,22 @@ spotParser::BitSelectContext* spotParser::bitSelect() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(333);
-    match(spotParser::LCPAREN);
-    setState(334);
-    match(spotParser::NUMERIC);
-    setState(337);
+    setState(307);
+    match(spotParser::LSQUARED);
+    setState(308);
+    match(spotParser::UINTEGER);
+    setState(311);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == spotParser::COL) {
-      setState(335);
+      setState(309);
       match(spotParser::COL);
-      setState(336);
-      match(spotParser::NUMERIC);
+      setState(310);
+      match(spotParser::UINTEGER);
     }
-    setState(339);
-    match(spotParser::RCPAREN);
+    setState(313);
+    match(spotParser::RSQUARED);
    
   }
   catch (RecognitionException &e) {
@@ -2232,8 +2151,8 @@ spotParser::LogicAtomContext::LogicAtomContext(ParserRuleContext *parent, size_t
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* spotParser::LogicAtomContext::LOGIC_CONSTANT() {
-  return getToken(spotParser::LOGIC_CONSTANT, 0);
+spotParser::Logic_constantContext* spotParser::LogicAtomContext::logic_constant() {
+  return getRuleContext<spotParser::Logic_constantContext>(0);
 }
 
 tree::TerminalNode* spotParser::LogicAtomContext::LOGIC_VARIABLE() {
@@ -2260,7 +2179,6 @@ void spotParser::LogicAtomContext::exitRule(tree::ParseTreeListener *listener) {
 spotParser::LogicAtomContext* spotParser::logicAtom() {
   LogicAtomContext *_localctx = _tracker.createInstance<LogicAtomContext>(_ctx, getState());
   enterRule(_localctx, 18, spotParser::RuleLogicAtom);
-  size_t _la = 0;
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2270,17 +2188,166 @@ spotParser::LogicAtomContext* spotParser::logicAtom() {
     exitRule();
   });
   try {
-    enterOuterAlt(_localctx, 1);
-    setState(341);
-    _la = _input->LA(1);
-    if (!(_la == spotParser::LOGIC_CONSTANT
+    setState(317);
+    _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case spotParser::SINTEGER:
+      case spotParser::UINTEGER:
+      case spotParser::VERILOG_BINARY:
+      case spotParser::GCC_BINARY:
+      case spotParser::HEX: {
+        enterOuterAlt(_localctx, 1);
+        setState(315);
+        logic_constant();
+        break;
+      }
 
-    || _la == spotParser::LOGIC_VARIABLE)) {
-    _errHandler->recoverInline(this);
+      case spotParser::LOGIC_VARIABLE: {
+        enterOuterAlt(_localctx, 2);
+        setState(316);
+        match(spotParser::LOGIC_VARIABLE);
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
     }
-    else {
-      _errHandler->reportMatch(this);
-      consume();
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- Logic_constantContext ------------------------------------------------------------------
+
+spotParser::Logic_constantContext::Logic_constantContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::VERILOG_BINARY() {
+  return getToken(spotParser::VERILOG_BINARY, 0);
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::GCC_BINARY() {
+  return getToken(spotParser::GCC_BINARY, 0);
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::SINTEGER() {
+  return getToken(spotParser::SINTEGER, 0);
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::CONST_SUFFIX() {
+  return getToken(spotParser::CONST_SUFFIX, 0);
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::UINTEGER() {
+  return getToken(spotParser::UINTEGER, 0);
+}
+
+tree::TerminalNode* spotParser::Logic_constantContext::HEX() {
+  return getToken(spotParser::HEX, 0);
+}
+
+
+size_t spotParser::Logic_constantContext::getRuleIndex() const {
+  return spotParser::RuleLogic_constant;
+}
+
+void spotParser::Logic_constantContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<spotListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterLogic_constant(this);
+}
+
+void spotParser::Logic_constantContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<spotListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitLogic_constant(this);
+}
+
+spotParser::Logic_constantContext* spotParser::logic_constant() {
+  Logic_constantContext *_localctx = _tracker.createInstance<Logic_constantContext>(_ctx, getState());
+  enterRule(_localctx, 20, spotParser::RuleLogic_constant);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    setState(330);
+    _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case spotParser::VERILOG_BINARY: {
+        enterOuterAlt(_localctx, 1);
+        setState(319);
+        match(spotParser::VERILOG_BINARY);
+        break;
+      }
+
+      case spotParser::GCC_BINARY: {
+        enterOuterAlt(_localctx, 2);
+        setState(320);
+        match(spotParser::GCC_BINARY);
+        break;
+      }
+
+      case spotParser::SINTEGER: {
+        enterOuterAlt(_localctx, 3);
+        setState(321);
+        match(spotParser::SINTEGER);
+        setState(323);
+        _errHandler->sync(this);
+
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 31, _ctx)) {
+        case 1: {
+          setState(322);
+          match(spotParser::CONST_SUFFIX);
+          break;
+        }
+
+        default:
+          break;
+        }
+        break;
+      }
+
+      case spotParser::UINTEGER: {
+        enterOuterAlt(_localctx, 4);
+        setState(325);
+        match(spotParser::UINTEGER);
+        setState(327);
+        _errHandler->sync(this);
+
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx)) {
+        case 1: {
+          setState(326);
+          match(spotParser::CONST_SUFFIX);
+          break;
+        }
+
+        default:
+          break;
+        }
+        break;
+      }
+
+      case spotParser::HEX: {
+        enterOuterAlt(_localctx, 5);
+        setState(329);
+        match(spotParser::HEX);
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
     }
    
   }
@@ -2307,8 +2374,8 @@ spotParser::LogicContext* spotParser::NumericContext::logic() {
   return getRuleContext<spotParser::LogicContext>(0);
 }
 
-tree::TerminalNode* spotParser::NumericContext::LPAREN() {
-  return getToken(spotParser::LPAREN, 0);
+tree::TerminalNode* spotParser::NumericContext::LROUND() {
+  return getToken(spotParser::LROUND, 0);
 }
 
 std::vector<spotParser::NumericContext *> spotParser::NumericContext::numeric() {
@@ -2319,8 +2386,8 @@ spotParser::NumericContext* spotParser::NumericContext::numeric(size_t i) {
   return getRuleContext<spotParser::NumericContext>(i);
 }
 
-tree::TerminalNode* spotParser::NumericContext::RPAREN() {
-  return getToken(spotParser::RPAREN, 0);
+tree::TerminalNode* spotParser::NumericContext::RROUND() {
+  return getToken(spotParser::RROUND, 0);
 }
 
 tree::TerminalNode* spotParser::NumericContext::TIMES() {
@@ -2367,8 +2434,8 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
   spotParser::NumericContext *_localctx = _tracker.createInstance<NumericContext>(_ctx, parentState);
   spotParser::NumericContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 20;
-  enterRecursionRule(_localctx, 20, spotParser::RuleNumeric, precedence);
+  size_t startState = 22;
+  enterRecursionRule(_localctx, 22, spotParser::RuleNumeric, precedence);
 
     size_t _la = 0;
 
@@ -2382,28 +2449,28 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(350);
+    setState(339);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 30, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx)) {
     case 1: {
-      setState(344);
+      setState(333);
       numericAtom();
       break;
     }
 
     case 2: {
-      setState(345);
+      setState(334);
       logic(0);
       break;
     }
 
     case 3: {
-      setState(346);
-      match(spotParser::LPAREN);
-      setState(347);
+      setState(335);
+      match(spotParser::LROUND);
+      setState(336);
       numeric(0);
-      setState(348);
-      match(spotParser::RPAREN);
+      setState(337);
+      match(spotParser::RROUND);
       break;
     }
 
@@ -2411,24 +2478,24 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(360);
+    setState(349);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(358);
+        setState(347);
         _errHandler->sync(this);
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 31, _ctx)) {
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 35, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(352);
+          setState(341);
 
           if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(353);
+          setState(342);
           antlrcpp::downCast<NumericContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == spotParser::TIMES
@@ -2440,7 +2507,7 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(354);
+          setState(343);
           numeric(6);
           break;
         }
@@ -2448,10 +2515,10 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
         case 2: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(355);
+          setState(344);
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(356);
+          setState(345);
           antlrcpp::downCast<NumericContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == spotParser::PLUS
@@ -2463,7 +2530,7 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(357);
+          setState(346);
           numeric(5);
           break;
         }
@@ -2472,9 +2539,9 @@ spotParser::NumericContext* spotParser::numeric(int precedence) {
           break;
         } 
       }
-      setState(362);
+      setState(351);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -2518,7 +2585,7 @@ void spotParser::NumericAtomContext::exitRule(tree::ParseTreeListener *listener)
 
 spotParser::NumericAtomContext* spotParser::numericAtom() {
   NumericAtomContext *_localctx = _tracker.createInstance<NumericAtomContext>(_ctx, getState());
-  enterRule(_localctx, 22, spotParser::RuleNumericAtom);
+  enterRule(_localctx, 24, spotParser::RuleNumericAtom);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2530,7 +2597,7 @@ spotParser::NumericAtomContext* spotParser::numericAtom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(363);
+    setState(352);
     _la = _input->LA(1);
     if (!(_la == spotParser::NUMERIC_CONSTANT
 
@@ -2593,7 +2660,7 @@ void spotParser::RelopContext::exitRule(tree::ParseTreeListener *listener) {
 
 spotParser::RelopContext* spotParser::relop() {
   RelopContext *_localctx = _tracker.createInstance<RelopContext>(_ctx, getState());
-  enterRule(_localctx, 24, spotParser::RuleRelop);
+  enterRule(_localctx, 26, spotParser::RuleRelop);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2605,10 +2672,10 @@ spotParser::RelopContext* spotParser::relop() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(365);
+    setState(354);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & 8444249301319680) != 0))) {
+      ((1ULL << _la) & 1055531162664960) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2632,7 +2699,7 @@ bool spotParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicat
     case 3: return tformulaSempred(antlrcpp::downCast<TformulaContext *>(context), predicateIndex);
     case 5: return booleanSempred(antlrcpp::downCast<BooleanContext *>(context), predicateIndex);
     case 7: return logicSempred(antlrcpp::downCast<LogicContext *>(context), predicateIndex);
-    case 10: return numericSempred(antlrcpp::downCast<NumericContext *>(context), predicateIndex);
+    case 11: return numericSempred(antlrcpp::downCast<NumericContext *>(context), predicateIndex);
 
   default:
     break;

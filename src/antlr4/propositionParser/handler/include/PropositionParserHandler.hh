@@ -45,6 +45,7 @@ private:
   void enterBooleanAtom(propositionParser::BooleanAtomContext *ctx) override;
   virtual void
   enterLogicAtom(propositionParser::LogicAtomContext *ctx) override;
+  void enterLogic_constant(propositionParser::Logic_constantContext *ctx) override;
   virtual void enterNumericAtom(propositionParser::NumericAtomContext *ctx) override;
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;

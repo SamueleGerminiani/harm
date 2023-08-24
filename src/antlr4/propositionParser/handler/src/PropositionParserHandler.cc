@@ -35,205 +35,116 @@ void PropositionParserHandler::enterFile(__attribute__((unused))
   }
 }
 
-struct VariableParsedData {
-  std::string variable;
-  char sign;
-  size_t numeric;
-};
-
-VariableParsedData parseBooleanVariable(const std::string &input) {
+std::string getVariableName(const std::string &input, const std::string &type) {
   size_t startDelimiterPos = input.find("«");
   size_t endDelimiterPos = input.rfind("»");
-  size_t boolPos = input.find(",bool");
+  size_t typePos = input.rfind("," + type);
 
   if (startDelimiterPos == std::string::npos ||
-      endDelimiterPos == std::string::npos || boolPos == std::string::npos) {
-    messageError("Invalid string format in parseBooleanVariable: " + input);
+      endDelimiterPos == std::string::npos || typePos == std::string::npos) {
+    messageError("Invalid string format in parseVariable(" + type +
+                 "): " + input);
   }
 
-  return {
-      input.substr(startDelimiterPos + 2, boolPos - (startDelimiterPos + 2)),
-      'u', 0};
+  return input.substr(startDelimiterPos + 2, typePos - (startDelimiterPos + 2));
 }
 
-VariableParsedData parseNumericVariable(const std::string &input) {
-  size_t startDelimiterPos = input.find("«");
-  size_t endDelimiterPos = input.rfind("»");
-  size_t numericPos = input.find("numeric(");
-  size_t openParenthesisPos = input.find('('); 
-  size_t firstComma = input.find(','); 
-  size_t closingParenthesisPos =
-      input.find(')', numericPos + 8); 
+void PropositionParserHandler::enterLogic_constant(
+    propositionParser::Logic_constantContext *ctx) {
+  std::string conStr = std::string(ctx->getText());
 
-  if (startDelimiterPos == std::string::npos ||
-      endDelimiterPos == std::string::npos || numericPos == std::string::npos || closingParenthesisPos == std::string::npos ) {
-    messageError("Invalid string format in parseNumericVariable: " + input);
+  if (ctx->VERILOG_BINARY() != nullptr) {
+    messageErrorIf(conStr.size() - 2 > 64,
+                   "Constant '" + conStr.substr(0, conStr.size()) +
+                       "' exceeds the maximum length of 64 bits" +
+                       printErrorMessage());
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
+                                _trace->getLength());
+    _logicExpressions.push(c);
+    return;
+  } else if (ctx->GCC_BINARY() != nullptr) {
+    messageErrorIf(conStr.size() - 2 > 64,
+                   "Constant '" + conStr.substr(0, conStr.size()) +
+                       "' exceeds the maximum length of 64 bits" +
+                       printErrorMessage());
+    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
+    auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
+                                _trace->getLength());
+    _logicExpressions.push(c);
+    return;
+  } else if (ctx->HEX() != nullptr) {
+    messageErrorIf((conStr.size() - 2) * 4 > 64,
+                   "Constant '" + conStr.substr(0, conStr.size()) +
+                       "' exceeds the maximum length of 64 bits" +
+                       printErrorMessage());
+    ULogic value =
+        std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
+    auto *c = new LogicConstant(value, VarType::ULogic, (conStr.size() - 2) * 4,
+                                _trace->getLength());
+    _logicExpressions.push(c);
+    return;
+  } else if (ctx->SINTEGER() != nullptr || ctx->UINTEGER() != nullptr) {
+
+    if (ctx->CONST_SUFFIX() == nullptr) {
+      // Store the logic as 2s complement int
+      ULogic value;
+      try {
+        value = std::stoll(conStr);
+      } catch (const std::out_of_range &e) {
+        messageError("Integer overflow when converting '" + conStr + "'" +
+                     printErrorMessage());
+      }
+      auto *c =
+          new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
+      _logicExpressions.push(c);
+    } else {
+      if (ctx->CONST_SUFFIX()->getText() == "ll") {
+        // Store the logic as 2s complement int
+        ULogic value;
+        try {
+          value = std::stoll(conStr);
+        } catch (const std::out_of_range &e) {
+          messageError("Integer overflow when converting '" + conStr + "'" +
+                       printErrorMessage());
+        }
+        auto *c =
+            new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
+        _logicExpressions.push(c);
+
+      } else if (ctx->CONST_SUFFIX()->getText() == "ull") {
+        // Store the logic as classic unsigned binary
+        ULogic value;
+        try {
+          value = std::stoull(conStr);
+        } catch (const std::out_of_range &e) {
+          messageError("Integer overflow when converting '" + conStr + "'" +
+                       printErrorMessage());
+        }
+        auto *c =
+            new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
+        _logicExpressions.push(c);
+
+      } else {
+        messageError("Unsupported suffix '" + ctx->CONST_SUFFIX()->getText() +
+                     "'" + printErrorMessage());
+      }
+    }
+    return;
   }
-
-  std::string numericStr =
-      input.substr(openParenthesisPos + 1, closingParenthesisPos - (openParenthesisPos + 1));
-  if (!numericStr.empty() &&
-      !std::all_of(numericStr.begin(), numericStr.end(), ::isdigit)) {
-    messageError("Invalid NUMERIC value '"+std::string({numericStr})+"' in parseNumericVariable: "+input);
-  }
-
-  return {input.substr(startDelimiterPos + 2,
-                       firstComma - (startDelimiterPos + 2)),
-          's', std::stoull(numericStr)};
+  messageError("Unknown logic constant!" + printErrorMessage());
 }
 
-VariableParsedData parseLogicVariable(const std::string &input) {
-  size_t startDelimiterPos = input.find("«");
-  size_t endDelimiterPos = input.rfind("»");
-  size_t logicPos = input.find("logic(");
-  size_t comma1Pos = input.find(',', startDelimiterPos); 
-  size_t comma2Pos = input.find(',', comma1Pos+1);
-  size_t closingParenthesisPos = input.find(')', comma2Pos + 1);
-  //print all the positions
-  std::cout << "startDelimiterPos: " << input[startDelimiterPos] << std::endl;
-  std::cout << "endDelimiterPos: " << input[endDelimiterPos] << std::endl;
-  std::cout << "comma1Pos: " << input[comma1Pos] << std::endl;
-  std::cout << "logicPos: " << input[logicPos] << std::endl;
-  std::cout << "comma2Pos: " << input[comma2Pos] << std::endl;
-  std::cout << "closingParenthesisPos: " << input[closingParenthesisPos] << std::endl;
-
-
-  if (startDelimiterPos == std::string::npos ||
-      endDelimiterPos == std::string::npos || logicPos == std::string::npos ||
-      comma2Pos == std::string::npos ) {
-    messageError("Invalid string format in parseLogicVariable: " + input);
-  }
-
-  char parsedSign = input[comma2Pos - 1];
-
-  if (parsedSign != 's' && parsedSign != 'u') {
-    messageError("Invalid SIGN '"+std::string({parsedSign})+"' value in parseLogicVariable: "+input);
-  }
-
-  std::string numericStr =
-      input.substr(comma2Pos+1, closingParenthesisPos - (comma2Pos + 1));
-  if (numericStr.empty() ||
-      !std::all_of(numericStr.begin(), numericStr.end(), ::isdigit)) {
-    messageError("Invalid NUMERIC value '"+std::string({numericStr})+"' in parseLogicVariable: "+input);
-  }
-
-  size_t parsedNumeric = numericStr.empty() ? 0 : std::stoull(numericStr);
-
-  return {input.substr(startDelimiterPos + 2,
-                       comma1Pos - (startDelimiterPos + 2)),
-          parsedSign, parsedNumeric};
-}
-
-//void PropositionParserHandler::enterLogicConstant(
-//    propositionParser::LogicConstantContext *ctx) {
-//  std::string conStr = std::string(ctx->getText());
-//
-//  if (ctx->VERILOG_BINARY() != nullptr) {
-//    messageErrorIf(conStr.size() - 2 > 64,
-//                   "Constant '" + conStr.substr(0, conStr.size()) +
-//                       "' exceeds the maximum length of 64 bits" +
-//                       printErrorMessage());
-//    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
-//    auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
-//                                _trace->getLength());
-//    _logicExpressions.push(c);
-//    return;
-//  } else if (ctx->GCC_BINARY() != nullptr) {
-//    messageErrorIf(conStr.size() - 2 > 64,
-//                   "Constant '" + conStr.substr(0, conStr.size()) +
-//                       "' exceeds the maximum length of 64 bits" +
-//                       printErrorMessage());
-//    ULogic value = std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 2);
-//    auto *c = new LogicConstant(value, VarType::ULogic, conStr.size() - 2,
-//                                _trace->getLength());
-//    _logicExpressions.push(c);
-//    return;
-//  } else if (ctx->HEX() != nullptr) {
-//    messageErrorIf((conStr.size() - 2) * 4 > 64,
-//                   "Constant '" + conStr.substr(0, conStr.size()) +
-//                       "' exceeds the maximum length of 64 bits" +
-//                       printErrorMessage());
-//    ULogic value =
-//        std::stoull(conStr.substr(2, conStr.size() - 2), nullptr, 16);
-//    auto *c = new LogicConstant(value, VarType::ULogic, (conStr.size() - 2) * 4,
-//                                _trace->getLength());
-//    _logicExpressions.push(c);
-//    return;
-//  } else if (ctx->NUMERIC() != nullptr) {
-//    size_t res = conStr.find('.');
-//    if (res != std::string::npos) {
-//      messageWarning("Float literal truncated to integer");
-//      conStr = conStr.substr(0, res);
-//    }
-//
-//    if (ctx->CONST_SUFFIX() == nullptr) {
-//      // Store the logic as 2s complement int
-//      ULogic value;
-//      try {
-//        value = std::stoll(conStr);
-//      } catch (const std::out_of_range &e) {
-//        messageError("Integer overflow when converting '" + conStr + "'" +
-//                     printErrorMessage());
-//      }
-//      auto *c =
-//          new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
-//      _logicExpressions.push(c);
-//    } else {
-//      if (ctx->CONST_SUFFIX()->getText() == "ll") {
-//        // Store the logic as 2s complement int
-//        ULogic value;
-//        try {
-//          value = std::stoll(conStr);
-//        } catch (const std::out_of_range &e) {
-//          messageError("Integer overflow when converting '" + conStr + "'" +
-//                       printErrorMessage());
-//        }
-//        auto *c =
-//            new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
-//        _logicExpressions.push(c);
-//
-//      } else if (ctx->CONST_SUFFIX()->getText() == "ull") {
-//        // Store the logic as classic unsigned binary
-//        ULogic value;
-//        try {
-//          value = std::stoull(conStr);
-//        } catch (const std::out_of_range &e) {
-//          messageError("Integer overflow when converting '" + conStr + "'" +
-//                       printErrorMessage());
-//        }
-//        auto *c =
-//            new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
-//        _logicExpressions.push(c);
-//
-//      } else {
-//        messageError("Unsupported suffix '" + ctx->CONST_SUFFIX()->getText() +
-//                     "'" + printErrorMessage());
-//      }
-//    }
-//    return;
-//  }
-//  messageError("Unknown logic constant!" + printErrorMessage());
-//}
-//void PropositionParserHandler::enterNumericConstant(
-//    propositionParser::NumericConstantContext *ctx) {
-//  if (ctx->NUMERIC() != nullptr) {
-//    Numeric value = std::stod(ctx->getText());
-//    auto *c =
-//        new NumericConstant(value, VarType::Numeric, 64, _trace->getLength());
-//    _numericExpressions.push(c);
-//    return;
-//  }
-//}
 
 void PropositionParserHandler::enterBooleanAtom(
     propositionParser::BooleanAtomContext *ctx) {
 
   std::string exp = std::string(ctx->getText());
-  if (ctx->BOOLEAN_VARIABLE()) {
-    auto data = parseBooleanVariable(exp);
-    _proposition.push(_trace->getBooleanVariable(data.variable));
+  if (ctx->BOOLEAN_VARIABLE() != nullptr) {
+    auto name = getVariableName(exp, "bool");
+    _proposition.push(_trace->getBooleanVariable(name));
 
-  } else if (ctx->BOOLEAN_CONSTANT()) {
+  } else if (ctx->BOOLEAN_CONSTANT() != nullptr) {
     if (exp == "@false") {
       auto *c =
           new BooleanConstant(false, VarType::Bool, 1, _trace->getLength());
@@ -255,14 +166,11 @@ void PropositionParserHandler::enterBooleanAtom(
 void PropositionParserHandler::enterLogicAtom(
     propositionParser::LogicAtomContext *ctx) {
   std::string exp = std::string(ctx->getText());
-  if (ctx->LOGIC_VARIABLE()) {
-    auto data = parseLogicVariable(exp);
-    std::cout << data.numeric << "\n";
-    std::cout << data.sign << "\n";
-    std::cout << data.variable << "\n";
-    _logicExpressions.push(_trace->getLogicVariable(data.variable));
+  if (ctx->LOGIC_VARIABLE() != nullptr) {
+    auto name = getVariableName(exp, "logic");
+    _logicExpressions.push(_trace->getLogicVariable(name));
 
-  } else if (ctx->LOGIC_CONSTANT()) {
+  } else if (ctx->logic_constant() != nullptr) {
 
   } else {
     messageError("Unknown logic atom!" + printErrorMessage());
@@ -273,14 +181,15 @@ void PropositionParserHandler::enterNumericAtom(
 
   std::string exp = std::string(ctx->getText());
 
-  if (ctx->NUMERIC_VARIABLE()) {
-    auto data = parseNumericVariable(exp);
-    std::cout << data.numeric << "\n";
-    std::cout << data.sign << "\n";
-    std::cout << data.variable << "\n";
-    _numericExpressions.push(_trace->getNumericVariable(data.variable));
+  if (ctx->NUMERIC_VARIABLE() != nullptr) {
+    auto name = getVariableName(exp, "numeric");
+    _numericExpressions.push(_trace->getNumericVariable(name));
 
-  } else if (ctx->NUMERIC_CONSTANT()) {
+  } else if (ctx->NUMERIC_CONSTANT() != nullptr) {
+    Numeric value = std::stod(exp);
+    auto *c =
+        new NumericConstant(value, VarType::Numeric, 64, _trace->getLength());
+    _numericExpressions.push(c);
 
   } else {
     messageError("Unknown boolean atom!" + printErrorMessage());
@@ -288,7 +197,7 @@ void PropositionParserHandler::enterNumericAtom(
 }
 void PropositionParserHandler::exitBoolean(
     propositionParser::BooleanContext *ctx) {
-  if (ctx->LPAREN() && ctx->RPAREN()) {
+  if (ctx->LROUND() && ctx->RROUND()) {
     // std::cout<<__func__<<"()"<<std::endl;
     return;
   }
@@ -453,7 +362,7 @@ void PropositionParserHandler::exitBoolean(
 void PropositionParserHandler::exitLogic(propositionParser::LogicContext *ctx) {
   // std::cout<<__func__<<std::endl;
 
-  if (ctx->LPAREN() && ctx->RPAREN()) {
+  if (ctx->LROUND() && ctx->RROUND()) {
     return;
   }
 
@@ -468,12 +377,12 @@ void PropositionParserHandler::exitLogic(propositionParser::LogicContext *ctx) {
       size_t left;
       size_t right;
       LogicExpression *le_r = nullptr;
-      if (ctx->bitSelect()->NUMERIC().size() > 1) {
-        left = std::stoul(ctx->bitSelect()->NUMERIC()[0]->getText());
-        right = std::stoul(ctx->bitSelect()->NUMERIC()[1]->getText());
+      if (ctx->bitSelect()->UINTEGER().size() > 1) {
+        left = std::stoul(ctx->bitSelect()->UINTEGER()[0]->getText());
+        right = std::stoul(ctx->bitSelect()->UINTEGER()[1]->getText());
         le_r = new LogicBitSelector(_logicExpressions.top(), left, right);
       } else {
-        left = std::stoul(ctx->bitSelect()->NUMERIC()[0]->getText());
+        left = std::stoul(ctx->bitSelect()->UINTEGER()[0]->getText());
         right = left;
         le_r = new LogicBitSelector(_logicExpressions.top(), left, right);
       }
@@ -580,7 +489,7 @@ void PropositionParserHandler::exitNumeric(
     propositionParser::NumericContext *ctx) {
   // std::cout<<__func__<<std::endl;
 
-  if (ctx->LPAREN() && ctx->RPAREN()) {
+  if (ctx->LROUND() && ctx->RROUND()) {
     return;
   }
 

@@ -156,7 +156,8 @@ trimCommonPrefix(const std::unordered_map<std::string, std::vector<VCDSignal *>>
   }
 
   if (commonPrefix == "" or commonPrefix.back() != ':') {
-      return nameToSignal;;
+    return nameToSignal;
+    ;
   }
   std::unordered_map<std::string, std::vector<VCDSignal *>> ret;
   //trim common prefix
@@ -173,6 +174,9 @@ getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal;
   if (!recursive) {
     for (auto signal : rootScope->signals) {
+      messageWarningIf(_nameToSignal.count(signal->reference),
+                       "Multiple definitions of signal '" + signal->reference +
+                           "' in trace!");
       if (isIgnored(signal->type)) {
         continue;
       }
@@ -199,6 +203,9 @@ getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
           std::accumulate(scopeName.begin(), scopeName.end(), std::string{}) +
           signal->reference;
 
+      messageWarningIf(_nameToSignal.count(name),
+                       "Multiple definitions of signal '" + name +
+                           "' in trace!");
       _nameToSignal[name].push_back(signal);
     }
     if (!currScope->children.empty()) {

@@ -33,12 +33,17 @@ private:
   harm::Trace *_trace;
   Hstring _convertedFormula;
   std::unordered_map<std::string, expression::Proposition **> _phToProp;
+  std::unordered_map<std::string, expression::Proposition **> _instToProp;
+  std::unordered_map<std::string, expression::Function<expression::Proposition,expression::Proposition> * > _funIDtoFun;
   std::unordered_map<std::string, std::string> _propStrToInst;
+  std::unordered_map<std::string, std::string> _funStrToFunID;
   size_t dtCount = 0;
   size_t instCount = 0;
   std::vector<std::string> _errorMessages;
   std::string printErrorMessage();
 
+  std::string handleNewPP(const std::string &ph);
+  std::string handleNewInst(const std::string &prop);
   void enterFile(spotParser::FileContext *ctx) override;
   void exitFile(spotParser::FileContext *ctx) override;
   virtual void exitFormula(spotParser::FormulaContext *ctx) override;

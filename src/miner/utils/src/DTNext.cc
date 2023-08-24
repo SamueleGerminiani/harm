@@ -102,7 +102,7 @@ void DTNext::generateFormulas() {
 
       messageErrorIf(dth == hant.rend(), "Could not find the operand");
       auto newOperand = Hstring(token, Hstring::Stype::DTNext, pp);
-      newOperand._offset = _shift;
+      newOperand[0]._offset = _shift;
       hant.insert(++((dth + 1).base()), newOperand);
     }
 

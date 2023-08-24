@@ -44,6 +44,9 @@ public:
   virtual void enterLogicAtom(spotParser::LogicAtomContext *ctx) = 0;
   virtual void exitLogicAtom(spotParser::LogicAtomContext *ctx) = 0;
 
+  virtual void enterLogic_constant(spotParser::Logic_constantContext *ctx) = 0;
+  virtual void exitLogic_constant(spotParser::Logic_constantContext *ctx) = 0;
+
   virtual void enterNumeric(spotParser::NumericContext *ctx) = 0;
   virtual void exitNumeric(spotParser::NumericContext *ctx) = 0;
 
