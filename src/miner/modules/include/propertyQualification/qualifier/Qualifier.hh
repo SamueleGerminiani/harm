@@ -51,10 +51,6 @@ private:
    */
   void faultBasedQualification(std::vector<Assertion *> selected, Trace *trace);
   void fbqUsingFaultyTraces(std::vector<Assertion *> &selected, Trace *trace);
-  /** \brief faults are inserted direclty on the trace
-   */
-  void fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,
-                                Trace *trace, size_t &nFaults);
   void dumpAssToFile(Context &context, Trace *trace,
                      std::vector<Assertion *> &assertions);
 

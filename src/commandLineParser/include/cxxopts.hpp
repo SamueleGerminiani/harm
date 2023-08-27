@@ -1028,8 +1028,8 @@ String format_option(const HelpOptionDetails& o) {
 
 	if (!o.is_boolean) {
 		if (o.has_implicit) {
-			result += " [=" + arg +
-				  "(=" + toLocalString(o.implicit_value) + ")]";
+            //result += " [=" + arg + "(=" + toLocalString(o.implicit_value) + ")]";
+			result += " [=" + arg + "]";
 		} else {
 			result += " " + arg;
 		}

@@ -69,12 +69,20 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("name")) {
     hs::name = result["name"].as<std::string>();
   }
+
+
+  //------------------------
+  //vcd cases
+  //vcd-ss or vcd-ss + vcd-r == 0 : get signals only in selected scope
+  //vcd-ss + vcd-r = n with n>0 : get signals in selected scope and recursive with depth n
+  //vcd-ss + vcd-unroll = n with n>0 : get signals in selected scope and recursive with depth n and make a context for each scope
+  //
   if (result.count("vcd-ss")) {
     clc::selectedScope = result["vcd-ss"].as<std::string>();
     clc::vcdRecursive = 0;
   }
   if (result.count("vcd-r")) {
-    clc::vcdRecursive = result["vcd-r"].as<size_t>();
+    clc::vcdRecursive = std::stoull(result["vcd-r"].as<std::string>());
   }
 
   messageErrorIf(result.count("vcd-unroll") && (result.count("vcd-r")),
@@ -85,7 +93,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
 
   if (result.count("vcd-unroll")) {
     clc::vcdUnroll = std::stoull(result["vcd-unroll"].as<std::string>());
-    clc::vcdRecursive = 1;
+    messageErrorIf(clc::vcdUnroll == 0, "vcd-unroll must be greater than 0");
   }
 
   if (result.count("vcd")) {
@@ -215,13 +223,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   messageErrorIf(result.count("ftm") && result.count("fd"),
                  "ftm and fd options are mutually exclusive");
 
-  if (result.count("ftm")) {
-    clc::ftmFile = result["ftm"].as<std::string>();
-    messageErrorIf(clc::ftmFile != "<all>" &&
-                       !std::filesystem::exists(clc::ftmFile),
-                   "Can not find '" + clc::ftmFile + "'");
-  }
-
   if (result.count("dont-fill-ass")) {
     clc::dontFillAss = true;
   }
@@ -334,7 +335,7 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
         }
       }
 
-      ofs << "\t\t<template dtLimits=\"5D,3W,15A,-0.1E,R\" "
+      ofs << "\t\t<template dtLimits=\"3D,3W,5A,-0.1E,R\" "
              "exp=\"G({..#1&..}|-> P0)\" /> "
           << "\n\n";
       ofs << "	</context>"

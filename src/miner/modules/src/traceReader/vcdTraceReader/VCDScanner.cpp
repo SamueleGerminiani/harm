@@ -1,6 +1,6 @@
-#line 2 "./build/VCDScanner.cpp"
+#line 2 "..//VCDScanner.cpp"
 
-#line 4 "./build/VCDScanner.cpp"
+#line 4 "..//VCDScanner.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -691,8 +691,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 /* %% [3.0] code to copy yytext_ptr to yytext[] goes here, if %array \ */\
 	(yy_c_buf_p) = yy_cp;
 /* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
-#define YY_NUM_RULES 61
-#define YY_END_OF_BUFFER 62
+#define YY_NUM_RULES 63
+#define YY_END_OF_BUFFER 64
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -700,37 +700,37 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[262] =
+static const flex_int16_t yy_accept[264] =
     {   0,
         0,    0,    4,    4,    6,    6,    8,    8,    0,    0,
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,   62,   60,   57,   58,
-       59,   47,   60,   53,   60,   60,    4,   60,    6,    8,
-       10,   60,   60,   60,   60,   11,   60,   18,   18,   18,
-       18,   18,   18,   18,   40,   60,   60,   60,   60,   60,
-       60,   60,   60,   60,   42,   43,   41,   44,   45,   46,
-       48,   56,   56,    0,    0,    0,    0,    0,    0,    0,
-       54,   55,    4,    0,    6,    8,   10,   11,   18,   18,
-       18,   18,   18,   18,   18,   18,   40,    0,    0,    0,
+        0,    0,    0,    0,    0,    0,   64,   62,   59,   60,
+       61,   49,   62,   55,   62,   62,    4,   62,    6,    8,
+       10,   62,   62,   62,   62,   11,   62,   20,   20,   20,
+       20,   20,   20,   20,   42,   62,   62,   62,   62,   62,
+       62,   62,   62,   62,   44,   45,   43,   46,   47,   48,
+       50,   58,   58,    0,    0,    0,    0,    0,    0,    0,
+       56,   57,    4,    0,    6,    8,   10,   11,   20,   20,
+       20,   20,   20,   20,   20,   20,   42,    0,    0,    0,
 
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-       42,   41,   44,   48,   56,   56,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,   10,   18,   18,
-       18,   18,   18,   18,   18,   38,    0,    0,   23,    0,
-        0,    0,   27,    0,    0,   31,    0,    0,   39,   56,
-        0,    0,    0,    1,    0,    0,    0,   21,    0,   55,
-        2,   18,   14,   18,   18,   18,   18,   17,   23,    0,
-        0,    0,    0,   25,    0,   30,   35,   36,    0,    0,
-        0,   37,    2,    0,    5,    0,    0,    0,    0,    0,
-        0,   13,   18,   18,   18,   18,   22,    0,    0,    0,
+       44,   43,   46,   50,   58,   58,    0,    0,    0,    0,
+        0,    0,    0,    0,    0,    0,    0,   10,   20,   20,
+       20,   20,   20,   20,   20,   40,    0,    0,   25,    0,
+        0,    0,   29,    0,    0,   33,    0,    0,   41,   58,
+        0,    0,    0,    1,    0,    0,    0,   23,    0,   57,
+        2,   20,   14,   20,   20,   20,   20,   19,   25,    0,
+        0,    0,    0,   27,    0,   32,   37,   38,    0,    0,
+        0,   39,    2,    0,    5,    0,    0,    0,    0,    0,
+        0,   13,   20,   20,   20,   20,   24,    0,    0,    0,
 
-        0,    0,   33,    0,    0,    0,    0,    0,    0,   12,
-        0,    0,    0,   18,   18,   16,    0,    0,    0,    0,
-       32,   34,    0,    0,    0,   51,    0,    0,    0,    0,
-        0,   18,   18,    0,    0,   28,   29,    3,   49,   50,
-        0,    0,    0,   19,    7,   15,   18,    0,   26,   52,
-        0,    0,   24,    0,    9,    0,    0,    0,    0,   20,
-        0
+        0,    0,   35,    0,    0,    0,    0,    0,    0,   12,
+        0,    0,    0,   20,   20,   16,   18,    0,    0,    0,
+        0,   34,   36,    0,    0,    0,   53,    0,    0,    0,
+        0,    0,   20,   20,    0,    0,   30,   31,    3,   51,
+       52,    0,    0,    0,   21,    7,   15,   20,    0,   28,
+       54,    0,    0,   17,   26,    0,    9,    0,    0,    0,
+        0,   22,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -774,7 +774,7 @@ static const YY_CHAR yy_meta[44] =
         5,    5,    5
     } ;
 
-static const flex_int16_t yy_base[276] =
+static const flex_int16_t yy_base[278] =
     {   0,
         0,   42,   15,   19,   23,   28,   57,   61,   78,  109,
       147,    0,  183,    0,  223,  243,   70,   77,   80,  111,
@@ -799,91 +799,91 @@ static const flex_int16_t yy_base[276] =
       354,    0,  340,  341,  338,  325,  485,  333,  332,  290,
 
       274,  290,  485,  286,  280,  281,  180,  289,  282,  485,
-      284,  272,  267,  265,  257,    0,  242,  227,  209,    8,
-      485,  485,  201,  192,  195,  485,  179,  179,  172,  167,
-      114,  112,  119,  114,  109,  485,  485,  485,  485,  485,
-       94,   94,   88,  485,  485,    0,   90,   78,  485,  485,
-       83,   83,  485,   62,  485,   56,   43,   20,   15,  485,
-      485,  319,  324,  329,  334,  339,  344,  349,  354,  359,
-      364,  366,  368,  372,  376
+      284,  272,  267,  265,  257,    0,    0,  242,  227,  209,
+        8,  485,  485,  201,  192,  195,  485,  179,  179,  172,
+      167,  114,  112,  119,  114,  109,  485,  485,  485,  485,
+      485,   94,   94,   88,  485,  485,    0,   90,   78,  485,
+      485,   83,   83,    0,  485,   62,  485,   56,   43,   20,
+       15,  485,  485,  319,  324,  329,  334,  339,  344,  349,
+      354,  359,  364,  366,  368,  372,  376
     } ;
 
-static const flex_int16_t yy_def[276] =
+static const flex_int16_t yy_def[278] =
     {   0,
-      262,  262,  263,  263,  264,  264,  265,  265,  262,  262,
-      261,   11,  262,   13,  266,  266,  267,  267,  262,  262,
-      262,  262,    2,    2,  268,  268,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  269,  261,  270,  271,
-      261,  261,  261,  261,  261,  261,  261,  272,  272,  272,
-      272,  272,  272,  272,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  273,  261,  274,  261,  261,  261,
-      261,  275,  275,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  269,  261,  270,  271,  261,  261,  272,  272,
-      272,  272,  272,  272,  272,  272,  261,  261,  261,  261,
+      264,  264,  265,  265,  266,  266,  267,  267,  264,  264,
+      263,   11,  264,   13,  268,  268,  269,  269,  264,  264,
+      264,  264,    2,    2,  270,  270,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  271,  263,  272,  273,
+      263,  263,  263,  263,  263,  263,  263,  274,  274,  274,
+      274,  274,  274,  274,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  275,  263,  276,  263,  263,  263,
+      263,  277,  277,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  271,  263,  272,  273,  263,  263,  274,  274,
+      274,  274,  274,  274,  274,  274,  263,  263,  263,  263,
 
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      273,  274,  261,  261,  275,  275,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  272,  272,
-      272,  272,  272,  272,  272,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  275,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  272,  272,  272,  272,  272,  272,  272,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  275,  261,  261,  261,  261,  261,  261,  261,
-      261,  272,  272,  272,  272,  272,  261,  261,  261,  261,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      275,  276,  263,  263,  277,  277,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  274,  274,
+      274,  274,  274,  274,  274,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  277,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  274,  274,  274,  274,  274,  274,  274,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  277,  263,  263,  263,  263,  263,  263,  263,
+      263,  274,  274,  274,  274,  274,  263,  263,  263,  263,
 
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  272,  272,  272,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  272,  272,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  272,  272,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-        0,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  274,  274,  274,  274,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  274,  274,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  274,  274,  263,  263,
+      263,  263,  263,  274,  263,  263,  263,  263,  263,  263,
+      263,  263,    0,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263
     } ;
 
 static const flex_int16_t yy_nxt[529] =
     {   0,
-      261,   29,   30,   31,  261,  261,   32,   33,  261,  261,
-       34,   34,   71,   71,   71,   35,   34,   34,  236,  237,
+      263,   29,   30,   31,  263,  263,   32,   33,  263,  263,
+       34,   34,   71,   71,   71,   35,   34,   34,  237,  238,
        28,   35,   38,   28,   28,  124,   38,   28,   28,  125,
-       38,   28,  261,   28,   36,   38,   28,   71,   71,   71,
+       38,   28,  263,   28,   36,   38,   28,   71,   71,   71,
        34,   91,   34,   29,   30,   31,   92,   98,   32,   33,
-      260,  259,   34,   34,   82,   82,   82,   35,   34,   34,
+      262,  261,   34,   34,   82,   82,   82,   35,   34,   34,
       106,   99,   28,   35,   38,   28,   28,  107,   38,   28,
-       28,   28,   28,   28,  108,  258,   36,   28,   28,   28,
-       28,  109,   34,  257,   34,   38,  110,   38,  142,   41,
-       68,   68,   68,   69,  143,   28,   28,   28,  256,   70,
+       28,   28,   28,   28,  108,  260,   36,   28,   28,   28,
+       28,  109,   34,  259,   34,   38,  110,   38,  142,   41,
+       68,   68,   68,   69,  143,   28,   28,   28,  258,   70,
 
-       28,   28,  118,   42,   97,   97,   97,  255,   43,   44,
-      254,   45,  253,   46,  216,   47,   38,  252,   38,  119,
-       41,   68,   68,   68,   69,  251,   28,   28,   28,  250,
-       70,   28,   28,  249,   42,  113,  113,  113,  248,   43,
-       44,  247,   45,  246,   46,  245,   47,   28,   28,   28,
+       28,   28,  118,   42,   97,   97,   97,  257,   43,   44,
+      256,   45,  255,   46,  254,   47,   38,  253,   38,  119,
+       41,   68,   68,   68,   69,  252,   28,   28,   28,  251,
+       70,   28,   28,  250,   42,  113,  113,  113,  249,   43,
+       44,  248,   45,  247,   46,  246,   47,   28,   28,   28,
        28,   28,   28,   28,   38,   28,   28,   28,   28,   28,
        28,   48,   48,   48,   48,   28,   28,   48,   49,   48,
        48,   48,   50,   48,   51,   48,   48,   52,   48,   48,
        48,   48,   53,   54,   48,   48,   48,   48,   48,   48,
-       38,  244,  243,   55,   55,   55,   28,   28,   28,   28,
+       38,  245,  244,   55,   55,   55,   28,   28,   28,   28,
 
-      114,  114,  114,   73,   56,  225,  242,   57,   81,   81,
-       58,  226,   59,  241,   81,   81,   60,   61,   62,   63,
-      240,  239,   64,   28,   28,   28,   28,   28,   28,   28,
-       38,   28,   28,   28,   28,   28,   28,  238,   81,  235,
+      114,  114,  114,   73,   56,  226,  243,   57,   81,   81,
+       58,  227,   59,  242,   81,   81,   60,   61,   62,   63,
+      241,  240,   64,   28,   28,   28,   28,   28,   28,   28,
+       38,   28,   28,   28,   28,   28,   28,  239,   81,  236,
        81,   66,   28,   28,   28,   28,   28,   28,   28,   28,
        38,   28,   28,   28,   28,   28,   28,   28,   28,   28,
-       28,   66,   28,  234,   73,   74,   75,   76,   81,   81,
-      126,   82,   82,   82,   81,   81,  169,  233,   77,   78,
+       28,   66,   28,  235,   73,   74,   75,   76,   81,   81,
+      126,   82,   82,   82,   81,   81,  169,  234,   77,   78,
        79,   80,   97,   97,   97,  113,  113,  113,  114,  114,
-      114,  160,  160,  160,  177,  178,  206,  232,   81,  231,
+      114,  160,  160,  160,  177,  178,  206,  233,   81,  232,
 
-       81,  160,  160,  160,  179,  230,  229,  228,  207,  227,
-      224,  223,  222,  221,  208,  220,  180,  219,  181,   28,
+       81,  160,  160,  160,  179,  231,  230,  229,  207,  228,
+      225,  224,  223,  222,  208,  221,  180,  220,  181,   28,
        28,   28,   28,   28,   37,   37,   37,   37,   37,   39,
        39,   39,   39,   39,   40,   40,   40,   40,   40,   65,
        65,   65,   65,   65,   67,   67,   67,   67,   67,   72,
-       72,   72,   72,   72,   83,   83,  218,  217,   83,   85,
-       85,  216,  216,   85,   86,   86,  215,  214,   86,   89,
+       72,   72,   72,   72,   83,   83,  219,  218,   83,   85,
+       85,  217,  216,   85,   86,   86,  215,  214,   86,   89,
        89,  111,  111,  112,  112,  112,  112,  115,  115,  115,
       115,  213,  212,  211,  210,  209,  205,  204,  203,  202,
       201,  200,  199,  136,  198,  197,  196,  195,  194,  193,
@@ -896,58 +896,58 @@ static const flex_int16_t yy_nxt[529] =
       135,  134,  133,  132,  131,  130,  129,  128,  127,  123,
       122,  121,  120,  117,  116,  105,  104,  103,  102,  101,
       100,   96,   95,   94,   93,   90,   88,   88,   88,   88,
-       88,   87,   84,  261,   27,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
+       88,   87,   84,  263,   27,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
 
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263
     } ;
 
 static const flex_int16_t yy_chk[529] =
     {   0,
         0,    1,    1,    1,    0,    0,    1,    1,    0,    0,
-        1,    1,   21,   21,   21,    1,    1,    1,  220,  220,
+        1,    1,   21,   21,   21,    1,    1,    1,  221,  221,
         3,    1,    3,    3,    4,   80,    4,    4,    5,   80,
         5,    5,    0,    6,    1,    6,    6,   22,   22,   22,
         1,   50,    1,    2,    2,    2,   50,   56,    2,    2,
-      259,  258,    2,    2,   36,   36,   36,    2,    2,    2,
+      261,  260,    2,    2,   36,   36,   36,    2,    2,    2,
        63,   56,    7,    2,    7,    7,    8,   63,    8,    8,
-       17,   17,   17,   17,   64,  257,    2,   18,   18,   18,
-       18,   64,    2,  256,    2,    9,   64,   19,  104,    9,
-       19,   19,   19,   19,  104,   23,   23,   23,  254,   19,
+       17,   17,   17,   17,   64,  259,    2,   18,   18,   18,
+       18,   64,    2,  258,    2,    9,   64,   19,  104,    9,
+       19,   19,   19,   19,  104,   23,   23,   23,  256,   19,
 
-       23,   23,   75,    9,   55,   55,   55,  252,    9,    9,
-      251,    9,  248,    9,  247,    9,   10,  243,   20,   75,
-       10,   20,   20,   20,   20,  242,   24,   24,   24,  241,
-       20,   24,   24,  235,   10,   68,   68,   68,  234,   10,
-       10,  233,   10,  232,   10,  231,   10,   11,   11,   11,
+       23,   23,   75,    9,   55,   55,   55,  253,    9,    9,
+      252,    9,  249,    9,  248,    9,   10,  244,   20,   75,
+       10,   20,   20,   20,   20,  243,   24,   24,   24,  242,
+       20,   24,   24,  236,   10,   68,   68,   68,  235,   10,
+       10,  234,   10,  233,   10,  232,   10,   11,   11,   11,
        11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
        11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
        11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
        11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
-       13,  230,  229,   13,   13,   13,   25,   25,   25,   25,
+       13,  231,  230,   13,   13,   13,   25,   25,   25,   25,
 
-       71,   71,   71,   25,   13,  207,  228,   13,   35,   35,
-       13,  207,   13,  227,   35,   35,   13,   13,   13,   13,
-      225,  224,   13,   15,   15,   15,   15,   15,   15,   15,
-       15,   15,   15,   15,   15,   15,   15,  223,   35,  219,
+       71,   71,   71,   25,   13,  207,  229,   13,   35,   35,
+       13,  207,   13,  228,   35,   35,   13,   13,   13,   13,
+      226,  225,   13,   15,   15,   15,   15,   15,   15,   15,
+       15,   15,   15,   15,   15,   15,   15,  224,   35,  220,
        35,   15,   15,   16,   16,   16,   16,   16,   16,   16,
        16,   16,   16,   16,   16,   16,   16,   26,   26,   26,
-       26,   16,   16,  218,   26,   33,   33,   33,   81,   81,
-       82,   82,   82,   82,   81,   81,  217,  215,   33,   33,
+       26,   16,   16,  219,   26,   33,   33,   33,   81,   81,
+       82,   82,   82,   82,   81,   81,  218,  215,   33,   33,
        33,   33,   97,   97,   97,  113,  113,  113,  114,  114,
       114,  126,  126,  126,  146,  146,  186,  214,   81,  213,
 
        81,  160,  160,  160,  146,  212,  211,  209,  186,  208,
-      206,  205,  204,  202,  186,  201,  146,  200,  146,  262,
-      262,  262,  262,  262,  263,  263,  263,  263,  263,  264,
+      206,  205,  204,  202,  186,  201,  146,  200,  146,  264,
       264,  264,  264,  264,  265,  265,  265,  265,  265,  266,
       266,  266,  266,  266,  267,  267,  267,  267,  267,  268,
-      268,  268,  268,  268,  269,  269,  199,  198,  269,  270,
-      270,  196,  195,  270,  271,  271,  194,  193,  271,  272,
-      272,  273,  273,  274,  274,  274,  274,  275,  275,  275,
-      275,  191,  190,  189,  188,  187,  184,  181,  180,  179,
+      268,  268,  268,  268,  269,  269,  269,  269,  269,  270,
+      270,  270,  270,  270,  271,  271,  199,  198,  271,  272,
+      272,  196,  195,  272,  273,  273,  194,  193,  273,  274,
+      274,  275,  275,  276,  276,  276,  276,  277,  277,  277,
+      277,  191,  190,  189,  188,  187,  184,  181,  180,  179,
       175,  174,  173,  172,  171,  170,  167,  166,  165,  164,
 
       162,  159,  157,  156,  155,  154,  153,  152,  151,  150,
@@ -958,12 +958,12 @@ static const flex_int16_t yy_chk[529] =
        96,   95,   94,   93,   92,   91,   90,   87,   84,   79,
        78,   77,   76,   74,   73,   62,   61,   60,   59,   58,
        57,   54,   53,   52,   51,   49,   47,   45,   44,   43,
-       42,   41,   38,   27,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
+       42,   41,   38,   27,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
 
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261,  261,  261,
-      261,  261,  261,  261,  261,  261,  261,  261
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263,  263,  263,
+      263,  263,  263,  263,  263,  263,  263,  263
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -972,14 +972,15 @@ static char *yy_last_accepting_cpos;
 extern int yy_flex_debug;
 int yy_flex_debug = 1;
 
-static const flex_int16_t yy_rule_linenum[61] =
+static const flex_int16_t yy_rule_linenum[63] =
     {   0,
-      109,  113,  118,  124,  129,  135,  140,  146,  151,  157,
-      162,  182,  188,  193,  198,  203,  208,  213,  218,  223,
-      228,  234,  235,  236,  237,  238,  239,  240,  241,  242,
-      243,  244,  245,  246,  247,  248,  249,  250,  251,  253,
-      259,  265,  270,  276,  281,  286,  291,  297,  303,  309,
-      315,  321,  327,  356,  362,  368,  374,  375,  376,  383
+      111,  115,  120,  126,  131,  137,  142,  148,  153,  159,
+      164,  184,  190,  195,  200,  205,  210,  215,  220,  225,
+      230,  235,  240,  246,  247,  248,  249,  250,  251,  252,
+      253,  254,  255,  256,  257,  258,  259,  260,  261,  262,
+      263,  265,  271,  277,  282,  288,  293,  298,  303,  309,
+      315,  321,  327,  333,  339,  368,  374,  380,  386,  387,
+      388,  395
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -990,12 +991,12 @@ static const flex_int16_t yy_rule_linenum[61] =
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "./src/VCDScanner.l"
+#line 1 "flex_bison_src/VCDScanner.l"
 /*!
 @file
 @brief Contains the lexical definition for the parser.
 */
-#line 7 "./src/VCDScanner.l"
+#line 7 "flex_bison_src/VCDScanner.l"
     
 #include <cerrno>
 #include <climits>
@@ -1014,13 +1015,13 @@ char *yytext;
 
 static VCDParser::location loc;
     
-#line 1018 "./build/VCDScanner.cpp"
+#line 1019 "..//VCDScanner.cpp"
 #define YY_NO_INPUT 1
 
-#line 98 "./src/VCDScanner.l"
+#line 100 "flex_bison_src/VCDScanner.l"
 #define YY_USER_ACTION loc.columns(yyleng);
-#line 1023 "./build/VCDScanner.cpp"
-#line 1024 "./build/VCDScanner.cpp"
+#line 1024 "..//VCDScanner.cpp"
+#line 1025 "..//VCDScanner.cpp"
 
 #define INITIAL 0
 #define IN_COMMENT 1
@@ -1310,16 +1311,16 @@ YY_DECL
 
 	{
 /* %% [7.0] user's declarations go here */
-#line 101 "./src/VCDScanner.l"
+#line 103 "flex_bison_src/VCDScanner.l"
 
 
 
-#line 105 "./src/VCDScanner.l"
+#line 107 "flex_bison_src/VCDScanner.l"
     loc.step();
 
 
 
-#line 1323 "./build/VCDScanner.cpp"
+#line 1324 "..//VCDScanner.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1348,13 +1349,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 262 )
+				if ( yy_current_state >= 264 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_current_state != 261 );
+		while ( yy_current_state != 263 );
 		yy_cp = (yy_last_accepting_cpos);
 		yy_current_state = (yy_last_accepting_state);
 
@@ -1373,13 +1374,13 @@ do_action:	/* This label is used only to access EOF actions. */
 			{
 			if ( yy_act == 0 )
 				fprintf( stderr, "--scanner backing up\n" );
-			else if ( yy_act < 61 )
+			else if ( yy_act < 63 )
 				fprintf( stderr, "--accepting rule at line %ld (\"%s\")\n",
 				         (long)yy_rule_linenum[yy_act], yytext );
-			else if ( yy_act == 61 )
+			else if ( yy_act == 63 )
 				fprintf( stderr, "--accepting default rule (\"%s\")\n",
 				         yytext );
-			else if ( yy_act == 62 )
+			else if ( yy_act == 64 )
 				fprintf( stderr, "--(end of buffer or a NUL)\n" );
 			else
 				fprintf( stderr, "--EOF (start condition %d)\n", YY_START );
@@ -1397,14 +1398,14 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 109 "./src/VCDScanner.l"
+#line 111 "flex_bison_src/VCDScanner.l"
 {
     return VCDParser::parser::make_TOK_KW_END(loc);
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 113 "./src/VCDScanner.l"
+#line 115 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(INITIAL);
     return VCDParser::parser::make_TOK_KW_END(loc);
@@ -1412,7 +1413,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 118 "./src/VCDScanner.l"
+#line 120 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_COMMENT);
     //std::cout << yytext << ", ";
@@ -1422,7 +1423,7 @@ YY_RULE_SETUP
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 124 "./src/VCDScanner.l"
+#line 126 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_COMMENT_TEXT(std::string(yytext),loc);
@@ -1430,7 +1431,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 129 "./src/VCDScanner.l"
+#line 131 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_DATE);
     //std::cout << yytext << ", ";
@@ -1440,7 +1441,7 @@ YY_RULE_SETUP
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-#line 135 "./src/VCDScanner.l"
+#line 137 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_DATE_TEXT(std::string(yytext),loc);
@@ -1448,7 +1449,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 140 "./src/VCDScanner.l"
+#line 142 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VERSION);
     //std::cout << yytext << ", ";
@@ -1458,7 +1459,7 @@ YY_RULE_SETUP
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 146 "./src/VCDScanner.l"
+#line 148 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_VERSION_TEXT(std::string(yytext),loc);
@@ -1466,7 +1467,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 151 "./src/VCDScanner.l"
+#line 153 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_TIMESCALE);
     //std::cout << yytext << ", ";
@@ -1475,7 +1476,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 157 "./src/VCDScanner.l"
+#line 159 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_TIME_NUMBER(std::atoi(yytext),loc);
@@ -1483,7 +1484,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 162 "./src/VCDScanner.l"
+#line 164 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     VCDTimeUnit tr = TIME_S;
@@ -1505,7 +1506,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 182 "./src/VCDScanner.l"
+#line 184 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_SCOPE);
     //std::cout << yytext << ", ";
@@ -1514,7 +1515,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 188 "./src/VCDScanner.l"
+#line 190 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_BEGIN(VCD_SCOPE_BEGIN,loc);
@@ -1522,7 +1523,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 193 "./src/VCDScanner.l"
+#line 195 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_FORK(VCD_SCOPE_FORK,loc);
@@ -1530,7 +1531,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 198 "./src/VCDScanner.l"
+#line 200 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_FUNCTION(VCD_SCOPE_FUNCTION, loc);
@@ -1538,7 +1539,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 203 "./src/VCDScanner.l"
+#line 205 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_MODULE(VCD_SCOPE_MODULE, loc);
@@ -1546,251 +1547,267 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 208 "./src/VCDScanner.l"
+#line 210 "flex_bison_src/VCDScanner.l"
+{
+    //std::cout << yytext << ", ";
+    return VCDParser::parser::make_TOK_KW_INTERFACE(VCD_SCOPE_INTERFACE, loc);
+}
+	YY_BREAK
+case 18:
+YY_RULE_SETUP
+#line 215 "flex_bison_src/VCDScanner.l"
+{
+    //std::cout << yytext << ", ";
+    return VCDParser::parser::make_TOK_KW_STRUCT(VCD_SCOPE_STRUCT, loc);
+}
+	YY_BREAK
+case 19:
+YY_RULE_SETUP
+#line 220 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_TASK(VCD_SCOPE_TASK, loc);
 }
 	YY_BREAK
-case 18:
+case 20:
 YY_RULE_SETUP
-#line 213 "./src/VCDScanner.l"
+#line 225 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_IDENTIFIER(std::string(yytext),loc);
 }
 	YY_BREAK
-case 19:
+case 21:
 YY_RULE_SETUP
-#line 218 "./src/VCDScanner.l"
+#line 230 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_UPSCOPE(loc);
 }
 	YY_BREAK
-case 20:
+case 22:
 YY_RULE_SETUP
-#line 223 "./src/VCDScanner.l"
+#line 235 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_ENDDEFINITIONS(loc);
 }
 	YY_BREAK
-case 21:
+case 23:
 YY_RULE_SETUP
-#line 228 "./src/VCDScanner.l"
+#line 240 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAR);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_VAR(loc);
 }
 	YY_BREAK
-case 22:
-YY_RULE_SETUP
-#line 234 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_EVENT    ,loc);}
-	YY_BREAK
-case 23:
-YY_RULE_SETUP
-#line 235 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_INTEGER  ,loc);}
-	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 236 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_PARAMETER,loc);}
+#line 246 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_EVENT    ,loc);}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 237 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REAL     ,loc);}
+#line 247 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_INTEGER  ,loc);}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 238 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REALTIME ,loc);}
+#line 248 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_PARAMETER,loc);}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 239 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REG      ,loc);}
+#line 249 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REAL     ,loc);}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 240 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_SUPPLY0  ,loc);}
+#line 250 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REALTIME ,loc);}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 241 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_SUPPLY1  ,loc);}
+#line 251 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_REG      ,loc);}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 242 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TIME     ,loc);}
+#line 252 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_SUPPLY0  ,loc);}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 243 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI      ,loc);}
+#line 253 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_SUPPLY1  ,loc);}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 244 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIAND   ,loc);}
+#line 254 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TIME     ,loc);}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 245 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIOR    ,loc);}
+#line 255 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI      ,loc);}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 246 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIREG   ,loc);}
+#line 256 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIAND   ,loc);}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 247 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI0     ,loc);}
+#line 257 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIOR    ,loc);}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 248 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI1     ,loc);}
+#line 258 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRIREG   ,loc);}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 249 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WAND     ,loc);}
+#line 259 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI0     ,loc);}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 250 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WIRE     ,loc);}
+#line 260 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_TRI1     ,loc);}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 251 "./src/VCDScanner.l"
-{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WOR      ,loc);}
+#line 261 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WAND     ,loc);}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 253 "./src/VCDScanner.l"
+#line 262 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WIRE     ,loc);}
+	YY_BREAK
+case 41:
+YY_RULE_SETUP
+#line 263 "flex_bison_src/VCDScanner.l"
+{return VCDParser::parser::make_TOK_VAR_TYPE(VCD_VAR_WOR      ,loc);}
+	YY_BREAK
+case 42:
+YY_RULE_SETUP
+#line 265 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAR_PSIZE);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_DECIMAL_NUM(std::atoi(yytext),loc);
 }
 	YY_BREAK
-case 41:
+case 43:
 YY_RULE_SETUP
-#line 259 "./src/VCDScanner.l"
+#line 271 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAR_PID);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_IDENTIFIER(std::string(yytext),loc);
 }
 	YY_BREAK
-case 42:
+case 44:
 YY_RULE_SETUP
-#line 265 "./src/VCDScanner.l"
+#line 277 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_IDENTIFIER(std::string(yytext),loc);
 }
 	YY_BREAK
-case 43:
+case 45:
 YY_RULE_SETUP
-#line 270 "./src/VCDScanner.l"
+#line 282 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAR_RNG);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_BRACKET_O(loc);
 }
 	YY_BREAK
-case 44:
+case 46:
 YY_RULE_SETUP
-#line 276 "./src/VCDScanner.l"
+#line 288 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_DECIMAL_NUM(std::atoi(yytext),loc);
 }
 	YY_BREAK
-case 45:
+case 47:
 YY_RULE_SETUP
-#line 281 "./src/VCDScanner.l"
+#line 293 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_COLON(loc);
 }
 	YY_BREAK
-case 46:
+case 48:
 YY_RULE_SETUP
-#line 286 "./src/VCDScanner.l"
+#line 298 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_BRACKET_C(loc);
 }
 	YY_BREAK
-case 47:
+case 49:
 YY_RULE_SETUP
-#line 291 "./src/VCDScanner.l"
+#line 303 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_SIMTIME);
     //std::cout << "simtime: " << yytext << ", ";
     return VCDParser::parser::make_TOK_HASH(loc);
 }
 	YY_BREAK
-case 48:
+case 50:
 YY_RULE_SETUP
-#line 297 "./src/VCDScanner.l"
+#line 309 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(INITIAL);
     //std::cout << yytext << std::endl;
     return VCDParser::parser::make_TOK_DECIMAL_NUM(std::atoi(yytext),loc);
 }
 	YY_BREAK
-case 49:
+case 51:
 YY_RULE_SETUP
-#line 303 "./src/VCDScanner.l"
+#line 315 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAL_CHANGES);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_DUMPALL(loc);
 }
 	YY_BREAK
-case 50:
+case 52:
 YY_RULE_SETUP
-#line 309 "./src/VCDScanner.l"
+#line 321 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAL_CHANGES);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_DUMPOFF(loc);
 }
 	YY_BREAK
-case 51:
+case 53:
 YY_RULE_SETUP
-#line 315 "./src/VCDScanner.l"
+#line 327 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAL_CHANGES);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_DUMPON(loc);
 }
 	YY_BREAK
-case 52:
+case 54:
 YY_RULE_SETUP
-#line 321 "./src/VCDScanner.l"
+#line 333 "flex_bison_src/VCDScanner.l"
 {
     BEGIN(IN_VAL_CHANGES);
     //std::cout << yytext << ", ";
     return VCDParser::parser::make_TOK_KW_DUMPVARS(loc);
 }
 	YY_BREAK
-case 53:
+case 55:
 YY_RULE_SETUP
-#line 327 "./src/VCDScanner.l"
+#line 339 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     BEGIN(IN_VAL_IDCODE);
@@ -1820,47 +1837,47 @@ YY_RULE_SETUP
     return VCDParser::parser::make_TOK_VALUE(val, loc);
 }
 	YY_BREAK
-case 54:
+case 56:
 YY_RULE_SETUP
-#line 356 "./src/VCDScanner.l"
+#line 368 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     BEGIN(IN_VAL_IDCODE);
     return VCDParser::parser::make_TOK_BIN_NUM(std::string(yytext), loc);
 }
 	YY_BREAK
-case 55:
+case 57:
 YY_RULE_SETUP
-#line 362 "./src/VCDScanner.l"
+#line 374 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << ", ";
     BEGIN(IN_VAL_IDCODE);
     return VCDParser::parser::make_TOK_REAL_NUM(std::string(yytext), loc);
 }
 	YY_BREAK
-case 56:
+case 58:
 YY_RULE_SETUP
-#line 368 "./src/VCDScanner.l"
+#line 380 "flex_bison_src/VCDScanner.l"
 {
     //std::cout << yytext << std::endl;
     BEGIN(INITIAL);
     return VCDParser::parser::make_TOK_IDENTIFIER(std::string(yytext),loc);
 }
 	YY_BREAK
-case 57:
-YY_RULE_SETUP
-#line 374 "./src/VCDScanner.l"
-{loc.columns();}
-	YY_BREAK
-case 58:
-/* rule 58 can match eol */
-YY_RULE_SETUP
-#line 375 "./src/VCDScanner.l"
-{loc.lines();}
-	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 376 "./src/VCDScanner.l"
+#line 386 "flex_bison_src/VCDScanner.l"
+{loc.columns();}
+	YY_BREAK
+case 60:
+/* rule 60 can match eol */
+YY_RULE_SETUP
+#line 387 "flex_bison_src/VCDScanner.l"
+{loc.lines();}
+	YY_BREAK
+case 61:
+YY_RULE_SETUP
+#line 388 "flex_bison_src/VCDScanner.l"
 {loc.lines();}
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
@@ -1876,25 +1893,25 @@ case YY_STATE_EOF(IN_VAR_RNG):
 case YY_STATE_EOF(IN_SIMTIME):
 case YY_STATE_EOF(IN_VAL_CHANGES):
 case YY_STATE_EOF(IN_VAL_IDCODE):
-#line 379 "./src/VCDScanner.l"
+#line 391 "flex_bison_src/VCDScanner.l"
 {
     return VCDParser::parser::make_END(loc);
 }
 	YY_BREAK
-case 60:
-/* rule 60 can match eol */
+case 62:
+/* rule 62 can match eol */
 YY_RULE_SETUP
-#line 383 "./src/VCDScanner.l"
+#line 395 "flex_bison_src/VCDScanner.l"
 {
     // DO nothing!
 }
 	YY_BREAK
-case 61:
+case 63:
 YY_RULE_SETUP
-#line 387 "./src/VCDScanner.l"
+#line 399 "flex_bison_src/VCDScanner.l"
 ECHO;
 	YY_BREAK
-#line 1898 "./build/VCDScanner.cpp"
+#line 1915 "..//VCDScanner.cpp"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2213,7 +2230,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 262 )
+			if ( yy_current_state >= 264 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -2246,11 +2263,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 262 )
+		if ( yy_current_state >= 264 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 261);
+	yy_is_jam = (yy_current_state == 263);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -2944,29 +2961,6 @@ int yylex_destroy  (void)
 }
 /* %endif */
 
-int custom_destroy(void) {
-
-  /* Pop the buffer stack, destroying each element. */
-  while (YY_CURRENT_BUFFER) {
-    yy_delete_buffer(YY_CURRENT_BUFFER);
-    YY_CURRENT_BUFFER_LVALUE = NULL;
-    yypop_buffer_state();
-  }
-
-  /* Destroy the stack itself. */
-  yyfree((yy_buffer_stack));
-  (yy_buffer_stack) = NULL;
-
-  /* Reset the globals. This is important in a non-reentrant scanner so the next time
-     * yylex() is called, initialization will occur. */
-  yy_init_globals();
-
-  /* %if-reentrant */
-  /* %endif */
-  return 0;
-}
-/* %endif */
-
 /*
  * Internal utility routines.
  */
@@ -3022,7 +3016,7 @@ void yyfree (void * ptr )
 
 /* %ok-for-header */
 
-#line 387 "./src/VCDScanner.l"
+#line 399 "flex_bison_src/VCDScanner.l"
 
 
 void VCDFileParser::scan_begin() {

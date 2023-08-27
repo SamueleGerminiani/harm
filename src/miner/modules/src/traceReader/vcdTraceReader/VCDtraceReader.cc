@@ -105,9 +105,10 @@ static std::pair<std::string, VCDScope *> findScope(VCDFile *vcd_trace,
     scopes[0] = nullptr;
 
     //debug
-//    std::cout << std::string(scopeName.size(), '\t') << full_name << " " << currScope->signals.size() << " \n";
+    //    std::cout << std::string(scopeName.size(), '\t') << full_name << " " << currScope->signals.size() << " \n";
 
-    if (full_name == scope) {
+    //second option of || is to allow backward compatibility with older versions of harm
+    if (full_name == scope || ("::" + full_name == scope)) {
       if (!isScopeUniqueChild(currScope)) {
         messageWarning(
             "Scope '" + full_name +
@@ -179,22 +180,9 @@ static std::unordered_map<std::string, std::vector<VCDSignal *>>
 getSignalsInScope(
     VCDScope *rootScope,
     std::unordered_map<std::string, std::unordered_set<std::string>>
-        &scopeFullName_to_SignalsFullName,
-    bool recursive = 1) {
+        &scopeFullName_to_SignalsFullName) {
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal;
-  if (!recursive) {
-    for (auto signal : rootScope->signals) {
-      messageWarningIf(_nameToSignal.count(signal->reference) &&
-                           signal->size != 1,
-                       "Multiple definitions of signal '" + signal->reference +
-                           "' in trace!");
-      if (isIgnored(signal->type)) {
-        continue;
-      }
-      _nameToSignal[signal->reference].push_back(signal);
-    }
-    return _nameToSignal;
-  }
+  size_t maxDepth = clc::vcdUnroll ? clc::vcdUnroll : clc::vcdRecursive;
 
   std::deque<VCDScope *> scopes;
   std::vector<std::string> scopeName;
@@ -222,12 +210,20 @@ getSignalsInScope(
         scopeFullName_to_SignalsFullName[scopeNameStr].insert(signalFullName);
       }
     }
-    if (!currScope->children.empty() && (!clc::vcdUnroll || scopeName.size()<=clc::vcdUnroll)) {
-      // add children
+
+    // add children to front
+    if (!currScope->children.empty() && (scopeName.size() <= maxDepth) &&
+        find_if(currScope->children.begin(), currScope->children.end(),
+                [](VCDScope *s) {
+                  return s->type == VCDScopeType::VCD_SCOPE_MODULE;
+                }) != currScope->children.end()) {
       for (auto s : currScope->children) {
-        scopes.push_front(s);
+        if (s->type == VCDScopeType::VCD_SCOPE_MODULE) {
+          scopes.push_front(s);
+        }
       }
     } else {
+      //return to parent
       while (!scopes.empty() && scopes.front() == nullptr) {
         scopes.pop_front();
         scopeName.pop_back();
@@ -287,7 +283,7 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   //note that one signal 'name' might be related to multiple 'VCDSignal', this happens when there are split signals, for example: sig1 -> {sig1[0],sig1[1],sig2[3]}
   //size_t commonPrefixSize = findCommonPrefixLength(rootScope.second);
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal =
-      getSignalsInScope(rootScope.second, _scopeFullName_to_SignalsFullName, clc::vcdRecursive);
+      getSignalsInScope(rootScope.second, _scopeFullName_to_SignalsFullName);
   //_nameToSignal = trimCommonPrefix(_nameToSignal);
 
   //sort the split signals in ascending order of index

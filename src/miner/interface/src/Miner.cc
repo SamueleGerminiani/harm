@@ -50,26 +50,24 @@ void Miner::run() {
                      "No templates defined in context '" + context->_name +
                          "'");
 
-    // handle "check" templates
+    //remove "check" templates from the list, will be handled later
     std::vector<Template *> toCheck;
-    for (Template *&t : context->_templates) {
-      if (t->_check) {
-        toCheck.push_back(t);
-        //mark for removal
-        t = nullptr;
-      }
-    }
-    // remove "check" templates from the list
-    auto &templs = context->_templates;
-    templs.erase(std::remove(templs.begin(), templs.end(), nullptr),
-                 templs.end());
+    context->_templates.erase(std::remove_if(context->_templates.begin(),
+                                             context->_templates.end(),
+                                             [&toCheck](Template *t) {
+                                               if (t->_check) {
+                                                 toCheck.push_back(t);
+                                               }
+                                               return t->_check;
+                                             }),
+                              context->_templates.end());
+
+    messageErrorIf(_config.propertyMiner == nullptr,
+                   "No propertyMiner module has been set");
 
     // time to mine
     std::chrono::steady_clock::time_point begin =
         std::chrono::steady_clock::now();
-
-    messageErrorIf(_config.propertyMiner == nullptr,
-                   "No propertyMiner module has been set");
 
     //3) Mine temporal assertions
     _config.propertyMiner->mineProperties(*context, trace);
@@ -87,6 +85,7 @@ void Miner::run() {
     //4) Qualify the mined temporal assertions (additionally print and dump)
     _config.propertyQualifier->qualify(*context, trace);
 
+    // handle "check" templates
     for (Template *t : toCheck) {
       t->check();
     }
@@ -108,7 +107,7 @@ void Miner::printStats() {
             << "\n";
   std::cout << "Number of assertions: " << hs::nAssertions << "\n";
   std::cout << "Trace length: " << hs::traceLength << "\n";
-  if (!clc::faultyTraceFiles.empty() || clc::ftmFile != "") {
+  if (!clc::faultyTraceFiles.empty()) {
     std::cout << "Number of faults: " << clc::faultyTraceFiles.size() << "\n";
     std::cout << "Faults covered: " << hs::nOfCovFaults << " ("
               << ((double)hs::nOfCovFaults / (double)hs::nFaults) * 100.f

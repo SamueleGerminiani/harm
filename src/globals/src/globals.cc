@@ -15,7 +15,6 @@ size_t MAX_THREADS = std::thread::hardware_concurrency() / 2;
 namespace clc {
 std::vector<std::string> traceFiles;
 std::vector<std::string> faultyTraceFiles;
-std::string ftmFile = "";
 std::string includeAss="";
 std::string configFile = "";
 std::string parserType = "";
@@ -31,7 +30,7 @@ size_t maxAss = std::numeric_limits<size_t>().max();
 std::string dumpPath = "";
 bool intMode = false;
 bool splitLogic = false;
-bool vcdRecursive = true;
+size_t vcdRecursive = true;
 size_t vcdUnroll=0;
 std::string selectedScope = "";
 bool dontFillAss = false;

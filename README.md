@@ -170,7 +170,9 @@ For the full grammar of propositions, check "src/antl4/propositionParser/grammar
 	
 A proposition is defined inside the "exp" attribute
 * WARNING: if you are using a vcd trace, the variables must include the hierarchical path as a prefix, ex. "test1::modn::a" is the variable "a" in module "modn" instantiated in module "test1". Check the vcd file to retrieve the path.
-* Do not include the prefix common to all variables in the vcd, ex. If all design's variables are contained inside the global scope "test1", then variable "a" must be referenced as "modn::a"
+
+*  Do not include the prefix common to all variables in the vcd, ex. If all design's variables are contained inside the global scope "test1", then variable "a" must be referenced as "modn::a" (Removed in latest version of harm, now the full path from the selected scope SS is required. SS is given to harm with the --vcd-ss option; otherwise, if --vcd-ss is not used, then SS is the first hierarchical scope in the vcd file)
+
 
 Propositions are labelled (using the 'loc' attribute of 'prop') with "a", "c", "ac" and "dt"
 * "a" propositions will be used only to fill the antecedent's placeholders (not the dt operator)
@@ -266,8 +268,9 @@ The template expression has an additional parameter "check", if it is set to "1"
 * \-\-wsilent : disable all warnings
 * \-\-split-logic : generate a config file where all bitvecots are split into single bit variables (must be used with --generate-config)
 * \-\-sva : output assertions in SystemVerilog Assertion format
-* \-\-vcd-r : recursively add signals for all sub-scopes
-* \-\-vcd-ss <string> :  select a scope of signals in the .vcd traces
+* \-\-vcd-ss <string> : select a scope of signals in the .vcd traces (sets \-\-vcd-r to 0)
+* \-\-vcd-r=<uint> : recursively add signals for sub-scopes, default recursion depth is <max depth>
+* \-\-vcd-unroll=<uint> : create a context for each scope when generating the config file (mutually esclusive with vcd-r, default recursion depth is <max depth>)
 
 
 

@@ -19,7 +19,6 @@ extern size_t MAX_THREADS;
 namespace clc {
 extern std::vector<std::string> traceFiles;
 extern std::vector<std::string> faultyTraceFiles;
-extern std::string ftmFile;
 extern std::string includeAss;
 extern std::string configFile;
 extern std::string parserType;
@@ -37,7 +36,7 @@ extern bool intMode;
 extern bool splitLogic;
 extern bool dontFillAss;
 extern bool dontPrintAss;
-extern bool vcdRecursive;
+extern size_t vcdRecursive;
 extern size_t vcdUnroll;
 extern std::string selectedScope;
 extern bool silent;

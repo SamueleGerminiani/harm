@@ -2,9 +2,9 @@
 #define VCDParserHEADER_H 1
 #define VCDParserIN_HEADER 1
 
-#line 6 "./build/VCDScanner.hpp"
+#line 6 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
 
-#line 8 "./build/VCDScanner.hpp"
+#line 8 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -297,7 +297,7 @@
 
 #include <inttypes.h>
 typedef int8_t flex_int8_t;
-typedef size_t flex_size_t;
+typedef uint8_t flex_uint8_t;
 typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
@@ -306,7 +306,7 @@ typedef uint32_t flex_uint32_t;
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
-typedef unsigned char flex_size_t; 
+typedef unsigned char flex_uint8_t; 
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
@@ -558,8 +558,6 @@ extern char *yytext;
    These are made visible to non-reentrant scanners for convenience. */
 
 int yylex_destroy ( void );
-
-int custom_destroy ( void );
 
 int yyget_debug ( void );
 
@@ -827,9 +825,9 @@ extern int yylex (void);
 #undef yyTABLES_NAME
 #endif
 
-#line 387 "./src/VCDScanner.l"
+#line 399 "flex_bison_src/VCDScanner.l"
 
 
-#line 832 "./build/VCDScanner.hpp"
+#line 832 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
 #undef VCDParserIN_HEADER
 #endif /* VCDParserHEADER_H */

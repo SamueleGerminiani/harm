@@ -286,7 +286,7 @@ std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
   }
 
   // fault-based qualification
-  if ((!clc::faultyTraceFiles.empty() || clc::ftmFile != "") &&
+  if ((!clc::faultyTraceFiles.empty()) &&
       !rankedAssertions.empty()) {
     faultBasedQualification(rankedAssertions, trace);
   }
@@ -557,133 +557,7 @@ void Qualifier::printAssertions(Context &context,
     }
   }
 }
-void Qualifier::fbqUsingFaultOnTraceMode(std::vector<Assertion *> &selected,
-                                         Trace *trace, size_t &nFaults) {
-  std::unordered_set<std::string> outVars;
 
-  if (clc::ftmFile != "<all>") {
-    //  find the output variables
-    std::ifstream infile(clc::ftmFile);
-    std::string line;
-    std::string str;
-
-    while (getline(infile, line)) {
-      std::istringstream ss(line);
-      std::vector<std::string> record;
-
-      while (getline(ss, str, ',')) {
-        str.erase(std::remove_if(str.begin(), str.end(), ::isspace), str.end());
-        outVars.insert(str);
-      }
-    }
-  } else {
-    // use all vars
-    for (auto i : trace->getVariables()) {
-      outVars.insert(i.getName());
-    }
-  }
-
-  // debug
-  std::cout << "Considered variables:\n"
-            << "\n";
-  for (auto i : outVars) {
-    std::cout << "\t\t\t" << i << "\n";
-  }
-
-  // groupby assertions by var
-  std::unordered_map<std::string, std::vector<std::pair<Assertion *, size_t>>>
-      varToAss;
-  for (auto &ov : outVars) {
-    for (size_t i = 0; i < selected.size(); i++) {
-      auto &a = selected[i];
-      if (a->_toString.first.find(ov) != std::string::npos) {
-        varToAss[ov].emplace_back(a, i);
-      }
-    }
-  }
-
-  size_t pbEvals = 0;
-  for (auto &[ov, aa] : varToAss) {
-    if (trace->getVarType(ov) == expression::VarType::Bool) {
-      auto bv = trace->getBooleanVariable(ov);
-      pbEvals += 1;
-      nFaults += 1;
-      delete bv;
-    } else if (trace->getVarType(ov) == expression::VarType::ULogic ||
-               trace->getVarType(ov) == expression::VarType::SLogic) {
-      auto lv = trace->getLogicVariable(ov);
-      pbEvals += lv->getType().second * varToAss.at(ov).size();
-      nFaults += lv->getType().second;
-      delete lv;
-    }
-  }
-
-#if enPB
-  progresscpp::ParallelProgressBar progressBar;
-  progressBar.addInstance(0, "Fault coverage 0/" + std::to_string(nFaults),
-                          pbEvals, 70);
-  progressBar.display();
-#endif
-
-  size_t elabFault = 0;
-  for (auto &[ov, aa] : varToAss) {
-    auto faultyTraces = trace->newTracesWithSAFault(ov);
-
-    for (size_t j = 0; j < faultyTraces.size(); j++) {
-      // keep track of how many ass were checked for this var
-      size_t tv_id = 0;
-      // ith fault
-      elabFault++;
-#if enPB
-      progressBar.changeMessage(
-          0,
-          "Fault coverage " +
-              (std::to_string(_fToA.size()) + "/" + std::to_string(nFaults)) +
-              " (Elaborating " + std::to_string(elabFault) + ")");
-#endif
-      auto ft = faultyTraces[j];
-      _fToVar[elabFault - 1] = ov + "[" + std::to_string(j) + "]";
-      for (auto &[a, id] : varToAss.at(ov)) {
-        tv_id++;
-        Template *fAss = nullptr;
-
-        fAss = hparser::parseTemplate(a->_toString.first, ft);
-        fAss->setL1Threads(std::thread::hardware_concurrency() / 2);
-        if (!fAss->assHoldsOnTrace(Location::AntCon)) {
-          // new fault covered
-          _aToF[id].push_back(elabFault - 1);
-          _fToA[elabFault - 1].push_back(id);
-
-          if (!clc::findMinSubset) {
-#if enPB
-            progressBar.increment(0, varToAss.at(ov).size() - tv_id);
-            progressBar.display();
-#endif
-            delete fAss;
-            break;
-          }
-        }
-        delete fAss;
-#if enPB
-        progressBar.increment(0);
-        progressBar.display();
-#endif
-      }
-      delete ft;
-    }
-  }
-
-  // print last
-#if enPB
-  progressBar.changeMessage(
-      0, "Fault coverage " +
-             (std::to_string(_fToA.size()) + "/" + std::to_string(nFaults)));
-#endif
-
-#if enPB
-  progressBar.done(0);
-#endif
-}
 void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
                                      Trace *originalTrace) {
 
@@ -718,9 +592,10 @@ void Qualifier::fbqUsingFaultyTraces(std::vector<Assertion *> &selected,
     progressBar.changeMessage(
         0, "Fault coverage " +
                (std::to_string(_fToA.size()) + "/" +
-                std::to_string(clc::faultyTraceFiles.size())) + " ("+ to_string_with_precision((_fToA.size() / (double)j) * 100.f,2) +
-              "%)" +
-               " (Elaborating " + clc::faultyTraceFiles[j] + " [" +
+                std::to_string(clc::faultyTraceFiles.size())) +
+               " (" +
+               to_string_with_precision((_fToA.size() / (double)j) * 100.f, 2) +
+               "%)" + " (Elaborating " + clc::faultyTraceFiles[j] + " [" +
                std::to_string(j + 1) + "])");
 #endif
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
@@ -828,7 +703,6 @@ end:;
 void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
                                         Trace *trace) {
 
-  bool mode = !clc::faultyTraceFiles.empty();
   size_t nFaultsftm = 0;
   auto rng = std::default_random_engine{};
   std::shuffle(std::begin(selected), std::end(selected), rng);
@@ -837,20 +711,14 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
   _fToA.clear();
   _fToVar.clear();
 
-  if (mode) {
-    fbqUsingFaultyTraces(selected, trace);
-    hs::nFaults = clc::faultyTraceFiles.size();
-  } else {
-    fbqUsingFaultOnTraceMode(selected, trace, nFaultsftm);
-    hs::nFaults = nFaultsftm;
-  }
+  fbqUsingFaultyTraces(selected, trace);
+  hs::nFaults = clc::faultyTraceFiles.size();
   std::stringstream ss;
 
   //gather info on the coverage
 
   ss << "Coverage: "
-     << (double)_fToA.size() /
-            (double)(mode ? clc::faultyTraceFiles.size() : nFaultsftm) * 100
+     << ((double)_fToA.size() / (double)clc::faultyTraceFiles.size()) * 100
      << "%\n";
   hs::nOfCovFaults = _fToA.size();
 
@@ -873,17 +741,9 @@ void Qualifier::faultBasedQualification(std::vector<Assertion *> selected,
        << "\n"
        << "\033[0m";
 
-    if (mode) {
-      for (size_t j = 0; j < clc::faultyTraceFiles.size(); j++) {
-        if (!_fToA.count(j)) {
-          ss << "\t" << clc::faultyTraceFiles[j] << "\n";
-        }
-      }
-    } else {
-      for (size_t j = 0; j < nFaultsftm; j++) {
-        if (!_fToA.count(j)) {
-          ss << _fToVar.at(j) << "\n";
-        }
+    for (size_t j = 0; j < clc::faultyTraceFiles.size(); j++) {
+      if (!_fToA.count(j)) {
+        ss << "\t" << clc::faultyTraceFiles[j] << "\n";
       }
     }
     ss << "\n\e[1m";
