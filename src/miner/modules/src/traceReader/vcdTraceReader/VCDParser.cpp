@@ -685,7 +685,6 @@ int parser::parse() {
                 std::cout << "MSB:" << new_signal->lindex << "\n";
                 std::cout << "LSB:" << new_signal->rindex << "\n";
                 std::cout << "Size:" << new_signal->size << "\n";
-                //goto skipSizeCheck;
                 assert(0);
                 exit(1);
               }
@@ -699,7 +698,6 @@ int parser::parse() {
                 std::cout << "Size:" << new_signal->size << "\n";
                 exit(1);
               }
-                //skipSizeCheck:;
             }
           }
 

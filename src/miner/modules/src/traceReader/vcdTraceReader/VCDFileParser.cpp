@@ -15,7 +15,7 @@ VCDFileParser::VCDFileParser() {
   this->trace_parsing = false;
 }
 
-VCDFileParser::~VCDFileParser() { custom_destroy(); }
+VCDFileParser::~VCDFileParser() { VCDParserlex_destroy(); }
 
 VCDFile *VCDFileParser::parse_file(const std::string &filepath) {
 
@@ -98,42 +98,6 @@ void traverse_scope(std::string parent, VCDScope *scope) {
   for (auto child : scope->children) {
     std::cout << "Child:\n";
     traverse_scope(local_parent, child);
-  }
-}
-/*!
-@brief Standalone test function to allow testing of the VCD file parser.
-*/
-int main(int argc, char **argv) {
-
-  std::string infile(argv[1]);
-
-  std::cout << "Parsing " << infile << std::endl;
-
-  VCDFileParser parser;
-
-  VCDFile *trace = parser.parse_file(infile);
-
-  if (trace) {
-    std::cout << "Parse successful." << std::endl;
-    std::cout << "Version:       " << trace->version << std::endl;
-    std::cout << "Date:          " << trace->date << std::endl;
-    std::cout << "Signal count:  " << trace->get_signals()->size() << std::endl;
-    std::cout << "Times Recorded:" << trace->get_timestamps()->size()
-              << std::endl;
-
-    // Print out every signal in every scope.
-    for (VCDScope *scope : *trace->get_scopes()) {
-      if (scope->parent)
-        continue;
-      traverse_scope(std::string(""), scope);
-    }
-
-    delete trace;
-
-    return 0;
-  } else {
-    std::cout << "Parse Failed." << std::endl;
-    return 1;
   }
 }
 

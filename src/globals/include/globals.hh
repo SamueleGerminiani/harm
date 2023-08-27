@@ -38,6 +38,7 @@ extern bool splitLogic;
 extern bool dontFillAss;
 extern bool dontPrintAss;
 extern bool vcdRecursive;
+extern size_t vcdUnroll;
 extern std::string selectedScope;
 extern bool silent;
 extern bool wsilent;

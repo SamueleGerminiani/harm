@@ -32,6 +32,7 @@ std::string dumpPath = "";
 bool intMode = false;
 bool splitLogic = false;
 bool vcdRecursive = true;
+size_t vcdUnroll=0;
 std::string selectedScope = "";
 bool dontFillAss = false;
 bool dontPrintAss = false;

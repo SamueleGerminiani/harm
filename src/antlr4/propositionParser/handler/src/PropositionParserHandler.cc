@@ -92,8 +92,9 @@ void PropositionParserHandler::enterLogic_constant(
       try {
         value = std::stoll(conStr);
       } catch (const std::out_of_range &e) {
-        messageError("Integer overflow when converting '" + conStr + "'" +
-                     printErrorMessage());
+        messageWarning("Integer overflow when converting '" + conStr + "'" +
+                       printErrorMessage());
+        value = std::numeric_limits<long long int>::max();
       }
       auto *c =
           new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
@@ -105,8 +106,9 @@ void PropositionParserHandler::enterLogic_constant(
         try {
           value = std::stoll(conStr);
         } catch (const std::out_of_range &e) {
-          messageError("Integer overflow when converting '" + conStr + "'" +
+          messageWarning("Integer overflow when converting '" + conStr + "'" +
                        printErrorMessage());
+          value = std::numeric_limits<long long int>::max();
         }
         auto *c =
             new LogicConstant(value, VarType::SLogic, 64, _trace->getLength());
@@ -118,8 +120,9 @@ void PropositionParserHandler::enterLogic_constant(
         try {
           value = std::stoull(conStr);
         } catch (const std::out_of_range &e) {
-          messageError("Integer overflow when converting '" + conStr + "'" +
+          messageWarning("Integer overflow when converting '" + conStr + "'" +
                        printErrorMessage());
+          value = std::numeric_limits<unsigned long long int>::max();
         }
         auto *c =
             new LogicConstant(value, VarType::ULogic, 64, _trace->getLength());
@@ -134,7 +137,6 @@ void PropositionParserHandler::enterLogic_constant(
   }
   messageError("Unknown logic constant!" + printErrorMessage());
 }
-
 
 void PropositionParserHandler::enterBooleanAtom(
     propositionParser::BooleanAtomContext *ctx) {

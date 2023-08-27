@@ -43,9 +43,12 @@ void Miner::run() {
                  "ContextMiner module has not been set!");
   _config.contextMiner->mineContexts(trace, contexts);
 
+  messageInfo("Mining " + std::to_string(contexts.size()) + " contexts");
+
   for (Context *context : contexts) {
     messageWarningIf(context->_templates.empty(),
-                   "No templates defined in context '"+context->_name+"'");
+                     "No templates defined in context '" + context->_name +
+                         "'");
 
     // handle "check" templates
     std::vector<Template *> toCheck;

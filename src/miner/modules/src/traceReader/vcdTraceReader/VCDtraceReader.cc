@@ -52,7 +52,7 @@ static DataType toDataType(std::string name, std::string type, size_t size) {
   return ret;
 }
 
-static bool isScopeUniqueChildren(VCDScope *scope) {
+static bool isScopeUniqueChild(VCDScope *scope) {
   std::unordered_set<std::string> names;
   for (auto &child : scope->parent->children) {
     if (names.count(child->name)) {
@@ -91,18 +91,24 @@ static std::pair<std::string, VCDScope *> findScope(VCDFile *vcd_trace,
       std::make_pair(std::string(), nullptr);
   while (!scopes.empty()) {
     VCDScope *currScope = scopes.front();
-    scopeName.push_back(currScope->name + "::");
+    std::string full_name = "";
+    if (!scopeName.empty()) {
+      scopeName.push_back(currScope->name + "::");
+      full_name =
+          std::accumulate(scopeName.begin(), scopeName.end(), std::string{});
+      full_name.erase(full_name.size() - 2, 2);
+    } else {
+      scopeName.push_back("");
+      full_name = "";
+    }
+
     scopes[0] = nullptr;
 
     //debug
-    //    std::cout << std::string(scopeName.size(), '\t') << currScope->name << ": " << currScope->signals.size() << " \n";
-
-    std::string full_name =
-        std::accumulate(scopeName.begin(), scopeName.end(), std::string{});
-    full_name.erase(full_name.size() - 2, 2);
+//    std::cout << std::string(scopeName.size(), '\t') << full_name << " " << currScope->signals.size() << " \n";
 
     if (full_name == scope) {
-      if (!isScopeUniqueChildren(currScope)) {
+      if (!isScopeUniqueChild(currScope)) {
         messageWarning(
             "Scope '" + full_name +
             "' is not unique, using the one containing the most signals");
@@ -136,45 +142,50 @@ static bool isIgnored(VCDVarType type) {
   return 0;
 }
 
-static std::unordered_map<std::string, std::vector<VCDSignal *>>
-trimCommonPrefix(const std::unordered_map<std::string, std::vector<VCDSignal *>>
-                     &nameToSignal) {
-  //find common prefix ending with :
-  std::string commonPrefix = "";
-  for (auto &[name, signals] : nameToSignal) {
-    if (commonPrefix.empty()) {
-      commonPrefix = name;
-    } else {
-      commonPrefix =
-          commonPrefix.substr(0, std::mismatch(commonPrefix.begin(),
-                                               commonPrefix.end(), name.begin())
-                                         .first -
-                                     commonPrefix.begin());
-    }
-    //debug
-    //std::cout << commonPrefix << "\n";
-  }
-
-  if (commonPrefix == "" or commonPrefix.back() != ':') {
-    return nameToSignal;
-    ;
-  }
-  std::unordered_map<std::string, std::vector<VCDSignal *>> ret;
-  //trim common prefix
-  for (auto &[name, signals] : nameToSignal) {
-    ret[name.substr(commonPrefix.size())] = nameToSignal.at(name);
-  }
-
-  return ret;
-}
+//static std::unordered_map<std::string, std::vector<VCDSignal *>>
+//trimCommonPrefix(const std::unordered_map<std::string, std::vector<VCDSignal *>>
+//                     &nameToSignal) {
+//  //find common prefix ending with :
+//  std::string commonPrefix = "";
+//  for (auto &[name, signals] : nameToSignal) {
+//    if (commonPrefix.empty()) {
+//      commonPrefix = name;
+//    } else {
+//      commonPrefix =
+//          commonPrefix.substr(0, std::mismatch(commonPrefix.begin(),
+//                                               commonPrefix.end(), name.begin())
+//                                         .first -
+//                                     commonPrefix.begin());
+//    }
+//    //debug
+//    //std::cout << commonPrefix << "\n";
+//  }
+//
+//  if (commonPrefix == "" or commonPrefix.back() != ':') {
+//    return nameToSignal;
+//    ;
+//  }
+//  std::unordered_map<std::string, std::vector<VCDSignal *>> ret;
+//  //trim common prefix
+//  for (auto &[name, signals] : nameToSignal) {
+//    ret[name.substr(commonPrefix.size())] = nameToSignal.at(name);
+//  }
+//
+//  return ret;
+//}
 
 ///retrieve the signals in the given scope 'rootScope', return type
 static std::unordered_map<std::string, std::vector<VCDSignal *>>
-getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
+getSignalsInScope(
+    VCDScope *rootScope,
+    std::unordered_map<std::string, std::unordered_set<std::string>>
+        &scopeFullName_to_SignalsFullName,
+    bool recursive = 1) {
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal;
   if (!recursive) {
     for (auto signal : rootScope->signals) {
-      messageWarningIf(_nameToSignal.count(signal->reference) && signal->size!=1,
+      messageWarningIf(_nameToSignal.count(signal->reference) &&
+                           signal->size != 1,
                        "Multiple definitions of signal '" + signal->reference +
                            "' in trace!");
       if (isIgnored(signal->type)) {
@@ -194,21 +205,24 @@ getSignalsInScope(VCDScope *rootScope, bool recursive = 1) {
     scopeName.push_back(scopeName.empty() ? "" : currScope->name + "::");
     scopes[0] = nullptr;
 
+    std::string scopeNameStr =
+        std::accumulate(scopeName.begin(), scopeName.end(), std::string{});
     for (auto signal : currScope->signals) {
       if (isIgnored(signal->type)) {
         continue;
       }
 
-      std::string name =
-          std::accumulate(scopeName.begin(), scopeName.end(), std::string{}) +
-          signal->reference;
+      std::string signalFullName = scopeNameStr + signal->reference;
 
-      messageWarningIf(_nameToSignal.count(name) && signal->size!=1,
-                       "Multiple definitions of signal '" + name +
+      messageWarningIf(_nameToSignal.count(signalFullName) && signal->size != 1,
+                       "Multiple definitions of signal '" + signalFullName +
                            "' in trace!");
-      _nameToSignal[name].push_back(signal);
+      _nameToSignal[signalFullName].push_back(signal);
+      if (clc::vcdUnroll) {
+        scopeFullName_to_SignalsFullName[scopeNameStr].insert(signalFullName);
+      }
     }
-    if (!currScope->children.empty()) {
+    if (!currScope->children.empty() && (!clc::vcdUnroll || scopeName.size()<=clc::vcdUnroll)) {
       // add children
       for (auto s : currScope->children) {
         scopes.push_front(s);
@@ -232,6 +246,8 @@ VCDBit getSingleBitValue(VCDTimedValue *tv) {
   }
 }
 Trace *VCDtraceReader::readTrace(const std::string file) {
+
+  _scopeFullName_to_SignalsFullName.clear();
 
   messageInfo("Parsing " + file);
 
@@ -271,8 +287,8 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
   //note that one signal 'name' might be related to multiple 'VCDSignal', this happens when there are split signals, for example: sig1 -> {sig1[0],sig1[1],sig2[3]}
   //size_t commonPrefixSize = findCommonPrefixLength(rootScope.second);
   std::unordered_map<std::string, std::vector<VCDSignal *>> _nameToSignal =
-      getSignalsInScope(rootScope.second, clc::vcdRecursive);
-  _nameToSignal = trimCommonPrefix(_nameToSignal);
+      getSignalsInScope(rootScope.second, _scopeFullName_to_SignalsFullName, clc::vcdRecursive);
+  //_nameToSignal = trimCommonPrefix(_nameToSignal);
 
   //sort the split signals in ascending order of index
   for (auto &n_s : _nameToSignal) {
@@ -348,8 +364,8 @@ Trace *VCDtraceReader::readTrace(const std::string file) {
 
   VCDSignalValues *clkV = _nameToValues.at(_clk)[0];
   // erase clk signal: it will not be part of the final trace
-  _nameToValues.erase(_clk);
-  _nameToSignal.erase(_clk);
+  //_nameToValues.erase(_clk);
+  //_nameToSignal.erase(_clk);
 
   for (auto &n_ss : _nameToSignal) {
 

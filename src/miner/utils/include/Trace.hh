@@ -73,6 +73,16 @@ public:
     }
     return ret;
   }
+  std::unordered_map<std::string, std::pair<expression::VarType, size_t>>
+  getDeclarationsAsMap() {
+    std::unordered_map<std::string, std::pair<expression::VarType, size_t>> ret;
+
+    for (const auto &v : _variables) {
+      ret[v.getName()] = std::make_pair(_varName2Type.at(v.getName()),
+                                        _name2size.at(v.getName()));
+    }
+    return ret;
+  }
 
   size_t getVarSize(std::string varName) {
     messageErrorIf(_name2size.count(varName) == 0,

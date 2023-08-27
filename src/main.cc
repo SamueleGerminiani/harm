@@ -8,8 +8,8 @@
 #include "commandLineParser.hh"
 #include "exp.hh"
 #include "globals.hh"
-#include "templateParser.hh"
 #include "harmIcon.hh"
+#include "templateParser.hh"
 
 #include <csignal>
 #include <filesystem>
@@ -74,7 +74,18 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::vcdRecursive = 0;
   }
   if (result.count("vcd-r")) {
-    clc::vcdRecursive = true;
+    clc::vcdRecursive = result["vcd-r"].as<size_t>();
+  }
+
+  messageErrorIf(result.count("vcd-unroll") && (result.count("vcd-r")),
+                 "Can not use 'vcd-unroll' with 'vcd-r'");
+
+  messageErrorIf(result.count("vcd-unroll") && !result.count("generate-config"),
+                 "Can not use 'vcd-unroll' without 'generate-config'");
+
+  if (result.count("vcd-unroll")) {
+    clc::vcdUnroll = std::stoull(result["vcd-unroll"].as<std::string>());
+    clc::vcdRecursive = 1;
   }
 
   if (result.count("vcd")) {
@@ -275,57 +286,109 @@ void genConfigFile(std::string &configFile, TraceReader *tr) {
   Trace *trace = tr->readTrace();
   std::ofstream ofs(configFile,
                     std::fstream::in | std::fstream::out | std::fstream::trunc);
-
   ofs << "<harm>"
       << "\n";
-  ofs << "\t<context name=\"default\">"
-      << "\n\n";
+  if (clc::parserType == "vcd" && clc::vcdUnroll) {
+    VCDtraceReader *vcdtr = dynamic_cast<VCDtraceReader *>(tr);
+    auto sfn_to_sfn = vcdtr->_scopeFullName_to_SignalsFullName;
+    //print sfn_to_sfn
+    //    for (auto &[scopeName, sfn] : sfn_to_sfn) {
+    //      std::cout << scopeName << "\n";
+    //      for (auto &name : sfn) {
+    //        std::cout << "\t\t\t" << name << "\n";
+    //      }
+    //}
 
-  // a,dt
-  for (auto &dec : trace->getDeclarations()) {
-    if (clc::splitLogic && (std::get<1>(dec) == VarType::SLogic ||
-                            std::get<1>(dec) == VarType::ULogic)) {
-      for (size_t i = 0; i < std::get<2>(dec); i++) {
+    auto mapDec = trace->getDeclarationsAsMap();
+
+    for (auto &[scopeName, sfn] : sfn_to_sfn) {
+      ofs << "\t<context name=\"" + scopeName + "\">"
+          << "\n\n";
+
+      for (auto &name : sfn) {
+        const auto &type = mapDec.at(name).first;
+        const auto &size = mapDec.at(name).second;
+        if (clc::splitLogic &&
+            (type == VarType::SLogic || type == VarType::ULogic)) {
+          for (size_t i = 0; i < size; i++) {
+            ofs << "\t\t<prop exp=\"";
+            ofs << name + "[" + std::to_string(i) + "]";
+            ofs << "\"";
+            ofs << " loc=\"c,dt\"/>"
+                << "\n";
+          }
+
+        } else if (size == 1) {
+          // bool var
+          ofs << "\t\t<prop exp=\"";
+          ofs << name;
+          ofs << "\"";
+          ofs << " loc=\"c,dt\"/>"
+              << "\n";
+        } else {
+          ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
+          ofs << name;
+          ofs << "\"";
+          ofs << " loc=\"c,dt\"/>"
+              << "\n";
+        }
+      }
+
+      ofs << "\t\t<template dtLimits=\"5D,3W,15A,-0.1E,R\" "
+             "exp=\"G({..#1&..}|-> P0)\" /> "
+          << "\n\n";
+      ofs << "	</context>"
+          << "\n";
+    }
+
+  } else {
+
+    ofs << "\t<context name=\"default\">"
+        << "\n\n";
+
+    for (auto &[name, type, size] : trace->getDeclarations()) {
+      if (clc::splitLogic &&
+          (type == VarType::SLogic || type == VarType::ULogic)) {
+        for (size_t i = 0; i < size; i++) {
+          ofs << "\t\t<prop exp=\"";
+          ofs << name + "[" + std::to_string(i) + "]";
+          ofs << "\"";
+          ofs << " loc=\"c,dt\"/>"
+              << "\n";
+        }
+
+      } else if (size == 1) {
+        // bool var
         ofs << "\t\t<prop exp=\"";
-        ofs << std::get<0>(dec) + "[" + std::to_string(i) + "]";
+        ofs << name;
+        ofs << "\"";
+        ofs << " loc=\"c,dt\"/>"
+            << "\n";
+      } else {
+        ofs << "\t\t<numeric clsEffort=\"0.1\" exp=\"";
+        ofs << name;
         ofs << "\"";
         ofs << " loc=\"c,dt\"/>"
             << "\n";
       }
-
-    } else if (std::get<2>(dec) == 1) {
-      // bool var
-      ofs << "\t\t<prop exp=\"";
-      ofs << std::get<0>(dec);
-      ofs << "\"";
-      ofs << " loc=\"c,dt\"/>"
-          << "\n";
-    } else {
-      ofs << "\t\t<numeric clsEffort=\"0.3\" exp=\"";
-      ofs << std::get<0>(dec);
-      ofs << "\"";
-      ofs << " loc=\"c,dt\"/>"
-          << "\n";
     }
+
+    ofs << "\n\n"
+        << "\n";
+    ofs << "\t\t<template dtLimits=\"5D,3W,15A,-0.1E,R\" "
+           "exp=\"G({..#1&..}|-> P0)\" /> "
+        << "\n";
+    ofs << "\n\n"
+        << "\n";
+    ofs << "\t\t<sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n";
+    ofs << "\t\t<sort name=\"frequency\" exp=\"atct/traceLength\"/>\n";
+    ofs << "	</context>"
+        << "\n";
   }
 
-
-  ofs << "\n\n"
-      << "\n";
-  ofs << "\t\t<template dtLimits=\"5D,3W,15A,-0.1E,R\" "
-         "exp=\"G({..#1&..}|-> X(P0))\" /> "
-      << "\n";
-  ofs << "\n\n"
-      << "\n";
-
-  ofs << "\t\t<sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n";
-  ofs << "\t\t<sort name=\"frequency\" exp=\"atct/traceLength\"/>\n";
-  ofs << "	</context>"
-      << "\n";
   ofs << "</harm>"
       << "\n";
   ofs << "\n\n"
       << "\n";
-
   ofs.close();
 }

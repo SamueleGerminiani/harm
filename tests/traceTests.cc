@@ -74,7 +74,7 @@ TEST_F(TraceTest, t1) {
 
 ///test single vcd trace
 TEST_F(TraceTest, t2) {
-  clc::selectedScope = "::tb::DUT";
+  clc::selectedScope = "tb::DUT";
   tr = new VCDtraceReader("../tests/input/TraceTest_t2.vcd", "clk");
   Trace *trace = tr->readTrace();
   Proposition *o1 = trace->getBooleanVariable("o1");
@@ -175,7 +175,7 @@ TEST_F(TraceTest, t4) {
   std::vector<std::string> traces;
   traces.push_back("../tests/input/TraceTest_t2.vcd");
   traces.push_back("../tests/input/TraceTest_t2.vcd");
-  clc::selectedScope = "::tb::DUT";
+  clc::selectedScope = "tb::DUT";
   tr = new VCDtraceReader(traces, "clk");
   Trace *trace = tr->readTrace();
   Proposition *o1 = trace->getBooleanVariable("o1");
