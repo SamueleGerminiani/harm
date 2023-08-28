@@ -13,4 +13,5 @@ compile_commands.json
 *.csv
 transcript
 *work*
+*axc_ass.txt
 

@@ -139,7 +139,7 @@ public:
 };
 
 TEST_F(EvalTest, t1) {
-  _tr = new CSVtraceReader("../tests/input/EvalTest_t1.csv");
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
   _trace = _tr->readTrace();
 
   _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
@@ -153,3 +153,109 @@ TEST_F(EvalTest, t1) {
   check();
 }
 
+TEST_F(EvalTest, t2) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+
+  _tempStrAnt = "{v1 ##1 v2}";
+  _tempStrCon = "X(v3)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t3) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+
+  _tempStrAnt = "{v2}";
+  _tempStrCon = "X(v1 && v3)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t4) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+  _tokenToProp["v4"] = new Proposition *(_trace->getBooleanVariable("v4"));
+
+  _tempStrAnt = "{v1 ##[1..3] v2}";
+  _tempStrCon = "X(v3 || v4)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t5) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+  _tokenToProp["v4"] = new Proposition *(_trace->getBooleanVariable("v4"));
+
+  _tempStrAnt = "{v1 [*2]: v2}";
+  _tempStrCon = "X(v3 || v4)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t6) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+
+  _tempStrAnt = "{v1 [*2..$]; v2}";
+  _tempStrCon = "X(v3)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t7) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+
+  _tempStrAnt = "{v1 ##[0..$] v2}";
+  _tempStrCon = "X(v3)";
+  _imp = "|->";
+
+  check();
+}
+
+TEST_F(EvalTest, t8) {
+  _tr = new CSVtraceReader("../tests/input/EvalTest_RandomTrace.csv");
+  _trace = _tr->readTrace();
+
+  _tokenToProp["v1"] = new Proposition *(_trace->getBooleanVariable("v1"));
+  _tokenToProp["v2"] = new Proposition *(_trace->getBooleanVariable("v2"));
+  _tokenToProp["v3"] = new Proposition *(_trace->getBooleanVariable("v3"));
+
+  _tempStrAnt = "{v1 [->2..$]; v2}";
+  _tempStrCon = "X(v3)";
+  _imp = "|->";
+
+  check();
+}

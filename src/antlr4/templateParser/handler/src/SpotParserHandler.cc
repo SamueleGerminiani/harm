@@ -102,8 +102,10 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(formulaAnt + Hstring(" "+ctx->SEREIMPL()->getText()+" ", Hstring::Stype::Imp) +
-                      formulaCon);
+    _subFormulas.push(
+        formulaAnt +
+        Hstring(" " + ctx->SEREIMPL()->getText() + " ", Hstring::Stype::Imp) +
+        formulaCon);
     return;
   }
 
@@ -115,8 +117,10 @@ void SpotParserHandler::exitFormula(spotParser::FormulaContext *ctx) {
     auto formulaAnt = Hstring("{", Hstring::Stype::Temp) + _subFormulas.top() +
                       Hstring("}", Hstring::Stype::Temp);
     _subFormulas.pop();
-    _subFormulas.push(formulaAnt + Hstring(" "+ctx->SEREIMPLO()->getText()+" ", Hstring::Stype::Imp) +
-                      formulaCon);
+    _subFormulas.push(
+        formulaAnt +
+        Hstring(" " + ctx->SEREIMPLO()->getText() + " ", Hstring::Stype::Imp) +
+        formulaCon);
     return;
   }
   messageError("Error in formula\n" + printErrorMessage());
@@ -416,7 +420,9 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
           left + Hstring(" ##[", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
-          Hstring("] ", Hstring::Stype::Temp) + right;
+          ((ctx->DOLLAR() != nullptr) ? Hstring("$]", Hstring::Stype::Temp)
+                                      : Hstring("] ", Hstring::Stype::Temp)) +
+          right;
       _subFormulas.push(newFormula);
     } else if (ctx->LSQUARED() != nullptr && ctx->RSQUARED() != nullptr &&
                ctx->UINTEGER().size() == 1) {
@@ -438,21 +444,22 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
   if (ctx->sere().size() == 1 && ctx->LSQUARED() != nullptr &&
       ctx->ASS() != nullptr && !ctx->UINTEGER().empty() &&
       ctx->RSQUARED() != nullptr) {
-    if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
-      Hstring newFormula =
-          _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
-          Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
-          Hstring("..", Hstring::Stype::Temp) +
-          Hstring("]", Hstring::Stype::Temp);
-      _subFormulas.pop();
-      _subFormulas.push(newFormula);
-    } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+    if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
+      _subFormulas.pop();
+      _subFormulas.push(newFormula);
+    }else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+      Hstring newFormula =
+          _subFormulas.top() + Hstring("[=", Hstring::Stype::Temp) +
+          Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring("..", Hstring::Stype::Temp) +
+          ((ctx->DOLLAR() != nullptr) ? Hstring("$]", Hstring::Stype::Temp)
+                                      : Hstring("] ", Hstring::Stype::Temp));
       _subFormulas.pop();
       _subFormulas.push(newFormula);
     } else {
@@ -469,21 +476,22 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
   if (ctx->sere().size() == 1 && ctx->LSQUARED() != nullptr &&
       ctx->IMPL() != nullptr && !ctx->UINTEGER().empty() &&
       ctx->RSQUARED() != nullptr) {
-    if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
-      Hstring newFormula =
-          _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
-          Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
-          Hstring("..", Hstring::Stype::Temp) +
-          Hstring("]", Hstring::Stype::Temp);
-      _subFormulas.pop();
-      _subFormulas.push(newFormula);
-    } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
+    if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 2) {
       Hstring newFormula =
           _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[1]->getText(), Hstring::Stype::Temp) +
           Hstring("]", Hstring::Stype::Temp);
+      _subFormulas.pop();
+      _subFormulas.push(newFormula);
+    } else if (ctx->DOTS() != nullptr && ctx->UINTEGER().size() == 1) {
+      Hstring newFormula =
+          _subFormulas.top() + Hstring("[->", Hstring::Stype::Temp) +
+          Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
+          Hstring("..", Hstring::Stype::Temp) +
+          ((ctx->DOLLAR() != nullptr) ? Hstring("$]", Hstring::Stype::Temp)
+                                      : Hstring("] ", Hstring::Stype::Temp));
       _subFormulas.pop();
       _subFormulas.push(newFormula);
     } else {
@@ -513,7 +521,8 @@ void SpotParserHandler::exitSere(spotParser::SereContext *ctx) {
           _subFormulas.top() + Hstring("[*", Hstring::Stype::Temp) +
           Hstring(ctx->UINTEGER()[0]->getText(), Hstring::Stype::Temp) +
           Hstring("..", Hstring::Stype::Temp) +
-          Hstring("]", Hstring::Stype::Temp);
+          ((ctx->DOLLAR() != nullptr) ? Hstring("$]", Hstring::Stype::Temp)
+                                      : Hstring("] ", Hstring::Stype::Temp));
       _subFormulas.pop();
       _subFormulas.push(newFormula);
     } else if (ctx->UINTEGER().size() == 1) {

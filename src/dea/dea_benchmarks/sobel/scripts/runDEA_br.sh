@@ -1,6 +1,6 @@
 $HARM_ROOT/build/dea \
 --vcd \
---clk "clk" \
+--clk "sobel_tb::clk" \
 --fd traces/ \
 --ass-file ass/axc_ass.txt \
 --tech "br" \

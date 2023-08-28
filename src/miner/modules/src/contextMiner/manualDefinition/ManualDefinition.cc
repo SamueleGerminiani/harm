@@ -283,6 +283,7 @@ void ManualDefinition::mineContexts(Trace *trace,
         //delete nn if it is no longer used
         if (std::find(begin(locs), end(locs), Location::DecTree) == locs.end())
           delete nn;
+
         pb.increment(0);
         pb.display();
       }
