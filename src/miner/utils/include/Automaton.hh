@@ -1,6 +1,7 @@
 
 #pragma once
 #include "EdgeProposition.hh"
+#include <unordered_map>
 
 namespace harm {
 class Automaton {

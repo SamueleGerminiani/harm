@@ -5,6 +5,7 @@
 #include <iostream>
 #include <ostream>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 using EvaluatorClusterElement =

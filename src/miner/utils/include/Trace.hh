@@ -9,6 +9,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <unordered_map>
 
 namespace harm {
 
