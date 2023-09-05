@@ -7,4 +7,4 @@
 #include "atom/Variable.hh"
 #include "expression/Expression.hh"
 #include "temporal/temporal.hh"
-#include "function/function.hh"
+#include "function/Function.hh"
