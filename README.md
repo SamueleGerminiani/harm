@@ -197,7 +197,7 @@ S. Germiniani and G. Pravadelli, "Exploiting clustering and decision-tree algori
 
 
 Templates can be written using all LTL operators, they must follow the form "G(antecedent -> consequent)"; all variables (inside the template) of the form P\<N\> are considered  placeholders. For instance, template "G(P0 && P1 -> P2 U P3)" has 4 placeholders.
-For the full grammar of templates, check "src/antl4/templateParser/grammar/temporal.g4".
+For the full grammar of templates, check "src/antlr4/templateParser/grammarSpot/spot.g4".
  
  There are three special placeholders: ..&&.., ..##\<N>.. and ..#\<N>&..;  when employed, the miner will try to replace them with a corresponding expression using a decision tree (DT) algorithm.
  
