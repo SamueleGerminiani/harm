@@ -141,13 +141,14 @@ std::vector<Assertion *>
 Qualifier::patchDiscardAssertions(std::vector<Assertion *> &inAssertions,
                                   Trace *trace) {
   std::vector<Assertion *> outAssertions;
+  //remove x -> x assertions
   for (auto a : inAssertions) {
     if (a->_ct[1][0] == 0) {
       auto assTemp = hparser::parseTemplate(a->_toString.first, trace);
       auto antProps = assTemp->getLoadedPropositionsAnt();
       if (antProps.size() == 1) {
         auto conProps = assTemp->getLoadedPropositionsCon();
-        if (conProps.size() == antProps.size()) {
+        if (conProps.size() == 1) {
           auto antPropStr = prop2String(*antProps.back());
           auto conPropStr = prop2String(*conProps.back());
           if (antPropStr == conPropStr) {
@@ -229,22 +230,21 @@ Qualifier::extractUniqueAssertions(std::vector<Assertion *> &inAssertions) {
   // remove equivalent solutions, keep shortest
   std::vector<Assertion *> outAssertions;
   std::unordered_set<size_t> taken;
-#if enPB
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Extracting unique assertions... 0 discarded",
                  inAssertions.size(), 70);
   size_t discarded = 0;
-#endif
 
   for (size_t i = 0; i < inAssertions.size(); i++) {
-#if enPB
+
     pb.changeMessage(0, "Extracting unique assertions... " +
                             std::to_string(discarded) + " discarded");
     pb.increment(0);
     pb.display();
-#endif
+
     if (taken.count(i))
       continue;
+
     taken.insert(i);
     Assertion *a1 = inAssertions[i];
     Assertion *shortest = a1;
@@ -255,22 +255,19 @@ Qualifier::extractUniqueAssertions(std::vector<Assertion *> &inAssertions) {
       Assertion *a2 = inAssertions[j];
       if (*a1 == *a2) {
         //     debug
-        //     std::cout << a1._toString.second << " == " << a2._toString.second
-        //     <<  "\n";
+        //std::cout << a1->_toString.second << " == " << a2->_toString.second <<  "\n";
         shortest = a1->_toString.second.size() >= a2->_toString.second.size()
                        ? shortest
                        : a2;
         taken.insert(j);
-#if enPB
         discarded++;
-#endif
       }
     }
+
     outAssertions.push_back(shortest);
   }
-#if enPB
+
   pb.done(0);
-#endif
   return outAssertions;
 }
 
@@ -286,8 +283,7 @@ std::vector<Assertion *> Qualifier::qualify(Context &context, Trace *trace) {
   }
 
   // fault-based qualification
-  if ((!clc::faultyTraceFiles.empty()) &&
-      !rankedAssertions.empty()) {
+  if ((!clc::faultyTraceFiles.empty()) && !rankedAssertions.empty()) {
     faultBasedQualification(rankedAssertions, trace);
   }
 
@@ -805,10 +801,14 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
   std::vector<Assertion *> assertions;
   messageInfo("Qualifying " + std::to_string(context._assertions.size()) +
               " assertions");
+
+  assertions = context._assertions;
+
+  assertions = patchDiscardAssertions(assertions, trace);
+
   if (context._assertions.size() > 10000) {
     assertions = extractUniqueAssertionsFast(context._assertions);
   } else {
-    assertions = patchDiscardAssertions(context._assertions, trace);
     assertions = extractUniqueAssertions(assertions);
   }
 

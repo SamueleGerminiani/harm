@@ -9,7 +9,7 @@
         <numeric clsEffort="0.01" exp="sobel_tb::p7" loc="dt"/>
         <numeric clsEffort="0.01" exp="sobel_tb::p8" loc="dt"/>
         <numeric clsEffort="0.001" exp="sobel_tb::out" loc="c"/>
-        <template dtLimits="9A,-0.1E"exp="G({..&&..}|->P0)" />
+        <template dtLimits="9A,-0.1E" exp="G({..&&..}|->P0)" />
 
         <sort name="frequency" exp="atct/traceLength"/>
         <sort name="causality" exp="1-afct/traceLength"/>
