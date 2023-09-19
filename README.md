@@ -153,7 +153,7 @@ For csv:
 		<prop exp="!var5 || !var6" loc="c"/>
 		<prop exp="var8" loc="c"/>
 		
-		<numeric clsEffort="0.3" exp="var7 + var8" loc="c"/>
+		<numeric op="r,ge,le,e" clsEffort="0.3" exp="var7 + var8" loc="c"/>
 		
 		<template dtLimits="4A,3D,2D,-0.1E,R,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
@@ -185,6 +185,7 @@ The user can specify a set of tuples N = \{(ne\_i, loc\_i, th\_i) | i =1, ..., k
 * ne\_i is a numeric expression ("exp" attribute)
 * loc\_i is a location label (among 'a', 'c', 'ac', and 'dt', following the same meaning as in a proposition, "loc" attribute). 
 * th\_i is a numeric threshold (from 0 to 1, "clsEffort" attribute) that is used to specify how much effort the tool must put in to generate propositions including the numeric expression ne\_i (for technical reasons, a threshold close to 0 is considered high effort while a threshold close to 1 is low effort).
+Additionaly, the user can specify which predicates to use to generate the propositions through the "op" attribute; the options are "e" (equal) for ==, "r" (range) for <= <=, "ge" (greater equal) for >= and "le" (less equal) for <=. The default value of "op" is "r,e".
 
 See the paper below to know more about how the procedure is carried out in harm.
 ```
