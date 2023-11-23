@@ -266,10 +266,6 @@ void TLMiner::l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
     }
 
     if (t->isVacuous(harm::Location::AntCon)) {
-
-      _progressBar.increment(l3InstId);
-      _progressBar.display();
-
       if (!clc::keepVacAss) {
         goto end;
       }
