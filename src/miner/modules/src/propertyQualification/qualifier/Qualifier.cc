@@ -140,6 +140,7 @@ void Qualifier::loadParams() {
 std::vector<Assertion *>
 Qualifier::patchDiscardAssertions(std::vector<Assertion *> &inAssertions,
                                   Trace *trace) {
+  messageInfo("Discarding trivial assertions...");
   std::vector<Assertion *> outAssertions;
   //remove x -> x assertions
   for (auto a : inAssertions) {
@@ -806,11 +807,14 @@ std::vector<Assertion *> Qualifier::rankAssertions(Context &context,
 
   assertions = patchDiscardAssertions(assertions, trace);
 
-  if (context._assertions.size() > 10000) {
-    assertions = extractUniqueAssertionsFast(context._assertions);
-  } else {
-    assertions = extractUniqueAssertions(assertions);
-  }
+  //remove redundant assertios
+  //FIXME: do we still need the slow version?
+  //  if (assertions.size() > 10000) {
+  //    //less precise but faster
+  assertions = extractUniqueAssertionsFast(assertions);
+  //  } else {
+  //    assertions = extractUniqueAssertions(assertions);
+  //  }
 
   //filter according to filtering metrics
   filterAssertionsWithMetrics(assertions, context._filter);
