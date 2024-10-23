@@ -17,19 +17,15 @@ target_include_directories(traceReader PUBLIC
 	../../csv-parser/include/
 	)
 
-target_link_libraries(traceReader csv varParser miner_utils)
+target_link_libraries(traceReader csv varParser propositionParser miner_utils)
 
 #Context miner
 SET(CR_SRC src/contextMiner/interface/ContextMiner.cc
     src/contextMiner/manualDefinition/ManualDefinition.cc)
 add_library(contextMiner ${CR_SRC} )
-target_include_directories(contextMiner PUBLIC include/contextMiner/interface/
-	include/contextMiner/manualDefinition/ ../../rapidxml/include)
+target_include_directories(contextMiner PUBLIC include/contextMiner/interface/ include/contextMiner/manualDefinition/ ../../rapidxml/include)
 
-target_link_libraries(contextMiner templateParser propositionParser metricParser dtLimitsParser)
-
-
-
+target_link_libraries(contextMiner temporalParser propositionParser miner_utils)
 
 
 #TLMiner
@@ -40,22 +36,19 @@ SET(CR_SRC src/propertyMiner/interface/PropertyMiner.cc
     )
 
 add_library(propertyMiner ${CR_SRC} )
-target_link_libraries(propertyMiner templateParser propositionParser miner_utils clustering)
+target_link_libraries(propertyMiner temporalParser miner_utils clustering)
 
-target_include_directories(propertyMiner PUBLIC include/propertyMiner/interface/
-	include/propertyMiner/TLMiner/)
+target_include_directories(propertyMiner PUBLIC include/propertyMiner/interface/ include/propertyMiner/TLMiner/)
 
 #Property Qualifier
-SET(CR_SRC src/propertyQualification/interface/PropertyQualifier.cc
-	src/propertyQualification/qualifier/Qualifier.cc)
+SET(CR_SRC src/propertyQualification/interface/PropertyQualifier.cc src/propertyQualification/qualifier/Qualifier.cc)
 add_library(propertyQualification ${CR_SRC} )
-target_link_libraries(propertyQualification metricParser templateParser fort
-    traceReader miner_utils)
+target_link_libraries(propertyQualification temporalParser fort traceReader miner_utils set_cover)
 
 target_include_directories(propertyQualification PUBLIC include/propertyQualification/interface/
 	include/propertyQualification/qualifier/)
 
-target_link_libraries(propertyQualification ${Z3_LIBRARY})
+target_link_libraries(propertyQualification miner)
 
 #Modules
 add_library(modules INTERFACE)

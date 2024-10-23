@@ -1,11 +1,14 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "ContextMiner.hh"
 
-#include <map>
-#include <string>
-
 namespace harm {
+class Context;
+class Trace;
+
 /*! \class ManualDefinition
     \brief used to generated manually defined contexts (in the .xml file)
 */
@@ -16,7 +19,8 @@ public:
 
   ~ManualDefinition() override = default;
 
-  void mineContexts(Trace *trace, std::vector<Context *> &context) override;
+  void mineContexts(const harm::TracePtr &trace,
+                    std::vector<ContextPtr > &context) override;
 };
 
 } // namespace harm

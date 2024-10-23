@@ -1,0 +1,99 @@
+<harm>
+    <!--
+    -->
+	<context name="NotChainSuccession"> 
+	
+		<prop exp="Receive_Loan_Application" loc="a,c"/>
+		<prop exp="Assess_Loan_Risk" loc="a,c"/>
+		<prop exp="Appraise_Property" loc="a,c"/>
+		<prop exp="Assess_Eligibility" loc="a,c"/>
+		<prop exp="Reject_Application" loc="a,c"/>
+		<prop exp="Send_Acceptance_Pack" loc="a,c"/>
+		<prop exp="Notify_Approval" loc="a,c"/>
+		<prop exp="Receive_Negative_Feedback" loc="a,c"/>
+		<prop exp="Store_feedback" loc="a,c"/>
+
+		<template exp="G(P0 |-> !X(P1))" /> 
+
+		<sort name="frequency" exp="ct/traceLength"/>
+	</context>
+
+	<context name="ChainResponse"> 
+	
+		<prop exp="Receive_Loan_Application" loc="a,c"/>
+		<prop exp="Assess_Loan_Risk" loc="a,c"/>
+		<prop exp="Appraise_Property" loc="a,c"/>
+		<prop exp="Assess_Eligibility" loc="a,c"/>
+		<prop exp="Reject_Application" loc="a,c"/>
+		<prop exp="Send_Acceptance_Pack" loc="a,c"/>
+		<prop exp="Notify_Approval" loc="a,c"/>
+		<prop exp="Receive_Negative_Feedback" loc="a,c"/>
+		<prop exp="Store_feedback" loc="a,c"/>
+
+		<template exp="G(P0 |-> X(P1))" /> 
+
+
+		<sort name="frequency" exp="ct/traceLength"/>
+	
+	</context>
+
+
+	<context name="AlternateResponse"> 
+	
+		<prop exp="Receive_Loan_Application" loc="a,c,ac"/>
+		<prop exp="Assess_Loan_Risk" loc="a,c,ac"/>
+		<prop exp="Appraise_Property" loc="a,c,ac"/>
+		<prop exp="Assess_Eligibility" loc="a,c,ac"/>
+		<prop exp="Reject_Application" loc="a,c,ac"/>
+		<prop exp="Send_Acceptance_Pack" loc="a,c,ac"/>
+		<prop exp="Notify_Approval" loc="a,c,ac"/>
+		<prop exp="Receive_Negative_Feedback" loc="a,c,ac"/>
+		<prop exp="Store_feedback" loc="a,c,ac"/>
+
+		<template exp="G(P0 |-> X(notP0 until P1))" /> 
+
+		
+		<sort name="frequency" exp="ct/traceLength"/>
+	</context>
+
+	<context name="NotSuccession"> 
+	
+		<prop exp="Receive_Loan_Application" loc="a,c"/>
+		<prop exp="Assess_Loan_Risk" loc="a,c"/>
+		<prop exp="Appraise_Property" loc="a,c"/>
+		<prop exp="Assess_Eligibility" loc="a,c"/>
+		<prop exp="Reject_Application" loc="a,c"/>
+		<prop exp="Send_Acceptance_Pack" loc="a,c"/>
+		<prop exp="Notify_Approval" loc="a,c"/>
+		<prop exp="Receive_Negative_Feedback" loc="a,c"/>
+		<prop exp="Store_feedback" loc="a,c"/>
+		
+    <!--
+        Cant be mined! The consequence can never become true on a finite trace
+		<template exp="G(P0 |-> !(true until P1))" /> 
+    -->
+
+		<sort name="frequency" exp="ct/traceLength"/>
+		</context>
+
+
+	<context name="Response"> 
+	
+		<prop exp="Receive_Loan_Application" loc="a,c"/>
+		<prop exp="Assess_Loan_Risk" loc="a,c"/>
+		<prop exp="Appraise_Property" loc="a,c"/>
+		<prop exp="Assess_Eligibility" loc="a,c"/>
+		<prop exp="Reject_Application" loc="a,c"/>
+		<prop exp="Send_Acceptance_Pack" loc="a,c"/>
+		<prop exp="Notify_Approval" loc="a,c"/>
+		<prop exp="Receive_Negative_Feedback" loc="a,c"/>
+		<prop exp="Store_feedback" loc="a,c"/>
+
+		<template exp="G(P0 |-> F(P1))" /> 
+
+		
+		<sort name="frequency" exp="ct/traceLength"/>
+	</context>
+
+
+</harm>

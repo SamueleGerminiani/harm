@@ -3,9 +3,12 @@
  */
 
 #include <algorithm>
+#include <iterator>
 #include <set>
+#include <stddef.h>
 
 #include "csv_format.hpp"
+#include "internal/common.hpp"
 
 namespace csv {
 CSV_INLINE CSVFormat &CSVFormat::delimiter(char delim) {
@@ -14,7 +17,8 @@ CSV_INLINE CSVFormat &CSVFormat::delimiter(char delim) {
   return *this;
 }
 
-CSV_INLINE CSVFormat &CSVFormat::delimiter(const std::vector<char> &delim) {
+CSV_INLINE CSVFormat &
+CSVFormat::delimiter(const std::vector<char> &delim) {
   this->possible_delimiters = delim;
   this->assert_no_char_overlap();
   return *this;
@@ -27,7 +31,8 @@ CSV_INLINE CSVFormat &CSVFormat::quote(char quote) {
   return *this;
 }
 
-CSV_INLINE CSVFormat &CSVFormat::trim(const std::vector<char> &chars) {
+CSV_INLINE CSVFormat &
+CSVFormat::trim(const std::vector<char> &chars) {
   this->trim_chars = chars;
   this->assert_no_char_overlap();
   return *this;
@@ -52,14 +57,16 @@ CSV_INLINE CSVFormat &CSVFormat::header_row(int row) {
 CSV_INLINE void CSVFormat::assert_no_char_overlap() {
   auto delims = std::set<char>(this->possible_delimiters.begin(),
                                this->possible_delimiters.end()),
-       trims = std::set<char>(this->trim_chars.begin(), this->trim_chars.end());
+       trims = std::set<char>(this->trim_chars.begin(),
+                              this->trim_chars.end());
 
   // Stores intersection of possible delimiters and trim characters
   std::vector<char> intersection = {};
 
   // Find which characters overlap, if any
   std::set_intersection(delims.begin(), delims.end(), trims.begin(),
-                        trims.end(), std::back_inserter(intersection));
+                        trims.end(),
+                        std::back_inserter(intersection));
 
   // Make sure quote character is not contained in possible delimiters
   // or whitespace characters
@@ -72,7 +79,8 @@ CSV_INLINE void CSVFormat::assert_no_char_overlap() {
     std::string err_msg =
         "There should be no overlap between the quote character, "
         "the set of possible delimiters "
-        "and the set of whitespace characters. Offending characters: ";
+        "and the set of whitespace characters. Offending "
+        "characters: ";
 
     // Create a pretty error message with the list of overlapping
     // characters

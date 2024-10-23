@@ -6,9 +6,9 @@
 		<prop exp="intf::out2" loc="c"/>
 		<prop exp="intf::out1" loc="c"/>
 
-        <numeric exp="DUT::state"/>
+        <numeric clustering="0.01WCSS,==" exp="DUT::state" loc="[dt],c"/>
 
-		<template dtLimits="3D,2W,3A,0.1E,R,N" exp="G({..#1&..}|-> (P0))" /> 
+		<template dtLimits="3D,2W,3A,0E,U" exp="G({..#1&..}|-> (P0))" /> 
 
 
 

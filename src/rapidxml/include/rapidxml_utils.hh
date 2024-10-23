@@ -53,7 +53,8 @@ public:
 
     // Load data and add terminating 0
     stream.unsetf(ios::skipws);
-    m_data.assign(istreambuf_iterator<Ch>(stream), istreambuf_iterator<Ch>());
+    m_data.assign(istreambuf_iterator<Ch>(stream),
+                  istreambuf_iterator<Ch>());
     if (stream.fail() || stream.bad())
       throw runtime_error("error reading stream");
     m_data.push_back(0);
@@ -77,7 +78,8 @@ private:
 
 //! Counts children of node. Time complexity is O(n).
 //! \return Number of children of node
-template <class Ch> inline std::size_t count_children(xml_node<Ch> *node) {
+template <class Ch>
+inline std::size_t count_children(xml_node<Ch> *node) {
   xml_node<Ch> *child = node->first_node();
   std::size_t count = 0;
   while (child) {
@@ -89,7 +91,8 @@ template <class Ch> inline std::size_t count_children(xml_node<Ch> *node) {
 
 //! Counts attributes of node. Time complexity is O(n).
 //! \return Number of attributes of node
-template <class Ch> inline std::size_t count_attributes(xml_node<Ch> *node) {
+template <class Ch>
+inline std::size_t count_attributes(xml_node<Ch> *node) {
   xml_attribute<Ch> *attr = node->first_attribute();
   std::size_t count = 0;
   while (attr) {

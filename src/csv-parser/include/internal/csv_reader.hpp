@@ -4,22 +4,21 @@
 
 #pragma once
 
-#include <algorithm>
-#include <deque>
+#include <stddef.h>
 #include <fstream>
 #include <iterator>
 #include <memory>
-#include <mutex>
 #include <thread>
-#include <sstream>
 #include <string>
 #include <vector>
+#include <type_traits>
 
-#include "../external/mio.hpp"
 #include "basic_csv_parser.hpp"
 #include "common.hpp"
-#include "data_type.h"
 #include "csv_format.hpp"
+#include "external/hedley.h"
+#include "internal/col_names.hpp"
+#include "internal/csv_row.hpp"
 
 /** The all encompassing namespace */
 namespace csv {

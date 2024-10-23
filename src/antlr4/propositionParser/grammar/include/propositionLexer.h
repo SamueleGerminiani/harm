@@ -1,5 +1,5 @@
 
-// Generated from proposition.g4 by ANTLR 4.12.0
+// Generated from proposition.g4 by ANTLR 4.10.1
 
 #pragma once
 
@@ -12,13 +12,15 @@
 class  propositionLexer : public antlr4::Lexer {
 public:
   enum {
-    T__0 = 1, BOOLEAN_CONSTANT = 2, BOOLEAN_VARIABLE = 3, LOGIC_VARIABLE = 4, 
-    CONST_SUFFIX = 5, NUMERIC_CONSTANT = 6, NUMERIC_VARIABLE = 7, LCURLY = 8, 
-    RCURLY = 9, LSQUARED = 10, RSQUARED = 11, LROUND = 12, RROUND = 13, 
-    SINTEGER = 14, UINTEGER = 15, FLOAT = 16, VERILOG_BINARY = 17, GCC_BINARY = 18, 
-    HEX = 19, PLUS = 20, MINUS = 21, TIMES = 22, DIV = 23, GT = 24, GE = 25, 
-    LT = 26, LE = 27, EQ = 28, NEQ = 29, BAND = 30, BOR = 31, BXOR = 32, 
-    NEG = 33, LSHIFT = 34, RSHIFT = 35, AND = 36, OR = 37, NOT = 38, WS = 39
+    BOOLEAN_CONSTANT = 1, BOOLEAN_VARIABLE = 2, INT_VARIABLE = 3, CONST_SUFFIX = 4, 
+    FLOAT_CONSTANT = 5, FLOAT_VARIABLE = 6, LCURLY = 7, RCURLY = 8, LSQUARED = 9, 
+    RSQUARED = 10, LROUND = 11, RROUND = 12, INSIDE = 13, FUNCTION = 14, 
+    SINTEGER = 15, UINTEGER = 16, FLOAT = 17, GCC_BINARY = 18, HEX = 19, 
+    VERILOG_BINARY = 20, FVL = 21, SINGLE_QUOTE = 22, PLUS = 23, MINUS = 24, 
+    TIMES = 25, DIV = 26, GT = 27, GE = 28, LT = 29, LE = 30, EQ = 31, NEQ = 32, 
+    BAND = 33, BOR = 34, BXOR = 35, NEG = 36, LSHIFT = 37, RSHIFT = 38, 
+    AND = 39, OR = 40, NOT = 41, COL = 42, DCOL = 43, DOLLAR = 44, RANGE = 45, 
+    CLS_TYPE = 46, WS = 47
   };
 
   explicit propositionLexer(antlr4::CharStream *input);

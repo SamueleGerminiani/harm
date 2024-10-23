@@ -8,7 +8,8 @@ static std::string err_preamble =
     "delimiters and the set of whitespace characters.";
 
 // Assert that an error is thrown if whitespace, delimiter, and quote
-TEST_CASE("CSVFormat - Overlapping Characters", "[csv_format_overlap]") {
+TEST_CASE("CSVFormat - Overlapping Characters",
+          "[csv_format_overlap]") {
   CSVFormat format;
   bool err_caught = false;
 
@@ -17,8 +18,9 @@ TEST_CASE("CSVFormat - Overlapping Characters", "[csv_format_overlap]") {
       format.delimiter('\t').quote('"').trim({'\t'});
     } catch (std::runtime_error &err) {
       err_caught = true;
-      REQUIRE(err.what() ==
-              std::string(err_preamble + " Offending characters: '\t'."));
+      REQUIRE(
+          err.what() ==
+          std::string(err_preamble + " Offending characters: '\t'."));
     }
 
     REQUIRE(err_caught);
@@ -29,8 +31,9 @@ TEST_CASE("CSVFormat - Overlapping Characters", "[csv_format_overlap]") {
       format.delimiter({',', '\t'}).quote('"').trim({' ', '\t'});
     } catch (std::runtime_error &err) {
       err_caught = true;
-      REQUIRE(err.what() ==
-              std::string(err_preamble + " Offending characters: '\t'."));
+      REQUIRE(
+          err.what() ==
+          std::string(err_preamble + " Offending characters: '\t'."));
     }
 
     REQUIRE(err_caught);
@@ -41,8 +44,9 @@ TEST_CASE("CSVFormat - Overlapping Characters", "[csv_format_overlap]") {
       format.delimiter({',', '"'}).quote('"').trim({' ', '\t'});
     } catch (std::runtime_error &err) {
       err_caught = true;
-      REQUIRE(err.what() ==
-              std::string(err_preamble + " Offending characters: '\"'."));
+      REQUIRE(
+          err.what() ==
+          std::string(err_preamble + " Offending characters: '\"'."));
     }
 
     REQUIRE(err_caught);
@@ -54,7 +58,8 @@ TEST_CASE("CSVFormat - Overlapping Characters", "[csv_format_overlap]") {
     } catch (std::runtime_error &err) {
       err_caught = true;
       REQUIRE(err.what() ==
-              std::string(err_preamble + " Offending characters: '\t', ' '."));
+              std::string(err_preamble +
+                          " Offending characters: '\t', ' '."));
     }
 
     REQUIRE(err_caught);

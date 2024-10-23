@@ -1,52 +1,85 @@
 #pragma once
 
-#include "exp.hh"
-#include "expUtils/VarType.hh"
-#include "message.hh"
+#include <iosfwd>
 #include <memory>
-#include <spot/tl/formula.hh>
-#include <spot/tl/parse.hh>
-#include <spot/tl/print.hh>
-#include <spot/twaalgos/hoa.hh>
-#include <spot/twaalgos/isdet.hh>
-#include <spot/twaalgos/ltl2tgba_fm.hh>
-#include <spot/twaalgos/minimize.hh>
-#include <spot/twaalgos/postproc.hh>
-#include <spot/twaalgos/sccfilter.hh>
-#include <spot/twaalgos/stripacc.hh>
+#include <stddef.h>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "formula/atom/Atom.hh"
+#include "formula/temporal/TemporalExpression.hh"
+
+namespace expression {
+class NumericExpression;
+using NumericExpressionPtr = std::shared_ptr<NumericExpression>;
+
+template <typename OT, typename ET> class Function;
+using FunctionPropositionPtr =
+    std::shared_ptr<Function<Proposition, Proposition>>;
+
+} // namespace expression
+namespace harm {
+enum class ClsOp;
+} // namespace harm
+
+namespace expression {
+enum class ExpType;
+}
 
 namespace harm {
-class Template;
 class Automaton;
 class EdgeProposition;
+class VarDeclaration;
 
 /** \brief To print a ClsOp
    */
 std::ostream &operator<<(std::ostream &os, ClsOp op);
 
-std::pair<expression::VarType, size_t>
+/// @brief converts a string variable to a type
+std::pair<expression::ExpType, size_t>
 variableTypeFromString(const std::string &type, size_t size = 1);
 
-std::vector<expression::Proposition *>
+/// @brief converts a type to a string
+std::string varTypeToString(const expression::ExpType &type,
+                            size_t size);
+
+/// @brief converts a set of numeric values to propositions
+std::vector<expression::PropositionPtr>
 genPropsThroughClustering(std::vector<size_t> &ivs,
-                          expression::CachedAllNumeric *cn, size_t max_length);
+                          const expression::NumericExpressionPtr &cn,
+                          bool DTAlgo);
+std::string
+dumpClusteringValues(std::vector<size_t> &ivs,
+                     const expression::NumericExpressionPtr &cn);
 
-/** \brief generate a FSM from a spot formula
-   */
-std::shared_ptr<spot::twa_graph>
-generateDeterministicSpotAutomaton(spot::formula &formula);
+size_t getTypeBase(const std::string &type);
 
-/** \brief builds a custom automaton (see class Automaton) from a spotLTL automaton
-   */
-Automaton *buildAutomaton(
-    spot::twa_graph_ptr &automata,
-    std::unordered_map<std::string, expression::Proposition **> &tokenToProp);
+/// @brief converts a variable declaration into VarDeclaration
+VarDeclaration toVarDeclaration(std::string name, std::string type,
+                                size_t size);
 
-/** \brief converts a spot LTL formula to a custom proposition
-   */
-EdgeProposition *edgeToProposition(
-    const spot::formula &f,
-    std::unordered_map<std::string, expression::Proposition **> &tokenToProp);
+///Pack of placeholders
+struct PlaceholderPack {
+  PlaceholderPack() = default;
+
+  ///dt and permutations placeholders
+  std::unordered_map<std::string, expression::PropositionPtrPtr>
+      _tokenToPP;
+  ///inst placeholders
+  std::unordered_map<std::string, expression::PropositionPtr>
+      _tokenToInst;
+  ///function placeholders
+  std::unordered_map<std::string, expression::FunctionPropositionPtr>
+      _tokenToFun;
+};
+
+PlaceholderPack
+extractPlaceholders(const expression::TemporalExpressionPtr &formula);
+
+int getTemporalDepth(const expression::TemporalExpressionPtr &te);
+void substitutePlaceholders(
+    expression::TemporalExpressionPtr &original,
+    const PlaceholderPack &pack);
 } // namespace harm

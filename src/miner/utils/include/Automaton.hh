@@ -1,24 +1,37 @@
 
 #pragma once
-#include "EdgeProposition.hh"
+#include <stddef.h>
+#include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace harm {
+class EdgeProposition;
+
 class Automaton {
+
 public:
-//----Internal classes Node-Edge to make custom automata
+  //----Internal classes Node-Edge to make custom automata
   /*! \class Edge
       \brief edge of the custom automaton
   */
   struct Edge;
+
   /*! \class Node
       \brief  state of the custom automaton
   */
   struct Node {
-    Node(size_t id, int type);
+    enum class Type {
+      Accepting,
+      Rejecting,
+      Pending,
+    };
+
+    Node(size_t id, Type type);
     ~Node();
     size_t _id;
-    int _type;
+    Type _type;
     std::vector<Edge *> _outEdges;
     std::vector<Edge *> _inEdges;
   };
@@ -40,8 +53,11 @@ public:
   }
 
   std::unordered_map<size_t, Node *> _idToNode;
+  ///start node of the automaton
   Node *_root;
-  Node *_accepting=nullptr;
-  Node *_rejecting=nullptr;
+  Node *_accepting = nullptr;
+  Node *_rejecting = nullptr;
 };
+
+std::string printAutomaton(const Automaton *aut);
 } // namespace harm

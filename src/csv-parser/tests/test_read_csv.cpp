@@ -51,7 +51,8 @@ TEST_CASE("Assert UTF-8 Handling Works", "[read_utf8_direct]") {
 
   // Flag should be set
   REQUIRE(rows.utf8_bom());
-  REQUIRE(rows.get_col_names() == std::vector<std::string>({"A", "B", "C"}));
+  REQUIRE(rows.get_col_names() ==
+          std::vector<std::string>({"A", "B", "C"}));
 
   CSVRow row;
   rows.read_row(row);
@@ -68,7 +69,8 @@ TEST_CASE("Test Escaped Comma", "[read_csv_comma]") {
 
   CSVRow row;
   rows.read_row(row);
-  REQUIRE(vector<string>(row) == vector<string>({"123", "234,345", "456"}));
+  REQUIRE(vector<string>(row) ==
+          vector<string>({"123", "234,345", "456"}));
 }
 //! [Escaped Comma]
 
@@ -80,7 +82,8 @@ TEST_CASE("Test Escaped Newline", "[read_csv_newline]") {
 
   CSVRow row;
   rows.read_row(row);
-  REQUIRE(vector<string>(row) == vector<string>({"123", "234\n,345", "456"}));
+  REQUIRE(vector<string>(row) ==
+          vector<string>({"123", "234\n,345", "456"}));
 }
 
 TEST_CASE("Test Empty Field", "[read_empty_field]") {
@@ -124,33 +127,34 @@ TEST_CASE("Test Escaped Quote", "[read_csv_quote]") {
 //! [Parse Example]
 
 TEST_CASE("Test Whitespace Trimming", "[read_csv_trim]") {
-  auto row_str = GENERATE(as<std::string>{},
-                          "A,B,C\r\n" // Header row
-                          "123,\"234\n,345\",456\r\n",
+  auto row_str =
+      GENERATE(as<std::string>{},
+               "A,B,C\r\n" // Header row
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces
-                          "A,B,C\r\n"
-                          "   123,\"234\n,345\",    456\r\n",
+               // Random spaces
+               "A,B,C\r\n"
+               "   123,\"234\n,345\",    456\r\n",
 
-                          // Random spaces + tabs
-                          "A,B,C\r\n"
-                          "\t\t   123,\"234\n,345\",    456\r\n",
+               // Random spaces + tabs
+               "A,B,C\r\n"
+               "\t\t   123,\"234\n,345\",    456\r\n",
 
-                          // Spaces in quote escaped field
-                          "A,B,C\r\n"
-                          "\t\t   123,\"   234\n,345  \t\",    456\r\n",
+               // Spaces in quote escaped field
+               "A,B,C\r\n"
+               "\t\t   123,\"   234\n,345  \t\",    456\r\n",
 
-                          // Spaces in one header column
-                          "A,B,        C\r\n"
-                          "123,\"234\n,345\",456\r\n",
+               // Spaces in one header column
+               "A,B,        C\r\n"
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces + tabs in header
-                          "\t A,  B\t,     C\r\n"
-                          "123,\"234\n,345\",456\r\n",
+               // Random spaces + tabs in header
+               "\t A,  B\t,     C\r\n"
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces in header + data
-                          "A,B,        C\r\n"
-                          "123,\"234\n,345\",  456\r\n");
+               // Random spaces in header + data
+               "A,B,        C\r\n"
+               "123,\"234\n,345\",  456\r\n");
 
   SECTION("Parse Test") {
     CSVFormat format;
@@ -160,7 +164,8 @@ TEST_CASE("Test Whitespace Trimming", "[read_csv_trim]") {
     CSVRow row;
     rows.read_row(row);
 
-    REQUIRE(vector<string>(row) == vector<string>({"123", "234\n,345", "456"}));
+    REQUIRE(vector<string>(row) ==
+            vector<string>({"123", "234\n,345", "456"}));
     REQUIRE(row["A"] == "123");
     REQUIRE(row["B"] == "234\n,345");
     REQUIRE(row["C"] == "456");
@@ -206,7 +211,8 @@ inline std::vector<std::string> make_whitespace_test_cases() {
 }
 
 TEST_CASE("Test Whitespace Trimming w/ Empty Fields") {
-  auto csv_string = GENERATE(from_range(make_whitespace_test_cases()));
+  auto csv_string =
+      GENERATE(from_range(make_whitespace_test_cases()));
 
   SECTION("Parse Test") {
     CSVFormat format;
@@ -333,7 +339,8 @@ TEST_CASE("Test read_row() CSVField - Memory", "[read_row_csvf2]") {
 }
 
 // Reported in: https://github.com/vincentlaucsb/csv-parser/issues/56
-TEST_CASE("Leading Empty Field Regression", "[empty_field_regression]") {
+TEST_CASE("Leading Empty Field Regression",
+          "[empty_field_regression]") {
   std::stringstream csv_string(R"(category,subcategory,project name
 ,,foo-project
 bar-category,,bar-project
@@ -371,7 +378,8 @@ TEST_CASE("Test Parsing CSV with Dummy Column", "[read_csv_dummy]") {
 }
 
 // Reported in: https://github.com/vincentlaucsb/csv-parser/issues/67
-TEST_CASE("Comments in Header Regression", "[comments_in_header_regression]") {
+TEST_CASE("Comments in Header Regression",
+          "[comments_in_header_regression]") {
   std::stringstream csv_string(R"(# some extra metadata
 # some extra metadata
 timestamp,distance,angle,amplitude
@@ -384,8 +392,8 @@ timestamp,distance,angle,amplitude
 
   csv::CSVReader reader(csv_string, format);
 
-  std::vector<std::string> expected = {"timestamp", "distance", "angle",
-                                       "amplitude"};
+  std::vector<std::string> expected = {"timestamp", "distance",
+                                       "angle", "amplitude"};
 
   // Original issue: Leading comments appeared in column names
   REQUIRE(expected == reader.get_col_names());

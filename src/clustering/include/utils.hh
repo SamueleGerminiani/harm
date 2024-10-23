@@ -1,32 +1,23 @@
 
 #pragma once
 #include <algorithm>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 template <typename T>
-std::vector<std::pair<T, T>>
-toRanges(std::unordered_map<size_t, std::vector<T>> &labelToValues);
+std::vector<std::tuple<T, T, size_t>>
+toRanges(std::map<size_t, std::vector<T>> &labelToValues) {
 
-template <typename T>
-std::vector<std::pair<T, T>>
-toRanges(std::unordered_map<size_t, std::vector<T>> &labelToValues) {
-  std::vector<std::pair<T, T>> ranges;
+  std::vector<std::tuple<T, T, size_t>> ranges;
 
-  for (auto &l_vv : labelToValues) {
-    std::vector<T> values;
-    for (auto &v : l_vv.second) {
-      values.push_back(v);
-    }
-    if (values.empty())
+  for (auto &[l, vv] : labelToValues) {
+    //FIXME: do we still need this?
+    if (vv.empty())
       continue;
 
-    std::sort(values.begin(), values.end());
-    if (values.size() > 1) {
-      ranges.emplace_back(std::make_pair(values.front(), values.back()));
-    } else {
-      ranges.emplace_back(std::make_pair(values.back(), values.back()));
-    }
+    auto [min, max] = std::minmax_element(vv.begin(), vv.end());
+
+    ranges.emplace_back(*min, *max, vv.size());
   }
   return ranges;
 }

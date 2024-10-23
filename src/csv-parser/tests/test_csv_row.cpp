@@ -45,8 +45,9 @@ TEST_CASE("CSVRow Test", "[test_csv_row]") {
   }
 
   SECTION("Content Check") {
-    REQUIRE(std::vector<std::string>(row) ==
-            std::vector<std::string>({"Col1", "Col2", "Col3", "Col4"}));
+    REQUIRE(
+        std::vector<std::string>(row) ==
+        std::vector<std::string>({"Col1", "Col2", "Col3", "Col4"}));
   }
 
   /** Allow get_sv() to be used with a const CSVField
@@ -61,8 +62,9 @@ TEST_CASE("CSVRow Test", "[test_csv_row]") {
       content.push_back(std::string(field.get_sv()));
     }
 
-    REQUIRE(std::vector<std::string>(row) ==
-            std::vector<std::string>({"Col1", "Col2", "Col3", "Col4"}));
+    REQUIRE(
+        std::vector<std::string>(row) ==
+        std::vector<std::string>({"Col1", "Col2", "Col3", "Col4"}));
   }
 }
 

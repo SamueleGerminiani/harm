@@ -11,9 +11,6 @@ PropertyQualifier::PropertyQualifier(XmlNode *data) : configuration(nullptr) {
     configuration = data;
 }*/
 
-PropertyQualifier::PropertyQualifier() {
-
-  
-}
+PropertyQualifier::PropertyQualifier() {}
 
 } // namespace harm

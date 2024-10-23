@@ -1,7 +1,7 @@
 SET(NAME all_utils)
-project(${NAME})
 
-add_library(${NAME} INTERFACE )
+SET(SRC src/Limits.cc)
+add_library(${NAME} ${SRC})
 
-target_include_directories(all_utils INTERFACE include/)
+target_include_directories(${NAME} PUBLIC include/ ${Boost_INCLUDE_DIRS})
 

@@ -4,11 +4,18 @@
 */
 
 #include "VCDFileParser.hpp"
+
+#include <iostream>
+#include <limits>
+
+#include "VCDFile.hpp"
 #include "VCDScanner.hpp"
+#include "location.hh"
 
 VCDFileParser::VCDFileParser() {
 
-  this->start_time = -std::numeric_limits<decltype(start_time)>::max();
+  this->start_time =
+      -std::numeric_limits<decltype(start_time)>::max();
   this->end_time = std::numeric_limits<decltype(end_time)>::max();
 
   this->trace_scanning = false;
@@ -60,7 +67,8 @@ VCDFile *VCDFileParser::parse_file(const std::string &filepath) {
   }
 }
 
-void VCDFileParser::error(const VCDParser::location &l, const std::string &m) {
+void VCDFileParser::error(const VCDParser::location &l,
+                          const std::string &m) {
   std::cerr << "line " << l.begin.line << std::endl;
   std::cerr << " : " << m << std::endl;
 }
@@ -77,7 +85,8 @@ void print_scope_signals(VCDScope *scope) {
     std::cout << "\t" << signal->hash << "\t" << signal->reference;
 
     if (signal->size > 1) {
-      std::cout << "[" << signal->lindex << ":" << signal->rindex << "]";
+      std::cout << "[" << signal->lindex << ":" << signal->rindex
+                << "]";
     } else if (signal->lindex >= 0) {
       std::cout << "[" << signal->lindex << "]";
     }
@@ -116,7 +125,8 @@ int main(int argc, char **argv) {
     std::cout << "Parse successful." << std::endl;
     std::cout << "Version:       " << trace->version << std::endl;
     std::cout << "Date:          " << trace->date << std::endl;
-    std::cout << "Signal count:  " << trace->get_signals()->size() << std::endl;
+    std::cout << "Signal count:  " << trace->get_signals()->size()
+              << std::endl;
     std::cout << "Times Recorded:" << trace->get_timestamps()->size()
               << std::endl;
 

@@ -3,36 +3,63 @@ import proposition;
 
 file : varDec EOF;
 
-varDec : VARTYPE ('[' LOGIC_CONSTANT ':' LOGIC_CONSTANT ']')? Name ;
+varDec : VARTYPE range? Name ;
 
 Name : START_VAR VARIABLE END_VAR;
 
 
 VARTYPE:
+//C types
   'bool' 
-| 'unsigned char' 
-| 'unsigned short' 
-| 'unsigned int' 
-| 'unsigned long int' 
 | 'char' 
 | 'short' 
 | 'int' 
 | 'long int' 
+| 'unsigned char' 
+| 'unsigned short' 
+| 'unsigned int' 
+| 'unsigned long int' 
+| 'size_t' 
+| 'int64_t' 
+| 'int32_t' 
+| 'uint64_t' 
+| 'uint32_t' 
 | 'float' 
 | 'double' 
-|    'byte'
-|    'shortint'
-|    'longint'
-|    'byte unsigned'
-|    'shortint unsigned'
-|    'longint unsigned'
-|    'time'
-|    'shortreal'
-|    'real'
-|    'reg'
-|    'wire'
-|    'logic'
-    'bit'
+
+
+//SV Type
+//2-value
+| 'shortint'
+| 'longint'
+| 'byte'
+| 'bit'
+
+| 'shortint unsigned'
+| 'int unsigned'
+| 'longint unsigned'
+| 'byte unsigned'
+| 'bit signed'
+
+//4-value
+| 'reg'
+| 'logic'
+| 'integer'
+| 'wire'
+| 'time'
+
+| 'reg signed'
+| 'logic signed'
+| 'integer unsigned'
+| 'wire signed'
+| 'time signed'
+
+
+//double
+| 'shortreal'
+| 'real'
+| 'realtime'
+
 ; 
 
 

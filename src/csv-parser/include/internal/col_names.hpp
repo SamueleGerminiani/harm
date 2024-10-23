@@ -1,4 +1,5 @@
 #pragma once
+#include <stddef.h>
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -9,6 +10,7 @@
 namespace csv {
     namespace internals {
         struct ColNames;
+
         using ColNamesPtr = std::shared_ptr<ColNames>;
 
         /** @struct ColNames

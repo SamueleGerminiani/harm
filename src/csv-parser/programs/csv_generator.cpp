@@ -22,7 +22,8 @@ int main(int argc, char **argv) {
   writer << std::vector<std::string>({"A", "B", "C", "D", "E"});
 
   for (size_t i = 0; i < 1000000; i++) {
-    writer << std::array<double, 5>({d(gen), d(gen), d(gen), d(gen), d(gen)});
+    writer << std::array<double, 5>(
+        {d(gen), d(gen), d(gen), d(gen), d(gen)});
   }
 
   return 0;

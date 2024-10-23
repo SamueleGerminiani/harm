@@ -1,5 +1,5 @@
-#include "handler/include/PropositionParserHandler.hh"
-#include "handler/include/propositionParsingUtils.hh"
 #include "grammar/include/propositionLexer.h"
 #include "grammar/include/propositionListener.h"
 #include "grammar/include/propositionParser.h"
+#include "handler/include/PropositionParserHandler.hh"
+#include "handler/include/propositionParsingUtils.hh"

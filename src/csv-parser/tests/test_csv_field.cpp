@@ -5,8 +5,9 @@
 using namespace csv;
 
 TEMPLATE_TEST_CASE("CSVField get<> - String Value",
-                   "[test_csv_field_get_string]", signed char, short int, int,
-                   long long int, double, long double) {
+                   "[test_csv_field_get_string]", signed char,
+                   short int, int, long long int, double,
+                   long double) {
   CSVField field("applesauce");
   REQUIRE(field.get<>() == "applesauce");
 
@@ -22,7 +23,8 @@ TEMPLATE_TEST_CASE("CSVField get<> - String Value",
   REQUIRE(ex_caught);
 }
 
-TEST_CASE("CSVField get<> - Error Messages", "[test_csv_field_get_error]") {
+TEST_CASE("CSVField get<> - Error Messages",
+          "[test_csv_field_get_error]") {
   CSVField field("applesauce");
 
   bool ex_caught = false;
@@ -36,7 +38,8 @@ TEST_CASE("CSVField get<> - Error Messages", "[test_csv_field_get_error]") {
   REQUIRE(ex_caught);
 }
 
-TEST_CASE("CSVField get<>() - Integral Value", "[test_csv_field_get_int]") {
+TEST_CASE("CSVField get<>() - Integral Value",
+          "[test_csv_field_get_int]") {
   CSVField this_year("2019");
   REQUIRE(this_year.get<>() == "2019");
   REQUIRE(this_year.get<csv::string_view>() == "2019");
@@ -73,8 +76,8 @@ TEST_CASE("CSVField get<>() - Integer Boundary Value",
 // Test converting a small integer to unsigned and signed integer types
 TEMPLATE_TEST_CASE("CSVField get<>() - Integral Value to Int",
                    "[test_csv_field_convert_int]", unsigned char,
-                   unsigned short, unsigned int, unsigned long long, char,
-                   short, int, long long int) {
+                   unsigned short, unsigned int, unsigned long long,
+                   char, short, int, long long int) {
   CSVField savage("21");
   REQUIRE(savage.get<TestType>() == 21);
 }
@@ -91,8 +94,9 @@ TEST_CASE("CSVField get<>() - Floating Point Value",
 
 TEMPLATE_TEST_CASE("CSVField get<>() - Disallow Float to Int",
                    "[test_csv_field_get_float_as_int]", unsigned char,
-                   unsigned short, unsigned int, unsigned long long int,
-                   signed char, short, int, long long int) {
+                   unsigned short, unsigned int,
+                   unsigned long long int, signed char, short, int,
+                   long long int) {
   CSVField euler("2.718");
   bool ex_caught = false;
 
@@ -108,7 +112,8 @@ TEMPLATE_TEST_CASE("CSVField get<>() - Disallow Float to Int",
 
 TEMPLATE_TEST_CASE("CSVField get<>() - Disallow Negative to Unsigned",
                    "[test_csv_field_no_unsigned_neg]", unsigned char,
-                   unsigned short, unsigned int, unsigned long long int) {
+                   unsigned short, unsigned int,
+                   unsigned long long int) {
   CSVField neg("-1337");
   bool ex_caught = false;
 
@@ -122,7 +127,8 @@ TEMPLATE_TEST_CASE("CSVField get<>() - Disallow Negative to Unsigned",
   REQUIRE(ex_caught);
 }
 
-TEST_CASE("CSVField Equality Operator", "[test_csv_field_operator==]") {
+TEST_CASE("CSVField Equality Operator",
+          "[test_csv_field_operator==]") {
   CSVField field("3.14");
   REQUIRE(field == "3.14");
   REQUIRE(field == 3.14f);

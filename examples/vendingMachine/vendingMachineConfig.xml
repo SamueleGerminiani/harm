@@ -1,11 +1,10 @@
 <harm>
 	<context name="default"> 
-		<prop exp="nickel && !quarter && !dime " loc="a, dt"/>
-		<prop exp="quarter  && !nickel && !dime " loc="a, dt"/>
-		<prop exp="dime && !quarter && !nickel " loc="a, dt"/>
+		<prop exp="nickel && !quarter && !dime " loc="dt"/>
+		<prop exp="quarter  && !nickel && !dime " loc="dt"/>
+		<prop exp="dime && !quarter && !nickel " loc="dt"/>
 
 		<prop exp="diet && give_diet" loc="c"/>
-		<prop exp="soda && give_soda" loc="c"/>
-        <template dtLimits="5D,3W,10A,0E,S" exp="G({..##1..} |-> P1)" /> 
+        <template dtLimits="4A,2E,S,!N" exp="G({..##1..} |-> P1)" /> 
 	</context>
 </harm>

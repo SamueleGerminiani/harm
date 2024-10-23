@@ -1,19 +1,24 @@
 #pragma once
 
-#include "DataType.hh"
-#include "Logic.hh"
-#include "exp.hh"
-
 #include <climits>
 #include <map>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
-#include <tuple>
-#include <vector>
 #include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "Float.hh"
+#include "Int.hh"
+#include "VarDeclaration.hh"
+#include "formula/atom/Variable.hh"
+
+namespace expression {
+enum class ExpType;
+} // namespace expression
 
 namespace harm {
-
-using VarDeclaration = std::tuple<std::string, expression::VarType, size_t>;
 
 /// @brief Trace declaration.
 /// This class represents a simulation trace.
@@ -23,111 +28,110 @@ public:
   /// @brief Constructor.
   /// @param variables The variables to be set in the trace.
   /// @param length The length of the trace (number of simulation instants).
-  Trace(std::vector<DataType> &variables, size_t length);
+  Trace(std::vector<VarDeclaration> &variables, size_t length);
 
-  /// @brief Copy constructor
   Trace(const Trace &other) = delete;
-  std::vector<Trace *> newTracesWithSAFault(const std::string &varName);
+  Trace &operator=(const Trace &) = delete;
 
-  /// @brief Destructor.
   ~Trace();
 
   /// @brief Returns the length of the trace.
   size_t getLength() const;
 
-  std::vector<DataType> getVariables() { return _variables; }
+  std::vector<VarDeclaration> getVariables();
 
   /// @brief Returns the BooleanVariable given its name.
   /// @param name The name of the boolean variable
-  /// @return An instance of BooleanVariable
-  expression::BooleanVariable *
+  expression::BooleanVariablePtr
   getBooleanVariable(const std::string &name) const;
 
-  /// @brief Returns the logic variable given its name.
-  /// @param name The name of the logic variable
-  /// @return An instance of ExpressionVariable<Logic>
-  expression::LogicVariable *getLogicVariable(const std::string &name) const;
+  /// @brief Returns the int variable given its name.
+  /// @param name The name of the int variable
+  expression::IntVariablePtr
+  getIntVariable(const std::string &name) const;
 
-  /// @brief Returns the numeric variable given its name.
-  /// @param name The name of the numeric variable
-  /// @return An instance of ExpressionVariable<Numeric>
-  expression::NumericVariable *
-  getNumericVariable(const std::string &name) const;
+  /// @brief Returns the float variable given its name.
+  /// @param name The name of the float variable
+  expression::FloatVariablePtr
+  getFloatVariable(const std::string &name) const;
 
-  unsigned int *getBooleanVariableValues(const std::string &name) const;
+  /// @brief Returns the boolean sub-trace containing the values of a boolean variable
+  unsigned int *
+  getBooleanVariableValues(const std::string &name) const;
 
-  expression::ULogic *getLogicVariableValues(const std::string &name) const;
+  /// @brief Returns the int sub-trace containing the values of a int variable
+  expression::UInt *
+  getIntVariableValues(const std::string &name) const;
 
-  expression::Numeric *getNumericVariableValues(const std::string &name) const;
+  /// @brief Returns the float sub-trace containing the values of a float variable
+  expression::Float *
+  getFloatVariableValues(const std::string &name) const;
 
-  /// @brief Assignment operator
-  /// @param other The other trace to be copied.
-  Trace &operator=(const Trace &other) = delete;
+  ///@bfried returns a copy of the declarations of the variables in the trace
+  std::vector<VarDeclaration> getDeclarations();
 
-  void setLength(size_t length) { _length = length; }
-  std::vector<VarDeclaration> getDeclarations() {
-    std::vector<VarDeclaration> ret;
+  ///@brief returns the variables in the trace as a map
+  std::unordered_map<std::string,
+                     std::pair<expression::ExpType, size_t>>
+  getDeclarationsAsMap();
 
-    for (auto v : _variables) {
-      ret.emplace_back(v.getName(), _varName2Type.at(v.getName()),
-                       _name2size.at(v.getName()));
-    }
-    return ret;
-  }
-  std::unordered_map<std::string, std::pair<expression::VarType, size_t>>
-  getDeclarationsAsMap() {
-    std::unordered_map<std::string, std::pair<expression::VarType, size_t>> ret;
+  /// @brief Returns the size of a variable given its name
+  size_t getVarSize(std::string varName);
 
-    for (const auto &v : _variables) {
-      ret[v.getName()] = std::make_pair(_varName2Type.at(v.getName()),
-                                        _name2size.at(v.getName()));
-    }
-    return ret;
-  }
+  /// @brief Returns the type of a variable given its name
+  expression::ExpType getExpType(const std::string &name);
 
-  size_t getVarSize(std::string varName) {
-    messageErrorIf(_name2size.count(varName) == 0,
-                   "Did not find variable '" + varName + "'");
-    return _name2size.at(varName);
-  }
-  expression::VarType getVarType(const std::string &name) {
-    return _varName2Type.at(name);
-  }
-
+  /// @brief prints the trace in the range [start, start+n]
   std::string printTrace(size_t start, size_t n);
+
+  /// @brief gets how many cuts are in the trace (cuts are instants where the trace contains an implicit reset)
   std::vector<size_t> &getCuts();
+
+  /// @brief sets the cuts in the trace
   void setCuts(const std::vector<size_t> &cuts);
 
 private:
-  /// @brief The numeric sub-trace containing the values of each Numeric
+  /// @brief The float sub-trace containing the values of each Float
   /// variable
-  double *_numeriTrace;
+  expression::Float *_floatTrace = nullptr;
 
   /// @brief The boolean sub-trace containing the values of each Boolean
   /// variable
-  unsigned int *_booleanTrace;
+  unsigned int *_booleanTrace = nullptr;
 
-  /// @brief The logic sub-trace containing the values of each Logic variable
-  expression::ULogic *_logicTrace;
+  /// @brief The int sub-trace containing the values of each Int variable
+  expression::UInt *_intTrace = nullptr;
 
-  /// @brief The length of the trace
+  /// @brief The length of the trace (number of simulation instants).
   size_t _length;
 
+  /// indexes of the subtraces merged from multiple traces or that contained resets
   std::vector<size_t> _cuts;
 
-  std::map<std::string, size_t> _name2size;
+  std::map<std::string, size_t> _varName2size;
 
   /// @brief The mapping between variable's name and values
   std::map<std::string, uintptr_t> _varName2varValues;
-  std::map<std::string, expression::VarType> _varName2Type;
+  /// @brief The mapping between logic variable's name and their type
+  std::map<std::string, expression::ExpType> _varName2Type;
 
-  std::vector<DataType> _variables;
+  /// @brief list of variables in the trace
+  std::vector<VarDeclaration> _variables;
 
-  void _allocateTrace(std::vector<DataType> &variables);
-  void _allocatePointers(std::vector<DataType> &variables);
+  /// @brief utility function to allocate the memory of the trace
+  void allocateTrace(std::vector<VarDeclaration> &variables);
+  /// @brief utility function to allocate the pointers to acces the memory of the trace
+  void allocatePointers(std::vector<VarDeclaration> &variables);
 
   static_assert(CHAR_BIT == 8, "A byte does not contain 8 bits!");
-  size_t _val4Logic = sizeof(expression::ULogic) * CHAR_BIT;
+  const size_t _val4Int = sizeof(expression::UInt) * CHAR_BIT;
 };
+
+//smart pointer
+using TracePtr = std::shared_ptr<Trace>;
+
+/// @brief Dumps the trace in a CSV file
+void dumpTraceAsCSV(const harm::TracePtr &trace,
+                    const std::string &filename);
 
 } // namespace harm

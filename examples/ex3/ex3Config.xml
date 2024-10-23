@@ -1,16 +1,17 @@
 <harm>
 	<context name="default">
 
-		<prop exp="v1" loc="dt"/>
-		<prop exp="v2" loc="dt"/>
-		<prop exp="v3" loc="dt"/>
+		<prop exp="v1" loc="dt,a"/>
+		<prop exp="v2" loc="dt,a"/>
+		<prop exp="v3" loc="dt,a"/>
 		<prop exp="v4" loc="c"/>
 
-        <template dtLimits="3A,1E,R"
-            exp="G({..##1..}|-> X(v4))" /> 
+
+        <template dtLimits="2A,-0.1E, !N" exp="G({..&&..}|-> v4)" /> 
 
 
-
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="ct/traceLength"/>
 
 	</context>
 </harm>

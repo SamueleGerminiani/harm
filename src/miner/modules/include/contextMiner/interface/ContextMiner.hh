@@ -1,11 +1,19 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "rapidxml.hh"
+#include "rapidxml_utils.hh"
 #include "xmlUtils.hh"
 
 namespace harm {
 
 class Context;
+using ContextPtr = std::shared_ptr<Context>;
 class Trace;
+using TracePtr = std::shared_ptr<Trace>;
 
 /// @brief ContextMiner declaration.
 /// This is an interface for a generic context miner
@@ -24,7 +32,8 @@ public:
 
   /// @brief An implementation of this method generates
   /// contexts in some way.
-  virtual void mineContexts(Trace *trace, std::vector<Context *> &contexts) = 0;
+  virtual void mineContexts(const harm::TracePtr &trace,
+                            std::vector<ContextPtr> &contexts) = 0;
 
   /// @brief Unsupported constructor.
   ContextMiner(const ContextMiner &other) = delete;

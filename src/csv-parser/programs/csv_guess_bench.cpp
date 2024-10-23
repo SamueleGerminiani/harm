@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
   for (double time : times) {
     avg += time * 1 / trials;
   }
-  std::cout << "Guessing took: " << avg << " seconds (averaged over " << trials
-            << " trials)" << std::endl;
+  std::cout << "Guessing took: " << avg << " seconds (averaged over "
+            << trials << " trials)" << std::endl;
 
   return 0;
 }

@@ -7,11 +7,11 @@ include_directories(include/)
 # Sources.
 #############################################
 
-SET(OTHER_SRC src/globals.cc)
+SET(SRC src/globals.cc)
 
 #############################################
 # Targets.
 #############################################
-add_library(${NAME} ${OTHER_SRC})
+add_library(${NAME} ${SRC})
 
 

@@ -1,35 +1,56 @@
+#include <cmath>
+
+#include "TemplateImplication.hh"
+#include "Trinary.hh"
 #include "supportMethods.hh"
 
-#include <cmath>
-#include<iostream>
+namespace harm {
 
-namespace harm{
+OCCS computeOccs(const TemplateImplicationPtr &t) {
+  OCCS res{0, 0};
 
+  t->setCacheAntFalse();
 
-double getEntropy(size_t occurrences, size_t traceLength) {
-    double goalTrue  = DIV(occurrences, traceLength);
-    double goalFalse = 1 - goalTrue;
-    //std::cout << "Goal True: " << occurrences << " " << traceLength<< std::endl;
-    return (-1) * goalTrue * log2(goalTrue) +
-           (-1) * goalFalse * log2(goalFalse);
-}
-double getConditionalEntropy(size_t occProposition,size_t occGoal, size_t traceLength) {
-      double probXx = static_cast<double>(occProposition) /
-                      static_cast<double>(traceLength);
-      // P(Y|X=x)
-      double propYTrueGivenXx = static_cast<double>(occGoal) /
-                                static_cast<double>(occProposition);
+  for (size_t i = 0; i < t->getTraceLength(); i++) {
+    if (t->evaluate_ant(i) != Trinary::T) {
+      continue;
+    }
+    if (t->evaluate(i) == Trinary::T) {
+      ++res.AToccs;
+      ++res.ATCToccs;
+    } else if (t->evaluate(i) == Trinary::F) {
+      ++res.AToccs;
+      ++res.ATCFoccs;
+    }
+  }
 
-      // // P(!Y|X=x)
-      double propYFalseGivenXx = 1 - propYTrueGivenXx;
-
-      // H(Y|X=x)
-      double entropyYgivenXx =
-          ((-1) * propYTrueGivenXx * log2(propYTrueGivenXx) +
-           (-1) * propYFalseGivenXx * log2(propYFalseGivenXx));
-
-      return probXx * entropyYgivenXx;
+  return res;
 }
 
-} 
+double getConditionalEntropy(const OCCS &occs, size_t traceLength) {
+  size_t AToccs = occs.AToccs;
+  size_t ATCToccs = occs.ATCToccs;
 
+  // P(Y|X=x)
+  double propConTrueGivenAntTrue =
+      static_cast<double>(ATCToccs) / static_cast<double>(AToccs);
+
+  // P(!Y|X=x)
+  double propConFalseGivenAntTrue = 1 - propConTrueGivenAntTrue;
+
+  // H(Y|X=x)
+  double entropyConGivenAntTrue =
+      ((-1) * propConTrueGivenAntTrue *
+           log2(propConTrueGivenAntTrue) +
+       (-1) * propConFalseGivenAntTrue *
+           log2(propConFalseGivenAntTrue));
+
+  return entropyConGivenAntTrue;
+}
+
+double getCovScore(const OCCS &occs, size_t CT, size_t CF) {
+  return 1.f - ((double)occs.ATCToccs / CT *
+                (1.f - (double)occs.ATCFoccs / CF));
+}
+
+} // namespace harm

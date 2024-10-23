@@ -1,58 +1,102 @@
 #pragma once
-#include "PropertyMiner.hh"
-
-#include <list>
+#include <map>
+#include <mutex>
+#include <optional>
 #include <set>
+#include <stddef.h>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
+
+#include "DTOperator.hh"
+#include "formula/atom/Atom.hh"
+
+namespace expression {
+class NumericExpression;
+using NumericExpressionPtr = std::shared_ptr<NumericExpression>;
+} // namespace expression
+namespace harm {
+class DTOperator;
+using DTOperatorPtr = std::shared_ptr<DTOperator>;
+class TemplateImplication;
+using TemplateImplicationPtr = std::shared_ptr<TemplateImplication>;
+class OCCS;
+struct DTSolution;
+} // namespace harm
 
 #define printTree 0
 
 namespace harm {
 
 // For the decision tree algorithm variables are enumerated. Each variable is a proposition splitting the search space.
-using DecTreeVariables = std::map<size_t, std::pair<Proposition *, Proposition *>>;
-using NumericDecTreeExp = std::map<size_t, CachedAllNumeric *>;
+using DecTreeVariables =
+    std::map<size_t, std::pair<expression::PropositionPtr,
+                               expression::PropositionPtr>>;
+using NumericDecTreeExp =
+    std::map<size_t, expression::NumericExpressionPtr>;
 
 /*! \struct DiscoveredLeaf
     \brief utility structure to store a leaf of a decision tree
 */
 struct DiscoveredLeaf {
-  DiscoveredLeaf(size_t id, bool second, int depth)
-      : _id(id), _second(second), _depth(depth) {
+  explicit DiscoveredLeaf(size_t id, int depth, bool negated)
+      : _id(id), _depth(depth), _negated(negated) {
     // not todo
   }
+
   size_t _id;
-  bool _second;
   int _depth;
+  bool _negated;
+
+  // Define equality operator
+  bool operator==(const DiscoveredLeaf &other) const {
+    return _id == other._id && _depth == other._depth &&
+           _negated == other._negated;
+  }
+};
+
+// Define hash function
+struct DiscoveredLeafHash {
+  std::size_t operator()(const DiscoveredLeaf &leaf) const {
+    std::size_t h1 = std::hash<size_t>()(leaf._id);
+    std::size_t h2 = std::hash<int>()(leaf._depth);
+    std::size_t h3 = std::hash<bool>()(leaf._negated);
+    return h1 ^ (h2 << 1) ^ (h3 << 2); // Combine the hashes
+  }
 };
 /*! \struct CandidateDec
     \brief utility structure to store a candidate
 */
 struct CandidateDec {
 
-  CandidateDec() {}
-  CandidateDec(size_t id, double ig, int depth, Proposition *p, bool offSet,
-               double entropy = 1.f)
-      : _id(id), _ig(ig), _depth(depth), _entropy(entropy) {
-    _props.emplace_back(p, offSet);
-  }
-  CandidateDec(size_t id, double ig, int depth, Proposition *p1, bool offSet1,
-               Proposition *p2, bool offSet2, double entropy = 1.f)
-      : _id(id), _ig(ig), _depth(depth), _entropy(entropy) {
-    _props.emplace_back(p1, offSet1);
-    _props.emplace_back(p2, offSet2);
-  }
+  explicit CandidateDec(size_t id, int depth, bool negated,
+                        expression::PropositionPtr p, double gain,
+                        double score, bool ofNumericOrigin)
+      : _id(id), _depth(depth), _negated(negated), _prop(p),
+        _gain(gain), _score(score),
+        _ofNumericOrigin(ofNumericOrigin) {}
+
+  ///id of the candidate in the vector of decision variables
   size_t _id;
-  double _ig;
+  ///depth in the DT operator
   int _depth;
-  double _entropy;
-  std::vector<std::pair<Proposition *, size_t>> _props;
+  ///if true, this is the negated version of the candidate
+  bool _negated;
+  ///the proposition corresponding to this candidate
+  expression::PropositionPtr _prop;
+  /// the score gained obtained by splitting on this candidate
+  double _gain;
+  ///the score value after splitting on this candidate
+  double _score;
+  ///if true, this candidate was generated from a numeric expression
+  bool _ofNumericOrigin = false;
 };
 
 /*! \class AntecedentGenerator
-    \brief This class implements a search algorithm based on a decision tree with an entropy based heuristic.
+    \brief This class implements a search algorithm based on a decision tree
 */
-
 class AntecedentGenerator {
 public:
   /// @brief Constructor.
@@ -67,74 +111,91 @@ public:
 
   /// @brief Assignment operator
   /// @param other The other variable to be copied.
-  AntecedentGenerator &operator=(const AntecedentGenerator &other) = delete;
-
-  /// @brief maxPropositions defines the maximum number of propositions in a
-  /// generated antecedent
-  size_t maxPropositions;
-
-  /// the algorithm's result (onset, ant -> con):
-  std::vector<std::vector<Proposition *>> onSets;
-  /// the algorithm's result (offset, ant -> !con):
-  std::vector<std::vector<Proposition *>> offSets;
-
-  ///if true, it prompts the algo to save the offset
-  bool saveOffset;
-
-  ///previously found solutions in a string representation
-  std::unordered_set<std::string> knownSolutions;
+  AntecedentGenerator &
+  operator=(const AntecedentGenerator &other) = delete;
 
   /// @brief fill onSets and offSets with solutions
-  void makeAntecedents(Template *t, DecTreeVariables &dcVariables,
-                       NumericDecTreeExp &numericCandidates,
-                       std::vector<Proposition *> &genProps);
+  void makeAntecedents(const TemplateImplicationPtr &t,
+                       const DecTreeVariables &dcVariables,
+                       const NumericDecTreeExp &numericCandidates);
+
+  /// the algorithm's result (onset, ant -> con):
+  std::vector<DTSolution> _onSets;
+  /// the algorithm's result (offset, ant -> !con):
+  std::vector<DTSolution> _offSets;
+
+  ///if true, it prompts the algo to save the offset
+  bool _saveOffset;
+
+private:
+  ///number of times the consequent is true
+  size_t _CT = 0;
+  ///number of times the consequent is false
+  size_t _CF = 0;
+
+  ///previously found solutions in string representation
+  std::unordered_set<std::string> _knownSolutions;
 
 private:
   /// @brief implements the actual dt algo
-  void _runDecisionTree(std::set<size_t> &unusedVars,
-                        DecTreeVariables &dcVariables,
-                        std::set<size_t> &unusedNumerics,
-                        NumericDecTreeExp &numericCandidates, Template *t,
-                        std::vector<Proposition *> &genProps,
-                        double currEntropy);
+  void runDecisionTree(std::set<size_t> &unusedVars,
+                       const DecTreeVariables &dcVariables,
+                       std::set<size_t> &unusedNumerics,
+                       const NumericDecTreeExp &numericCandidates,
+                       const TemplateImplicationPtr &t,
+
+                       double currEntropy);
 
   /// @brief find choices to split the search space
-  inline void findCandidates(size_t candidate, DecTreeVariables &dcVariables,
-                             Template *t,
-                             std::vector<DiscoveredLeaf> &discLeaves,
-                             std::vector<CandidateDec> &igs, int depth,
-                             double currEntropy);
+  void findCandidates(
+      size_t candidate, const DecTreeVariables &dcVariables,
+      const TemplateImplicationPtr &t,
+      std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
+          &discSolutions,
+      std::vector<CandidateDec> &igs, int depth, double currEntropy);
 
   /// @brief find choices to split the search space, use numerics instead of props, uses gatherPropositionsFromNumerics
-  inline void findCandidatesNumeric(size_t candidate,
-                                    NumericDecTreeExp &dcVariables, Template *t,
-                                    std::vector<DiscoveredLeaf> &discLeaves,
-                                    std::vector<CandidateDec> &igs, int depth,
-                                    std::vector<Proposition *> &genProps,
-                                    double currEntropy);
+  void findCandidatesNumeric(
+      size_t candidate, const NumericDecTreeExp &dcVariables,
+      const TemplateImplicationPtr &t,
+      std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
+          &discSolutions,
+      std::vector<CandidateDec> &igs, int depth,
+
+      double currEntropy);
 
   /// @brief find choices through clustering, uses gatherPropositionsFromNumerics
-  inline std::vector<Proposition *>
-  gatherPropositionsFromNumerics(CachedAllNumeric *cn, Template *t, int depth,
-                                 std::vector<Proposition *> &genProps);
+  std::vector<expression::PropositionPtr>
+  gatherPropositionsFromNumerics(expression::NumericExpressionPtr cn,
+                                 const TemplateImplicationPtr &t,
+                                 int depth);
 
-  /// @brief analyse the trace to find a set of values on which to perform the clustering
-  inline std::vector<size_t>
-  gatherInterestingValues(Template *t, int depth);
+  bool
+  isKnownSolution(const DTOperatorPtr &dto, bool checkOnly = false,
+                  const std::optional<DTSolution> &ovveridenSolution =
+                      std::nullopt);
 
-  bool isKnownSolution(const std::vector<Proposition *> &items,
-                       DTOperator *template_dt, bool checkOnly = false);
+  void storeSolution(const TemplateImplicationPtr &t, bool isOffset);
 
-  void storeSolution(Template *t, bool isOffset);
+  /// @brief checks the fitness antecedent with respect to the consequent
+  /// returns true if the antecedent is a good fit, false otherwise
+  bool checkFitness(const TemplateImplicationPtr &t,
+                    const OCCS &occs);
 
-
-  //debug
-#if printTree
-  std::stringstream tree;
+  //------------ For printing the decision tree -----------------------
+  //keeps track of the tree being printed
+  std::stringstream ss_tree;
+  //keeps track of the list of assertions found
   std::stringstream foundAss;
+  ///keeps track of the number of states
   size_t nStates = 0;
+  std::unordered_map<size_t, std::string> nStateToClsProps;
+  ///keeps track of which assertions are found in which state
   std::unordered_map<size_t, std::string> nStateToAss;
-#endif
+
+  ///to protect the output file
+  static std::mutex dtDumpMutex;
+  //-----------------------------------------------------------------
 };
 
 } // namespace harm

@@ -41,11 +41,4 @@ private:
   std::string (*_printObject)(const T &);
 };
 
-template <typename T>
-std::vector<std::pair<T, T>>
-hcElbowHarm(std::vector<T> elements, size_t max = 20, double SDmin_red = 0.1f,
-            bool keepOnlyBest = false);
-
-std::vector<std::vector<EvaluatorClusterElement>> hcElbowEvaluator( std::unordered_map<std::string, std::unordered_set<std::string>> elements);
-
 #include "Hierarchical.i.hh"

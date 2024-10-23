@@ -1,9 +1,14 @@
 #pragma once
 
-#include "exp.hh"
+#include <stddef.h>
+#include <string>
+#include <vector>
+
+#include "formula/atom/Atom.hh"
+
 namespace harm {
 
-/*! \class DTOperator
+/*! \class EdgeProposition
     \brief Class representing an edge of Automaton
 */
 class EdgeProposition {
@@ -58,13 +63,25 @@ public:
   bool evaluate(size_t time) override;
   std::string toString() override;
 };
+
 class EdgePlaceholder : public EdgeProposition {
 public:
-  EdgePlaceholder(expression::Proposition **toProp,
+  EdgePlaceholder(const expression::PropositionPtrPtr &toProp,
                   const std::string &phName = "");
   bool evaluate(size_t time);
   std::string toString();
-  expression::Proposition **_toProp;
+  expression::PropositionPtrPtr _toProp;
   std::string _phName = "";
 };
+
+class EdgeInst : public EdgeProposition {
+public:
+  EdgeInst(const expression::PropositionPtr &toInst,
+           const std::string &phName = "");
+  bool evaluate(size_t time);
+  std::string toString();
+  expression::PropositionPtr _toInst;
+  std::string _phName = "";
+};
+
 } // namespace harm

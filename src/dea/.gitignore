@@ -1,0 +1,9 @@
+gmon.out
+axc_ass.txt 
+axc_faultCov.txt
+dea_benchmarks/sobel/traces/*
+dea_benchmarks/fir/traces/*
+dea_benchmarks/inversek2j/traces/*
+dea_benchmarks/paperRunningExample/traces/*
+dea_benchmarks/brentKung32b/traces/*
+

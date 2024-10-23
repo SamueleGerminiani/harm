@@ -58,7 +58,8 @@ TEST_CASE("Test CSVFieldArray Thread Safety", "[test_array_thread]") {
     size_t end = start + chunk_size;
 
     workers.push_back(std::async(
-        [](const CSVFieldList &arr, size_t start, size_t end, size_t offset) {
+        [](const CSVFieldList &arr, size_t start, size_t end,
+           size_t offset) {
           for (size_t i = start; i < end; i++) {
             if (arr[i].start != i || arr[i].length != i + offset)
               return false;

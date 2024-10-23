@@ -1,7 +1,7 @@
 #pragma once
 
+#include "CopyVisitor.hh"
 #include "ExpVisitor.hh"
 #include "PrinterVisitor.hh"
-#include "CounterVisitor.hh"
-#include "ColoredPrinterVisitor.hh"
-#include "CopyVisitor.hh"
+#include "TraceChangerVisitor.hh"
+#include "VarExtractVisitor.hh"

@@ -6,6 +6,8 @@
 #include "VCDTypes.hpp"
 #include "VCDValue.hpp"
 
+class VCDValue;
+
 #ifndef VCDFile_HPP
 #define VCDFile_HPP
 

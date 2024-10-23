@@ -6,14 +6,18 @@ project(${NAME})
 # Sources.
 #############################################
 
-SET(MINER_UTILS_SRC src/Trace.cc src/DataType.cc src/Template.cc
+SET(MINER_UTILS_SRC
+    src/Trace.cc
+    src/VarDeclaration.cc
+    src/TemplateImplication.cc
     src/Automaton.cc
-    src/TemplateEval.cc
-	src/PermGenerator.cc
-	src/Hstring.cc  src/EdgeProposition.cc
-        src/DTAnd.cc
-        src/DTNext.cc
-        src/DTNCReps.cc
+    src/Evaluator.cc
+    src/AutomataBasedEvaluator.cc
+    src/Permutator.cc
+    src/EdgeProposition.cc
+    src/DTAnd.cc
+    src/DTNext.cc
+    src/DTNCReps.cc
     src/DTNextAnd.cc
     src/minerUtils.cc
     src/Context.cc
@@ -21,11 +25,17 @@ SET(MINER_UTILS_SRC src/Trace.cc src/DataType.cc src/Template.cc
     src/DTUtils.cc
     )
 
+SET(METRIC_SRC
+    src/Metric.cc
+    )
+
 #############################################
 # Targets.
 #############################################
-add_library(${NAME} ${MINER_UTILS_SRC})
-target_include_directories(miner_utils PUBLIC include/ ${SPOTLTLCPP_INCLUDE_DIRS})
-target_link_libraries(${NAME} ${SPOTLTL_LIB} fort clustering)
+add_library(metric ${METRIC_SRC})
+target_link_libraries(metric propositionParser)
 
+add_library(${NAME} ${MINER_UTILS_SRC})
+target_include_directories(${NAME} PUBLIC include/ ${SPOTLTLCPP_INCLUDE_DIRS})
+target_link_libraries(${NAME} ${SPOTLTL_LIB} fort clustering temporalParser metric)
 

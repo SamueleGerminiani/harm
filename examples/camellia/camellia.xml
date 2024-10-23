@@ -13,12 +13,8 @@
 
 
 
-        <!--
-		<template dtLimits="2D,1W,2A,0E,R" exp="G({..##1..}|-> X[7](P0))" /> 
-		<template dtLimits="2D,1W,2A,0E,R" exp="G({..##1..}|-> X[24](P0))" /> 
-        -->
-		<template dtLimits="2D,2W,4A,0E,R" exp="G({..#1&..}|-> X(EncDec && X[23]Dvld))" /> 
-		<template dtLimits="2D,2W,4A,0E,R" exp="G({..#1&..}|-> X(!EncDec && X[23]Dvld))" /> 
+		<template dtLimits="2D,2W,4A,0E,U" exp="G({..#1&..}|-> X(EncDec && X[23]Dvld))" /> 
+		<template dtLimits="2D,2W,4A,0E,U" exp="G({..#1&..}|-> X(!EncDec && X[23]Dvld))" /> 
 
 
 

@@ -1,9 +1,10 @@
 #pragma once
 #include "ProgressBar.hpp"
 #include "Semaphore.hh"
-#include "evaluator.hh"
+#include "dea.hh"
 #include "globals.hh"
 #include "message.hh"
+#include "misc.hh"
 #include "utils.hh"
 #include <algorithm>
 #include <cfloat>
@@ -24,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+namespace dea {
+
 class NSGA2 {
 
 public:
@@ -31,11 +34,13 @@ public:
   public:
     Individual() = default;
     Individual(const std::unordered_set<std::string> &_genes,
-               const std::pair<size_t, size_t> &objective, const size_t &rank)
+               const std::pair<size_t, size_t> &objective,
+               const size_t &rank)
         : _genes(_genes), _objective(objective), _rank(rank) {
       //not todo
     }
-    Individual(const std::unordered_set<std::string> &_genes) : _genes(_genes) {
+    Individual(const std::unordered_set<std::string> &_genes)
+        : _genes(_genes) {
       //not todo
     }
 
@@ -60,10 +65,12 @@ public:
   }
 
   std::vector<std::tuple<size_t, double, Individual>>
-  run(const std::unordered_map<std::string, std::unordered_set<std::string>>
+  run(const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime,
       size_t maxIterations = 100, double minIncrement = 1.f,
-      const std::vector<Individual> &initialPop = std::vector<Individual>()) {
+      const std::vector<Individual> &initialPop =
+          std::vector<Individual>()) {
 
     //clear all gnuplot windows
     systemCustom("killall gnuplot");
@@ -100,8 +107,9 @@ public:
     if (clc::ve_only_sim) {
       //simulate golden
       messageInfo("Simulating the golden design...");
-      systemCustom("bash " + clc::ve_shPath + " golden " + clc::ve_ftPath +
-                   " 1 0" + (clc::ve_debugScript ? "" : " > /dev/null"));
+      systemCustom("bash " + clc::ve_shPath + " golden " +
+                   clc::ve_ftPath + " 1 0" +
+                   (clc::ve_debugScript ? "" : " > /dev/null"));
       dirtyTimerSeconds("startPush", 1);
       _pushing = 1;
       _simulate = !_simulate;
@@ -126,19 +134,23 @@ public:
 
       //prepare data for printing
       std::vector<std::pair<size_t, size_t>> chart_data;
-      for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
+      for (auto &individual :
+           generateParetoFront(pop, geneToAssTime)) {
         evalIndividual(individual, geneToAssTime);
         chart_data.push_back(individual._objective);
       }
 
       dominance = getDominatedSurface(
-          chart_data, std::make_pair(_maxObjs.first, _valuePrecision));
-      double increment = ((dominance - prevDominance) / dominance) * 100.f;
+          chart_data,
+          std::make_pair(_maxObjs.first, _valuePrecision));
+      double increment =
+          ((dominance - prevDominance) / dominance) * 100.f;
 
       //convert damage/error to double, and normalize it
       std::vector<std::pair<size_t, double>> front_plot_data;
       for (const auto &[x, y] : chart_data) {
-        front_plot_data.emplace_back(x, ((double)y / _valuePrecision));
+        front_plot_data.emplace_back(x,
+                                     ((double)y / _valuePrecision));
       }
 
       if (saveParetoMetricBeforePush) {
@@ -148,31 +160,36 @@ public:
       }
 
       if (_pushing) {
-        plotBeforeAfter(beforePushMetricFrontData, front_plot_data,
-                        "Number of tokens", clc::ve_metricName,
-                        "Dominance: " + std::to_string(dominance * 100) + "%",
-                        "Before push", "After push",
-                        std::make_pair(0.f, _maxObjs.first),
-                        std::make_pair(0.f, 1.f), 1);
+        plotBeforeAfter(
+            beforePushMetricFrontData, front_plot_data,
+            "Number of tokens", clc::ve_metricName,
+            "Dominance: " + std::to_string(dominance * 100) + "%",
+            "Before push", "After push",
+            std::make_pair(0.f, _maxObjs.first),
+            std::make_pair(0.f, 1.f), 1);
 
         if (clc::ve_plotDominance) {
-          dominance_plot_data.emplace_back(dirtyTimerSeconds("startNSGA2", 0),
-                                           dominance);
-          maxDominance = maxDominance > dominance_plot_data.back().second
-                             ? maxDominance
-                             : dominance_plot_data.back().second;
-          plotDominance(dominance_plot_data, "Time(s)", "Dominance",
-                        "Dominance in time",
-                        std::make_pair(0.f, dirtyTimerSeconds("startNSGA2", 0)),
-                        std::make_pair(0.f, maxDominance), 1);
+          dominance_plot_data.emplace_back(
+              dirtyTimerSeconds("startNSGA2", 0), dominance);
+          maxDominance =
+              maxDominance > dominance_plot_data.back().second
+                  ? maxDominance
+                  : dominance_plot_data.back().second;
+          plotDominance(
+              dominance_plot_data, "Time(s)", "Dominance",
+              "Dominance in time",
+              std::make_pair(0.f, dirtyTimerSeconds("startNSGA2", 0)),
+              std::make_pair(0.f, maxDominance), 1);
         }
 
       } else {
 
         plotErrorDamage(
-            front_plot_data, "Number of tokens", std::string("Damage"),
+            front_plot_data, "Number of tokens",
+            std::string("Damage"),
             "Dominance: " + std::to_string(dominance * 100) + "%",
-            std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f), 1);
+            std::make_pair(0.f, _maxObjs.first),
+            std::make_pair(0.f, 1.f), 1);
       }
 
       auto duration = dirtyTimerSeconds("startIteration", 0);
@@ -185,36 +202,44 @@ public:
 
       //terminal condition
       if (increment <= minIncrement) {
-        if (!clc::ve_only_sim && !isTimeOut("startNSGA2", clc::ve_minTime)) {
+        if (!clc::ve_only_sim &&
+            !isTimeOutSeconds("startNSGA2", clc::ve_minTime)) {
           goto continueUpdate;
         }
 
         if (_pushing) {
-          if (!isTimeOut("startPush", clc::ve_minPushTime)) {
+          if (!isTimeOutSeconds("startPush", clc::ve_minPushTime)) {
             goto continueUpdate;
           }
 
         } else {
           secondsPhase1 = dirtyTimerSeconds("startNSGA2", 0);
-          plotErrorDamage(
-              front_plot_data, "Number of tokens", std::string("Damage"),
-              "Dominance " + std::to_string(dominance * 100) + "%",
-              std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f), 1,
-              clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "damage.cvs",
-              clc::ve_dumpTo + "/" + clc::ve_technique + "_damage.png");
+          plotErrorDamage(front_plot_data, "Number of tokens",
+                          std::string("Damage"),
+                          "Dominance " +
+                              std::to_string(dominance * 100) + "%",
+                          std::make_pair(0.f, _maxObjs.first),
+                          std::make_pair(0.f, 1.f), 1,
+                          clc::ve_dumpTo + "/" + clc::ve_technique +
+                              "_" + "damage.cvs",
+                          clc::ve_dumpTo + "/" + clc::ve_technique +
+                              "_damage.png");
 
           if (clc::ve_push) {
-            std::cout << "######  #     #  #####  #     # ### #     #  #####\n";
-            std::cout
-                << "#     # #     # #     # #     #  #  ##    # #     #\n";
-            std::cout << "#     # #     # #       #     #  #  # #   # #\n";
-            std::cout
-                << "######  #     #  #####  #######  #  #  #  # #  ####\n";
-            std::cout
-                << "#       #     #       # #     #  #  #   # # #     #\n";
-            std::cout
-                << "#       #     # #     # #     #  #  #    ## #     #\n";
-            std::cout << "#        #####   #####  #     # ### #     #  #####\n";
+            std::cout << "######  #     #  #####  #     # ### #     "
+                         "#  #####\n";
+            std::cout << "#     # #     # #     # #     #  #  ##    "
+                         "# #     #\n";
+            std::cout << "#     # #     # #       #     #  #  # #  "
+                         " # #\n";
+            std::cout << "######  #     #  #####  #######  #  #  #  "
+                         "# #  ####\n";
+            std::cout << "#       #     #       # #     #  #  #   # "
+                         "# #     #\n";
+            std::cout << "#       #     # #     # #     #  #  #    "
+                         "## #     #\n";
+            std::cout << "#        #####   #####  #     # ### #     "
+                         "#  #####\n";
 
             //dump frontier before push
             dirtyTimerSeconds("startPush", 1);
@@ -238,7 +263,7 @@ public:
 
       } else {
         if (_pushing) {
-          if (isTimeOut("startPush", clc::ve_maxPushTime)) {
+          if (isTimeOutSeconds("startPush", clc::ve_maxPushTime)) {
             break;
           }
         }
@@ -271,7 +296,8 @@ public:
                         "dominance.csv",
                     "dominancePhase1;dominancePhase2;increment\n");
     fileAppendContent(
-        clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "dominance.csv",
+        clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
+            "dominance.csv",
         std::to_string(dominancePhase1) + ";" +
             std::to_string(dominancePhase2) + ";" +
             std::to_string(dominancePhase2 - dominancePhase1) + "\n");
@@ -285,13 +311,16 @@ public:
           (_pushing && clc::ve_metricDirection)
               ? 1.f - (double)individual._objective.second /
                           (double)_valuePrecision
-              : (double)individual._objective.second / (double)_valuePrecision;
-      ret.emplace_back(individual._objective.first, err_damage, individual);
+              : (double)individual._objective.second /
+                    (double)_valuePrecision;
+      ret.emplace_back(individual._objective.first, err_damage,
+                       individual);
     }
 
     if (clc::ve_genRand) {
-      genAndDumpRandomClusters(generateParetoFront(pop, geneToAssTime),
-                               geneToAssTime, beforePushMetricFrontData, 50);
+      genAndDumpRandomClusters(
+          generateParetoFront(pop, geneToAssTime), geneToAssTime,
+          beforePushMetricFrontData, 50);
     }
 
     return ret;
@@ -307,8 +336,9 @@ private:
     }
     return ss.str();
   }
-  std::string toDefineBR(const std::unordered_set<std::string> &individual,
-                         bool escape = 1) {
+  std::string
+  toDefineBR(const std::unordered_set<std::string> &individual,
+             bool escape = 1) {
     std::string define = "";
     std::unordered_map<std::string, std::string> idToMask;
     std::unordered_map<std::string, size_t> idToSize;
@@ -341,7 +371,8 @@ private:
 
     return define;
   }
-  std::string toDefineSR(const std::unordered_set<std::string> &individual) {
+  std::string
+  toDefineSR(const std::unordered_set<std::string> &individual) {
     std::string define = "";
     std::unordered_map<std::string, std::string> idToMask;
     std::unordered_map<std::string, size_t> idToSize;
@@ -352,7 +383,8 @@ private:
     return define;
   }
 
-  std::string toScriptList(const std::unordered_set<std::string> &individual) {
+  std::string
+  toScriptList(const std::unordered_set<std::string> &individual) {
     std::string list = "";
     std::unordered_map<std::string, std::string> idToMask;
     std::unordered_map<std::string, size_t> idToSize;
@@ -367,14 +399,16 @@ private:
 
   void evalIndividual(
       Individual &individual,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime,
       size_t t_id = 0) {
 
     std::string si = serializeIndividual(individual);
 
     if (countGuard(_cachedIndividual, si, _cacheGuard)) {
-      individual._objective = atGuard(_cachedIndividual, si, _cacheGuard);
+      individual._objective =
+          atGuard(_cachedIndividual, si, _cacheGuard);
       return;
     }
 
@@ -387,11 +421,11 @@ private:
         }
       }
 
-      auto obj = std::make_pair<size_t, size_t>(individual._genes.size(),
-                                                uniqueFeatures.size());
+      auto obj = std::make_pair<size_t, size_t>(
+          individual._genes.size(), uniqueFeatures.size());
 
-      obj.second =
-          ((double)obj.second / (double)_maxObjs.second) * _valuePrecision;
+      obj.second = ((double)obj.second / (double)_maxObjs.second) *
+                   _valuePrecision;
 
       messageErrorIf(obj.first == 0, "?");
       std::string si = serializeIndividual(individual);
@@ -404,8 +438,8 @@ private:
     } else {
 
       systemCustom("bash " + clc::ve_shPath + " \"" +
-                   toScriptList(individual._genes) + "\" " + clc::ve_ftPath +
-                   " 1 " + std::to_string(t_id) +
+                   toScriptList(individual._genes) + "\" " +
+                   clc::ve_ftPath + " 1 " + std::to_string(t_id) +
                    (clc::ve_debugScript ? "" : " > /dev/null"));
 
       std::string metricFile =
@@ -423,13 +457,14 @@ private:
       systemCustom("rm " + metricFile);
 
       metricValue = metricValue < 0.f ? 0.f : metricValue;
-      metricValue = clc::ve_metricDirection ? 1.f - metricValue : metricValue;
+      metricValue =
+          clc::ve_metricDirection ? 1.f - metricValue : metricValue;
 
       //debug
       //std::cout << metricValue << "\n";
 
-      auto obj = std::make_pair<size_t, size_t>(individual._genes.size(),
-                                                metricValue * _valuePrecision);
+      auto obj = std::make_pair<size_t, size_t>(
+          individual._genes.size(), metricValue * _valuePrecision);
       _cacheGuard.lock();
       _cachedIndividual[serializeIndividual(individual)] = obj;
       _cacheGuard.unlock();
@@ -439,7 +474,8 @@ private:
 
   void evalIndividuals(
       std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {
 
     Semaphore maxThreads(clc::maxThreads);
@@ -453,12 +489,13 @@ private:
                 << "\n";
     }
 
-    for (size_t toBeServed = 0; toBeServed < pop.size(); toBeServed++) {
+    for (size_t toBeServed = 0; toBeServed < pop.size();
+         toBeServed++) {
 
       maxThreads.wait();
 
-      std::thread([this, toBeServed, &maxThreads, &pop, &geneToAssTime,
-                   &completed, &pb]() {
+      std::thread([this, toBeServed, &maxThreads, &pop,
+                   &geneToAssTime, &completed, &pb]() {
         evalIndividual(pop[toBeServed], geneToAssTime, toBeServed);
         maxThreads.addNotifyOnce(1);
         completed.addNotifyOnce(1);
@@ -477,29 +514,34 @@ private:
   void trimPop(std::vector<Individual> &pop) {
 
     size_t lower =
-        (size_t)((clc::ve_metricDirection ? (1.f - clc::ve_metricInterval.second)
-                                          : clc::ve_metricInterval.first) *
+        (size_t)((clc::ve_metricDirection
+                      ? (1.f - clc::ve_metricInterval.second)
+                      : clc::ve_metricInterval.first) *
                  (double)_valuePrecision);
     size_t upper =
-        (size_t)((clc::ve_metricDirection ? (1.f - clc::ve_metricInterval.first)
-                                          : clc::ve_metricInterval.second) *
+        (size_t)((clc::ve_metricDirection
+                      ? (1.f - clc::ve_metricInterval.first)
+                      : clc::ve_metricInterval.second) *
                  (double)_valuePrecision);
 
     for (size_t i = 0; i < pop.size(); i++) {
       auto &ind = pop[i];
-      if (ind._objective.second < lower || ind._objective.second > upper) {
+      if (ind._objective.second < lower ||
+          ind._objective.second > upper) {
         ind._genes.clear();
       }
     }
 
-    pop.erase(std::remove_if(begin(pop), end(pop),
-                             [](Individual &e) { return e._genes.empty(); }),
+    pop.erase(std::remove_if(
+                  begin(pop), end(pop),
+                  [](Individual &e) { return e._genes.empty(); }),
               pop.end());
   }
 
   void generateDominanceRank(
       std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {
 
     // Store the objective values for each individual
@@ -532,7 +574,8 @@ private:
 
   std::vector<std::vector<Individual>> generateFronts(
       const std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {
 
     //we do not want to break pop
@@ -548,17 +591,19 @@ private:
     }
 
     // Remove empty fronts
-    fronts.erase(std::remove_if(fronts.begin(), fronts.end(),
-                                [](const std::vector<Individual> &front) {
-                                  return front.empty();
-                                }),
-                 fronts.end());
+    fronts.erase(
+        std::remove_if(fronts.begin(), fronts.end(),
+                       [](const std::vector<Individual> &front) {
+                         return front.empty();
+                       }),
+        fronts.end());
 
     return fronts;
   }
   std::vector<Individual> generateParetoFront(
       const std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {
 
     //we do not want to break pop
@@ -584,9 +629,11 @@ private:
 
   template <typename T, typename U>
   std::pair<T, U> getRandomItem(const std::unordered_map<T, U> &map) {
-    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    auto seed =
+        std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> distribution(0, map.size() - 1);
+    std::uniform_int_distribution<int> distribution(0,
+                                                    map.size() - 1);
     int randomIndex = distribution(generator);
 
     auto it = map.begin();
@@ -594,11 +641,13 @@ private:
     return *it;
   }
   Individual getRandomIndividual(
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime,
       size_t numberOfGenes) {
 
-    messageErrorIf(numberOfGenes == 0, "requested number of genes is 0");
+    messageErrorIf(numberOfGenes == 0,
+                   "requested number of genes is 0");
     messageErrorIf(numberOfGenes > geneToAssTime.size(),
                    "requested number of genes is higher than max");
 
@@ -622,7 +671,8 @@ private:
   }
 
   std::vector<Individual> samplePopulation(
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime,
       size_t sizeOfIndividual, size_t sizeOfPop) {
 
@@ -656,16 +706,18 @@ private:
     }
 
     //erase marked
-    pop.erase(
-        std::remove_if(pop.begin(), pop.end(),
-                       [](const Individual &e) { return e._genes.empty(); }),
-        pop.end());
+    pop.erase(std::remove_if(pop.begin(), pop.end(),
+                             [](const Individual &e) {
+                               return e._genes.empty();
+                             }),
+              pop.end());
   }
 
-  void crowdSort(
-      std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &geneToAssTime) {
+  void
+  crowdSort(std::vector<Individual> &pop,
+            const std::unordered_map<std::string,
+                                     std::unordered_set<std::string>>
+                &geneToAssTime) {
 
     size_t min[2] = {(size_t)-1, (size_t)-1};
     size_t max[2] = {0, 0};
@@ -674,14 +726,18 @@ private:
     // Evaluate all pop in the population
     for (size_t i = 0; i < pop.size(); i++) {
       evalIndividual(pop[i], geneToAssTime);
-      min[0] =
-          pop[i]._objective.first < min[0] ? pop[i]._objective.first : min[0];
-      max[0] =
-          pop[i]._objective.first > max[0] ? pop[i]._objective.first : max[0];
-      min[1] =
-          pop[i]._objective.second < min[1] ? pop[i]._objective.second : min[1];
-      max[1] =
-          pop[i]._objective.second > max[1] ? pop[i]._objective.second : max[1];
+      min[0] = pop[i]._objective.first < min[0]
+                   ? pop[i]._objective.first
+                   : min[0];
+      max[0] = pop[i]._objective.first > max[0]
+                   ? pop[i]._objective.first
+                   : max[0];
+      min[1] = pop[i]._objective.second < min[1]
+                   ? pop[i]._objective.second
+                   : min[1];
+      max[1] = pop[i]._objective.second > max[1]
+                   ? pop[i]._objective.second
+                   : max[1];
     }
     diff[0] = max[0] - min[0];
     diff[1] = max[1] - min[1];
@@ -693,14 +749,17 @@ private:
     for (size_t k = 0; k < 2; k++) {
       //init
       std::vector<size_t> sortedIndividuals(pop.size());
-      std::iota(sortedIndividuals.begin(), sortedIndividuals.end(), 0);
+      std::iota(sortedIndividuals.begin(), sortedIndividuals.end(),
+                0);
 
       std::sort(sortedIndividuals.begin(), sortedIndividuals.end(),
                 [&k, &pop](const size_t &i, const size_t &j) {
                   if (k == 0) {
-                    return pop[i]._objective.first < pop[j]._objective.first;
+                    return pop[i]._objective.first <
+                           pop[j]._objective.first;
                   } else {
-                    return pop[i]._objective.second < pop[j]._objective.second;
+                    return pop[i]._objective.second <
+                           pop[j]._objective.second;
                   }
                 });
 
@@ -712,16 +771,19 @@ private:
       for (size_t i = 1; i < pop.size() - 1; i++) {
         if (k == 0) {
           crowdingDist[sortedIndividuals[i]] +=
-              diff[k] > 0 ? (pop[sortedIndividuals[i + 1]]._objective.first -
-                             pop[sortedIndividuals[i - 1]]._objective.first) /
-                                (float)(diff[k])
-                          : 0.f;
+              diff[k] > 0
+                  ? (pop[sortedIndividuals[i + 1]]._objective.first -
+                     pop[sortedIndividuals[i - 1]]._objective.first) /
+                        (float)(diff[k])
+                  : 0.f;
         } else {
           crowdingDist[sortedIndividuals[i]] +=
-              diff[k] > 0 ? (pop[sortedIndividuals[i + 1]]._objective.second -
-                             pop[sortedIndividuals[i - 1]]._objective.second) /
-                                (float)(diff[k])
-                          : 0.f;
+              diff[k] > 0
+                  ? (pop[sortedIndividuals[i + 1]]._objective.second -
+                     pop[sortedIndividuals[i - 1]]
+                         ._objective.second) /
+                        (float)(diff[k])
+                  : 0.f;
         }
       }
     }
@@ -744,11 +806,12 @@ private:
     }
   }
 
-  void selectElites(
-      std::vector<std::vector<Individual>> &fronts,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &geneToAssTime,
-      std::vector<Individual> &pop, size_t allowedPopSize) {
+  void selectElites(std::vector<std::vector<Individual>> &fronts,
+                    const std::unordered_map<
+                        std::string, std::unordered_set<std::string>>
+                        &geneToAssTime,
+                    std::vector<Individual> &pop,
+                    size_t allowedPopSize) {
 
     pop.clear();
 
@@ -815,7 +878,8 @@ private:
       a2 = dist(rng2);
       b2 = dist(rng2);
     }
-    parents.second = pop[a2]._rank > pop[b2]._rank ? pop[b2] : pop[a2];
+    parents.second =
+        pop[a2]._rank > pop[b2]._rank ? pop[b2] : pop[a2];
 
     return parents;
   }
@@ -838,19 +902,22 @@ private:
   //Not used
   void mutateIndividual(
       Individual &child,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {}
 
-  void mutatePop(
-      std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &geneToAssTime) {
+  void
+  mutatePop(std::vector<Individual> &pop,
+            const std::unordered_map<std::string,
+                                     std::unordered_set<std::string>>
+                &geneToAssTime) {
     std::vector<Individual> mutatedPop = pop;
     for (auto &ind : pop) {
       if (getRandomBool()) {
         //add a random individual of the same size
         mutatedPop.push_back(
-            samplePopulation(geneToAssTime, ind._genes.size(), 1).front());
+            samplePopulation(geneToAssTime, ind._genes.size(), 1)
+                .front());
       } else {
         //create a new individual with a single random element
         auto tmpInd = ind;
@@ -861,10 +928,10 @@ private:
     pop = mutatedPop;
   }
 
-  void addOffspring(
-      std::vector<Individual> &pop,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
-          &geneToAssTime) {
+  void addOffspring(std::vector<Individual> &pop,
+                    const std::unordered_map<
+                        std::string, std::unordered_set<std::string>>
+                        &geneToAssTime) {
 
     std::vector<Individual> offSpring;
 
@@ -874,27 +941,31 @@ private:
     generateDominanceRank(pop_copy, geneToAssTime);
 
     //each iteration generates and adds one child
-    for (size_t i = 0; i < pop_copy.size() && pop_copy.size() > 1; i++) {
+    for (size_t i = 0; i < pop_copy.size() && pop_copy.size() > 1;
+         i++) {
       auto parents = tournamentSelection(pop_copy);
       auto child = crossover(parents);
       mutateIndividual(child, geneToAssTime);
       offSpring.push_back(child);
     }
     //add the offpring to the elite population
-    pop.insert(std::end(pop), std::begin(offSpring), std::end(offSpring));
+    pop.insert(std::end(pop), std::begin(offSpring),
+               std::end(offSpring));
   }
 
-  double
-  getDominatedSurface(const std::vector<std::pair<size_t, size_t>> &points,
-                      const std::pair<size_t, size_t> &gridSize) {
+  double getDominatedSurface(
+      const std::vector<std::pair<size_t, size_t>> &points,
+      const std::pair<size_t, size_t> &gridSize) {
     // Initialize a 2D grid with all elements set to false
     size_t gridX = (gridSize.first + 1);
     size_t maxYSize = 1000;
-    size_t divider =
-        (gridSize.second > maxYSize) ? (gridSize.second / maxYSize) : 1;
+    size_t divider = (gridSize.second > maxYSize)
+                         ? (gridSize.second / maxYSize)
+                         : 1;
     size_t gridY = (gridSize.second + 1) / divider;
 
-    std::vector<std::vector<bool>> grid(gridX, std::vector<bool>(gridY, false));
+    std::vector<std::vector<bool>> grid(
+        gridX, std::vector<bool>(gridY, false));
 
     for (size_t i = 0; i < points.size(); i++) {
       size_t x = points[i].first;
@@ -921,16 +992,16 @@ private:
     return (double)count / (gridX * gridY);
   }
 
-  void
-  plotDominance(const std::vector<std::pair<size_t, double>> &data,
-                const std::string &xlabel = "X",
-                const std::string &ylabel = "Y",
-                const std::string &title = "Data Plot",
-                std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
-                std::optional<std::pair<double, double>> yrange = std::nullopt,
-                bool dontClose = true,
-                const std::optional<std::string> &dumpFilePath = std::nullopt,
-                const std::optional<std::string> &pngFilePath = std::nullopt) {
+  void plotDominance(
+      const std::vector<std::pair<size_t, double>> &data,
+      const std::string &xlabel = "X",
+      const std::string &ylabel = "Y",
+      const std::string &title = "Data Plot",
+      std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
+      std::optional<std::pair<double, double>> yrange = std::nullopt,
+      bool dontClose = true,
+      const std::optional<std::string> &dumpFilePath = std::nullopt,
+      const std::optional<std::string> &pngFilePath = std::nullopt) {
 
     static FILE *pipe = nullptr;
 
@@ -966,8 +1037,8 @@ private:
     if (dumpFilePath.has_value()) {
       std::ofstream outfile(dumpFilePath.value());
       if (!outfile.is_open()) {
-        std::cerr << "Error opening dump file " << dumpFilePath.value()
-                  << std::endl;
+        std::cerr << "Error opening dump file "
+                  << dumpFilePath.value() << std::endl;
       } else {
         outfile << "x;y" << std::endl;
         for (const auto &p : data) {
@@ -978,10 +1049,10 @@ private:
     }
 
     // Plot data using points
-    fprintf(pipe,
-            "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb "
-            "'black' title "
-            "'Dominance'\n");
+    fprintf(pipe, "plot '-' with points pointtype 7 pointsize 0.5 "
+                  "linecolor rgb "
+                  "'black' title "
+                  "'Dominance'\n");
     for (const auto &p : data) {
       fprintf(pipe, "%lu %f\n", p.first, p.second);
     }
@@ -1007,7 +1078,8 @@ private:
 
   void plotErrorDamage(
       const std::vector<std::pair<size_t, double>> &data,
-      const std::string &xlabel = "X", const std::string &ylabel = "Y",
+      const std::string &xlabel = "X",
+      const std::string &ylabel = "Y",
       const std::string &title = "Data Plot",
       std::optional<std::pair<size_t, size_t>> xrange = std::nullopt,
       std::optional<std::pair<double, double>> yrange = std::nullopt,
@@ -1056,8 +1128,8 @@ private:
     if (dumpFilePath.has_value()) {
       std::ofstream outfile(dumpFilePath.value());
       if (!outfile.is_open()) {
-        std::cerr << "Error opening dump file " << dumpFilePath.value()
-                  << std::endl;
+        std::cerr << "Error opening dump file "
+                  << dumpFilePath.value() << std::endl;
       } else {
         outfile << "x;y" << std::endl;
         for (const auto &p : data) {
@@ -1068,9 +1140,9 @@ private:
     }
 
     // Plot data using points
-    fprintf(pipe,
-            "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb "
-            "'dark-violet' \n");
+    fprintf(pipe, "plot '-' with points pointtype 7 pointsize 0.5 "
+                  "linecolor rgb "
+                  "'dark-violet' \n");
     for (const auto &p : data) {
       fprintf(pipe, "%lu %f\n", p.first, p.second);
     }
@@ -1150,8 +1222,8 @@ private:
     if (dumpFilePath.has_value()) {
       std::ofstream outfile(dumpFilePath.value());
       if (!outfile.is_open()) {
-        std::cerr << "Error opening dump file " << dumpFilePath.value()
-                  << std::endl;
+        std::cerr << "Error opening dump file "
+                  << dumpFilePath.value() << std::endl;
       } else {
         outfile << "x;y1;y2" << std::endl;
         for (size_t i = 0; i < data1.size(); i++) {
@@ -1260,20 +1332,22 @@ private:
     if (dumpFilePath.has_value()) {
       std::ofstream outfile(dumpFilePath.value());
       if (!outfile.is_open()) {
-        std::cerr << "Error opening dump file " << dumpFilePath.value()
-                  << std::endl;
+        std::cerr << "Error opening dump file "
+                  << dumpFilePath.value() << std::endl;
       } else {
-        size_t longestSeriesSize =
-            std::max(data1.size(), std::max(data2.size(), data3.size()));
+        size_t longestSeriesSize = std::max(
+            data1.size(), std::max(data2.size(), data3.size()));
         outfile << "x1;y1;x2;y2;x3;y3" << std::endl;
         for (size_t i = 0; i < longestSeriesSize; i++) {
           if (i < data1.size()) {
-            outfile << data1[i].first << ";" << data1[i].second << ";";
+            outfile << data1[i].first << ";" << data1[i].second
+                    << ";";
           } else {
             outfile << ";;";
           }
           if (i < data2.size()) {
-            outfile << data2[i].first << ";" << data2[i].second << ";";
+            outfile << data2[i].first << ";" << data2[i].second
+                    << ";";
           } else {
             outfile << ";;";
           }
@@ -1294,7 +1368,8 @@ private:
         "plot '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'blue' title '%s', \
                   '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'dark-violet' title '%s', \
                   '-' with points pointtype 7 pointsize 0.5 linecolor rgb 'red' title '%s'\n",
-        series2Title.c_str(), series1Title.c_str(), series3Title.c_str());
+        series2Title.c_str(), series1Title.c_str(),
+        series3Title.c_str());
 
     for (const auto &p : data2) {
       fprintf(pipe, "%lu %f\n", p.first, p.second);
@@ -1333,7 +1408,8 @@ private:
   }
 
   std::pair<size_t, size_t> getMaxObjectivesValues(
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime) {
 
     std::unordered_set<std::string> uniqueInstances;
@@ -1342,14 +1418,17 @@ private:
         uniqueInstances.insert(i);
       }
     }
-    return std::make_pair(geneToAssTime.size(), uniqueInstances.size());
+    return std::make_pair(geneToAssTime.size(),
+                          uniqueInstances.size());
   }
 
   void genAndDumpRandomClusters(
       std::vector<Individual> paretoFront,
-      const std::unordered_map<std::string, std::unordered_set<std::string>>
+      const std::unordered_map<std::string,
+                               std::unordered_set<std::string>>
           &geneToAssTime,
-      std::vector<std::pair<size_t, double>> &beforePushMetricFrontData,
+      std::vector<std::pair<size_t, double>>
+          &beforePushMetricFrontData,
       size_t reps = 10) {
 
     messageInfo("Generating random clusters...");
@@ -1370,8 +1449,8 @@ private:
       //gather random pop
       std::vector<Individual> randomIndividuals;
       for (size_t i = 0; i < reps; i++) {
-        randomIndividuals.push_back(
-            getRandomIndividual(geneToAssTime, individual._genes.size()));
+        randomIndividuals.push_back(getRandomIndividual(
+            geneToAssTime, individual._genes.size()));
       }
 
       double avgRandom = 0.f;
@@ -1384,7 +1463,8 @@ private:
       evalIndividuals(randomIndividuals, geneToAssTime);
 
       for (auto &ind : randomIndividuals) {
-        double rnd = (((double)ind._objective.second / _valuePrecision));
+        double rnd =
+            (((double)ind._objective.second / _valuePrecision));
         avgRandom += rnd;
         //        candidatesRand.emplace_back(rnd, ind);
       }
@@ -1410,8 +1490,8 @@ private:
         "Number of tokens",
         (_pushing ? clc::ve_metricName : std::string("Damage")), "",
         "Before push", "After push", "Random",
-        std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f), 1,
-        clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "bar.csv",
+        std::make_pair(0.f, _maxObjs.first), std::make_pair(0.f, 1.f),
+        1, clc::ve_dumpTo + "/" + clc::ve_technique + "_" + "bar.csv",
         clc::ve_dumpTo + "/" + clc::ve_technique + "_bar.png");
 
     std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
@@ -1433,10 +1513,12 @@ private:
     //  out.close();
   }
   bool _pushing = 0;
-  std::unordered_map<std::string, std::pair<size_t, size_t>> _cachedIndividual;
+  std::unordered_map<std::string, std::pair<size_t, size_t>>
+      _cachedIndividual;
   std::mutex _cacheGuard;
   bool _simulate = false;
   std::pair<size_t, size_t> _maxObjs;
   size_t _valuePrecision = 10000;
   size_t plotRate = 1;
 };
+} // namespace dea

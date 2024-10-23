@@ -1,25 +1,24 @@
 grammar proposition;
 
-file : boolean EOF;
+startBoolean : boolean EOF;
+startInt : numeric EOF;
+startFloat : numeric EOF;
 
 // ------------------------------------------ BOOLEAN
 boolean
     : NOT boolean
-    | logic relop logic
     | numeric relop numeric
-    | logic EQ logic
     | numeric EQ numeric
-    | boolean EQ boolean
-    | logic NEQ logic
     | numeric NEQ numeric
+    | boolean EQ boolean
     | boolean NEQ boolean
     | boolean booleanop=AND boolean
     | boolean booleanop=OR boolean
     | booleanAtom
-    | logic
     | numeric
     | LROUND boolean RROUND
     ;
+
 
 booleanAtom
     : BOOLEAN_CONSTANT
@@ -36,38 +35,39 @@ BOOLEAN_VARIABLE
     : START_VAR VARIABLE ',bool' END_VAR 
     ;
 
-// ------------------------------------------ LOGIC
-logic
-    : NEG logic 
-    | logic bitSelect 
-    | logic artop=(TIMES|DIV) logic
-    | logic artop=(PLUS|MINUS) logic
-    | logic logop=LSHIFT logic
-    | logic logop=RSHIFT logic
-    | logic logop=BAND logic
-    | logic logop=BXOR logic
-    | logic logop=BOR logic
-    | logicAtom
-    | LROUND logic RROUND
+// ------------------------------------------ NUMERIC
+numeric
+    : NEG numeric 
+    | numeric range 
+    | numeric artop=(TIMES|DIV) numeric
+    | numeric artop=(PLUS|MINUS) numeric
+    | numeric logop=LSHIFT numeric
+    | numeric logop=RSHIFT numeric
+    | numeric logop=BAND numeric
+    | numeric logop=BXOR numeric
+    | numeric logop=BOR numeric
+    | intAtom
+    | floatAtom
+    | LROUND numeric RROUND
     ;
 
-bitSelect: '[' UINTEGER (':' UINTEGER)? ']';
+range: LSQUARED (SINTEGER | UINTEGER) (COL (SINTEGER | UINTEGER))? RSQUARED;
 
-logicAtom
-    : logic_constant
-    | LOGIC_VARIABLE
+intAtom
+    : int_constant
+    | INT_VARIABLE
     ;
 
-logic_constant
-    : VERILOG_BINARY
-    | GCC_BINARY
+int_constant
+    : GCC_BINARY
     | SINTEGER CONST_SUFFIX?
     | UINTEGER CONST_SUFFIX?
+    | UINTEGER? VERILOG_BINARY
     | HEX
     ;
 
-LOGIC_VARIABLE
-    : START_VAR VARIABLE ',logic' END_VAR
+INT_VARIABLE
+    : START_VAR VARIABLE ',int' END_VAR
     ;
 
 CONST_SUFFIX
@@ -75,31 +75,18 @@ CONST_SUFFIX
     | 'ull'
     ;
 
-
-// ------------------------------------------ NUMERIC
-numeric
-    : numeric artop=(TIMES|DIV) numeric
-    | numeric artop=(PLUS|MINUS) numeric
-    | numericAtom
-    | logic
-    | LROUND numeric RROUND
+floatAtom
+    : FLOAT_CONSTANT
+    | FLOAT_VARIABLE
     ;
 
-numericAtom
-    : NUMERIC_CONSTANT
-    | NUMERIC_VARIABLE
-    ;
-
-NUMERIC_CONSTANT
+FLOAT_CONSTANT
     :  FLOAT
     ;
 
-NUMERIC_VARIABLE
-    : START_VAR VARIABLE ',numeric' END_VAR 
+FLOAT_VARIABLE
+    : START_VAR VARIABLE ',float' END_VAR 
     ;
-
-
-
 
 LCURLY
     : '{'
@@ -123,6 +110,18 @@ LROUND
 RROUND
     : ')'
     ;
+
+INSIDE
+    : 'inside'
+    ;
+
+
+FUNCTION
+: '$stable'
+| '$past'
+| '$rose'
+| '$fell'
+;
 
 
 //==== Token VARIABLE ==========================================================
@@ -164,9 +163,6 @@ fragment VALID_ID_CHAR
     ;
 
     
-    VERILOG_BINARY
-    : ('\'')('b')('0' .. '1')+
-    ;
 
     GCC_BINARY
     : '0b' ('0' .. '1')+
@@ -178,6 +174,12 @@ fragment VALID_ID_CHAR
     ;
 
 
+   VERILOG_BINARY: SINGLE_QUOTE FVL
+   ;
+
+   FVL:('b'|'B') ('0'|'1'|'z'|'x')+;
+
+   SINGLE_QUOTE: '\'';
 //------------------------------------------------------------------------------
 
 fragment START_VAR: '«';
@@ -236,7 +238,7 @@ NEQ
 //------------------------------------------------------------------------------
 
 
-//==== Logic Operators =========================================================
+//==== Integer Operators =========================================================
 
 BAND
     : '&'
@@ -275,6 +277,30 @@ NOT
     : '!'
     ;
 //------------------------------------------------------------------------------
+
+COL
+    : ':'
+    ;
+
+DCOL
+    : '::'
+    ;
+
+DOLLAR
+    : '$'
+    ;
+
+RANGE: '><';
+
+cls_op :  RANGE
+    | GT
+    | GE
+    | LT
+    | LE
+    | EQ
+    ;
+
+CLS_TYPE: 'S' | 'K' ;
 
 // Ignore: \r, \n, \t
 WS : [ \t\r\n] -> skip;

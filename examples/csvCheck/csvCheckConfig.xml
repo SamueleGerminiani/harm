@@ -4,6 +4,6 @@
 		<prop exp="v2" loc="a, dt"/>
 		<prop exp="v3" loc="a, dt"/>
 		<prop exp="v4" loc="c"/>
-        <template check="1" exp="G({v1} |=> v3 U v4)" /> 
+        <template check="1" exp="G({v1} |=> v3 W v4)" /> 
 	</context>
 </harm>

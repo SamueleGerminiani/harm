@@ -1,0 +1,23 @@
+<harm>
+	<context name="default">
+
+
+		<numeric clustering="K,10Max,0.01WCSS,><" exp="a" loc="[dt]"/>
+		<numeric clustering="K,10Max,0.01WCSS,><" exp="b" loc="[dt]"/>
+		<numeric clustering="K,10Max,0.01WCSS,><" exp="c" loc="[dt]"/>
+
+        <!--
+        <template dtLimits="3A,-0.1E" exp="G({..&&..} |-> con)" /> 
+        -->
+        <template dtLimits="3A,-0.1E" exp="G({..##1..} |-> con)" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="ct/traceLength"/>
+		<sort name="complexity" exp="complexity"/>
+	</context>
+</harm>
+
+
+

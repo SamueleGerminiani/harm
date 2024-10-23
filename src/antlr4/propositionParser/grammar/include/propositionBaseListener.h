@@ -1,5 +1,5 @@
 
-// Generated from proposition.g4 by ANTLR 4.12.0
+// Generated from proposition.g4 by ANTLR 4.10.1
 
 #pragma once
 
@@ -16,8 +16,14 @@
 class  propositionBaseListener : public propositionListener {
 public:
 
-  virtual void enterFile(propositionParser::FileContext * /*ctx*/) override { }
-  virtual void exitFile(propositionParser::FileContext * /*ctx*/) override { }
+  virtual void enterStartBoolean(propositionParser::StartBooleanContext * /*ctx*/) override { }
+  virtual void exitStartBoolean(propositionParser::StartBooleanContext * /*ctx*/) override { }
+
+  virtual void enterStartInt(propositionParser::StartIntContext * /*ctx*/) override { }
+  virtual void exitStartInt(propositionParser::StartIntContext * /*ctx*/) override { }
+
+  virtual void enterStartFloat(propositionParser::StartFloatContext * /*ctx*/) override { }
+  virtual void exitStartFloat(propositionParser::StartFloatContext * /*ctx*/) override { }
 
   virtual void enterBoolean(propositionParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(propositionParser::BooleanContext * /*ctx*/) override { }
@@ -25,26 +31,26 @@ public:
   virtual void enterBooleanAtom(propositionParser::BooleanAtomContext * /*ctx*/) override { }
   virtual void exitBooleanAtom(propositionParser::BooleanAtomContext * /*ctx*/) override { }
 
-  virtual void enterLogic(propositionParser::LogicContext * /*ctx*/) override { }
-  virtual void exitLogic(propositionParser::LogicContext * /*ctx*/) override { }
-
-  virtual void enterBitSelect(propositionParser::BitSelectContext * /*ctx*/) override { }
-  virtual void exitBitSelect(propositionParser::BitSelectContext * /*ctx*/) override { }
-
-  virtual void enterLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
-  virtual void exitLogicAtom(propositionParser::LogicAtomContext * /*ctx*/) override { }
-
-  virtual void enterLogic_constant(propositionParser::Logic_constantContext * /*ctx*/) override { }
-  virtual void exitLogic_constant(propositionParser::Logic_constantContext * /*ctx*/) override { }
-
   virtual void enterNumeric(propositionParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(propositionParser::NumericContext * /*ctx*/) override { }
 
-  virtual void enterNumericAtom(propositionParser::NumericAtomContext * /*ctx*/) override { }
-  virtual void exitNumericAtom(propositionParser::NumericAtomContext * /*ctx*/) override { }
+  virtual void enterRange(propositionParser::RangeContext * /*ctx*/) override { }
+  virtual void exitRange(propositionParser::RangeContext * /*ctx*/) override { }
+
+  virtual void enterIntAtom(propositionParser::IntAtomContext * /*ctx*/) override { }
+  virtual void exitIntAtom(propositionParser::IntAtomContext * /*ctx*/) override { }
+
+  virtual void enterInt_constant(propositionParser::Int_constantContext * /*ctx*/) override { }
+  virtual void exitInt_constant(propositionParser::Int_constantContext * /*ctx*/) override { }
+
+  virtual void enterFloatAtom(propositionParser::FloatAtomContext * /*ctx*/) override { }
+  virtual void exitFloatAtom(propositionParser::FloatAtomContext * /*ctx*/) override { }
 
   virtual void enterRelop(propositionParser::RelopContext * /*ctx*/) override { }
   virtual void exitRelop(propositionParser::RelopContext * /*ctx*/) override { }
+
+  virtual void enterCls_op(propositionParser::Cls_opContext * /*ctx*/) override { }
+  virtual void exitCls_op(propositionParser::Cls_opContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

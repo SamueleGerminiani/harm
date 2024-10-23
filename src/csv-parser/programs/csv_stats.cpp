@@ -1,4 +1,11 @@
-#include "csv.hpp"
+
+#include <iostream>
+#include <stdlib.h>
+#include <string>
+#include <vector>
+
+#include "internal/common.hpp"
+#include "internal/csv_stat.hpp"
 
 int main(int argc, char **argv) {
   using namespace csv;

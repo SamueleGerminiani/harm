@@ -3,12 +3,21 @@
  */
 
 #pragma once
+#include <stddef.h>
 #include <unordered_map>
 #include <sstream>
 #include <vector>
+#include <deque>
+#include <string>
+
 #include "csv_reader.hpp"
+#include "internal/common.hpp"
+#include "internal/csv_format.hpp"
+#include "internal/csv_row.hpp"
 
 namespace csv {
+enum class DataType;
+
     /** Class for calculating statistics from CSV files and in-memory sources
      *
      *  **Example**

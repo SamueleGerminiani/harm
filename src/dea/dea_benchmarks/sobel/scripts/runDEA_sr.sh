@@ -14,4 +14,4 @@ $HARM_ROOT/build/dea \
 --min-time 5 \
 --metric-direction 1 \
 --gen-rand \
---max-threads 16  
+--max-threads 16

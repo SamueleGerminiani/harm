@@ -7,7 +7,7 @@ else()
 	set(CMAKE_CXX_STANDARD 17)
 endif(CSV_CXX_STANDARD)
 
-message("Building CSV library using C++${CMAKE_CXX_STANDARD}")
+#message("Building CSV library using C++${CMAKE_CXX_STANDARD}")
 
 # Defines CSV_HAS_CXX17 in compatibility.hpp
 if (CMAKE_VERSION VERSION_LESS "3.12.0")

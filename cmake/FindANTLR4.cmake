@@ -1,5 +1,6 @@
 include(FindPackageHandleStandardArgs)
 
+#Manual definition of antlr4 runtime and include path
 if(DEFINED ANTRL4_INCLUDE_PATH AND DEFINED ANTRL4_LIB_PATH)
     set(ANTLR4_RUNTIME ${ANTRL4_LIB_PATH})
     set(ANTLR4CPP_INCLUDE_DIRS ${ANTRL4_INCLUDE_PATH})

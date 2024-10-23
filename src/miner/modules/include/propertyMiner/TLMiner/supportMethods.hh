@@ -3,10 +3,18 @@
 #include <cstddef>
 
 namespace harm {
+class TemplateImplication;
 
-#define DIV(a, b) (static_cast<double>((a)) / static_cast<double>((b)))
+struct OCCS {
+  size_t AToccs;   // how many times is the ant satisfied?
+  size_t ATCToccs; // how many times ATCT?
+  size_t ATCFoccs; // how many times ATCF?
+};
 
-double getEntropy(size_t occurrences, size_t traceLength);
-double getConditionalEntropy(size_t occProposition,size_t occGoal, size_t traceLength) ;
+double getConditionalEntropy(const OCCS &occs, size_t traceLength);
 
-} // miner
+OCCS computeOccs(const TemplateImplicationPtr &t);
+
+double getCovScore(const OCCS &occs, size_t CT, size_t CF);
+
+} // namespace harm

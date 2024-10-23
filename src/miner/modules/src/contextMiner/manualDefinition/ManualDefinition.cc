@@ -1,33 +1,48 @@
-#include "ManualDefinition.hh"
-#include "Assertion.hh"
-#include "Context.hh"
-#include "ProgressBar.hpp"
-#include "Template.hh"
-#include "Trace.hh"
-#include "classes/atom/Atom.hh"
-#include "dtLimitsParser.hh"
-#include "globals.hh"
-#include "metricParser.hh"
-#include "metricParsingUtils.hh"
-#include "minerUtils.hh"
-#include "propositionParser.hh"
-#include "templateParser.hh"
-
 #include <algorithm>
-#include <cassert>
-#include <set>
+#include <ctype.h>
+#include <istream>
+#include <iterator>
+#include <stddef.h>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "Assertion.hh"
+#include "ClsOp.hh"
+#include "ClusteringConfig.hh"
+#include "Context.hh"
+#include "DTLimits.hh"
+#include "Location.hh"
+#include "ManualDefinition.hh"
+#include "Metric.hh"
+#include "ProgressBar.hpp"
+#include "TemplateImplication.hh"
+#include "Trace.hh"
+#include "expUtils/expUtils.hh"
+#include "formula/atom/Atom.hh"
+#include "formula/atom/NumericExpression.hh"
+#include "formula/expression/TypeCast.hh"
+#include "globals.hh"
+#include "message.hh"
+#include "minerUtils.hh"
+#include "misc.hh"
+#include "propositionParsingUtils.hh"
+#include "rapidxml.hh"
+#include "temporalParsingUtils.hh"
+#include "xmlUtils.hh"
+
 namespace harm {
 
 using namespace rapidxml;
+using namespace expression;
+
 ManualDefinition::ManualDefinition(std::string &configFile)
     : ContextMiner(configFile) {}
 
-void addAssertionsFromFile(std::string assPath, Trace *trace, Context *c) {
+void addAssertionsFromFile(std::string assPath, const TracePtr &trace,
+                           ContextPtr c) {
 
   std::fstream ass(assPath);
   std::string line = "";
@@ -39,15 +54,19 @@ void addAssertionsFromFile(std::string assPath, Trace *trace, Context *c) {
   messageInfo("Number of external assertions: " +
               std::to_string(assStrs.size()) + "\n");
 
-  std::vector<Template *> templs;
+  std::vector<TemplateImplicationPtr> templs;
   progresscpp::ParallelProgressBar pb;
-  pb.addInstance(0, "Parsing assertions from file...", assStrs.size(), 70);
+  pb.addInstance(0, "Parsing assertions from file...", assStrs.size(),
+                 70);
 
   for (size_t i = 0; i < assStrs.size(); i++) {
-    Template *ass =
-        hparser::parseTemplate(assStrs[i], trace, "Spot", DTLimits(), 0);
-    // parallelize eval function with 2 threads
-    ass->setL1Threads(2);
+    TemplateImplicationPtr ass =
+        hparser::parseTemplateImplication(assStrs[i], trace);
+    if (!ass->assHoldsOnTrace(harm::Location::None)) {
+      messageWarning("External assertion does not hold: '" +
+                     ass->getAssertionStr(Language::SpotLTL) +
+                     "', discarding it");
+    }
     // save
     templs.push_back(ass);
 
@@ -56,98 +75,232 @@ void addAssertionsFromFile(std::string assPath, Trace *trace, Context *c) {
   }
   pb.done(0);
 
-  for (Template *t : templs) {
+  //these assertions were not mined
+  for (const TemplateImplicationPtr &t : templs) {
     //create an assertion by making a snapshot of a template
-    Assertion *ass = new Assertion();
-    t->fillContingency(ass->_ct, 0);
-    ass->_toString =
-        std::make_pair(t->getAssertion(), t->getColoredAssertion());
-    auto loadedProps = t->getLoadedPropositions();
-    ass->_complexity = getNumVariables(loadedProps);
-    ass->_pRepetitions = getRepetitions(loadedProps);
-    ass->fillValues(t);
+    AssertionPtr ass = generatePtr<Assertion>();
+    fillAssertion(ass, t, false, std::string("(-1,-1)"));
     c->_assertions.push_back(ass);
   }
 }
 
-///used to parse the 'op' attribute in a numeric tag
-std::unordered_set<ClsOp> parseClsOp(std::string op) {
-  std::unordered_set<ClsOp> ret;
-  op.erase(remove_if(op.begin(), op.end(), isspace), op.end());
-  std::string word = "";
-  for (size_t i = 0; i < op.size(); i++) {
-    char c = op[i];
-    messageErrorIf(c != ',' && c != 'r' && c != 'e' && c != 'g' && c != 'l' &&
-                       c != ' ' && c != '<' && c != '>',
-                   "Unrecognized token '" + std::string({c}) + "' in op");
-    word += c;
-    if (c == ',' || i == op.size() - 1) {
-      if (c == ',')
-        word.pop_back();
-
-      if (word == "r") {
-        ret.insert(ClsOp::Range);
-      } else if (word == "ge") {
-        ret.insert(ClsOp::GE);
-      } else if (word == "le") {
-        ret.insert(ClsOp::LE);
-      } else if (word == "e") {
-        ret.insert(ClsOp::E);
+ClusteringConfig parseClusteringConfig(std::string config) {
+  removeSpacesInPlace(config);
+  ClusteringConfig res;
+  auto options = parseCSV(config);
+  std::unordered_set<std::string> seen;
+  for (auto &option : options) {
+    if (option == "K") {
+      res._clusteringType.insert(ClsType::Kmeans);
+      seen.insert("K");
+    } else if (option == "K+") {
+      res._clusteringType.insert(ClsType::Kmeans_UseAllIVsInDT);
+      seen.insert("K+");
+    } else if (option.size() > 3 &&
+               option.substr(option.size() - 3) == "Max") {
+      res._maxClusters =
+          safeStoull(option.substr(0, option.size() - 3));
+    } else if (option.size() > 4 &&
+               option.substr(option.size() - 4) == "WCSS") {
+      res._minWCSS = safeStod(option.substr(0, option.size() - 4));
+    } else if (option == "><") {
+      res._clsOps.insert(ClsOp::Range);
+    } else if (option == ">=") {
+      res._clsOps.insert(ClsOp::GE);
+    } else if (option == "<=") {
+      res._clsOps.insert(ClsOp::LE);
+    } else if (option == "==") {
+      res._clsOps.insert(ClsOp::E);
+    } else if (option.size() > 1 && option.back() == 'E') {
+      std::string constantStr = option.substr(0, option.size() - 1);
+      //this is to handle the different formats of the constants
+      if (isFloat(constantStr)) {
+        res._excluded.insert(constantStr);
+      } else if (isInteger(constantStr)) {
+        res._excluded.insert(constantStr);
       } else {
-        messageError("Unknown operator in '" + op +
-                     "', available operators are 'r' (range), 'ge' (>=) 'le' "
-                     "(<=), 'e' (==)");
+        messageError("Invalid constant type '" + constantStr +
+                     "' in clustering config option " + option);
       }
-      word = "";
+    } else {
+      messageError("Unknown clustering option: " + option);
     }
   }
-  return ret;
+
+  messageErrorIf(seen.count("K") && seen.count("K+"),
+                 "Cannot use both K and K+ in " + config);
+  return res;
 }
+
 ///used to parse the 'loc' attribute in a prop or numeric tag
-std::vector<Location> parseLocation(std::string loc) {
-  std::vector<Location> ret;
-  loc.erase(remove_if(loc.begin(), loc.end(), isspace), loc.end());
-  std::string word = "";
-  for (size_t i = 0; i < loc.size(); i++) {
-    char c = loc[i];
-    messageErrorIf(c != ',' && c != 'a' && c != 'c' && c != 'd' && c != 't' &&
-                       c != ' ',
-                   "Unrecognized token '" + std::string({c}) + "' in loc");
-    word += c;
-    if (c == ',' || i == loc.size() - 1) {
-      if (c == ',')
-        word.pop_back();
+struct ParsedDomain {
+  ParsedDomain() = default;
+  ParsedDomain(int id, bool dontExpand)
+      : _id(id), _dontExpand(dontExpand) {}
+  int _id;
+  bool _dontExpand;
+};
 
-      if (word == "a") {
-        ret.push_back(Location::Ant);
-      } else if (word == "c") {
-        ret.push_back(Location::Con);
-      } else if (word == "ac") {
-        ret.push_back(Location::AntCon);
-      } else if (word == "dt") {
-        ret.push_back(Location::DecTree);
-      } else {
-        messageError(
-            "Unknown option in '" + loc +
-            "', available option are 'a' (antecedent), 'c' (consequent), 'ac' "
-            "both antecedent and consequent, 'dt' (decision tree)");
-      }
-      word = "";
+template <bool isNumericDomain>
+std::vector<ParsedDomain> parseDomain(std::string loc) {
+  std::vector<ParsedDomain> ret;
+  removeSpacesInPlace(loc);
+
+  auto options = parseCSV(loc);
+
+  for (auto option : options) {
+    if (option == "a") {
+      ret.emplace_back((int)Location::Ant, false);
+      continue;
+    } else if (option == "c") {
+      ret.emplace_back((int)Location::Con, false);
+      continue;
+    } else if (option == "ac") {
+      ret.emplace_back((int)Location::AntCon, false);
+      continue;
+    } else if (option == "dt") {
+      ret.emplace_back((int)Location::DecTree, false);
+      continue;
     }
+    if constexpr (isNumericDomain) {
+      if (option.size() > 2 && option.front() == '[' &&
+          option.back() == ']' &&
+          isPositiveInteger(option.substr(1, option.size() - 2))) {
+        //to be expanded ID
+        uint64_t id = safeStoull(option.substr(1, option.size() - 2));
+        messageErrorIf(id > INT_MAX, "Domain id too big, max is " +
+                                         std::to_string(INT_MAX));
+        ret.emplace_back((int)id, true);
+        continue;
+      } else if (option == "[dt]") {
+        ret.emplace_back((int)Location::DecTree, true);
+        continue;
+      }
+    }
+
+    messageError(
+        "Unknown option '" + option + "' in  loc '" + loc +
+        "', available option are 'a' (antecedent), 'c' "
+        "(consequent), "
+        "'ac' "
+        "both antecedent and consequent, 'dt' (decision tree) , "
+        "'[dt]' (decision tree not expanded, only for numerics)");
   }
   return ret;
 }
-void ManualDefinition::mineContexts(Trace *trace,
-                                    std::vector<Context *> &contexts) {
+
+DTLimits parseLimits(std::string dtLimits) {
+  removeSpacesInPlace(dtLimits);
+
+  auto options = parseCSV(dtLimits);
+  DTLimits limits;
+
+  std::unordered_set<std::string> seen;
+
+  for (auto option : options) {
+    if (option == "S") {
+      limits._isUnordered = false;
+      seen.insert(option);
+    } else if (option == "U") {
+      limits._isUnordered = true;
+      seen.insert(option);
+    } else if (option == "!N") {
+      limits._useNegatedProps = false;
+      seen.insert("!N");
+    } else if (option == "PF") {
+      limits._requirePerfectFitness = true;
+      seen.insert("PF");
+    } else if (option == "O") {
+      limits._saveOffset = true;
+      seen.insert(option);
+    } else if (option == "COV") {
+      limits._heuristic = DTHeuristic::COVERAGE;
+      seen.insert(option);
+    } else if (option == "ENT") {
+      limits._heuristic = DTHeuristic::ENTROPY;
+      seen.insert(option);
+    } else if (option == "DRP") {
+      limits._dontReuseProp = true;
+    } else if (option == "DRN") {
+      limits._dontReuseNumeric = true;
+    } else if (option == "DR") {
+      limits._dontReuseProp = true;
+      limits._dontReuseNumeric = true;
+    } else if (option.size() > 1 &&
+               option.substr(option.size() - 1) == "E") {
+      limits._effort = safeStod(option.substr(0, option.size() - 1));
+      seen.insert("E");
+    } else if (option.size() > 1 &&
+               option.substr(option.size() - 1) == "A") {
+      messageErrorIf(
+          !isPositiveInteger(option.substr(0, option.size() - 1)),
+          "A option is not an unsigned positive number in " +
+              dtLimits);
+      limits._maxAll =
+          safeStoull(option.substr(0, option.size() - 1));
+      seen.insert("A");
+    } else if (option.size() > 1 &&
+               option.substr(option.size() - 1) == "D") {
+      messageErrorIf(
+          !isPositiveInteger(option.substr(0, option.size() - 1)),
+          "D option is not an unsigned positive number in " +
+              dtLimits);
+      limits._maxDepth =
+          safeStoull(option.substr(0, option.size() - 1));
+      seen.insert("D");
+    } else if (option.size() > 1 &&
+               option.substr(option.size() - 1) == "W") {
+      messageErrorIf(
+          !isPositiveInteger(option.substr(0, option.size() - 1)),
+          "W option is not an unsigned positive number in " +
+              dtLimits);
+      limits._maxWidth =
+          safeStoull(option.substr(0, option.size() - 1));
+      seen.insert("W");
+    } else {
+      messageError("Unknown dt limits option: " + option);
+    }
+  }
+
+  if ((seen.count("W") xor seen.count("D")) && !seen.count("A")) {
+    if (seen.count("D")) {
+      limits._maxAll = limits._maxDepth;
+      limits._maxWidth = limits._maxDepth;
+    } else if (seen.count("W")) {
+      limits._maxAll = limits._maxWidth;
+      limits._maxDepth = limits._maxWidth;
+    }
+  }
+  if ((!seen.count("W") && !seen.count("D")) && seen.count("A")) {
+    limits._maxDepth = limits._maxAll;
+    limits._maxWidth = limits._maxAll;
+  }
+
+  messageErrorIf(seen.count("COV") && seen.count("ENT"),
+                 "Cannot use both COV and ENT in " + dtLimits);
+  messageErrorIf(seen.count("U") && seen.count("S"),
+                 "Cannot use both U and S in " + dtLimits);
+
+  return limits;
+}
+void ManualDefinition::mineContexts(
+    const TracePtr &trace, std::vector<ContextPtr> &contexts) {
 
   std::vector<rapidxml::xml_node<> *> contextsTag;
   getNodesFromName(_configuration, "context", contextsTag);
   messageErrorIf(contextsTag.empty(), "No contexts defined");
 
   for (auto &contextTag : contextsTag) {
+
     auto contextName = getAttributeValue(contextTag, "name", "");
-    auto language = getAttributeValue(contextTag, "language", "Spot");
-    Context *context = new Context(contextName, language);
+    messageErrorIf(
+        std::find_if(begin(contexts), end(contexts),
+                     [&contextName](const ContextPtr &c) {
+                       return c->_name == contextName;
+                     }) != end(contexts),
+        "Multiple contexts with the same name are not allowed");
+
+    ContextPtr context = generatePtr<Context>(contextName);
 
     // templates
     std::vector<rapidxml::xml_node<> *> templatesTag;
@@ -155,26 +308,38 @@ void ManualDefinition::mineContexts(Trace *trace,
     for (auto &templateTag : templatesTag) {
       auto exp = getAttributeValue(templateTag, "exp", "");
       auto check = getAttributeValue(templateTag, "check", "0");
-      auto dtLimitsStr =
-          getAttributeValue(templateTag, "dtLimits", "3W,3D,3A,!O,N,-0.1E,R");
-      //      messageWarningIf(getAttributeValue(templateTag, "dtLimits", "") == "", "dtLimits is undefined in template '" + exp +
-      //                           "', using default "
-      //                           "'3W,3D,3A,!O,N,0.1E,R'");
-      DTLimits dtLimits = hparser::parseLimits(dtLimitsStr);
+      messageErrorIf(check != "0" && check != "1",
+                     "Unknown value '" + check +
+                         "' for 'check' field");
+
+      auto dtLimitsStr = getAttributeValue(templateTag, "dtLimits",
+                                           "3W,3D,3A,-0.1E,U");
+
+      DTLimits dtLimits = parseLimits(dtLimitsStr);
       //  debug
       // std::cout << "maxDepth:" << dtLimits._maxDepth << "\n";
       // std::cout << "maxWidth:" << dtLimits._maxWidth << "\n";
       // std::cout << "maxAll:" << dtLimits._maxAll << "\n";
       // std::cout << "dtRange:" << dtLimits._dtRange << "\n";
-      // std::cout << "isRandomConstructed:" << dtLimits._isRandomConstructed
+      // std::cout << "isUnordered:" << dtLimits._isUnordered
       //          << "\n";
       // std::cout << "saveOffset:" << dtLimits._saveOffset << "\n";
       // std::cout << "useNegatedProps:" << dtLimits._useNegatedProps << "\n";
-      context->_templates.push_back(
-          hparser::parseTemplate(exp, trace, language, dtLimits));
-      messageErrorIf(check != "0" && check != "1",
-                     "Unknown value for 'check' field");
-      context->_templates.back()->_check = (check == "1" ? 1 : 0);
+      //std::cout << "DTHeuristic:" << dtLimits._heuristic << "\n";
+      TemplateImplicationPtr newTemplate =
+          hparser::parseTemplateImplication(exp, trace, dtLimits);
+      newTemplate->setCheck(check == "1" ? 1 : 0);
+
+      if (newTemplate->isFullyInstantiated() &&
+          !newTemplate->getCheck() &&
+          newTemplate->assHoldsOnTrace(Location::AntCon)) {
+        //assertioon
+        AssertionPtr ass = generatePtr<Assertion>();
+        fillAssertion(ass, newTemplate, 0, "(-1,-1)");
+        context->_assertions.push_back(ass);
+      } else {
+        context->_templates.push_back(newTemplate);
+      }
     }
 
     // get sort metrics
@@ -185,7 +350,7 @@ void ManualDefinition::mineContexts(Trace *trace,
       auto name = getAttributeValue(sortTag, "name", "default");
       auto range = getAttributeValue(sortTag, "range", "[0,1]");
 
-      context->_sort.push_back(hparser::parseMetric(name, exp, trace));
+      context->_sort.push_back(Metric::parseMetric(name, exp));
     }
 
     // get filter metrics
@@ -195,8 +360,8 @@ void ManualDefinition::mineContexts(Trace *trace,
       auto exp = getAttributeValue(filterTag, "exp", "0");
       auto name = getAttributeValue(filterTag, "name", "default");
       auto th = getAttributeValue(filterTag, "threshold", "0");
-      context->_filter.emplace_back(hparser::parseMetric(name, exp, trace),
-                                    std::stod(th));
+      context->_filter.emplace_back(Metric::parseMetric(name, exp),
+                                    safeStod(th));
     }
 
     // get propositions
@@ -205,17 +370,20 @@ void ManualDefinition::mineContexts(Trace *trace,
     for (auto &propTag : propsTag) {
       auto exp = getAttributeValue(propTag, "exp", "");
       messageErrorIf(exp == "", "exp attribute is empty");
+
       auto locStr = getAttributeValue(propTag, "loc", "");
       if (locStr == "") {
         messageWarning("loc is empty in exp '" + exp +
                        "', using 'a, c, ac, dt'");
         locStr = "a, c, ac, dt";
       }
+      auto domains = parseDomain<0>(locStr);
 
-      auto locs = parseLocation(locStr);
-      for (auto loc : locs) {
-        context->_props.push_back(std::make_pair(
-            new CachedProposition(hparser::parseProposition(exp, trace)), loc));
+      PropositionPtr p = hparser::parseProposition(exp, trace);
+      p->enableCache();
+      for (auto &[id, dontExpand] : domains) {
+        //dontExpand is not used for non-numerics
+        context->_domainIdToProps[id].push_back(p);
       }
     }
 
@@ -224,65 +392,82 @@ void ManualDefinition::mineContexts(Trace *trace,
     getNodesFromName(contextTag, "numeric", numsTag);
 
     if (!numsTag.empty()) {
+
       progresscpp::ParallelProgressBar pb;
       pb.addInstance(0, "Elaborating numerics (" + contextName + ")",
                      numsTag.size(), 70);
+      std::unordered_map<std::string, std::vector<PropositionPtr>>
+          expandedNumericStrToProps;
       for (auto &numTag : numsTag) {
-        CachedAllNumeric *nn;
+        NumericExpressionPtr nn = nullptr;
         auto exp = getAttributeValue(numTag, "exp", "");
-        messageErrorIf(exp == "", "exp attribute is empty in numeric exp");
+        messageErrorIf(exp == "",
+                       "exp attribute is empty in numeric exp");
+        auto idStr = getAttributeValue(numTag, "id", "::");
+        messageErrorIf(idStr != "::" && !isPositiveInteger(idStr),
+                       "id is not an unsigned number in "
+                       "numeric '" +
+                           exp + "'");
         auto locStr = getAttributeValue(numTag, "loc", "");
         if (locStr == "") {
           messageWarning("loc is empty in numeric exp '" + exp +
                          "', using 'a, c, ac, dt'\n\n");
           locStr = "a, c, ac, dt";
         }
-        auto locs = parseLocation(locStr);
-        double clsEffort =
-            std::stod(getAttributeValue(numTag, "clsEffort", "0.3"));
-        std::unordered_set<ClsOp> clsop =
-            parseClsOp(getAttributeValue(numTag, "op", "r, e"));
 
-        // convert to proposition to avoid having multiple parsers for similar
-        // things
-        Proposition *np = hparser::parseProposition(exp, trace);
-        messageErrorIf(dynamic_cast<LogicToBool *>(np) == nullptr &&
-                           dynamic_cast<NumericToBool *>(np) == nullptr,
-                       "Exp " + exp + " is not of numeric or logic type");
+        auto domains = parseDomain<1>(locStr);
+
+        // use the proposition parser to parse the numeric expression, because we do not know the actual type of the numeric expression
+        PropositionPtr np = hparser::parseProposition(exp, trace);
+
+        messageErrorIf(
+            std::dynamic_pointer_cast<IntToBool>(np) == nullptr &&
+                std::dynamic_pointer_cast<FloatToBool>(np) == nullptr,
+            "Exp '" + exp + "' is not of numeric type");
+
         // retrieve the numeric expression
-        if (dynamic_cast<LogicToBool *>(np) != nullptr) {
-          nn = new expression::CachedAllNumeric(
-              &dynamic_cast<LogicToBool *>(np)->getItem(), clsEffort, clsop);
-          dynamic_cast<LogicToBool *>(np)->popItem();
-        } else if (dynamic_cast<NumericToBool *>(np) != nullptr) {
-          nn = new expression::CachedAllNumeric(
-              &dynamic_cast<NumericToBool *>(np)->getItem(), clsEffort, clsop);
-          dynamic_cast<NumericToBool *>(np)->popItem();
-        } else {
-          messageError("Bad type in CachedAllNumeric");
+        if (std::dynamic_pointer_cast<IntToBool>(np) != nullptr) {
+          nn = generatePtr<expression::NumericExpression>(
+              std::dynamic_pointer_cast<IntToBool>(np)->getItem());
+        } else if (std::dynamic_pointer_cast<FloatToBool>(np) !=
+                   nullptr) {
+          nn = generatePtr<expression::NumericExpression>(
+              std::dynamic_pointer_cast<FloatToBool>(np)->getItem());
         }
 
-        delete np;
+        ClusteringConfig cf = parseClusteringConfig(getAttributeValue(
+            numTag, "clustering", "K,10Max,0.01WCSS,><,<=,>=,=="));
+        nn->_clsConfig = cf;
 
-        for (auto &loc : locs) {
-          if (loc != Location::DecTree) {
-            //generate props though clustering using the whole trace
-            std::vector<size_t> ivs;
-            for (size_t i = 0; i < trace->getLength(); i++) {
-              ivs.push_back(i);
-            }
-            auto props = genPropsThroughClustering(ivs, nn, trace->getLength());
-            for (auto p : props) {
-              context->_props.emplace_back(p, loc);
-            }
+        std::string nnStr = num2String(nn);
+
+        //get the domains
+        std::vector<int> expandedDomains;
+        for (auto &[id, dontExpand] : domains) {
+          if (dontExpand) {
+            context->_domainIdToNumerics[id].push_back(nn);
           } else {
-            context->_numerics.push_back(nn);
+            expandedDomains.push_back(id);
           }
         }
 
-        //delete nn if it is no longer used
-        if (std::find(begin(locs), end(locs), Location::DecTree) == locs.end())
-          delete nn;
+        //non-expanded domains
+
+        if (!expandedDomains.empty()) {
+          //generate props though clustering using the whole trace
+          std::vector<size_t> ivs;
+          for (size_t i = 0; i < trace->getLength(); i++) {
+            ivs.push_back(i);
+          }
+          auto props = genPropsThroughClustering(ivs, nn, false);
+
+          //add the props to the context
+          for (auto id : expandedDomains) {
+            context->_domainIdToProps[id].insert(
+                context->_domainIdToProps[id].end(), props.begin(),
+                props.end());
+          }
+        }
 
         pb.increment(0);
         pb.display();
@@ -293,15 +478,18 @@ void ManualDefinition::mineContexts(Trace *trace,
     contexts.push_back(context);
   }
 
+  //add external assertions to the 'external' context
   if (clc::includeAss != "") {
-    auto pc = std::find_if(begin(contexts), end(contexts),
-                           [](Context *c) { return c->_name == "external"; });
-    Context *external_context;
+    auto pc = std::find_if(
+        begin(contexts), end(contexts),
+        [](const ContextPtr &c) { return c->_name == "external"; });
+    ContextPtr external_context;
     if (pc == end(contexts)) {
-      external_context = new Context("external");
+      external_context = generatePtr<Context>("external");
       contexts.push_back(external_context);
     } else {
-      messageInfo("Inserting external assertions into the 'external' context");
+      messageInfo("Inserting external assertions into the 'external' "
+                  "context");
       external_context = *pc;
     }
     addAssertionsFromFile(clc::includeAss, trace, external_context);

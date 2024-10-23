@@ -1,0 +1,24 @@
+<harm>
+    <context name="axc">
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="           exp="sobel_tb::p0" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="           exp="sobel_tb::p1" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="           exp="sobel_tb::p2" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="          exp="sobel_tb::p3" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="          exp="sobel_tb::p5" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="          exp="sobel_tb::p6" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="         exp="sobel_tb::p7" loc="dt"/>
+        <numeric clustering="K,3Max,0.01WCSS,><,==,>=,<="         exp="sobel_tb::p8" loc="dt"/>
+        <numeric clustering="K,100Max,0.00001WCSS,><,==,>=,<="          exp="sobel_tb::out" loc="c"/>
+        <template dtLimits="9A,-0.1E" exp="G({..&&..}|->P0)" />
+        <template dtLimits="2A,-0.1E" exp="G({..##1..}|->P0)" />
+
+        <sort name="frequency" exp="atct/traceLength"/>
+        <sort name="causality" exp="ct/traceLength"/>
+    </context>
+
+
+
+</harm>
+
+
+

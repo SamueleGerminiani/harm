@@ -9,9 +9,7 @@ SET(NAME clustering)
 # Sources.
 #############################################
 SET (CLUSTERING_SRCS
-    src/Hierarchical.cc
-    src/KDE.cc
-    src/Kmeans.cc
+    src/Clustering.cc
     )
 
 #############################################

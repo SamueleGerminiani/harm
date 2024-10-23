@@ -16,6 +16,12 @@
 #include "VCDTypes.hpp"
 #include "VCDFile.hpp"
 
+class VCDFile;
+class VCDFileParser;
+namespace VCDParser {
+class location;
+}  // namespace VCDParser
+
 #define YY_DECL \
     VCDParser::parser::symbol_type yylex (VCDFileParser & driver)
 

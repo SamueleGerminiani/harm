@@ -1,194 +1,208 @@
+#include <algorithm>
+#include <assert.h>
+#include <iterator>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+
+#include "Automaton.hh"
+#include "DTLimits.hh"
 #include "DTNext.hh"
 #include "DTUtils.hh"
-#include "ProgressBar.hpp"
-#include "Template.hh"
+#include "Evaluator.hh"
+#include "Location.hh"
+#include "TemplateImplication.hh"
+
+#include "formula/temporal/TemporalExpression.hh"
 #include "message.hh"
 #include "minerUtils.hh"
-#include <spot/tl/formula.hh>
-#include <spot/twaalgos/postproc.hh>
-#include <string>
-#include <unordered_set>
-#include <utility>
+
 namespace harm {
 //--DTNext---------------------------------------
 
-DTNext::DTNext(BooleanConstant *p, size_t shift, Template *t,
-               const DTLimits &limits)
-    : _t(t), _shift(shift), _tc(p) {
-
-  _limits = limits;
-  _limits._maxWidth = -1;
-  // The base case automata were already generated in the template
-  _tokens.push_back("dtNext0");
-  _ant.push_back(_t->_ant);
-  // storing depths
-  _antDepth.push_back(_t->getDepth(_ant.back()));
-
-  // adjust offset:  we shouldn't have any delaying when we have only one
-  // operand
-  for (auto &e : t->_templateFormula)
-    e._offset = (e._t == Hstring::Stype::DTNext ? 0 : e._offset);
-
-  _formulas.push_back(t->_templateFormula);
-
-  if (_t->_applyDynamicShift) {
-    _applyDynamicShift = true;
-    messageErrorIf(
-        !nothingBefore(
-            _tokens.back(),
-            spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
-                .f),
-        "Can't have events happening before the dtNext operator when using "
-        "|->, |=> ");
-  } else {
-    messageErrorIf(
-        !nothingAfter(
-            _tokens.back(),
-            spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
-                .f),
-        "Can't have events happening after the dtNext operator when not using "
-        "->, => ");
-  }
-
-  //  debug
-  //  messageInfo("Building automata...");
-
+DTNext::DTNext(TemplateImplication *t)
+    : _t(t), _delay(_t->_limits._dto_param._step),
+      _tc(generatePtr<BooleanConstant>(true, ExpType::Bool, 1,
+                                       _t->getTraceLength())) {
   // generate the rest of the automata
   generateFormulas();
 
   //  debug
-    //for (auto &f : _formulas) {
-    //  std::cout << f.toSpotString() << "\n";
-    //}
+  //for (auto &f : _formulas) {
+  //  std::cout << temp2ColoredString(f, Language::SpotLTL, 0) << "\n";
+  //}
 
   //   Check for parallel depth
   handleParallelDepth();
+
+  updateTemplate(0);
 }
 
 void DTNext::generateFormulas() {
-  // retrieve the consequent and the implication of the formula
-  auto hcon = _t->_templateFormula.getCon();
-  // remove unwanted spaces in the string representation of the implication
 
-  for (size_t i = 1; i < _limits._maxDepth; i++) {
-    // we build on the previously generated antecedent
-    auto hant = _formulas[i - 1].getAnt();
-    Proposition **pp = new Proposition *(nullptr);
-    std::string token = "dtNext" + std::to_string(i);
-    // the relation between token name and proposition is kept in the template
-    _t->_tokenToProp[token] = pp;
-    _tokens.push_back(token);
+  // store the base template
+  _formulas.push_back(_t->_templateFormula);
+  _dtTokens.push_back("_dtNext0");
+  // This first dtNext operator
+  TemporalExpressionPtr delayOp = getDTPlaceholder(_formulas[0], 0);
+  messageErrorIf(delayOp == nullptr,
+                 "Could not find the dtNext placeholder");
+  //fill the relation between the token name and the placeholder
+  _dtTokenToPP["_dtNext0"] =
+      std::dynamic_pointer_cast<BooleanLayerDTPlaceholder>(delayOp)
+          ->getPlaceholderPointer();
+  (*_dtTokenToPP["_dtNext0"]) = _tc;
+
+  {
+    //check if the template is well formed when including the DT Operator
+    TemporalExpressionPtr fant =
+        _t->_templateFormula->getItems()[0]->getItems()[0];
 
     if (_t->_applyDynamicShift) {
-      // dtNextM ##N ... ##N dtNext2 ##N dtNext0
-      //find the last operand and append a new one
-      auto dth =
-          std::find_if(std::begin(hant), std::end(hant),
-                       [](Hstring &e) { return e._t == Hstring::Stype::DTNext; }
+      messageErrorIf(!nothingBefore(_dtTokens.back(), fant),
+                     "Can't have events happening before "
+                     "the dtNext operator when "
+                     "using "
+                     "|->, |=> ");
+    } else {
+      messageErrorIf(!nothingAfter(_dtTokens.back(), fant),
+                     "Can't have events happening after the dtNext "
+                     "operator when "
+                     "not using "
+                     "->, => ");
+    }
+  }
 
-          );
+  //base antecedent
+  _antEvaluators.push_back(generateEvaluator(
+      _formulas[0]->getItems()[0]->getItems()[0], _t->_trace));
 
-      messageErrorIf(dth == hant.end(), "Could not find the operand");
-      dth->_offset = _shift;
-      hant.insert(dth, Hstring(token, Hstring::Stype::DTNext, pp));
+  if (_t->_contains_mma) {
+    //base implication
+    _impEvaluators.push_back(
+        generateEvaluator(_formulas[0]->getItems()[0], _t->_trace));
+  }
+
+  //build the rest of the formulas
+  for (size_t i = 1; i < _t->_limits._maxDepth; i++) {
+    SereDelayPtr delayOp_new = generatePtr<SereDelay>();
+    delayOp_new->setWindow({_delay, _delay});
+    // we build on the previously generated antecedent
+    std::string token = "_dtNext" + std::to_string(i);
+    _dtTokens.push_back(token);
+    //make a new dt placeholder
+    BooleanLayerDTPlaceholderPtr blp =
+        generatePtr<BooleanLayerDTPlaceholder>(
+            harm::DTO_Type::Next,
+            generatePtrPtr<Proposition>((Proposition *)nullptr),
+            token, (int)i);
+    // save the relation between token and the placeholder pointer
+    _dtTokenToPP[token] = blp->getPlaceholderPointer();
+
+    if (_t->_applyDynamicShift) {
+      // dtNextM ##N ... ##N dtNext1 ##N dtNext0
+      delayOp_new->addItem(blp);
+      delayOp_new->addItem(copy(delayOp));
     } else {
       // dtNext0 ##N dtNext1 ##N ... ##N dtNextM
-      // find the last operand and append a new one
-      auto dth =
-          std::find_if(std::rbegin(hant), std::rend(hant),
-                       [](Hstring &e) { return e._t == Hstring::Stype::DTNext; }
+      delayOp_new->addItem(copy(delayOp));
+      delayOp_new->addItem(blp);
+    }
+    //prepare the delay operator for the next iteration
+    delayOp = delayOp_new;
 
-          );
-
-      messageErrorIf(dth == hant.rend(), "Could not find the operand");
-      auto newOperand = Hstring(token, Hstring::Stype::DTNext, pp);
-      newOperand[0]._offset = _shift;
-      hant.insert(++((dth + 1).base()), newOperand);
+    //add the new delay operator to the base formula
+    TemporalExpressionPtr formula_new = copy(_formulas[0]);
+    TemporalExpressionPtr sdt_parent =
+        getDTPlaceholderParent(formula_new, 0);
+    messageErrorIf(
+        sdt_parent == nullptr,
+        "Could not find the parent of the dtNext placeholder");
+    //this cover two cases: the second one is when the delat operator is the only element in the antecedent
+    //Remember: The order of the elements changes when using a mm implication
+    if (_t->_applyDynamicShift ||
+        std::dynamic_pointer_cast<PropertyImplication>(sdt_parent) !=
+            nullptr) {
+      sdt_parent->getItems().front() = delayOp;
+    } else {
+      sdt_parent->getItems().back() = delayOp;
     }
 
-    Hstring imp = _t->_templateFormula.getImp();
-    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant + imp + hcon +
-                        Hstring(")", Hstring::Stype::G));
+    //init all the placeholders with the pointers of the previouse formula: all _formulas must use the same pointers
+    auto pack = extractPlaceholders(_formulas[i - 1]);
+    substitutePlaceholders(formula_new, pack);
 
-    // string to spot formula
-    spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
-
-    // Synthesising the automata
-    auto antAutomaton = generateDeterministicSpotAutomaton(ant.f);
-
-    // building storing our custom automata
-    _ant.push_back(buildAutomaton(antAutomaton,_t->_tokenToProp));
-
-    // storing depths
-    _antDepth.push_back(_t->getDepth(_ant.back()));
+    //store the new formula and the corresponding evaluators
+    _formulas.push_back(formula_new);
+    _antEvaluators.push_back(generateEvaluator(
+        formula_new->getItems()[0]->getItems()[0], _t->_trace));
+    if (_t->_contains_mma) {
+      _impEvaluators.push_back(
+          generateEvaluator(formula_new->getItems()[0], _t->_trace));
+    }
   }
 }
 
 void DTNext::handleParallelDepth() {
+  TemporalExpressionPtr fant =
+      _t->_templateFormula->getItems()[0]->getItems()[0];
+
   if (_t->_applyDynamicShift) {
-    if (onlyToken("dtNext0", selectFirstEvent(
-                                 spot::parse_infix_psl(
-                                     _formulas.front().getAnt().toSpotString())
-                                     .f))) {
+    if (onlyToken("_dtNext0", selectFirstEvent(fant))) {
       //no parallel depth
       return;
     }
-
     int baseDepth = 0;
-    for (auto f : _formulas) {
+    for (const auto &f : _formulas) {
+      TemporalExpressionPtr fant = f->getItems()[0]->getItems()[0];
       //extract first temporal element from the left
-      auto portionBare =
-          selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
+      auto portionBare = selectFirstEvent(fant);
 
-      //create an automaton of the first event
-      std::stringstream ss;
-      print_spin_ltl(ss, portionBare, false) << '\n';
-      std::string portion = "{" + ss.str() + "}";
-      auto portionFormula = spot::parse_infix_psl(portion);
-      auto aut = generateDeterministicSpotAutomaton(portionFormula.f);
-      Automaton *pAnt = buildAutomaton(aut,_t->_tokenToProp);
-      //get the max depth of the automaton from the root
-      int depth = _t->getDepth(pAnt);
-      //fails if the automaton has cycles
+      //get the max depth
+      int depth = getTemporalDepth(fant);
+      //fails if the depth cant be quantified
       messageErrorIf(depth == -1, " parallel depth is unknown");
       if (baseDepth == 0) {
         //depth of the original template
         baseDepth = depth;
       } else if (depth > baseDepth) {
         //cannot add any more operands without pushing things
-        delete pAnt;
         break;
       }
-      //adding an operand did not change the maximum depth of the automaton
+      //adding an operand did not change the maximum depth of the formula
       _parallelDepth++;
-      delete pAnt;
     }
   }
 
   if (_parallelDepth != 0) {
-    _limits._maxDepth =
-        _parallelDepth < _limits._maxDepth ? _parallelDepth : _limits._maxDepth;
+    //adapt the limits to the found parallel depth
+    _t->_limits._maxDepth = _parallelDepth < _t->_limits._maxDepth
+                                ? _parallelDepth
+                                : _t->_limits._maxDepth;
     //set the formula of the correct depth, from now on, the template will remain unchanged
-    _t->_ant = _ant[_limits._maxDepth - 1];
-    _t->_templateFormula = _formulas[_limits._maxDepth - 1];
-    _t->_antDepth = _antDepth[_limits._maxDepth - 1];
+    updateTemplate(_t->_limits._maxDepth - 1);
     //set all operands to the true constant
     removeItems();
   }
 }
-DTNext::~DTNext() {
-  for (size_t i = 0; i < _tokens.size(); i++) {
-    delete _ant[i];
+DTNext::~DTNext() {}
+
+DTSolution DTNext::getSolution() {
+  DTSolution ret;
+  for (size_t i = 0; i <= _currDepth; i++) {
+    ret.emplace_back();
+    ret[i].push_back(*_dtTokenToPP.at(_dtTokens[i]));
   }
-  delete _tc;
+  return ret;
 }
 
-std::vector<Proposition *> DTNext::minimize(bool isOffset) {
+DTSolution DTNext::getMinimizedSolution(bool isOffset) {
 
   std::vector<std::vector<size_t>> c;
-  std::vector<Proposition *> original;
+  std::vector<PropositionPtr> original;
   for (size_t i = 0; i <= _currDepth; i++) {
-    original.emplace_back((*_t->_tokenToProp.at(_tokens[i])));
+    original.emplace_back((*_dtTokenToPP.at(_dtTokens[i])));
   }
 
   for (size_t i = 1; i <= original.size(); i++) {
@@ -200,11 +214,11 @@ std::vector<Proposition *> DTNext::minimize(bool isOffset) {
     for (auto &comb : c) {
       // fill with all true constants
       for (size_t i = 0; i < original.size(); i++) {
-        (*_t->_tokenToProp.at(_tokens[i])) = _tc;
+        (*_dtTokenToPP.at(_dtTokens[i])) = _tc;
       }
       // load the combination
       for (auto &e : comb) {
-        (*_t->_tokenToProp.at(_tokens[e])) = original[e];
+        (*_dtTokenToPP.at(_dtTokens[e])) = original[e];
       }
       // check if this combination works
       if (isOffset) {
@@ -228,50 +242,50 @@ std::vector<Proposition *> DTNext::minimize(bool isOffset) {
     }
   }
 end:;
-  std::vector<Proposition *> ret;
+  DTSolution ret;
   for (size_t i = 0; i < original.size(); i++) {
-    ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
-    (*_t->_tokenToProp.at(_tokens[i])) = original[i];
+    ret.emplace_back();
+    ret[i].push_back(*_dtTokenToPP.at(_dtTokens[i]));
+    //restore the original pointers
+    (*_dtTokenToPP.at(_dtTokens[i])) = original[i];
   }
   return ret;
 }
+
 void DTNext::removeItems() {
 
   if (_parallelDepth) {
-    for (size_t i = 0; i < _limits._maxDepth; i++) {
-      (*_t->_tokenToProp[_tokens[i]]) = _tc;
+    for (size_t i = 0; i < _t->_limits._maxDepth; i++) {
+      (*_dtTokenToPP[_dtTokens[i]]) = _tc;
     }
   } else {
-    _t->_ant = _ant[0];
-    _t->_templateFormula = _formulas[0];
-    _t->_antDepth = _antDepth[0];
-    (*_t->_tokenToProp[_tokens[0]]) = _tc;
+    updateTemplate(0);
+    (*_dtTokenToPP[_dtTokens[0]]) = _tc;
   }
   _choices.clear();
   _order.clear();
   _currDepth = 0;
 }
+
 void DTNext::popItem(int depth) {
   if (depth == -1) {
     depth = _currDepth;
   }
-  assert(_order.back() == depth);
+  messageErrorIf(_order.back() != depth, "out-of-order pop");
   if (_parallelDepth) {
-    (*_t->_tokenToProp[_tokens[depth]]) = _tc;
+    (*_dtTokenToPP[_dtTokens[depth]]) = _tc;
     _currDepth = (_currDepth > 0 ? _currDepth - 1 : _currDepth);
   } else {
-    (*_t->_tokenToProp[_tokens[depth]]) = _tc;
+    (*_dtTokenToPP[_dtTokens[depth]]) = _tc;
     //we need to adjust the depth of the operator in order to avoid unnecessery gaps, ex. {true ##1 true ##1 var1}->con is reduced to {var1}->con
     if ((size_t)depth == _currDepth) {
       while (_currDepth > 0 &&
-             (*_t->_tokenToProp.at(_tokens[_currDepth])) == _tc) {
+             (*_dtTokenToPP.at(_dtTokens[_currDepth])) == _tc) {
         _currDepth--;
       }
     }
     //select the correct template for the current depth
-    _t->_ant = _ant[_currDepth];
-    _t->_templateFormula = _formulas[_currDepth];
-    _t->_antDepth = _antDepth[_currDepth];
+    updateTemplate(_currDepth);
   }
 
   //update utility variables
@@ -279,7 +293,8 @@ void DTNext::popItem(int depth) {
   _order.pop_back();
   assert(_choices.size() == _order.size());
 }
-void DTNext::addItem(Proposition *p, int depth) {
+
+void DTNext::addItem(const PropositionPtr &p, int depth) {
 
   if (depth == -1) {
     //insert at the back
@@ -287,12 +302,10 @@ void DTNext::addItem(Proposition *p, int depth) {
       _currDepth++;
     }
     if (_parallelDepth) {
-      (*_t->_tokenToProp.at(_tokens[_currDepth])) = p;
+      (*_dtTokenToPP.at(_dtTokens[_currDepth])) = p;
     } else {
-      (*_t->_tokenToProp.at(_tokens[_currDepth])) = p;
-      _t->_ant = _ant[_currDepth];
-      _t->_templateFormula = _formulas[_currDepth];
-      _t->_antDepth = _antDepth[_currDepth];
+      (*_dtTokenToPP.at(_dtTokens[_currDepth])) = p;
+      updateTemplate(_currDepth);
     }
     _choices[_currDepth] = p;
     _order.push_back(_currDepth);
@@ -300,136 +313,164 @@ void DTNext::addItem(Proposition *p, int depth) {
     //insert at depth 'depth'
     _order.push_back(depth);
     if (_parallelDepth) {
-      (*_t->_tokenToProp.at(_tokens[depth])) = p;
+      (*_dtTokenToPP.at(_dtTokens[depth])) = p;
       _choices[depth] = p;
     } else {
-      (*_t->_tokenToProp.at(_tokens[depth])) = p;
+      (*_dtTokenToPP.at(_dtTokens[depth])) = p;
       _choices[depth] = p;
       if ((size_t)depth > _currDepth) {
         // fill gap with tc, if we are using an unordered operator, inserting an element can create 'gaps' in the template, ex. insertion at depth 3 {prop1 ##1 ? ##1 ?}|->con, we must replace ? with a true constant
         int tmp = _currDepth + 1;
         while (tmp < depth) {
-          (*_t->_tokenToProp.at(_tokens[tmp++])) = _tc;
+          (*_dtTokenToPP.at(_dtTokens[tmp++])) = _tc;
         }
         _currDepth = depth;
-        _t->_ant = _ant[_currDepth];
-        _t->_templateFormula = _formulas[_currDepth];
-        _t->_antDepth = _antDepth[_currDepth];
+        updateTemplate(_currDepth);
       }
     }
   }
   assert(_choices.size() == _order.size());
 }
-std::vector<Proposition *> DTNext::getItems() {
-  std::vector<Proposition *> ret;
+std::vector<PropositionPtr> DTNext::getItems() {
+  std::vector<PropositionPtr> ret;
   for (size_t i = 0; i <= _currDepth; i++) {
-    ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
+    ret.push_back(*_dtTokenToPP.at(_dtTokens[i]));
   }
   return ret;
 }
+
 bool DTNext::isMultiDimensional() { return 0; }
+
 bool DTNext::canInsertAtDepth(int depth) {
   if (depth == -1) {
-    return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
+    //insert to back
+    return (_choices.empty() ? 0 : _currDepth + 1) <
+           _t->_limits._maxDepth;
   } else {
-    return (size_t)depth < _limits._maxDepth &&
+    //insert at depth
+    return (size_t)depth < _t->_limits._maxDepth &&
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }
-bool DTNext::isRandomConstructed() { return _limits._isRandomConstructed; }
+
+bool DTNext::isUnordered() { return _t->_limits._isUnordered; }
+
 size_t DTNext::getNChoices() { return _choices.size(); }
-bool DTNext::isTaken(size_t id, bool second, int depth) { return false; }
-void DTNext::removeLeaf(size_t id, bool second, int depth) {}
-void DTNext::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
-const DTLimits &DTNext::getLimits() { return _limits; }
+
+bool DTNext::isTaken(size_t id, bool negated, int depth) {
+  return false;
+}
+
+void DTNext::removeLeaf(size_t id, bool negated, int depth) {}
+
+void DTNext::addLeaf(const PropositionPtr &p, size_t id, bool negated,
+                     int depth) {}
+
+const DTLimits &DTNext::getLimits() { return _t->_limits; }
+
 size_t DTNext::getCurrentDepth() { return _currDepth; }
-std::pair<std::string, std::string> DTNext::prettyPrint(bool offset) {
 
-  std::vector<Hstring> dtOperators =
-      _formulas[_currDepth].getAnt().getDTOperands();
+TemporalExpressionPtr DTNext::getReducedFormula(bool offset) {
+  auto handleOffset = [&](TemporalExpressionPtr &f) {
+    if (offset) {
+      TemporalExpressionPtr fimpl = f->getItems()[0];
+      TemporalExpressionPtr fcon = fimpl->getItems()[1];
+      fimpl->popItem();
+      fimpl->addItem(generatePtr<PropertyNot>(fcon));
+    }
+    return f;
+  };
 
-  messageErrorIf(dtOperators.empty(), "No operands in dt to pretty print");
+  if (_currDepth == 0) {
+    //no need to reduce the formula
+    TemporalExpressionPtr ret = copy(_formulas[_currDepth], 1);
+    return handleOffset(ret);
+  }
 
-  std::vector<Hstring> reducedOperands;
-  //the first dto can never change
-  reducedOperands.emplace_back(dtOperators.front());
+  int start = _t->_applyDynamicShift ? _currDepth : 0;
+  int increment = _t->_applyDynamicShift ? -1 : 1;
 
-  size_t shift = 0;
-  for (size_t i = 1; i < dtOperators.size() - 1; i++) {
-    Hstring &dto = dtOperators[i];
-    if (dynamic_cast<BooleanConstant *>(*dto._pp) == nullptr) {
-      //shifted operand
-      dto._offset += shift;
-      reducedOperands.emplace_back(dto);
-      shift = 0;
-    } else {
-      //simplify true constant
-      shift += dto._offset;
+  //termination condition
+  auto keepGoing = [&](int i) {
+    return _t->_applyDynamicShift ? i >= 0 : i <= (int)_currDepth;
+  };
+
+  auto extendDelay = [&](const SereDelayPtr &delayOp) {
+    SereDelayPtr delayOp_new = generatePtr<SereDelay>();
+    delayOp_new->setWindow({_delay, _delay});
+    delayOp_new->addItem(delayOp);
+    return delayOp_new;
+  };
+
+  SereDelayPtr delayOp = generatePtr<SereDelay>();
+  delayOp->setWindow({_delay, _delay});
+  for (int i = start; keepGoing(i); i += increment) {
+    if (_choices.count(i) && _choices.at(i) != _tc) { //found a prop
+      if (delayOp->size() == 0 &&
+          delayOp->getWindow().first > (int)_delay) {
+        //there were leading true constants
+        delayOp->setWindow({delayOp->getWindow().first - _delay,
+                            delayOp->getWindow().second - _delay});
+        delayOp->addItem(generatePtr<BooleanLayerInst>(
+            copy(_choices.at(i)), "_dtNext" + std::to_string(i)));
+        if (keepGoing(i + increment)) {
+          //extend the delay operator if we are not at the last element
+          //the delayOp becomes: (##K P) ##_delay P
+          delayOp = extendDelay(delayOp);
+        }
+      } else {
+        //add the current choice to the delayOp
+        delayOp->addItem(generatePtr<BooleanLayerInst>(
+            copy(_choices.at(i)), "_dtNext" + std::to_string(i)));
+      }
+    } else { //found a gap
+      if (keepGoing(i + increment)) {
+        //this is not the last element: increment the window
+        delayOp->setWindow({delayOp->getWindow().first + _delay,
+                            delayOp->getWindow().second + _delay});
+      } else {
+        //this is the last element, add a dummy true constant to complete the pair
+        delayOp->addItem(generatePtr<BooleanLayerInst>(
+            _tc, "_dtNext" + std::to_string(_currDepth)));
+        break;
+      }
+    }
+
+    if (delayOp->size() == 2 && keepGoing(i + increment)) {
+      //delay operator is full, extend it, but only if we are not at the last element
+      delayOp = extendDelay(delayOp);
     }
   }
-  //handle last dto, unless I've already done that (front, only one element)
-  if (dtOperators.size() > 1) {
-    auto last = dtOperators.back();
-    last._offset += shift;
-    reducedOperands.emplace_back(last);
-  }
 
-  //prepare the canvas template
-  auto reducedTemplateAnt = _formulas[reducedOperands.size() - 1].getAnt();
-  auto imp = _formulas[reducedOperands.size() - 1].getImp();
-  auto con = _formulas[reducedOperands.size() - 1].getCon();
-  size_t rIndex = 0;
-  //paint the canvas
-  for (auto &e : reducedTemplateAnt) {
-    if (Hstring::isDT(e)) {
-      e = reducedOperands[rIndex++];
-    }
-  }
+  TemporalExpressionPtr ret = copy(_formulas[0], 1);
+  substituteByToken(ret, delayOp, "_dtNext0_r");
 
-  if (offset) {
-    //negate the consequent
-    con = Hstring("!(", Hstring::Stype::Temp, nullptr) + con +
-          Hstring(")", Hstring::Stype::Temp, nullptr);
-  }
-
-  //compose the reduced template
-  auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + reducedTemplateAnt +
-                         imp + con + Hstring(")", Hstring::Stype::G);
-
-  return std::make_pair(reducedTemplate.toString(1),
-                        reducedTemplate.toColoredString(1));
+  //return the reduced formula with the placeholders removed
+  return handleOffset(ret);
 }
 
-std::vector<Proposition *> DTNext::unpack() {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
-};
-std::vector<Proposition *> DTNext::unpack(Proposition *pack) {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
-};
-std::vector<Proposition *> DTNext::unpack(std::vector<Proposition *> &pack) {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
+bool DTNext::isSolutionInconsequential(const DTSolution &sol) const {
+  auto uniSol = sol.getUnidimensionalSolution();
+  return uniSol.empty() || uniSol.back() == _tc;
 }
 
-void DTNext::clearPack(Proposition *pack) {
-  messageError("Can't clear pack in unidimensional operator'");
-}
-bool DTNext::isSolutionInconsequential(std::vector<Proposition *> &sol) {
-  if (_applyDynamicShift) {
-    return sol.empty() || sol.back() == _tc;
-  } else {
-    return sol.empty() || sol.front() == _tc;
-  }
-}
-void DTNext::substitute(int depth, int width, Proposition *&sub) {
+void DTNext::substitute(int depth, int width, PropositionPtr &sub) {
   if (depth == -1) {
     depth = _currDepth;
   }
-  Proposition *tmp = _choices.at(depth);
+  PropositionPtr tmp = _choices.at(depth);
   _choices.at(depth) = sub;
-  (*_t->_tokenToProp.at(_tokens[depth])) = sub;
+  (*_dtTokenToPP.at(_dtTokens[depth])) = sub;
   sub = tmp;
 }
+
+void DTNext::setL1Threads(size_t n) {
+  for (size_t i = 0; i < _dtTokens.size(); i++) {
+    _antEvaluators[i]->setL1Threads(n);
+    if (_t->_contains_mma) {
+      _impEvaluators[i]->setL1Threads(n);
+    }
+  }
+}
+
 } // namespace harm

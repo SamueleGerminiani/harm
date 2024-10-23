@@ -2,17 +2,20 @@
 	<context name="default">
 
 
-		<numeric exp="a"/>
-		<numeric exp="b"/>
-		<numeric exp="c"/>
+		<numeric clustering="0E,K+,10Max,0.001WCSS,><" exp="a" loc="[dt]"/>
+		<numeric clustering="0E,K+,10Max,0.001WCSS,><" exp="b" loc="[dt]"/>
+		<numeric clustering="0E,K+,10Max,0.001WCSS,><" exp="c" loc="[dt]"/>
 
-
-        <template dtLimits="3D,3W,4A,1E,S" exp="G({..##1..}|-> X(con))" /> 
+        <!--
+        -->
+        <template dtLimits="3A,0E,DRN" exp="G({..##1..} |-> Xcon)" /> 
+        <template dtLimits="3A,1E,S,DRN" exp="G({..#1&..} |-> Xcon)" /> 
 
 
 
 		<sort name="causality" exp="1-afct/traceLength"/>
-		<sort name="frequency" exp="atct/traceLength"/>
+		<sort name="frequency" exp="ct/traceLength"/>
+		<sort name="complexity" exp="complexity"/>
 	</context>
 </harm>
 

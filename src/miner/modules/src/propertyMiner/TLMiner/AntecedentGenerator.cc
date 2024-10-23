@@ -1,97 +1,51 @@
-#include "AntecedentGenerator.hh"
-#include "DTOperator.hh"
-#include "KDE.hh"
-#include "supportMethods.hh"
-
 #include <algorithm>
-#include <climits>
-#include <cmath>
-#include <float.h>
-#include <ios>
-#include <iostream>
+#include <iterator>
+#include <mutex>
 #include <ostream>
-#include <sstream>
 #include <string>
-#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
-#define numLeavesOffset 1000000
+#include "AntecedentGenerator.hh"
+#include "DTLimits.hh"
+#include "DTOperator.hh"
+#include "TemplateImplication.hh"
+#include "Trinary.hh"
+#include "expUtils/expUtils.hh"
+#include "globals.hh"
+#include "message.hh"
+#include "minerUtils.hh"
+#include "misc.hh"
+#include "supportMethods.hh"
 
-#if printTree
-std::mutex printTreeMutex;
-std::string replaceAll(std::string str, const std::string &from,
-                       const std::string &to) {
-  size_t start_pos = 0;
-  while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-    str.replace(start_pos, from.length(), to);
-    start_pos +=
-        to.length(); // Handles case where 'to' is a substring of 'from'
-  }
-  return str;
-}
-#endif
+namespace expression {
+class NumericExpression;
+} // namespace expression
+
+#define numLeavesOffset 1'000'000
 
 namespace harm {
+std::mutex dtTreeIDmutex;
 
-namespace {
-namespace MT /* multi-thread methods */ {
-
-// the result of the decision-tree algorithm
-struct Result_DC {
-  size_t occProposition; // how many times is the proposition satisfied?
-  size_t occGoal; // how many times are the goal and the proposition satisfied?
-};
-
-Result_DC mean_MT(Template *t) {
-  Result_DC res{0, 0};
-
-  t->setCacheAntFalse();
-
-  for (size_t i = 0; i < t->_max_length; i++) {
-    if (t->evaluate_ant(i) != Trinary::T) {
-      continue;
-    }
-    if (t->evaluate(i) == Trinary::T) {
-      ++res.occGoal;
-      ++res.occProposition;
-    } else if (t->evaluate(i) == Trinary::F) {
-      res.occProposition++;
-    }
-  }
-
-  //  debug
-  //  std::cout << t->getColoredAssertion() << "\n";
-  //  for (size_t i = 0; i < t->_max_length; i++) {
-  //    std::cout << t->evaluate_ant(i) << " ";
-  //  }
-  //  std::cout << "\n";
-  //  for (size_t i = 0; i < t->_max_length; i++) {
-  //    std::cout << t->evaluate_con(i) << " ";
-  //  }
-  //  std::cout << "\n";
-  //
-  //
-  //  std::cout << "----------------------"
-  //            << "\n";
-  return res;
-}
-
-} // namespace MT
-} // namespace
+/// @brief analyse the trace to find a set of values on which to perform the clustering
+std::pair<std::vector<size_t>, std::vector<size_t>>
+gatherInterestingValues(const TemplateImplicationPtr &t, int depth);
 
 AntecedentGenerator::AntecedentGenerator()
-    : maxPropositions(0), onSets(), offSets(), saveOffset(true) {
+    : _onSets(), _offSets(), _saveOffset(true) {
   // ntd
 }
 
 void AntecedentGenerator::makeAntecedents(
-    Template *t, DecTreeVariables &dcVariables,
-    NumericDecTreeExp &numericCandidates,
-    std::vector<Proposition *> &genProps) {
+    const TemplateImplicationPtr &t,
+    const DecTreeVariables &dcVariables,
+    const NumericDecTreeExp &numericCandidates) {
 
-  knownSolutions.clear();
+  _knownSolutions.clear();
+  _CT = 0;
+  _CF = 0;
 
   std::set<size_t> unusedVars;
   for (size_t i = 0; i < dcVariables.size(); ++i)
@@ -102,345 +56,371 @@ void AntecedentGenerator::makeAntecedents(
     unusedNumerics.insert(i);
   }
 
-  MT::Result_DC res = MT::mean_MT(t);
+  OCCS occs = computeOccs(t);
 
-  double initialEntropy =
-      getConditionalEntropy(res.occProposition, res.occGoal, t->_max_length);
-  //  debug
-  //    std::cout << "initial entropy " << initialEntropy << "\n";
-  //    std::cout << "initial res.occProposition: " << res.occProposition <<
-  //    "\n"; std::cout << "initial res.occGoal: " << res.occGoal << "\n";
+  auto [CT, CF] = t->getCT_CF();
+  _CT = CT;
+  _CF = CF;
 
-#if printTree
-  tree.str(std::string(""));
-  tree.precision(2);
-  foundAss.str(std::string(""));
-  nStateToAss.clear();
-  nStates = 0;
-#endif
-
-  _runDecisionTree(unusedVars, dcVariables, unusedNumerics, numericCandidates,
-                   t, genProps, initialEntropy);
-
-#if printTree
-  printTreeMutex.lock();
-  std::ofstream fs("tree.dot", ios_base::app);
-  fs << "digraph G {"
-     << "\n";
-  fs << "label=\"" << t->getTemplateFormula().getCon().toString(1)
-     << "\"\n\n\n";
-  fs << "labelloc=\"t\"\n";
-  fs << tree.str() << "\n";
-  fs << foundAss.str() << "\n";
-  for (auto &ass : nStateToAss) {
-    fs << "a" << ass.first << "[shape=box, color=\"green4\" label=\"{"
-       << ass.second << "}\""
-       << "]\n";
+  double initialScore = 0.f;
+  if (t->getDT()->getLimits()._heuristic == DTHeuristic::ENTROPY) {
+    initialScore = getConditionalEntropy(occs, t->getTraceLength());
+  } else if (t->getDT()->getLimits()._heuristic ==
+             DTHeuristic::COVERAGE) {
+    initialScore = getCovScore(occs, _CT, _CF);
+  } else {
+    messageError("Unknown heuristic");
   }
-  fs << "}"
-     << "\n";
-  fs.close();
-  printTreeMutex.unlock();
-#endif
+
+  runDecisionTree(unusedVars, dcVariables, unusedNumerics,
+                  numericCandidates, t, initialScore);
 }
 
 inline void AntecedentGenerator::findCandidates(
-    size_t candidate, DecTreeVariables &dcVariables, Template *t,
-    std::vector<DiscoveredLeaf> &discLeaves, std::vector<CandidateDec> &igs,
-    int depth, double currEntropy) {
-  // debug
-  // std::cout << "RIG: " << RIG << "\n";
-  // std::cout << "_condEnt: " << condEnt << "\n";
-  // std::cout <<"\t\t\t\t\t\t"
+    size_t candidate, const DecTreeVariables &dcVariables,
+    const TemplateImplicationPtr &t,
+    std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
+        &discSolutions,
+    std::vector<CandidateDec> &candidates, int depth,
+    double currScore) {
+
+  DTOperatorPtr dto = t->getDT();
 
   // the 2 propositions of X
-  std::vector<Proposition *> propPtr;
-  DTOperator *template_dt = t->getDT();
-  propPtr.push_back(dcVariables[candidate].first);
-  propPtr.push_back(dcVariables[candidate].second);
+  std::vector<PropositionPtr> propPtr;
+  propPtr.push_back(dcVariables.at(candidate).first);
+  propPtr.push_back(dcVariables.at(candidate).second);
 
   // for each proposition that belongs to a unused variable
   for (size_t propI = 0;
-       propI < (template_dt->getLimits()._useNegatedProps ? 2 : 1); ++propI) {
+       propI < (dto->getLimits()._useNegatedProps ? 2 : 1); ++propI) {
 
-    if (template_dt->isTaken(candidate, propI, depth))
+    if (dto->isTaken(candidate, propI, depth))
       continue;
 
-    Proposition *prop = propPtr[propI];
-
-    //      debug
-    // std::cout << "-------------"
-    //          << "\n";
-    // std::cout << t->getColoredAssertion() << "\n";
-    // std::cout << "Candidate(" << depth << "): " << prop2String(*prop) <<
-    // "\n";
+    PropositionPtr prop = propPtr[propI];
 
     // add the new proposition of a unused variable in the current
     // antecedent
-    template_dt->addItem(prop, depth);
+    dto->addItem(prop, depth);
 
     // ignore this prop if the template contains a known solution
-    if ((template_dt->isRandomConstructed() ||
-         template_dt->isMultiDimensional()) &&
-        isKnownSolution(template_dt->getItems(), template_dt, 1)) {
-      template_dt->popItem(depth);
+    if (isKnownSolution(dto, 1)) {
+      dto->popItem(depth);
       continue;
     }
 
-    MT::Result_DC res = MT::mean_MT(t);
+    OCCS res = computeOccs(t);
 
     // is the new antecedent at least once satisfied? (avoid vacuity)
+    if (res.AToccs > 0 && checkFitness(t, res)) {
 
-    if (res.occProposition > 0) {
-      //      debug
-      //      std::cout << "-------->" << prop2String(*prop) << "\n";
-
-      if (res.occGoal == 0 || res.occGoal == res.occProposition) {
-
-        template_dt->addLeaf(prop, candidate, propI, depth);
-        discLeaves.push_back(DiscoveredLeaf(candidate, propI, depth));
-
-        storeSolution(t, res.occGoal == 0);
+      if (res.ATCToccs == 0 || res.ATCToccs == res.AToccs) {
+        dto->addLeaf(prop, candidate, propI, depth);
+        discSolutions.insert(DiscoveredLeaf(candidate, depth, propI));
+        storeSolution(t, res.ATCToccs == 0);
       } else {
-        double condEnt = getConditionalEntropy(res.occProposition, res.occGoal,
-                                               t->_max_length);
-        double IG = currEntropy - condEnt;
-        //        debug
-        //        if (IG<0) {
-        //         std::cout <<"********************************>"<<
-        //         currEntropy<<" - "<< condEnt<<" = "<<IG <<"\n";
-        //        }
-        igs.emplace_back(candidate, IG, depth, propPtr[propI], propI, condEnt);
+        double score = 0.f;
+        if (t->getDT()->getLimits()._heuristic ==
+            DTHeuristic::ENTROPY) {
+          score = getConditionalEntropy(res, t->getTraceLength());
+        } else if (t->getDT()->getLimits()._heuristic ==
+                   DTHeuristic::COVERAGE) {
+          score = getCovScore(res, _CT, _CF);
+        } else {
+          messageError("Unknown heuristic");
+        }
+        double gain = currScore - score;
+
+        candidates.emplace_back(candidate, depth, (bool)propI,
+                                propPtr[propI], gain, score, false);
       }
     }
 
-    template_dt->popItem(depth);
+    dto->popItem(depth);
   }
-
-  // debug
-  // std::cout << "RIG: " << RIG << "\n";
-  // std::cout << "_condEnt: " << condEnt << "\n";
-  // std::cout <<"\t\t\t\t\t\t"
-  // <<__func__<<"<---------"<<t->getColoredAssertion() << "\n";
 }
 
-inline std::vector<size_t>
-AntecedentGenerator::gatherInterestingValues(Template *t, int depth) {
-  std::vector<size_t> ivs;
-  for (size_t i = 0; i < t->_max_length; i++) {
-    size_t iv = t->gatherInterestingValue(i, depth, -1);
-    if (iv != (size_t)-1) {
-      ivs.push_back(iv);
+inline std::pair<std::vector<size_t>, std::vector<size_t>>
+gatherInterestingValues(const TemplateImplicationPtr &t, int depth) {
+
+  std::vector<size_t> positives;
+  std::vector<size_t> negatives;
+
+  DTOperatorPtr dto = t->_dtOp;
+
+  //Used to simulate if the numeric is true
+  PropositionPtr tc = generatePtr<BooleanConstant>(
+      true, ExpType::Bool, 1, t->getTraceLength());
+  PropositionPtr fc = generatePtr<BooleanConstant>(
+      false, ExpType::Bool, 1, t->getTraceLength());
+
+  std::vector<Trinary> truthValueBeforeAddingTrue;
+  std::vector<Trinary> truthValueAfterAddingTrue;
+
+  for (size_t i = 0; i < t->getTraceLength(); i++) {
+    truthValueBeforeAddingTrue.push_back(t->evaluate(i));
+  }
+
+  dto->addItem(tc, depth);
+  t->setCacheAntFalse();
+
+  for (size_t i = 0; i < t->getTraceLength(); i++) {
+    truthValueAfterAddingTrue.push_back(t->evaluate(i));
+  }
+
+  std::vector<size_t> undecided;
+
+  for (size_t i = 0; i < t->getTraceLength(); i++) {
+    if (truthValueBeforeAddingTrue[i] == Trinary::T &&
+        truthValueAfterAddingTrue[i] != Trinary::T) {
+      //this branch can be taken only if the DT is ..##.. or .. ..&#1..
+      //ATCT would be reduced or ATCF/AU/CU would be increased
+      //INTERESTING NEGATIVE
+      negatives.push_back(i);
+    } else if (truthValueBeforeAddingTrue[i] == Trinary::F &&
+               truthValueAfterAddingTrue[i] != Trinary::F) {
+      //ATCF reduced without negatively impacting ATCT
+      //INTERESTING POSITIVIVE
+      positives.push_back(i);
+    } else {
+      undecided.push_back(i);
     }
   }
-  return ivs;
+
+  std::unordered_map<size_t, Trinary> antTruthValueAfterAddingFalse;
+  std::unordered_map<size_t, Trinary> truthValueAfterAddingFalse;
+
+  dto->substitute(depth, -1, fc);
+  t->setCacheAntFalse();
+  for (auto time : undecided) {
+    antTruthValueAfterAddingFalse[time] = t->evaluate_ant(time);
+    truthValueAfterAddingFalse[time] = t->evaluate(time);
+  }
+  dto->substitute(depth, -1, fc);
+
+  for (auto time : undecided) {
+    if (truthValueAfterAddingTrue.at(time) == Trinary::T &&
+        antTruthValueAfterAddingFalse.at(time) == Trinary::F) {
+      //INTERESTING POSITIVE
+      positives.push_back(time);
+    } else if (truthValueAfterAddingTrue.at(time) == Trinary::F &&
+               truthValueAfterAddingFalse.at(time) == Trinary::T) {
+      //substitution with false covers a failure
+      //INTERESTING NEGATIVE
+      negatives.push_back(time);
+    } else {
+      //subtitution with false did not produce a failure
+      //REAL NOT INTERESTING
+    }
+  }
+
+  dto->popItem(depth);
+  t->setCacheAntFalse();
+
+  return {positives, negatives};
 }
 
-// template <typename T>
-// inline std::vector<std::pair<T, T>> kmeansMerge(std::vector<T> &elements,
-//                                                size_t modes) {
-//
-//  std::vector<std::pair<T, T>> merged;
-//  if (modes == 2) {
-//    std::vector<std::pair<T, T>> clusters = kmeans<T>(elements, 3);
-//    std::sort(clusters.begin(), clusters.end(),
-//              [](const std::pair<T, T> &e1, const std::pair<T, T> &e2) {
-//                return e1.first < e2.first;
-//              });
-//
-//    // debug
-//    for (auto m : clusters) {
-//      std::cout << "-------->\t\t\t\t\t\t" << m.first << ", " << m.second
-//                << "\n";
-//    }
-//    if (clusters.size() != 3) {
-//      return merged;
-//    }
-//    merged.emplace_back(clusters[0].first, clusters[1].second);
-//    merged.emplace_back(clusters[1].first, clusters[2].second);
-//  }
-//  //  debug
-//  for (auto m : merged) {
-//    std::cout << "\t\t\t\t\t\t" << m.first << ", " << m.second << "\n";
-//  }
-//  return merged;
-//}
-
-inline std::vector<Proposition *>
+inline std::vector<PropositionPtr>
 AntecedentGenerator::gatherPropositionsFromNumerics(
-    CachedAllNumeric *cn, Template *t, int depth,
-    std::vector<Proposition *> &genProps) {
-  std::vector<Proposition *> props;
+    NumericExpressionPtr cn, const TemplateImplicationPtr &t,
+    int depth) {
 
   // 1. Gather IV
-  std::vector<size_t> ivs = gatherInterestingValues(t, depth);
+  auto [positives, negatives] = gatherInterestingValues(t, depth);
+
+  //debug
+  //std::cout << num2String(*cn) << "\n";
+  //std::cout << "\t P:";
+  //for (auto i : ivs.first) {
+  //  std::cout << cn->evaluate<SInt>(i) << " ";
+  //}
+  //std::cout << "\n";
+
+  //std::cout << "\t N:";
+  //for (auto i : ivs.second) {
+  //  std::cout << cn->evaluate<SInt>(i) << " ";
+  //}
+  //std::cout << "\n";
+
   // 2. Generation of propositions
-  if (!ivs.empty()) {
-    props = genPropsThroughClustering(ivs, cn, t->_max_length);
-  }
-  // keep track of generated props to know what to delete
-  genProps.insert(genProps.end(), props.begin(), props.end());
-  // 3. Selection of best candidates
+  std::vector<PropositionPtr> props =
+      genPropsThroughClustering(positives, cn, true);
+
+  //for (auto p : props) {
+  //  std::cout << prop2String(*p) << "\n";
+  //}
+  //std::cout << "-----------------------"
+  //          << "\n";
 
   return props;
 }
 
 inline void AntecedentGenerator::findCandidatesNumeric(
-    size_t candidate, NumericDecTreeExp &dcVariables, Template *t,
-    std::vector<DiscoveredLeaf> &discLeaves, std::vector<CandidateDec> &igs,
-    int depth, std::vector<Proposition *> &genProps, double currEntropy) {
+    size_t candidate, const NumericDecTreeExp &dcVariables,
+    const TemplateImplicationPtr &t,
+    std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
+        &discSolutions,
+    std::vector<CandidateDec> &candidates, int depth,
+    double currScore) {
+  //FIXME: discSolutions is not used here
 
-  DTOperator *template_dt = t->getDT();
+  DTOperatorPtr dto = t->getDT();
 
-  if (template_dt->isTaken(candidate + numLeavesOffset, 0, depth)) {
+  if (dto->isTaken(candidate + numLeavesOffset, 0, depth)) {
     return;
   }
-  bool discLeaf = 0;
 
   // retrieve the propositions (props)
-  std::vector<Proposition *> props = gatherPropositionsFromNumerics(
-      dcVariables.at(candidate), t, depth, genProps);
+  std::vector<PropositionPtr> props = gatherPropositionsFromNumerics(
+      dcVariables.at(candidate), t, depth);
 
   for (auto prop : props) {
-    bool taken = 0;
 
     // add the new proposition of a unused variable in the current
     // antecedent
-    template_dt->addItem(prop, depth);
+    dto->addItem(prop, depth);
 
     // ignore this prop if the template contains a known solution
-    if ((template_dt->isRandomConstructed() ||
-         template_dt->isMultiDimensional()) &&
-        isKnownSolution(template_dt->getItems(), template_dt, 1)) {
-      template_dt->popItem(depth);
+    if (isKnownSolution(dto, 1)) {
+      dto->popItem(depth);
       continue;
     }
 
-    MT::Result_DC res = MT::mean_MT(t);
+    OCCS res = computeOccs(t);
 
     // is the new antecedent at least once satisfied? (avoid vacuity)
-    if (res.occProposition > 0) {
-
-      //          std::cout << "-------->" <<prop2String(*prop)<< "\n";
-      //          std::cout << " res.occGoal: " <<  res.occGoal << "\n";
-      //          std::cout << " res.occProposition " <<  res.occProposition <<
-      //          "\n";
-      if (res.occGoal == 0 || res.occGoal == res.occProposition) {
-        discLeaf = 1;
-        taken = 1;
-
-        storeSolution(t, res.occGoal == 0);
+    if (res.AToccs > 0 && checkFitness(t, res)) {
+      if (res.ATCToccs == 0 || res.ATCToccs == res.AToccs) {
+        storeSolution(t, res.ATCToccs == 0);
       } else {
-        double condEnt = getConditionalEntropy(res.occProposition, res.occGoal,
-                                               t->_max_length);
-        double IG = currEntropy - condEnt;
-
-        if (!taken) {
-          igs.emplace_back(candidate, IG, depth, prop, 0, condEnt);
+        double score = 0.f;
+        if (t->getDT()->getLimits()._heuristic ==
+            DTHeuristic::ENTROPY) {
+          score = getConditionalEntropy(res, t->getTraceLength());
+        } else if (t->getDT()->getLimits()._heuristic ==
+                   DTHeuristic::COVERAGE) {
+          score = getCovScore(res, _CT, _CF);
+        } else {
+          messageError("Unknown heuristic");
         }
+        double gain = currScore - score;
+
+        candidates.emplace_back(candidate, depth, false, prop, gain,
+                                score, true);
       }
     }
-    template_dt->popItem(depth);
-  }
-
-  if (discLeaf) {
-    template_dt->addLeaf(nullptr, candidate + numLeavesOffset, 0, depth);
-    discLeaves.push_back(DiscoveredLeaf(candidate + numLeavesOffset, 0, depth));
+    dto->popItem(depth);
   }
 }
 bool AntecedentGenerator::isKnownSolution(
-    const std::vector<Proposition *> &items, DTOperator *template_dt,
-    bool checkOnly) {
+    const DTOperatorPtr &dto, bool checkOnly,
+    const std::optional<DTSolution> &ovveridenSolution) {
+
+  DTSolution solution;
+  if (ovveridenSolution.has_value()) {
+    solution = ovveridenSolution.value();
+  } else {
+    solution = dto->getSolution();
+  }
+  solution.sortByWidth();
 
   std::stringstream ss;
-  if (template_dt->isMultiDimensional()) {
-    for (auto &pack : items) {
-      for (auto &p : template_dt->unpack(pack)) {
-        ss << p << "$";
+  if (dto->isMultiDimensional()) {
+    for (auto &pack : solution.getMultidimensionalSolution()) {
+      for (auto &p : pack) {
+        ss << prop2String(p) << "$";
       }
       ss << "$";
     }
   } else {
-    for (auto &p : items) {
-      ss << p << "$";
+    for (auto &p : solution.getUnidimensionalSolution()) {
+      ss << prop2String(p) << "$";
     }
   }
 
-  if (knownSolutions.count(ss.str())) {
+  if (_knownSolutions.count(ss.str())) {
     return true;
   }
   if (!checkOnly) {
-    knownSolutions.insert(ss.str());
+    _knownSolutions.insert(ss.str());
   }
 
   return false;
 }
-void AntecedentGenerator::_runDecisionTree(
-    std::set<size_t> &unusedVars, DecTreeVariables &dcVariables,
-    std::set<size_t> &unusedNumerics, NumericDecTreeExp &numericCandidates,
-    Template *t, std::vector<Proposition *> &genProps, double currEntropy) {
+void AntecedentGenerator::runDecisionTree(
+    std::set<size_t> &unusedVars, const DecTreeVariables &dcVariables,
+    std::set<size_t> &unusedNumerics,
+    const NumericDecTreeExp &numericCandidates,
+    const TemplateImplicationPtr &t, double currScore) {
 
-  DTOperator *template_dt = t->getDT();
+  DTOperatorPtr dto = t->getDT();
 
-  std::vector<DiscoveredLeaf> discLeaves;
-  // getting the relative information gain (RIG) for each unused variable X
-  // RIG (Y|X) = (H(Y) - H(Y|X)) / H(Y)
+  std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
+      discSolutions;
+
   auto candidate = unusedVars.begin();
   auto candidateNumeric = unusedNumerics.begin();
 
-  std::vector<CandidateDec> igs;
+  std::vector<CandidateDec> candidates;
 
-  if (template_dt->getNChoices() < template_dt->getLimits()._maxAll) {
+  if (dto->getNChoices() < dto->getLimits()._maxAll) {
     for (; candidate != unusedVars.end() ||
            candidateNumeric != unusedNumerics.end();) {
-      if (template_dt->isRandomConstructed()) {
-        //..#&.. ..##..
-        for (size_t i = 0; i < template_dt->getLimits()._maxDepth; i++) {
-          if (template_dt->canInsertAtDepth(i)) {
+      if (dto->isUnordered()) {
+        //Unordered ..#&.. ..##..
+        for (size_t i = 0; i < dto->getLimits()._maxDepth; i++) {
+          if (dto->canInsertAtDepth(i)) {
             if (candidate != unusedVars.end())
-              findCandidates(*candidate, dcVariables, t, discLeaves, igs, i,
-                             currEntropy);
+              findCandidates(*candidate, dcVariables, t,
+                             discSolutions, candidates, i, currScore);
 
             if (candidateNumeric != unusedNumerics.end())
-              findCandidatesNumeric(*candidateNumeric, numericCandidates, t,
-                                    discLeaves, igs, i, genProps, currEntropy);
+              findCandidatesNumeric(
+                  *candidateNumeric, numericCandidates, t,
+                  discSolutions, candidates, i, currScore);
           }
         }
       } else {
-        //..#&.. ..##.. ..&&..
-        if (template_dt->isMultiDimensional()) {
+        //Ordered ..#&.. ..##.. ..&&..
+        if (dto->isMultiDimensional()) {
           //..#&..
-          if (template_dt->canInsertAtDepth(template_dt->getCurrentDepth())) {
+          if (dto->canInsertAtDepth(dto->getCurrentDepth())) {
             if (candidate != unusedVars.end())
-              findCandidates(*candidate, dcVariables, t, discLeaves, igs,
-                             template_dt->getCurrentDepth(), currEntropy);
+              findCandidates(*candidate, dcVariables, t,
+                             discSolutions, candidates,
+                             dto->getCurrentDepth(), currScore);
 
             if (candidateNumeric != unusedNumerics.end())
               findCandidatesNumeric(
-                  *candidateNumeric, numericCandidates, t, discLeaves, igs,
-                  template_dt->getCurrentDepth(), genProps, currEntropy);
+                  *candidateNumeric, numericCandidates, t,
+                  discSolutions, candidates, dto->getCurrentDepth(),
+                  currScore);
           }
-          if (template_dt->canInsertAtDepth(template_dt->getCurrentDepth() +
-                                            1)) {
+          if (dto->canInsertAtDepth(dto->getCurrentDepth() + 1)) {
             if (candidate != unusedVars.end())
-              findCandidates(*candidate, dcVariables, t, discLeaves, igs,
-                             template_dt->getCurrentDepth() + 1, currEntropy);
+              findCandidates(*candidate, dcVariables, t,
+                             discSolutions, candidates,
+                             dto->getCurrentDepth() + 1, currScore);
 
             if (candidateNumeric != unusedNumerics.end())
               findCandidatesNumeric(
-                  *candidateNumeric, numericCandidates, t, discLeaves, igs,
-                  template_dt->getCurrentDepth() + 1, genProps, currEntropy);
+                  *candidateNumeric, numericCandidates, t,
+                  discSolutions, candidates,
+                  dto->getCurrentDepth() + 1, currScore);
           }
         } else {
           //..##.. ..&&..
-          if (template_dt->canInsertAtDepth(-1)) {
+          if (dto->canInsertAtDepth(-1)) {
             if (candidate != unusedVars.end())
-              findCandidates(*candidate, dcVariables, t, discLeaves, igs, -1,
-                             currEntropy);
+              findCandidates(*candidate, dcVariables, t,
+                             discSolutions, candidates, -1,
+                             currScore);
 
             if (candidateNumeric != unusedNumerics.end()) {
-              findCandidatesNumeric(*candidateNumeric, numericCandidates, t,
-                                    discLeaves, igs, -1, genProps, currEntropy);
+              findCandidatesNumeric(
+                  *candidateNumeric, numericCandidates, t,
+                  discSolutions, candidates, -1, currScore);
             }
           }
         }
@@ -455,118 +435,145 @@ void AntecedentGenerator::_runDecisionTree(
     } // for
   }
 
-  std::sort(begin(igs), end(igs),
+  std::sort(begin(candidates), end(candidates),
             [](const CandidateDec &e1, const CandidateDec &e2) {
-              return e1._ig > e2._ig;
+              return e1._gain > e2._gain;
             });
 
-  if (igs.size() > 1 && template_dt->getLimits()._dtRange < 0.f) {
-    igs.erase(begin(igs) + 1, end(igs));
-  }
-  //    std::cout << "---------start--------"
-  //              << "\n";
-  //    for (size_t i = 0; i < igs.size(); i++) {
-  //      std::cout << "\t\t" << i << ")\t" << igs[i]._depth << "\t"
-  //                << prop2String(*dcVariables[igs[i]._id].first) << "\t"
-  //                << igs[i]._ig << "\n";
-  //    }
-  //    std::cout << "--------end-----------"
-  //              << "\n";
-
-  double lowerBound =
-      igs.empty() ? 0 : igs[0]._ig - template_dt->getLimits()._dtRange;
-
-#if printTree
-  size_t currState = nStates;
+  if (!candidates.empty()) {
+    //-1E : keep only best
+    if (dto->getLimits()._effort < 0.f) {
+      candidates.erase(begin(candidates) + 1, end(candidates));
+#if DEBUG
+      messageErrorIf(candidates.size() > 1,
+                     "More than one candidate when E is < 0");
 #endif
-  for (const auto &c_ig : igs) {
-    if (template_dt->getLimits()._dtRange < 0.f || c_ig._ig >= lowerBound) {
+      //0E : keep all bests
+    } else if (dto->getLimits()._effort == 0.f) {
+      double max = candidates[0]._gain;
+      //delete all with G < max
+      candidates.erase(std::remove_if(begin(candidates),
+                                      end(candidates),
+                                      [max](const CandidateDec &e) {
+                                        return e._gain < max;
+                                      }),
+                       end(candidates));
+      //check that all candidates have the same G
 
-      messageErrorIf(c_ig._props.size() > 1, "");
-
-      Proposition *prop = c_ig._props[0].first;
-      size_t pos = c_ig._props[0].second;
-
-      template_dt->addItem(prop, c_ig._depth);
-      template_dt->addLeaf(prop, c_ig._id, pos, c_ig._depth);
-      discLeaves.push_back(DiscoveredLeaf(c_ig._id, pos, c_ig._depth));
-
-#if printTree
-      tree << currState << " -> " << ++nStates << "[label= \""
-           << prop2String(*prop) << " \\["
-           << (c_ig._depth == -1 ? template_dt->getCurrentDepth() : c_ig._depth)
-           << ", "
-           //             << t->getAssertion() << " \\[" <<
-           //             (c_ig._depth==-1?template_dt->getCurrentDepth():
-           //             c_ig._depth) << ", "
-           << c_ig._ig << "\\]"
-           << "\"];\n";
+#if DEBUG
+      for (auto &e : candidates) {
+        messageErrorIf(
+            e._gain != max,
+            "Found a candidate with different G when E is 0");
+      }
 #endif
+      //E in [0,1] : keep top _dtRange percentage
+    } else if (dto->getLimits()._effort > 0.f &&
+               dto->getLimits()._effort <= 1.f) {
+      size_t toKeep = candidates.size() * dto->getLimits()._effort;
+      toKeep = toKeep == 0 ? 1 : toKeep;
+      candidates.erase(begin(candidates) + toKeep, end(candidates));
 
-      _runDecisionTree(unusedVars, dcVariables, unusedNumerics,
-                       numericCandidates, t, genProps, c_ig._entropy);
-      template_dt->popItem(c_ig._depth);
+      //E > 1 : keep top N
+    } else {
+      size_t toKeep = dto->getLimits()._effort;
+      toKeep =
+          toKeep > candidates.size() ? candidates.size() : toKeep;
+      candidates.erase(begin(candidates) + toKeep, end(candidates));
+#if DEBUG
+      messageErrorIf(candidates.size() != toKeep,
+                     "Wrong number of candidates when E > 1");
+#endif
     }
-  } // for igs
+  }
 
-  for (auto &dl : discLeaves) {
-    template_dt->removeLeaf(dl._id, dl._second, dl._depth);
+  for (auto &cand : candidates) {
+    dto->addItem(cand._prop, cand._depth);
+    dto->addLeaf(cand._prop,
+                 cand._id +
+                     (cand._ofNumericOrigin ? numLeavesOffset : 0),
+                 cand._negated, cand._depth);
+
+    if (cand._ofNumericOrigin) {
+      if (dto->getLimits()._dontReuseNumeric)
+        unusedNumerics.erase(cand._id);
+    } else {
+      if (dto->getLimits()._dontReuseProp)
+        unusedVars.erase(cand._id);
+    }
+
+    runDecisionTree(unusedVars, dcVariables, unusedNumerics,
+                    numericCandidates, t, cand._score);
+
+    if (cand._ofNumericOrigin) {
+      if (dto->getLimits()._dontReuseNumeric)
+        unusedNumerics.insert(cand._id);
+    } else {
+      if (dto->getLimits()._dontReuseProp)
+        unusedVars.insert(cand._id);
+    }
+
+    if (cand._ofNumericOrigin) {
+      dto->removeLeaf(cand._id + numLeavesOffset, cand._negated,
+                      cand._depth);
+
+    } else {
+      if (!discSolutions.count(
+              DiscoveredLeaf(cand._id, cand._depth, cand._negated))) {
+        //remove leaf only if we are not also removing a discovered solution (discSolutions are not found in findCandidatesNumeric)
+        dto->removeLeaf(cand._id, cand._negated, cand._depth);
+      }
+    }
+    dto->popItem(cand._depth);
+  } // for candidates
+
+  for (auto &dl : discSolutions) {
+    dto->removeLeaf(dl._id, dl._negated, dl._depth);
   }
 }
-void AntecedentGenerator::storeSolution(Template *t, bool isOffset) {
+void AntecedentGenerator::storeSolution(
+    const TemplateImplicationPtr &t, bool isOffset) {
 
-  DTOperator *template_dt = t->getDT();
+  DTOperatorPtr dto = t->getDT();
 
-  if (isOffset && !saveOffset) {
+  if (isOffset && !_saveOffset) {
     return;
   }
 
   // Let's save the current propositions
-  std::vector<Proposition *> items = template_dt->minimize(isOffset);
+  DTSolution sol = dto->getMinimizedSolution(isOffset);
 
-  if (isKnownSolution(items, template_dt)) {
-    if (template_dt->isMultiDimensional()) {
-      // delete the minimized container propositions
-      for (auto p : items) {
-        template_dt->clearPack(p);
-        delete p;
-      }
-    }
+  if (isKnownSolution(dto, 0, sol) ||
+      dto->isSolutionInconsequential(sol)) {
     return;
   }
 
-  if (template_dt->isSolutionInconsequential(items)) {
-    return;
-  }
+  //print items
+  //std::cout << "---------------------"
+  //          << "\n";
+  //for (auto &i : items) {
+  //  std::cout << prop2String(i) << "\n";
+  //}
+  //std::cout << "---------------------"
+  //          << "\n";
 
-#if printTree
-  if (!nStateToAss.count(nStates)) {
-    foundAss << nStates << "->a" << nStates << "[color=\"green4\"];\n";
-    nStateToAss[nStates];
-  }
-  std::string ass = t->getAssertion();
-  ass = replaceAll(ass, "}", "\\}");
-  ass = replaceAll(ass, "{", "\\{");
-#endif
-
-  if (!isOffset) {
-#if printTree
-    ass = replaceAll(ass, ">", "\\>");
-    nStateToAss.at(nStates) = nStateToAss.at(nStates) + ass + "\\n";
-#endif
-
-    onSets.push_back(items);
+  //add solution
+  if (isOffset) {
+    _offSets.push_back(sol);
   } else {
-#if printTree
-    ass = replaceAll(ass, "-> ", "-> !(");
-    ass = replaceAll(ass, "=> ", "=> !(");
-    ass.push_back(')');
-    ass = replaceAll(ass, ">", "\\>");
-    nStateToAss.at(nStates) = nStateToAss.at(nStates) + ass + "\\n";
-#endif
-
-    offSets.push_back(items);
+    _onSets.push_back(sol);
   }
+}
+bool AntecedentGenerator::checkFitness(
+    const TemplateImplicationPtr &t, const OCCS &occs) {
+  //std::cout << occs.ATCToccs << " vs " << _CT << "\n";
+
+  if (t->getDT()->getLimits()._requirePerfectFitness) {
+    return occs.ATCToccs == _CT ||
+           (t->getDT()->getLimits()._saveOffset &&
+            occs.ATCFoccs == _CF);
+  }
+  return true;
 }
 
 } // namespace harm

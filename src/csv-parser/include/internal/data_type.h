@@ -30,10 +30,12 @@ enum class DataType {
 
 static_assert(DataType::CSV_STRING < DataType::CSV_INT8,
               "String type should come before numeric types.");
-static_assert(DataType::CSV_INT8 < DataType::CSV_INT64,
-              "Smaller integer types should come before larger integer types.");
-static_assert(DataType::CSV_INT64 < DataType::CSV_DOUBLE,
-              "Integer types should come before floating point value types.");
+static_assert(
+    DataType::CSV_INT8 < DataType::CSV_INT64,
+    "Smaller integer types should come before larger integer types.");
+static_assert(
+    DataType::CSV_INT64 < DataType::CSV_DOUBLE,
+    "Integer types should come before floating point value types.");
 
 namespace internals {
 /** Compute 10 to the power of n */
@@ -75,13 +77,19 @@ constexpr DataType int_type_arr[8] = {
 };
 
 template <typename T> inline DataType type_num() {
-  static_assert(std::is_integral<T>::value, "T should be an integral type.");
-  static_assert(sizeof(T) <= 8, "Byte size must be no greater than 8.");
+  static_assert(std::is_integral<T>::value,
+                "T should be an integral type.");
+  static_assert(sizeof(T) <= 8,
+                "Byte size must be no greater than 8.");
   return int_type_arr[sizeof(T) - 1];
 }
 
-template <> inline DataType type_num<float>() { return DataType::CSV_DOUBLE; }
-template <> inline DataType type_num<double>() { return DataType::CSV_DOUBLE; }
+template <> inline DataType type_num<float>() {
+  return DataType::CSV_DOUBLE;
+}
+template <> inline DataType type_num<double>() {
+  return DataType::CSV_DOUBLE;
+}
 template <> inline DataType type_num<long double>() {
   return DataType::CSV_DOUBLE;
 }
@@ -153,7 +161,8 @@ template <size_t Bytes> CONSTEXPR long double get_uint_max() {
   }
 
   IF_CONSTEXPR(sizeof(unsigned long long int) == Bytes) {
-    return (long double)std::numeric_limits<unsigned long long int>::max();
+    return (long double)
+        std::numeric_limits<unsigned long long int>::max();
   }
 
   HEDLEY_UNREACHABLE();
@@ -327,7 +336,8 @@ DataType data_type(csv::string_view in, long double *const out) {
       *out = neg_allowed ? number : -number;
     }
 
-    return prob_float ? DataType::CSV_DOUBLE : _determine_integral_type(number);
+    return prob_float ? DataType::CSV_DOUBLE
+                      : _determine_integral_type(number);
   }
 
   // Just whitespace

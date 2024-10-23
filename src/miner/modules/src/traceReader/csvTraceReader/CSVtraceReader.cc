@@ -1,15 +1,38 @@
-#include "CSVtraceReader.hh"
-#include "csv.hpp"
-#include "exp.hh"
-#include "expUtils/VarType.hh"
-#include "expUtils/expUtils.hh"
-#include "message.hh"
-#include "minerUtils.hh"
-#include "varDeclarationParser.hh"
-
-#include <bitset>
+#include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <stddef.h>
+#include <string>
+#include <unordered_set>
+#include <utility>
+
+// clang-format off
+// clang-format on
+#include "ANTLRInputStream.h"
+#include "CSVtraceReader.hh"
+#include "CommonTokenStream.h"
+#include "PointerUtils.hh"
+#include "Trace.hh"
+#include "VarDeclaration.hh"
+#include "VarDeclarationParserHandler.hh"
+#include "expUtils/ExpType.hh"
+#include "formula/atom/Variable.hh"
+#include "globals.hh"
+#include "internal/common.hpp"
+#include "internal/csv_format.hpp"
+#include "internal/csv_reader.hpp"
+#include "internal/csv_row.hpp"
+#include "message.hh"
+#include "misc.hh"
+#include "tree/ParseTreeWalker.h"
+#include "varDeclarationLexer.h"
+#include "varDeclarationParser.h"
+
+namespace antlr4 {
+namespace tree {
+class ParseTree;
+} // namespace tree
+} // namespace antlr4
 
 namespace harm {
 using namespace csv;
@@ -21,161 +44,154 @@ CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files)
 CSVtraceReader::CSVtraceReader(const std::string &file)
     : TraceReader(std::vector<std::string>({file})) {}
 
-///var declaration to cpp class
-DataType toDataType(std::string name, std::string type, size_t size) {
-  DataType ret;
-  auto type_size = variableTypeFromString(type, size);
+/// @brief parse a variable declaration
+static VarDeclaration parseVariableDec(std::string varDecl);
 
-  //optimization: 1 bit logic to bool
-  if ((type_size.first == VarType::SLogic ||
-       type_size.first == VarType::ULogic) &&
-      type_size.second == 1) {
-    type_size.first = VarType::Bool;
-    type_size.second = 1;
+static void addPrefixAndPostfixToLastWord(std::string &input,
+                                          const std::string &prefix,
+                                          const std::string &postfix);
+
+/// @brief adds prefix and postfix to the last word of the input string
+void addPrefixAndPostfixToLastWord(std::string &input,
+                                   const std::string &prefix,
+                                   const std::string &postfix) {
+  if (input.empty()) {
+    return;
   }
 
-  ret.setName(name);
-  ret.setType(type_size.first, type_size.second);
+  auto lastSpacePos =
+      std::find_if(input.rbegin(), input.rend(), ::isspace);
 
-  return ret;
-}
-static void addPrefixAndPostfixToLastWord(std::string& input, const std::string& prefix, const std::string& postfix) {
-    if (input.empty()) {
-        return;
-    }
-
-    auto lastSpacePos = std::find_if(input.rbegin(), input.rend(), ::isspace);
-
-    if (lastSpacePos != input.rend()) {
-        auto startPos = lastSpacePos.base();
-        std::string lastWord(startPos, input.end());
-        input.replace(startPos, input.end(), prefix + lastWord + postfix);
-    } else {
-        input = prefix + input + postfix;
-    }
+  if (lastSpacePos != input.rend()) {
+    auto startPos = lastSpacePos.base();
+    std::string lastWord(startPos, input.end());
+    input.replace(startPos, input.end(), prefix + lastWord + postfix);
+  } else {
+    input = prefix + input + postfix;
+  }
 }
 
 ///parse a variable declaration
-std::pair<std::string, std::pair<std::string, size_t>>
-parseVariable(std::string varDecl) {
-    addPrefixAndPostfixToLastWord(varDecl, "«", "»");
+VarDeclaration parseVariableDec(std::string varDecl) {
+  addPrefixAndPostfixToLastWord(varDecl, "«", "»");
   hparser::VarDeclarationParserHandler listenerLocDec;
   listenerLocDec.addErrorMessage("\t\t\tIn declaration: " + varDecl);
   antlr4::ANTLRInputStream inputLocDec(varDecl);
   varDeclarationLexer lexerLocDec(&inputLocDec);
   CommonTokenStream tokensLocDec(&lexerLocDec);
   varDeclarationParser parserPrecLocDec(&tokensLocDec);
-//    //print tokens
-//    std::map<size_t, std::string> indexToToken;
-//    for (auto [token,index] : parserPrecLocDec.getTokenTypeMap()) {
-//        indexToToken[index] = token;
-//    }
-//    for (auto &i : lexerLocDec.getAllTokens()) {
-//        std::cout << i->toString() <<" "<<indexToToken.at(i->getType())<<"\n";
-//    }
   tree::ParseTree *treeLocDec = parserPrecLocDec.file();
   tree::ParseTreeWalker::DEFAULT.walk(&listenerLocDec, treeLocDec);
-//  std::cout <<listenerLocDec.getVarDeclaration().first  << "\n";
-//  std::cout <<listenerLocDec.getVarDeclaration().second.second  << "\n";
 
   return listenerLocDec.getVarDeclaration();
 }
 
-Trace *CSVtraceReader::readTrace(const std::string file) {
+TracePtr CSVtraceReader::readTrace(const std::string file) {
 
-  std::vector<DataType> vars_dt;
-  std::vector<VarType> varIndexToBucket;
-  std::vector<BooleanVariable *> boolVars;
-  std::vector<NumericVariable *> numVars;
-  std::vector<LogicVariable *> logVars;
+  std::vector<VarDeclaration> vars_dt;
+  //keeps track of the type of the variable for each column of the .csv file
+  //one bucket for each type of variable
+  std::vector<BooleanVariablePtr> boolVars;
+  std::vector<FloatVariablePtr> numVars;
+  std::vector<IntVariablePtr> intVars;
   std::unordered_set<std::string> varNames;
+
   messageInfo("Parsing " + file);
 
   CSVFormat format;
   format.delimiter(',');
   CSVReader reader(file, format);
-  for (auto cn : reader.get_col_names()) {
-    auto var = parseVariable(cn);
-    messageWarningIf(varNames.count(var.first), "Variable " + var.first + " already declared!");
-    varNames.insert(var.first);
-    vars_dt.push_back(
-        toDataType(var.first, var.second.first, var.second.second));
-
-
-    if (vars_dt.back().getType() == VarType::Bool) {
-      varIndexToBucket.push_back(VarType::Bool);
-    } else if (vars_dt.back().getType() == VarType::Numeric) {
-      varIndexToBucket.push_back(VarType::Numeric);
-    } else if (vars_dt.back().getType() == VarType::SLogic) {
-      varIndexToBucket.push_back(VarType::SLogic);
-    } else if (vars_dt.back().getType() == VarType::ULogic) {
-      varIndexToBucket.push_back(VarType::ULogic);
-    } else {
-      messageError("Unknown var type!");
-    }
-  }
 
   size_t number_of_entries = 0;
   std::string line;
   std::ifstream myfile(file);
   std::getline(myfile, line);
   while (std::getline(myfile, line)) {
-    line.erase(remove_if(line.begin(), line.end(), isspace), line.end());
-    //workaround
-    if (!std::isdigit(line[0]) && !(line[0] == '-')) {
-      break;
+    removeSpacesInPlace(line);
+    //skip empty lines
+    if (line == "") {
+      continue;
     }
     ++number_of_entries;
   }
-  messageErrorIf(number_of_entries <= 1, "No data found in csv file:" + file);
 
-  Trace *trace = new Trace(vars_dt, number_of_entries);
+  if(number_of_entries < 1){
+    messageWarning("No data found in trace csv file:" + file);
+    return nullptr;
+  }
 
+  //parse header of .csv file
+  for (auto cn : reader.get_col_names()) {
+    auto var = parseVariableDec(cn);
+    messageWarningIf(varNames.count(var.getName()),
+                     "Variable " + var.getName() +
+                         " already declared!");
+    varNames.insert(var.getName());
+    vars_dt.push_back(var);
+  }
+
+  //make an empty trace
+  const TracePtr &trace =
+      generatePtr<Trace>(vars_dt, number_of_entries);
+
+  //gather all variables of the trace
   for (auto &var : vars_dt) {
-    if (var.getType() == VarType::Bool) {
+    if (isBool(var.getType())) {
       boolVars.push_back(trace->getBooleanVariable(var.getName()));
-    } else if (var.getType() == VarType::Numeric) {
-      numVars.push_back(trace->getNumericVariable(var.getName()));
+    } else if (isFloat(var.getType())) {
+      numVars.push_back(trace->getFloatVariable(var.getName()));
+    } else if (isInt(var.getType())) {
+      intVars.push_back(trace->getIntVariable(var.getName()));
     } else {
-      logVars.push_back(trace->getLogicVariable(var.getName()));
+      messageError("Variable " + var.getName() +
+                   " not found in trace!");
     }
   }
 
   size_t time = 0;
+  //for each row of the .csv file
   for (CSVRow &row : reader) {
     size_t bfieldIndex = 0;
-    size_t nfieldIndex = 0;
-    size_t lfieldIndex = 0;
+    size_t ffieldIndex = 0;
+    size_t ifieldIndex = 0;
     size_t fieldIndex = 0;
+    //for each field of the row
     for (CSVField &field : row) {
-      if (varIndexToBucket[fieldIndex] == VarType::Bool) {
-        boolVars[bfieldIndex++]->assign(time, field.get<bool>());
-      } else if (varIndexToBucket[fieldIndex] == VarType::Numeric) {
-        if (numVars[nfieldIndex]->getType().second == 64) {
-          numVars[nfieldIndex++]->assign(time, field.get<double>());
-        } else {
-          numVars[nfieldIndex++]->assign(time, field.get<float>());
+      //varIndexToBucket[fieldIndex] is the type of the variable in the field, all vars are ordered by type and occurrence in the csv header
+      if (vars_dt[fieldIndex].getType() == ExpType::Bool) {
+        boolVars[bfieldIndex++]->assign(time,
+                                        safeStoull(field.get(), 10));
+      } else if (vars_dt[fieldIndex].getType() == ExpType::Float) {
+        //float type is no longer supported
+        numVars[ffieldIndex++]->assign(time, safeStod(field.get()));
+      } else if (isInt(vars_dt[fieldIndex].getType())) {
+        size_t base = vars_dt[fieldIndex].getBase();
+        auto val = field.get();
+        if (base == 2) {
+          messageErrorIf(!isBase2(val),
+                         "val '" + val +
+                             "' is not a valid binary number");
+          //substitute 'x' and 'z' from the string with 0
+          if (val.size() > 64) {
+            //if the number is too big, truncate it
+            val.erase(0, val.size() - 64);
+          }
+          std::replace_if(
+              val.begin(), val.end(),
+              [](char c) { return c == 'x' || c == 'z'; }, '0');
         }
+        if (intVars[ifieldIndex]->getType().first == ExpType::SInt) {
+          intVars[ifieldIndex]->assign(time, safeStoll(val, base));
+        } else {
+          intVars[ifieldIndex]->assign(time, safeStoull(val, base));
+        }
+        ifieldIndex++;
       } else {
-        if (logVars[lfieldIndex]->getType().first == VarType::SLogic) {
-          logVars[lfieldIndex++]->assign(time, field.get<SLogic>());
-        } else {
-          logVars[lfieldIndex++]->assign(time, field.get<ULogic>());
-        }
+        messageError("Unknown var type");
       }
       fieldIndex++;
     }
     time++;
-  }
-
-  for (auto i : boolVars) {
-    delete i;
-  }
-  for (auto i : logVars) {
-    delete i;
-  }
-  for (auto i : numVars) {
-    delete i;
   }
 
   return trace;

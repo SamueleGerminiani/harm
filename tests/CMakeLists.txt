@@ -1,13 +1,25 @@
-message("-- Including test cases...")
+function(addTest test_name src)
+    add_executable(${test_name} ${src})
+    target_link_libraries (${test_name} gtest_main stdc++fs all_utils progresscpp logging exp commandLineParser temporalParser miner)
+    add_test(NAME ${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${WORK_DIR})
+endfunction()
 
-add_executable(gtests ./traceTests.cc ./evalTests.cc)
-target_link_libraries(gtests gtest_main stdc++fs all_utils progresscpp logging exp commandLineParser templateParser miner )
+message("-- Including test cases...")
 
 set(WORK_DIR ${CMAKE_BINARY_DIR})
 set(TEST_DIR ${CMAKE_BINARY_DIR}/../tests)
 
+addTest("TraceTest" ./traceTests.cc)
+addTest("HarmLinearVsQuadraticAutomatonEvalTest" ./harmLinearVsQuadraticAutomatonEvalTests.cc)
+addTest("OpeTest" ./opeTests.cc)
+addTest("ConvTest" ./conversionTests.cc)
+addTest("SetConvTest" ./setCovTests.cc )
+addTest("ConstantsTest" ./constantsTests.cc )
+addTest("perfTest" ./perfTests.cc )
+addTest("mmaTest" ./mmaTests.cc )
+addTest("TemporalExpressionTest" ./temporalExpressionTests.cc )
+addTest("TemporalDepthTest" ./temporalDepthTests.cc )
+addTest("PermutatorTest" ./permutatorTests.cc )
+addTest("DTOTest" ./dtoTests.cc )
+addTest("TempExpSyntaxTreeTests" ./tempExpSyntaxTreeTests.cc )
 
-#tests
-add_test(NAME AllTests COMMAND gtests WORKING_DIRECTORY ${WORK_DIR})
-add_test(NAME TraceTest COMMAND gtests --gtest_filter=TraceTest* WORKING_DIRECTORY ${WORK_DIR})
-add_test(NAME EvalTest COMMAND gtests --gtest_filter=EvalTest* WORKING_DIRECTORY ${WORK_DIR})

@@ -1,39 +1,42 @@
+#include <algorithm>
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+#include <stddef.h>
+#include <string>
+#include <vector>
+
 #include "CSVtraceReader.hh"
+#include "Float.hh"
+#include "TemplateImplication.hh"
 #include "Trace.hh"
 #include "TraceReader.hh"
 #include "VCDtraceReader.hh"
+#include "formula/atom/Atom.hh"
+#include "formula/atom/Variable.hh"
 #include "globals.hh"
-#include <gtest/gtest.h>
+#include "temporalParsingUtils.hh"
+#include "gtest/gtest_pred_impl.h"
 
 using namespace harm;
 using namespace expression;
 
 class TraceTest : public ::testing::Test {
 protected:
-  TraceTest() {}
-
-  ~TraceTest() override {}
-
-  void SetUp() override {}
-
-  void TearDown() override {
-    delete tr;
-    delete trace;
-  }
+  void TearDown() override { delete tr; }
 
 public:
   TraceReader *tr = nullptr;
-  Trace *trace = nullptr;
+  const TracePtr &trace = nullptr;
 };
 
 ///test single csv trace
-TEST_F(TraceTest, t1) {
-  tr = new CSVtraceReader("../tests/input/TraceTest_t1.csv");
-  Trace *trace = tr->readTrace();
-  Proposition *v1 = trace->getBooleanVariable("v1");
-  LogicExpression *v2 = trace->getLogicVariable("v2");
-  LogicExpression *v3 = trace->getLogicVariable("v3");
-  NumericExpression *v4 = trace->getNumericVariable("v4");
+TEST_F(TraceTest, BasicTypesCSV) {
+  tr = new CSVtraceReader("../tests/input/BasicTypes.csv");
+  const TracePtr &trace = tr->readTrace();
+  PropositionPtr v1 = trace->getBooleanVariable("v1");
+  IntExpressionPtr v2 = trace->getIntVariable("v2");
+  IntExpressionPtr v3 = trace->getIntVariable("v3");
+  FloatExpressionPtr v4 = trace->getFloatVariable("v4");
 
   EXPECT_EQ(trace->getLength(), 5);
   EXPECT_EQ(trace->getCuts().size(), 1);
@@ -65,30 +68,25 @@ TEST_F(TraceTest, t1) {
   EXPECT_EQ(v4->evaluate(2), (double)255.5);
   EXPECT_EQ(v4->evaluate(3), (double)123456.123);
   EXPECT_EQ(v4->evaluate(4), (double)0);
-
-  delete v1;
-  delete v2;
-  delete v3;
-  delete v4;
 }
 
 ///test single vcd trace
-TEST_F(TraceTest, t2) {
+TEST_F(TraceTest, BasicTypesVCD) {
   clc::selectedScope = "tb::DUT";
-  tr = new VCDtraceReader("../tests/input/TraceTest_t2.vcd", "clk");
-  Trace *trace = tr->readTrace();
-  Proposition *o1 = trace->getBooleanVariable("o1");
-  LogicExpression *o2 = trace->getLogicVariable("o2");
+  tr = new VCDtraceReader("../tests/input/BasicTypes.vcd", "clk");
+  const TracePtr &trace = tr->readTrace();
+  BooleanVariablePtr o1 = trace->getBooleanVariable("o1");
+  IntExpressionPtr o2 = trace->getIntVariable("o2");
 
   EXPECT_EQ(trace->getLength(), 5);
   EXPECT_EQ(trace->getCuts().size(), 1);
 
   //o1
-  EXPECT_EQ(o1->evaluate(0), (bool)1);
-  EXPECT_EQ(o1->evaluate(1), (bool)0);
-  EXPECT_EQ(o1->evaluate(2), (bool)0);
-  EXPECT_EQ(o1->evaluate(3), (bool)0);
-  EXPECT_EQ(o1->evaluate(4), (bool)0);
+  EXPECT_EQ(o1->evaluate(0), (int)1);
+  EXPECT_EQ(o1->evaluate(1), (int)0);
+  EXPECT_EQ(o1->evaluate(2), (int)0);
+  EXPECT_EQ(o1->evaluate(3), (int)0);
+  EXPECT_EQ(o1->evaluate(4), (int)0);
 
   //o2
   EXPECT_EQ(o2->evaluate(0), (unsigned char)139);
@@ -96,22 +94,19 @@ TEST_F(TraceTest, t2) {
   EXPECT_EQ(o2->evaluate(2), (unsigned char)151);
   EXPECT_EQ(o2->evaluate(3), (unsigned char)28);
   EXPECT_EQ(o2->evaluate(4), (unsigned char)23);
-
-  delete o1;
-  delete o2;
 }
 
 ///test merged csv trace
-TEST_F(TraceTest, t3) {
+TEST_F(TraceTest, MergedCSV) {
   std::vector<std::string> traces;
-  traces.push_back("../tests/input/TraceTest_t1.csv");
-  traces.push_back("../tests/input/TraceTest_t1.csv");
+  traces.push_back("../tests/input/BasicTypes.csv");
+  traces.push_back("../tests/input/BasicTypes.csv");
   tr = new CSVtraceReader(traces);
-  Trace *trace = tr->readTrace();
-  Proposition *v1 = trace->getBooleanVariable("v1");
-  LogicExpression *v2 = trace->getLogicVariable("v2");
-  LogicExpression *v3 = trace->getLogicVariable("v3");
-  NumericExpression *v4 = trace->getNumericVariable("v4");
+  const TracePtr &trace = tr->readTrace();
+  PropositionPtr v1 = trace->getBooleanVariable("v1");
+  IntExpressionPtr v2 = trace->getIntVariable("v2");
+  IntExpressionPtr v3 = trace->getIntVariable("v3");
+  FloatExpressionPtr v4 = trace->getFloatVariable("v4");
 
   EXPECT_EQ(trace->getLength(), 10);
   EXPECT_EQ(trace->getCuts().size(), 2);
@@ -163,23 +158,18 @@ TEST_F(TraceTest, t3) {
   EXPECT_EQ(v4->evaluate(7), (double)255.5);
   EXPECT_EQ(v4->evaluate(8), (double)123456.123);
   EXPECT_EQ(v4->evaluate(9), (double)0);
-
-  delete v1;
-  delete v2;
-  delete v3;
-  delete v4;
 }
 
 ///test merged vcd trace
-TEST_F(TraceTest, t4) {
+TEST_F(TraceTest, MergedVCD) {
   std::vector<std::string> traces;
-  traces.push_back("../tests/input/TraceTest_t2.vcd");
-  traces.push_back("../tests/input/TraceTest_t2.vcd");
+  traces.push_back("../tests/input/BasicTypes.vcd");
+  traces.push_back("../tests/input/BasicTypes.vcd");
   clc::selectedScope = "tb::DUT";
   tr = new VCDtraceReader(traces, "clk");
-  Trace *trace = tr->readTrace();
-  Proposition *o1 = trace->getBooleanVariable("o1");
-  LogicExpression *o2 = trace->getLogicVariable("o2");
+  const TracePtr &trace = tr->readTrace();
+  BooleanVariablePtr o1 = trace->getBooleanVariable("o1");
+  IntVariablePtr o2 = trace->getIntVariable("o2");
 
   EXPECT_EQ(trace->getLength(), 10);
   EXPECT_EQ(trace->getCuts().size(), 2);
@@ -207,8 +197,5 @@ TEST_F(TraceTest, t4) {
   EXPECT_EQ(o2->evaluate(7), (unsigned char)151);
   EXPECT_EQ(o2->evaluate(8), (unsigned char)28);
   EXPECT_EQ(o2->evaluate(9), (unsigned char)23);
-
-  delete o1;
-  delete o2;
 }
 

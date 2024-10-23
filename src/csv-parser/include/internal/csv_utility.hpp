@@ -1,14 +1,16 @@
 #pragma once
+#include <stddef.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "common.hpp"
 #include "csv_format.hpp"
 #include "csv_reader.hpp"
-#include "data_type.h"
-
-#include <string>
-#include <type_traits>
-#include <unordered_map>
 
 namespace csv {
+enum class DataType;
+
     /** Returned by get_file_info() */
     struct CSVFileInfo {
         std::string filename;               /**< Filename */

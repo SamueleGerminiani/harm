@@ -1,15 +1,23 @@
 #pragma once
-
-#include "modules.hh"
+#include <memory>
 
 namespace harm {
+class ContextMiner;
+using ContextMinerPtr = std::shared_ptr<ContextMiner>;
+class PropertyMiner;
+using PropertyMinerPtr = std::shared_ptr<PropertyMiner>;
+class PropertyQualifier;
+using PropertyQualifierPtr = std::shared_ptr<PropertyQualifier>;
+class TraceReader;
+using TraceReaderPtr = std::shared_ptr<TraceReader>;
+
 /// \class Miner
-/// \brief This class contains a collection of modules implementing the functionaltiies of an assertion miner.
+/// \brief This class contains a collection of modules implementing the functionalities of an assertion miner.
 class Miner {
 
 public:
   /// \struct ModulesConfig
-  /// This class collects a trace reader, a context miner and a property miner
+  /// This struct collects a trace reader, a context miner, a property miner and property qualifier
   struct ModulesConfig {
     /// @brief Constructor.
     ModulesConfig();
@@ -18,13 +26,13 @@ public:
     ~ModulesConfig();
 
     /// a pointer to a trace reader
-    TraceReader *traceReader;
+    TraceReaderPtr traceReader = nullptr;
     /// a pointer to a context miner
-    ContextMiner *contextMiner;
+    ContextMinerPtr contextMiner = nullptr;
     /// a pointer to an assertion miner
-    PropertyMiner *propertyMiner;
+    PropertyMinerPtr propertyMiner = nullptr;
     /// a point to a property qualifier
-    PropertyQualifier *propertyQualifier;
+    PropertyQualifierPtr propertyQualifier = nullptr;
 
     /// @brief Unsupported constructor.
     ModulesConfig(const ModulesConfig &) = delete;
@@ -42,8 +50,8 @@ public:
 private:
   ModulesConfig &_config;
 
-  /// @brief Print the statistics of mining (stored in the hs:: namespace)
-  void printStats();
+  /// @brief Print/Dump the statistics of mining (stored in the hs::namespace)
+  void handleStatistics();
 };
 
 } // namespace harm

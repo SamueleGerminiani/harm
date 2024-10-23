@@ -1,163 +1,80 @@
-#include "Trace.hh"
-#include <iostream>
+#include <algorithm>
+#include <fstream>
 
-#include <cassert>
-#include <sstream>
+#include "Trace.hh"
+#include "expUtils/ExpType.hh"
+#include "formula/atom/Variable.hh"
+#include "globals.hh"
+#include "message.hh"
+#include "minerUtils.hh"
 
 namespace harm {
 
 using namespace expression;
 
-Trace::Trace(std::vector<DataType> &variables, size_t length)
-    : _numeriTrace(nullptr), _booleanTrace(nullptr), _logicTrace(nullptr),
-      _length(length), _variables(variables) {
+Trace::Trace(std::vector<VarDeclaration> &variables, size_t length)
+    : _length(length), _variables(variables) {
 
-  for (DataType &dt : _variables) {
-    _name2size[dt.getName()] = dt.getSize();
+  for (VarDeclaration &dt : _variables) {
+    _varName2size[dt.getName()] = dt.getSize();
     _varName2Type[dt.getName()] = dt.getType();
   }
 
-  _allocateTrace(variables);
-  _allocatePointers(variables);
+  allocateTrace(variables);
+  allocatePointers(variables);
 }
 
-std::vector<Trace *> Trace::newTracesWithSAFault(const std::string &varName) {
-
-  auto varsCopy = getVariables();
-  size_t varSize = _name2size.at(varName);
-
-  std::vector<Trace *> faultyTraces;
-  // copy the trace 'varSize' times
-  for (size_t i = 0; i < varSize; i++) {
-    faultyTraces.push_back(new Trace(varsCopy, getLength()));
-    faultyTraces.back()->setCuts(_cuts);
-  }
-
-  // retreive the vars
-  for (size_t ft_i = 0; ft_i < varSize; ft_i++) {
-    srand(ft_i + 1);
-
-    auto ft = faultyTraces[ft_i];
-    std::vector<BooleanVariable *> boolVars;
-    std::vector<NumericVariable *> numVars;
-    std::vector<LogicVariable *> logVars;
-
-    for (auto &var : varsCopy) {
-      if (var.getType() == VarType::Bool) {
-        boolVars.push_back(ft->getBooleanVariable(var.getName()));
-      } else if (var.getType() == VarType::Numeric) {
-        numVars.push_back(ft->getNumericVariable(var.getName()));
-      } else {
-        logVars.push_back(ft->getLogicVariable(var.getName()));
-      }
-    }
-
-    // copy values
-    for (size_t time = 0; time < getLength(); time++) {
-      for (auto bv : boolVars) {
-        auto currTracebv = getBooleanVariable(bv->getName());
-        bv->assign(time, currTracebv->evaluate(time));
-        delete currTracebv;
-      }
-      for (auto nv : numVars) {
-        auto currTracenv = getNumericVariable(nv->getName());
-        nv->assign(time, currTracenv->evaluate(time));
-        delete currTracenv;
-      }
-      for (auto lv : logVars) {
-        auto currTracelv = getLogicVariable(lv->getName());
-        lv->assign(time, currTracelv->evaluate(time));
-        delete currTracelv;
-      }
-    }
-
-    size_t nInsertFaults = 1;
-    if (_varName2Type.at(varName) == expression::VarType::Bool) {
-      // handle the faulty var
-      for (size_t i = 0; i < nInsertFaults; i++) {
-        size_t randPos = rand() % ((getLength() - 1) - 0 + 1) + 0;
-        auto flv = getBooleanVariable(varName);
-        auto original = flv->evaluate(randPos);
-
-        flv->assign(randPos, !original);
-        delete flv;
-      }
-    } else if (_varName2Type.at(varName) == expression::VarType::SLogic ||
-               _varName2Type.at(varName) == expression::VarType::ULogic) {
-      // handle the faulty var
-      for (size_t i = 0; i < nInsertFaults; i++) {
-        size_t randPos = rand() % ((getLength() - 1) - 0 + 1) + 0;
-        auto flv = getLogicVariable(varName);
-        auto original = flv->evaluate(randPos);
-
-        // sa 0
-        auto withsa = (original & (~((ULogic)(1ULL << ft_i)) << 1) >> 1);
-        if (original != withsa) {
-          flv->assign(randPos, withsa);
-          delete flv;
-          continue;
-        }
-
-        // sa 1
-        withsa = (original | 1ULL << ft_i);
-        flv->assign(randPos, withsa);
-        delete flv;
-      }
-    } else {
-      messageError("Unsupported var type for fault insertion");
-    }
-
-    for (auto v : boolVars) {
-      delete v;
-    }
-    for (auto v : logVars) {
-      delete v;
-    }
-    for (auto v : numVars) {
-      delete v;
-    }
-  }
-
-  return faultyTraces;
-} // namespace harm
 Trace::~Trace() {
-  delete[] _numeriTrace;
-  delete[] _booleanTrace;
-  delete[] _logicTrace;
+
+  //delete sub-trace only if allocated
+
+  if (_floatTrace != nullptr) {
+    delete[] _floatTrace;
+  }
+  if (_booleanTrace != nullptr) {
+    delete[] _booleanTrace;
+  }
+  if (_intTrace != nullptr) {
+    delete[] _intTrace;
+  }
 }
+
 std::string Trace::printTrace(size_t start, size_t n) {
 
   std::stringstream ss;
+  size_t maxNumberOfLeadingCharsVarname = 0;
   for (auto &[vn, t] : _varName2Type) {
-    ss << vn << ": ";
-    if (t == VarType::Bool) {
+    maxNumberOfLeadingCharsVarname =
+        std::max(maxNumberOfLeadingCharsVarname, vn.size());
+  }
+
+  for (auto &[vn, t] : _varName2Type) {
+    ss << std::string(maxNumberOfLeadingCharsVarname - vn.size(), ' ')
+       << vn << ": ";
+    if (t == ExpType::Bool) {
       auto v = getBooleanVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
         ss << v->evaluate(i) << " ";
       }
       ss << "\n";
-      delete v;
-    } else if (t == VarType::Numeric) {
-      auto v = getNumericVariable(vn);
+    } else if (t == ExpType::Float) {
+      auto v = getFloatVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
         ss << v->evaluate(i) << " ";
       }
       ss << "\n";
-      delete v;
-    } else if (t == VarType::ULogic) {
-      auto v = getLogicVariable(vn);
+    } else if (t == ExpType::UInt) {
+      auto v = getIntVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
-        ss << (ULogic)v->evaluate(i) << " ";
+        ss << (UInt)v->evaluate(i) << " ";
       }
       ss << "\n";
-      delete v;
-    } else if (t == VarType::SLogic) {
-      auto v = getLogicVariable(vn);
+    } else if (t == ExpType::SInt) {
+      auto v = getIntVariable(vn);
       for (size_t i = start; i < start + n && i < _length; i++) {
-        ss << (SLogic)v->evaluate(i) << " ";
+        ss << (SInt)v->evaluate(i) << " ";
       }
       ss << "\n";
-      delete v;
     }
   }
   return ss.str();
@@ -165,134 +82,234 @@ std::string Trace::printTrace(size_t start, size_t n) {
 
 size_t Trace::getLength() const { return _length; }
 
-void Trace::_allocateTrace(std::vector<DataType> &variables) {
-  size_t numVarCounter = 0;
+void Trace::allocateTrace(std::vector<VarDeclaration> &variables) {
+  size_t floatVarCounter = 0;
   size_t bolVarCounter = 0;
-  size_t logVarCounter = 0;
+  size_t intVarCounter = 0;
 
-  for (DataType var : variables) {
-    switch (var.getType()) {
-    case VarType::Numeric: {
-      ++numVarCounter;
-      break;
-    }
-    case VarType::Bool: {
+  for (VarDeclaration var : variables) {
+    if (var.getType() == ExpType::Float) {
+      ++floatVarCounter;
+    } else if (var.getType() == ExpType::Bool) {
       ++bolVarCounter;
-      break;
-    }
-    default: {
-      // number of values in a Logic
-      size_t _valuesInside = _val4Logic / var.getSize();
-      // number of 64 bits integers to represent all
+    } else if (isInt(var.getType())) {
+      // number of values in a Int
+      size_t valuesInside = _val4Int / var.getSize();
+      // number of N bits integers to represent all
       // the values of this variable
-      size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
-      logVarCounter += tmpSize;
-      break;
-    }
+      size_t tmpSize = (_length + valuesInside - 1) / valuesInside;
+      intVarCounter += tmpSize;
+    } else {
+      messageError("Unknown var type");
     }
   }
 
-  _numeriTrace = new double[_length * numVarCounter]{};
-  _booleanTrace = new unsigned[((_length + 31) >> 5) * bolVarCounter]{};
-  _logicTrace = new ULogic[logVarCounter]{};
+  if (floatVarCounter > 0) {
+    _floatTrace = new double[_length * floatVarCounter]{0};
+  }
+  if (bolVarCounter > 0) {
+    _booleanTrace =
+        new unsigned[((_length + 31) >> 5) * bolVarCounter]{false};
+  }
+  if (intVarCounter > 0) {
+    _intTrace = new UInt[intVarCounter]{0};
+  }
 }
 
-void Trace::_allocatePointers(std::vector<DataType> &variables) {
-  size_t numVarCounter = 0;
+void Trace::allocatePointers(std::vector<VarDeclaration> &variables) {
+  size_t floatVarCounter = 0;
   size_t bolVarCounter = 0;
-  size_t logVarAccu = 0;
+  size_t intVarAccur = 0;
 
-  for (DataType var : variables) {
-    switch (var.getType()) {
-    case VarType::Numeric: {
-      _varName2varValues[var.getName()] =
-          reinterpret_cast<uintptr_t>(&_numeriTrace[_length * numVarCounter]);
-      ++numVarCounter;
-      break;
-    }
-    case VarType::Bool: {
+  for (VarDeclaration var : variables) {
+    ExpType type = var.getType();
+    if (type == ExpType::Float) {
+      _varName2varValues[var.getName()] = reinterpret_cast<uintptr_t>(
+          &_floatTrace[_length * floatVarCounter]);
+      ++floatVarCounter;
+    } else if (type == ExpType::Bool) {
       _varName2varValues[var.getName()] = reinterpret_cast<uintptr_t>(
           &_booleanTrace[((_length + 31) >> 5) * bolVarCounter]);
       ++bolVarCounter;
-      break;
-    }
-    default: {
+    } else if (isInt(var.getType())) {
       _varName2varValues[var.getName()] =
-          reinterpret_cast<uintptr_t>(&_logicTrace[logVarAccu]);
-
-      // number of values in a Logic
-      size_t _valuesInside = _val4Logic / var.getSize();
-      // number of 64 bits integers to represent all
+          reinterpret_cast<uintptr_t>(&_intTrace[intVarAccur]);
+      // number of values in an Int
+      size_t _valuesInside = _val4Int / var.getSize();
+      // number of n-bit integers to represent all
       // the values of this variable
       size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
-      logVarAccu += tmpSize;
-
-      break;
-    }
+      intVarAccur += tmpSize;
+    } else {
+      messageError("Unknown var type");
     }
   }
 }
 
-unsigned int *Trace::getBooleanVariableValues(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::Bool),
-                 "Can't find boolean variable with name: " + name);
-  return reinterpret_cast<unsigned int *>(_varName2varValues.at(name));
+unsigned int *
+Trace::getBooleanVariableValues(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::Bool),
+      "Can't find boolean variable with name: " + name);
+  return reinterpret_cast<unsigned int *>(
+      _varName2varValues.at(name));
 }
 
-ULogic *Trace::getLogicVariableValues(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::ULogic &&
-                      _varName2Type.at(name) != expression::VarType::SLogic),
-                 "Can't find logic variable with name: " + name);
+UInt *Trace::getIntVariableValues(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::UInt &&
+           _varName2Type.at(name) != expression::ExpType::SInt),
+      "Can't find int variable with name: " + name);
 
-  return reinterpret_cast<ULogic *>(_varName2varValues.at(name));
+  return reinterpret_cast<UInt *>(_varName2varValues.at(name));
 }
 
-Numeric *Trace::getNumericVariableValues(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::Numeric),
-                 "Can't find numeric variable with name: " + name);
+Float *Trace::getFloatVariableValues(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::Float),
+      "Can't find float variable with name: " + name);
 
-  return reinterpret_cast<Numeric *>(_varName2varValues.at(name));
+  return reinterpret_cast<Float *>(_varName2varValues.at(name));
 }
 
-expression::BooleanVariable *
+expression::BooleanVariablePtr
 Trace::getBooleanVariable(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::Bool),
-                 "Can't find boolean variable with name: " + name);
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::Bool),
+      "Can't find boolean variable with name: " + name);
 
-  return new expression::BooleanVariable(
-      reinterpret_cast<unsigned int *>(_varName2varValues.at(name)), name,
-      _length);
+  return generatePtr<expression::BooleanVariable>(
+      reinterpret_cast<unsigned int *>(_varName2varValues.at(name)),
+      name, _length);
 }
 
-expression::LogicVariable *
-Trace::getLogicVariable(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::ULogic &&
-                      _varName2Type.at(name) != expression::VarType::SLogic),
-                 "Can't find logic variable with name: " + name);
+expression::IntVariablePtr
+Trace::getIntVariable(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::UInt &&
+           _varName2Type.at(name) != expression::ExpType::SInt),
+      "Can't find int variable with name: " + name);
 
-  size_t size = _name2size.at(name);
-  return new expression::LogicVariable(
-      reinterpret_cast<ULogic *>(_varName2varValues.at(name)), name,
+  size_t size = _varName2size.at(name);
+  return generatePtr<expression::IntVariable>(
+      reinterpret_cast<UInt *>(_varName2varValues.at(name)), name,
       _varName2Type.at(name), size, _length);
 }
 
-expression::NumericVariable *
-Trace::getNumericVariable(const std::string &name) const {
-  messageErrorIf(_varName2varValues.count(name) == 0 ||
-                     (_varName2Type.at(name) != expression::VarType::Numeric),
-                 "Can't find numeric variable with name: " + name);
+expression::FloatVariablePtr
+Trace::getFloatVariable(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::Float),
+      "Can't find float variable with name: " + name);
 
-  size_t size = _name2size.at(name);
-  return new expression::NumericVariable(
-      reinterpret_cast<expression::Numeric *>(_varName2varValues.at(name)),
-      name, _varName2Type.at(name), size, _length);
+  size_t size = _varName2size.at(name);
+  return generatePtr<expression::FloatVariable>(
+      reinterpret_cast<Float *>(_varName2varValues.at(name)), name,
+      _varName2Type.at(name), size, _length);
 }
 
 std::vector<size_t> &Trace::getCuts() { return _cuts; }
 void Trace::setCuts(const std::vector<size_t> &cuts) { _cuts = cuts; }
+
+std::vector<VarDeclaration> Trace::getDeclarations() {
+  std::vector<VarDeclaration> ret;
+
+  for (auto v : _variables) {
+    ret.emplace_back(v.getName(), _varName2Type.at(v.getName()),
+                     _varName2size.at(v.getName()));
+  }
+  return ret;
+}
+
+std::unordered_map<std::string,
+                   std::pair<expression::ExpType, size_t>>
+Trace::getDeclarationsAsMap() {
+  std::unordered_map<std::string,
+                     std::pair<expression::ExpType, size_t>>
+      ret;
+
+  for (const auto &v : _variables) {
+    ret[v.getName()] = std::make_pair(_varName2Type.at(v.getName()),
+                                      _varName2size.at(v.getName()));
+  }
+  return ret;
+}
+
+size_t Trace::getVarSize(std::string varName) {
+  messageErrorIf(_varName2size.count(varName) == 0,
+                 "Did not find variable '" + varName + "'");
+  return _varName2size.at(varName);
+}
+expression::ExpType Trace::getExpType(const std::string &name) {
+  return _varName2Type.at(name);
+}
+
+void dumpTraceAsCSV(const TracePtr &trace,
+                    const std::string &filename) {
+
+  auto vars = trace->getDeclarations();
+  std::ofstream file(filename);
+  std::stringstream ss;
+
+  for (auto &v : vars) {
+    //skip the clock
+    if (v.getName() == clc::clk) {
+      continue;
+    }
+    ss << varTypeToString(v.getType(), v.getSize()) << " "
+       << v.getName() << ",";
+  }
+  std::string header = ss.str();
+  ss.str(std::string());
+  header.pop_back();
+  file << header;
+  file << "\n";
+
+  for (size_t i = 0; i < trace->getLength(); i++) {
+    for (auto &v : vars) {
+      //skip the clock
+      if (v.getName() == clc::clk) {
+        continue;
+      }
+      auto vn = v.getName();
+      auto t = v.getType();
+
+      if (t == ExpType::Bool) {
+        auto v = trace->getBooleanVariable(vn);
+        ss << v->evaluate(i) << ", ";
+      } else if (t == ExpType::Float) {
+        auto v = trace->getFloatVariable(vn);
+        ss << v->evaluate(i) << ", ";
+      } else if (t == ExpType::UInt) {
+        auto v = trace->getIntVariable(vn);
+        ss << (UInt)v->evaluate(i) << ", ";
+      } else if (t == ExpType::SInt) {
+        auto v = trace->getIntVariable(vn);
+        ss << (SInt)v->evaluate(i) << ", ";
+      } else {
+        messageError("Unsupported type");
+      }
+    } //end for vars
+
+    std::string row = ss.str();
+    ss.str(std::string());
+    //remove last comma
+    row = row.substr(0, row.size() - 2);
+    file << row;
+    file << "\n";
+  } //end for i
+
+  file << ss.str();
+  file.close();
+}
+
+std::vector<VarDeclaration> Trace::getVariables() {
+  return _variables;
+}
 } // namespace harm

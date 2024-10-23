@@ -17,7 +17,8 @@ TEST_CASE("Basic CSV Parse Test", "[raw_csv_parse]") {
   RowCollection rows;
 
   StreamParser<std::stringstream> parser(
-      csv, internals::make_parse_flags(',', '"'), internals::WhitespaceMap());
+      csv, internals::make_parse_flags(',', '"'),
+      internals::WhitespaceMap());
 
   parser.set_output(rows);
   parser.next();
@@ -51,17 +52,19 @@ TEST_CASE("Basic CSV Parse Test", "[raw_csv_parse]") {
 }
 
 TEST_CASE("Test Quote Escapes", "[test_parse_quote_escape]") {
-  std::stringstream csv(""
-                        "\"A\",\"B\",\"C\"\r\n"   // Quoted fields w/ no escapes
-                        "123,\"234,345\",456\r\n" // Escaped comma
-                        "1,\"2\"\"3\",4\r\n"      // Escaped quote
-                        "1,\"23\"\"34\",5\r\n"    // Another escaped quote
-                        "1,\"\",2\r\n");          // Empty Field
+  std::stringstream csv(
+      ""
+      "\"A\",\"B\",\"C\"\r\n"   // Quoted fields w/ no escapes
+      "123,\"234,345\",456\r\n" // Escaped comma
+      "1,\"2\"\"3\",4\r\n"      // Escaped quote
+      "1,\"23\"\"34\",5\r\n"    // Another escaped quote
+      "1,\"\",2\r\n");          // Empty Field
 
   RowCollection rows;
 
   StreamParser<std::stringstream> parser(
-      csv, internals::make_parse_flags(',', '"'), internals::WhitespaceMap());
+      csv, internals::make_parse_flags(',', '"'),
+      internals::WhitespaceMap());
 
   parser.set_output(rows);
   parser.next();
@@ -140,33 +143,34 @@ inline std::vector<std::string> make_whitespace_test_cases() {
 }
 
 TEST_CASE("Test Parser Whitespace Trimming", "[test_csv_trim]") {
-  auto row_str = GENERATE(as<std::string>{},
-                          "A,B,C\r\n" // Header row
-                          "123,\"234\n,345\",456\r\n",
+  auto row_str =
+      GENERATE(as<std::string>{},
+               "A,B,C\r\n" // Header row
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces
-                          "A,B,C\r\n"
-                          "   123,\"234\n,345\",    456\r\n",
+               // Random spaces
+               "A,B,C\r\n"
+               "   123,\"234\n,345\",    456\r\n",
 
-                          // Random spaces + tabs
-                          "A,B,C\r\n"
-                          "\t\t   123,\"234\n,345\",    456\r\n",
+               // Random spaces + tabs
+               "A,B,C\r\n"
+               "\t\t   123,\"234\n,345\",    456\r\n",
 
-                          // Spaces in quote escaped field
-                          "A,B,C\r\n"
-                          "\t\t   123,\"   234\n,345  \t\",    456\r\n",
+               // Spaces in quote escaped field
+               "A,B,C\r\n"
+               "\t\t   123,\"   234\n,345  \t\",    456\r\n",
 
-                          // Spaces in one header column
-                          "A,B,        C\r\n"
-                          "123,\"234\n,345\",456\r\n",
+               // Spaces in one header column
+               "A,B,        C\r\n"
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces + tabs in header
-                          "\t A,  B\t,     C\r\n"
-                          "123,\"234\n,345\",456\r\n",
+               // Random spaces + tabs in header
+               "\t A,  B\t,     C\r\n"
+               "123,\"234\n,345\",456\r\n",
 
-                          // Random spaces in header + data
-                          "A,B,        C\r\n"
-                          "123,\"234\n,345\",  456\r\n");
+               // Random spaces in header + data
+               "A,B,        C\r\n"
+               "123,\"234\n,345\",  456\r\n");
 
   SECTION("Parse Test") {
     using namespace std;
@@ -182,10 +186,12 @@ TEST_CASE("Test Parser Whitespace Trimming", "[test_csv_trim]") {
     parser.next();
 
     auto header = rows[0];
-    REQUIRE(vector<string>(header) == vector<string>({"A", "B", "C"}));
+    REQUIRE(vector<string>(header) ==
+            vector<string>({"A", "B", "C"}));
 
     auto row = rows[1];
-    REQUIRE(vector<string>(row) == vector<string>({"123", "234\n,345", "456"}));
+    REQUIRE(vector<string>(row) ==
+            vector<string>({"123", "234\n,345", "456"}));
     REQUIRE(row[0] == "123");
     REQUIRE(row[1] == "234\n,345");
     REQUIRE(row[2] == "456");
@@ -194,7 +200,8 @@ TEST_CASE("Test Parser Whitespace Trimming", "[test_csv_trim]") {
 
 TEST_CASE("Test Parser Whitespace Trimming w/ Empty Fields",
           "[test_raw_ws_trim]") {
-  auto csv_string = GENERATE(from_range(make_whitespace_test_cases()));
+  auto csv_string =
+      GENERATE(from_range(make_whitespace_test_cases()));
 
   SECTION("Parse Test") {
     RowCollection rows;

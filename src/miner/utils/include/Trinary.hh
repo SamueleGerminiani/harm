@@ -23,11 +23,12 @@ inline std::ostream &operator<<(std::ostream &os, Trinary t) {
   return os;
 }
 
-//Boolean logic with Trinary operators
+//Boolean operators with Trinary type
 
 inline Trinary operator!(Trinary t) {
-  return (t == Trinary::U) ? Trinary::U
-                           : (t == Trinary::T) ? Trinary::F : Trinary::T;
+  return (t == Trinary::U)   ? Trinary::U
+         : (t == Trinary::T) ? Trinary::F
+                             : Trinary::T;
 }
 inline Trinary operator||(Trinary t1, Trinary t2) {
   if (t1 == Trinary::U || t2 == Trinary::U)

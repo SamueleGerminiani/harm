@@ -4,6 +4,8 @@
 #include <mutex>
 #include <queue>
 
+//This file contains a semaphore implementation + several helper functions
+
 class basic_semaphore {
 public:
   basic_semaphore(const basic_semaphore &) = delete;
@@ -74,7 +76,8 @@ public:
   template <class Clock, class Duration>
   bool wait_until(const std::chrono::time_point<Clock, Duration> &t) {
     std::unique_lock<std::mutex> lock{mMutex};
-    auto finished = mCv.wait_until(lock, t, [&] { return mCount > 0; });
+    auto finished =
+        mCv.wait_until(lock, t, [&] { return mCount > 0; });
 
     if (finished)
       --mCount;
@@ -124,7 +127,8 @@ void eraseGuard(Container &c, Key &k, std::mutex &m) {
   c.erase(k);
 }
 
-template <typename Container> bool emptyGuard(Container &c, std::mutex &m) {
+template <typename Container>
+bool emptyGuard(Container &c, std::mutex &m) {
   std::lock_guard<std::mutex> lock{m};
   return c.empty();
 }

@@ -2,7 +2,7 @@
 # Configuration.
 #############################################
 
-SET(NAME varHandler)
+SET(NAME varDeclarationParserHandler)
 
 #############################################
 # Sources.

@@ -3,14 +3,17 @@
  */
 
 #include "csv_row.hpp"
-#include <cassert>
-#include <functional>
+
+#include "external/hedley.h"
+#include "internal/col_names.hpp"
+#include "internal/common.hpp"
 
 namespace csv {
 namespace internals {
 CSV_INLINE RawCSVField &CSVFieldList::operator[](size_t n) const {
   const size_t page_no = n / _single_buffer_capacity;
-  const size_t buffer_idx = (page_no < 1) ? n : n % _single_buffer_capacity;
+  const size_t buffer_idx =
+      (page_no < 1) ? n : n % _single_buffer_capacity;
   return this->buffers[page_no][buffer_idx];
 }
 
@@ -44,7 +47,8 @@ CSV_INLINE CSVField CSVRow::operator[](size_t n) const {
      *
      *  @param[in] col_name The column to look for
      */
-CSV_INLINE CSVField CSVRow::operator[](const std::string &col_name) const {
+CSV_INLINE CSVField
+CSVRow::operator[](const std::string &col_name) const {
   auto &col_names = this->data->col_names;
   auto col_pos = col_names->index_of(col_name);
   if (col_pos > -1) {
@@ -70,15 +74,16 @@ CSV_INLINE csv::string_view CSVRow::get_field(size_t index) const {
 
   const size_t field_index = this->fields_start + index;
   auto &field = this->data->fields[field_index];
-  auto field_str =
-      csv::string_view(this->data->data).substr(this->data_start + field.start);
+  auto field_str = csv::string_view(this->data->data)
+                       .substr(this->data_start + field.start);
 
   if (field.has_double_quote) {
     auto &value = this->data->double_quote_fields[field_index];
     if (value.empty()) {
       bool prev_ch_quote = false;
       for (size_t i = 0; i < field.length; i++) {
-        if (this->data->parse_flags[field_str[i] + 128] == ParseFlags::QUOTE) {
+        if (this->data->parse_flags[field_str[i] + 128] ==
+            ParseFlags::QUOTE) {
           if (prev_ch_quote) {
             prev_ch_quote = false;
             continue;
@@ -122,20 +127,24 @@ CSV_INLINE CSVRow::reverse_iterator CSVRow::rend() const {
   return std::reverse_iterator<CSVRow::iterator>(this->begin());
 }
 
-CSV_INLINE HEDLEY_NON_NULL(2) CSVRow::iterator::iterator(const CSVRow *_reader,
-                                                         int _i)
+CSV_INLINE
+HEDLEY_NON_NULL(2) CSVRow::iterator::iterator(const CSVRow *_reader,
+                                              int _i)
     : daddy(_reader), i(_i) {
   if (_i < (int)this->daddy->size())
-    this->field = std::make_shared<CSVField>(this->daddy->operator[](_i));
+    this->field =
+        std::make_shared<CSVField>(this->daddy->operator[](_i));
   else
     this->field = nullptr;
 }
 
-CSV_INLINE CSVRow::iterator::reference CSVRow::iterator::operator*() const {
+CSV_INLINE CSVRow::iterator::reference
+CSVRow::iterator::operator*() const {
   return *(this->field.get());
 }
 
-CSV_INLINE CSVRow::iterator::pointer CSVRow::iterator::operator->() const {
+CSV_INLINE CSVRow::iterator::pointer
+CSVRow::iterator::operator->() const {
 // Using CSVField * as pointer type causes segfaults in MSVC debug builds
 #ifdef _MSC_BUILD
   return this->field;
@@ -148,7 +157,8 @@ CSV_INLINE CSVRow::iterator &CSVRow::iterator::operator++() {
   // Pre-increment operator
   this->i++;
   if (this->i < (int)this->daddy->size())
-    this->field = std::make_shared<CSVField>(this->daddy->operator[](i));
+    this->field =
+        std::make_shared<CSVField>(this->daddy->operator[](i));
   else // Reached the end of row
     this->field = nullptr;
   return *this;
@@ -164,7 +174,8 @@ CSV_INLINE CSVRow::iterator CSVRow::iterator::operator++(int) {
 CSV_INLINE CSVRow::iterator &CSVRow::iterator::operator--() {
   // Pre-decrement operator
   this->i--;
-  this->field = std::make_shared<CSVField>(this->daddy->operator[](this->i));
+  this->field =
+      std::make_shared<CSVField>(this->daddy->operator[](this->i));
   return *this;
 }
 

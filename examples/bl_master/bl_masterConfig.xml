@@ -1,34 +1,44 @@
 <harm>
-	<context name="">
+	<context name="external">
 
-		<numeric clsEffort="0.3" exp="data_from_bus" loc="c,dt"/>
 		<prop exp="busy" loc="c,dt"/>
-		<prop exp="reset" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="next_state" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="data_to_bus" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="byte_sel" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="address" loc="c,dt"/>
 		<prop exp="error_from_bus" loc="c,dt"/>
 		<prop exp="write" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="state" loc="c,dt"/>
 		<prop exp="request" loc="c,dt"/>
 		<prop exp="wb_ack" loc="c,dt"/>
 		<prop exp="wb_stall" loc="c,dt"/>
 		<prop exp="wb_err" loc="c,dt"/>
 		<prop exp="wb_cyc" loc="c,dt"/>
-		<prop exp="wb_clk" loc="c,dt"/>
 		<prop exp="wb_stb" loc="c,dt"/>
 		<prop exp="wb_we" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="wb_dat_i" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="wb_sel" loc="c,dt"/>
 		<prop exp="ready_from_bus" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="wb_adr" loc="c,dt"/>
-		<prop exp="wb_rst" loc="c,dt"/>
-		<numeric clsEffort="0.3" exp="wb_dat_o" loc="c,dt"/>
-		<template dtLimits="3D,3W,3A,-0.1E,R" exp="G({..#1&..}|-> P0)" /> 
+		<numeric clustering="K+,3Max,0.01WCSS,><,==" exp="byte_sel" loc="c,[dt]"/>
+		<numeric clustering="K+,3Max,0.01WCSS,><,==" exp="next_state" loc="c"/>
+		<numeric clustering="K+,3Max,0.01WCSS,><,==" exp="state" loc="c,[dt]"/>
 
+        <!--
+        <numeric clustering="K,3Max,0.01WCSS,><,==" exp="data_from_bus" loc="c,[dt]"/>
+		<numeric clustering="K,3Max,0.01WCSS,><,==" exp="wb_dat_i" loc="c,[dt]"/>
+		<numeric clustering="K,3Max,0.01WCSS,><,==" exp="wb_adr" loc="c,[dt]"/>
+		<numeric clustering="K,3Max,0.01WCSS,><,==" exp="wb_dat_o" loc="c,[dt]"/>
+		<numeric clustering="K,3Max,0.01WCSS,><,==" exp="data_to_bus" loc="c,[dt]"/>
+		<numeric clustering="K,3Max,0.01WCSS,><,==" exp="address" loc="c,[dt]"/>
+
+        warning: experimental
+        <template dtLimits="PF,COV,3D,-0.1E,S" exp="always({..[->1]@;..}|-> {P0})" />
+        -->
+        <template dtLimits="PF,COV,3D,3W,5A,2E,U,DR" exp="G({..#1&..}|-> {##1 P0})" />
+        <template dtLimits="PF,COV,3D,0E,U,DR" exp="G({..##1..}|-> {##1 P0})" />
+        <template dtLimits="PF,ENT,5A,2E,O" exp="G({..&&..}|-> {##1 P0})" />
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="ct/traceLength"/>
 	</context>
 </harm>
+
+
 
 
 

@@ -5,9 +5,11 @@
 #define NDEBUG
 #endif
 
-long double get_max(std::string file, std::string column, bool use_std = false);
+long double get_max(std::string file, std::string column,
+                    bool use_std = false);
 
-long double get_max(std::string file, std::string column, bool use_std) {
+long double get_max(std::string file, std::string column,
+                    bool use_std) {
   using namespace csv;
   long double max = -std::numeric_limits<long double>::infinity();
   CSVReader reader(file);
@@ -36,7 +38,8 @@ int main(int argc, char **argv) {
   using namespace csv;
 
   if (argc < 3) {
-    std::cout << "Usage: " << argv[0] << " [file] [column]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " [file] [column]"
+              << std::endl;
     exit(1);
   }
 

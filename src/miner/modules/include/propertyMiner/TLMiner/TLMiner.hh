@@ -1,24 +1,37 @@
 #pragma once
 
-#include "AntecedentGenerator.hh"
+#include <fstream>
+#include <mutex>
+#include <stddef.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "DTOperator.hh"
 #include "ProgressBar.hpp"
 #include "PropertyMiner.hh"
 #include "Semaphore.hh"
-#include "visitors/visitors.hh"
-#include <fstream>
-#include <map>
-#include <mutex>
-#include <set>
-#include <unordered_set>
-#include <vector>
+#include "formula/atom/Atom.hh"
 
-#define enPB 1
-using namespace std;
+namespace expression {
+class NumericExpression;
+using NumericExpressionPtr = std::shared_ptr<NumericExpression>;
+} // namespace expression
+namespace harm {
+class Assertion;
+using AssertionPtr = std::shared_ptr<Assertion>;
+class Context;
+using ContextPtr = std::shared_ptr<Context>;
+class TemplateImplication;
+using TemplateImplicationPtr = std::shared_ptr<TemplateImplication>;
+class Trace;
+enum class Location;
+} // namespace harm
 
 namespace harm {
 
 /*! \class TLMiner
-    \brief implements the logic of the harm assertion miner
+    \brief implements the three-level assertion miner
 */
 class TLMiner : public PropertyMiner {
 
@@ -32,19 +45,21 @@ public:
   ~TLMiner() override;
 
   /// @brief the context is filled with mined assertions
-  void mineProperties(Context &context, Trace *trace) override;
+  void mineProperties(const ContextPtr &context,
+                      const harm::TracePtr &trace) override;
 
+private:
   /// @brief implements level 3 of parallelization (Template)
-  void l3Handler(Context &context, size_t nThread);
+  void l3Handler(size_t nThread);
   /// @brief implements level 2 of parallelization (Permutation)
-  void l2Handler(Template *t, size_t l3InstId,
-                 std::unordered_map<size_t, Semaphore *> &l3Instances,
-                 Semaphore &l3avThreads, std::mutex &spotStupidity,
-                 std::mutex &l3InstancesGuard,
-                 std::unordered_map<size_t, size_t> &l3InstToNumThreads);
+  void
+  l2Handler(const TemplateImplicationPtr &t, size_t l3InstId,
+            std::unordered_map<size_t, Semaphore *> &l3Instances,
+            Semaphore &l3avThreads, std::mutex &l3InstancesGuard,
+            std::unordered_map<size_t, size_t> &l3InstToNumThreads);
   /// @brief implements level 1 of parallelization (Evaluation function)
-  void l1Handler(Template *t, size_t l2InstId, size_t l3InstId,
-                 Semaphore *l2avThreads,
+  void l1Handler(const TemplateImplicationPtr &t, size_t l2InstId,
+                 size_t l3InstId, Semaphore *l2avThreads,
                  std::unordered_map<size_t, size_t> &l2Instances,
                  std::mutex &l2InstancesGuard);
 
@@ -53,17 +68,17 @@ public:
 
   void dumpVac(const std::string &assStr);
 
-private:
-  std::vector<Proposition *> _propsCon;
-  std::vector<Proposition *> _propsAnt;
-  std::vector<Proposition *> _propsAntCon;
-  std::vector<Proposition *> _propsDT;
-  std::vector<CachedAllNumeric *> _numerics;
+  /// @brief collects the assertions mined using DT operators
+  void handleDTSolutions(const TemplateImplicationPtr &t,
+                         std::vector<DTSolution> &solutions,
+                         std::vector<harm::AssertionPtr> &assp,
+                         bool isOffset, const std::string &mining_id);
 
-  size_t _traceLength;
-  std::vector<std::vector<Assertion *>> _collectedAssertions;
+  std::vector<std::vector<harm::AssertionPtr>> _collectedAssertions;
   std::mutex _collectedAssertionsGuard;
+  ContextPtr _context = nullptr;
   progresscpp::ParallelProgressBar _progressBar;
+
   //debug
   std::mutex _vacLock;
   std::ofstream _vacFile;

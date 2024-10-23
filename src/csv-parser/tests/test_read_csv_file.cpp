@@ -12,15 +12,16 @@ using std::string;
 using std::vector;
 
 TEST_CASE("col_pos() Test", "[test_col_pos]") {
-  int pos = get_col_pos("./tests/data/real_data/2015_StateDepartment.csv",
-                        "Entity Type");
+  int pos =
+      get_col_pos("./tests/data/real_data/2015_StateDepartment.csv",
+                  "Entity Type");
   REQUIRE(pos == 1);
 }
 
 TEST_CASE("Prevent Column Names From Being Overwritten",
           "[csv_col_names_overwrite]") {
-  std::vector<std::string> column_names = {"A1", "A2", "A3", "A4", "A5",
-                                           "A6", "A7", "A8", "A9", "A10"};
+  std::vector<std::string> column_names = {
+      "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"};
 
   // Test against a variety of different CSVFormat objects
   std::vector<CSVFormat> formats = {};
@@ -33,7 +34,8 @@ TEST_CASE("Prevent Column Names From Being Overwritten",
   for (auto &format_in : formats) {
     // Set up the CSVReader
     format_in.column_names(column_names);
-    CSVReader reader("./tests/data/fake_data/ints_comments.csv", format_in);
+    CSVReader reader("./tests/data/fake_data/ints_comments.csv",
+                     format_in);
 
     // Assert that column names weren't overwritten
     CSVFormat format_out = reader.get_format();
@@ -51,7 +53,8 @@ TEST_CASE("get_file_info() Test", "[test_file_info]") {
   REQUIRE(info.delim == '|');
   REQUIRE(info.n_rows == 37960); // Can confirm with Excel
   REQUIRE(info.n_cols == 3);
-  REQUIRE(info.col_names == vector<string>({"ReportDt", "Unit", "Power"}));
+  REQUIRE(info.col_names ==
+          vector<string>({"ReportDt", "Unit", "Power"}));
 }
 
 TEST_CASE("Non-Existent CSV", "[read_ghost_csv]") {
@@ -62,7 +65,8 @@ TEST_CASE("Non-Existent CSV", "[read_ghost_csv]") {
     CSVReader reader("./lochness.csv");
   } catch (std::runtime_error &err) {
     error_caught = true;
-    REQUIRE(err.what() == std::string("Cannot open file ./lochness.csv"));
+    REQUIRE(err.what() ==
+            std::string("Cannot open file ./lochness.csv"));
   }
 
   REQUIRE(error_caught);
@@ -70,7 +74,8 @@ TEST_CASE("Non-Existent CSV", "[read_ghost_csv]") {
 
 TEST_CASE("Test Read CSV with Header Row", "[read_csv_header]") {
   // Header on first row
-  constexpr auto path = "./tests/data/real_data/2015_StateDepartment.csv";
+  constexpr auto path =
+      "./tests/data/real_data/2015_StateDepartment.csv";
 
   // Test using memory mapped IO and std::ifstream
   std::vector<CSVReader> readers = {};
@@ -113,20 +118,21 @@ TEST_CASE("Test Read CSV with Header Row", "[read_csv_header]") {
                                 "Entity County",
                                 "Special District Activities"};
 
-    vector<string> first_row = {"2015",       "State Department",
-                                "",           "Administrative Law, Office of",
-                                "",           "Assistant Chief Counsel",
-                                "False",      "False",
-                                "",           "112044",
-                                "129780",     "",
-                                "133020.06",  "0",
-                                "2551.59",    "2434.8",
-                                "138006.45",  "34128.65",
-                                "0",          "0",
-                                "15273.97",   "49402.62",
-                                "2.00% @ 55", "http://www.spb.ca.gov/",
-                                "",           "08/02/2016",
-                                "",           ""};
+    vector<string> first_row = {
+        "2015",       "State Department",
+        "",           "Administrative Law, Office of",
+        "",           "Assistant Chief Counsel",
+        "False",      "False",
+        "",           "112044",
+        "129780",     "",
+        "133020.06",  "0",
+        "2551.59",    "2434.8",
+        "138006.45",  "34128.65",
+        "0",          "0",
+        "15273.97",   "49402.62",
+        "2.00% @ 55", "http://www.spb.ca.gov/",
+        "",           "08/02/2016",
+        "",           ""};
 
     REQUIRE(vector<string>(row) == first_row);
     REQUIRE(reader.get_col_names() == col_names);
@@ -156,11 +162,13 @@ TEST_CASE("Test read_row() CSVField - Easy", "[read_row_csvf1]") {
 }
 //! [CSVField Example]
 
-TEST_CASE("Test read_row() CSVField - Power Status", "[read_row_csvf3]") {
+TEST_CASE("Test read_row() CSVField - Power Status",
+          "[read_row_csvf3]") {
   CSVReader reader("./tests/data/real_data/2009PowerStatus.txt");
   CSVRow row;
 
-  size_t date = reader.index_of("ReportDt"), unit = reader.index_of("Unit"),
+  size_t date = reader.index_of("ReportDt"),
+         unit = reader.index_of("Unit"),
          power = reader.index_of("Power");
 
   // Try to find a non-existent column

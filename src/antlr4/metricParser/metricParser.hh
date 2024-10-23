@@ -1,5 +1,0 @@
-#include "handler/include/MetricParserHandler.hh"
-#include "handler/include/metricParsingUtils.hh"
-#include "grammar/include/metricLexer.h"
-#include "grammar/include/metricListener.h"
-#include "grammar/include/metricParser.h"

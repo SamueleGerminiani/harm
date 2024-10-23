@@ -1,192 +1,222 @@
+#include <algorithm>
+#include <assert.h>
+#include <iterator>
+#include <ostream>
+#include <string>
+#include <utility>
+
+#include "Automaton.hh"
+#include "DTLimits.hh"
 #include "DTNCReps.hh"
 #include "DTUtils.hh"
-#include "ProgressBar.hpp"
-#include "Template.hh"
+#include "Location.hh"
+#include "TemplateImplication.hh"
 #include "message.hh"
 #include "minerUtils.hh"
-#include <spot/tl/formula.hh>
-#include <spot/twaalgos/postproc.hh>
-#include <string>
-#include <unordered_set>
-#include <utility>
+#include "misc.hh"
+
 namespace harm {
 //--DTNCReps---------------------------------------
+DTNCReps::DTNCReps(TemplateImplication *t)
+    : _t(t), _nReps(_t->_limits._dto_param._step),
+      _tc(generatePtr<BooleanConstant>(true, ExpType::Bool, 1,
+                                       _t->getTraceLength())) {
+  //print limits
 
-DTNCReps::DTNCReps(BooleanConstant *p, size_t shift, Template *t,
-                   const DTLimits &limits)
-    : _t(t), _shift(shift), _tc(p) {
-
-  _limits = limits;
-  _limits._maxWidth = -1;
-  // The base case automata were already generated in the template
-  _tokens.push_back("dtNCReps0");
-  _ant.push_back(_t->_ant);
-  // storing depths
-  _antDepth.push_back(_t->getDepth(_ant.back()));
-
-  for (size_t j = 0; j < t->_templateFormula.size(); j++) {
-    if (t->_templateFormula[j]._t == Hstring::Stype::DTNCReps) {
-      t->_templateFormula[j]._offset = -1 * _shift;
-    }
-  }
-  _formulas.push_back(t->_templateFormula);
-
-  if (_t->_applyDynamicShift) {
-    _applyDynamicShift = true;
-    messageErrorIf(
-        !nothingBefore(
-            _tokens.back(),
-            spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
-                .f),
-        "Can't have events happening before the dt operator when using "
-        "|-> ");
-  } else {
-    messageErrorIf(
-        !nothingAfter(
-            "dtMock",
-            spot::parse_infix_psl(_t->_templateFormula.getAnt().toSpotString())
-                .f),
-        "Can't have events happening after the dt operator when not using "
-        "|-> ");
-  }
-
-  //  messageInfo("Building automata...");
+  // generate the rest of the automata
   generateFormulas();
+
+  //  debug
+  //for (auto &f : _formulas) {
+  //  std::cout << temp2ColoredString(f, Language::SpotLTL, 0) << "\n";
+  //}
+
+  //   Check for parallel depth
   handleParallelDepth();
+
+  updateTemplate(0);
 }
 
 void DTNCReps::generateFormulas() {
-  // retrieve the consequent and the implication of the formula
-  auto hcon = _t->_templateFormula.getCon();
 
-  for (size_t i = 1; i < _limits._maxDepth; i++) {
-    // we build on the previously generated antecedent
-    auto hant = _formulas[i - 1].getAnt();
-    Proposition **pp = new Proposition *(nullptr);
-    std::string token = "dtNCReps" + std::to_string(i);
-    // the relation between token name and proposition is kept in the template
-    _t->_tokenToProp[token] = pp;
-    _tokens.push_back(token);
+  // store the base template
+  _formulas.push_back(_t->_templateFormula);
+  _dtTokens.push_back("_dtNCReps0");
+  // This first dtNCReps operator
+  TemporalExpressionPtr concatOp = getDTPlaceholder(_formulas[0], 0);
+  messageErrorIf(concatOp == nullptr,
+                 "Could not find the dtNCReps placeholder");
+  //fill the relation between the token name and the placeholder
+  _dtTokenToPP["_dtNCReps0"] =
+      std::dynamic_pointer_cast<BooleanLayerDTPlaceholder>(concatOp)
+          ->getPlaceholderPointer();
+  (*_dtTokenToPP["_dtNCReps0"]) = _tc;
+
+  {
+    //check if the template is well formed when including the DT Operator
+    TemporalExpressionPtr fant =
+        _t->_templateFormula->getItems()[0]->getItems()[0];
 
     if (_t->_applyDynamicShift) {
-      // dtNextM ##N ... ##N dtNext2 ##N dtNext0
-      //find the last operand and append a new one
-      auto dth = std::find_if(
-          std::begin(hant), std::end(hant),
-          [](Hstring &e) { return e._t == Hstring::Stype::DTNCReps; }
-
-      );
-
-      messageErrorIf(dth == hant.end(), "Could not find the operand");
-      dth->_offset = _shift;
-      hant.insert(dth, Hstring(token, Hstring::Stype::DTNCReps, pp));
+      messageErrorIf(!nothingBefore(_dtTokens.back(), fant),
+                     "Can't have events happening before "
+                     "the dtNCReps operator when "
+                     "using "
+                     "|->, |=> ");
     } else {
-      // dtNext0 ##N dtNext1 ##N ... ##N dtNextM
-      // find the last operand and append a new one
-      auto dth = std::find_if(
-          std::rbegin(hant), std::rend(hant),
-          [](Hstring &e) { return e._t == Hstring::Stype::DTNCReps; }
+      messageErrorIf(!nothingAfter(_dtTokens.back(), fant),
+                     "Can't have events happening after the dtNCReps "
+                     "operator when "
+                     "not using "
+                     "->, => ");
+    }
+  }
 
-      );
+  //base antecedent
+  _antEvaluators.push_back(generateEvaluator(
+      _formulas[0]->getItems()[0]->getItems()[0], _t->_trace));
 
-      messageErrorIf(dth == hant.rend(), "Could not find the operand");
-      auto newOperand = Hstring(token, Hstring::Stype::DTNCReps, pp);
-      newOperand[0]._offset = _shift;
-      hant.insert(++((dth + 1).base()), newOperand);
+  if (_t->_contains_mma) {
+    //base implication
+    _impEvaluators.push_back(
+        generateEvaluator(_formulas[0]->getItems()[0], _t->_trace));
+  }
+
+  //build the rest of the formulas
+  for (size_t i = 1; i < _t->_limits._maxDepth; i++) {
+    SereConcatPtr concatOp_new = generatePtr<SereConcat>();
+    concatOp_new->setOverlapping(_t->_limits._dto_param._separator ==
+                                 ":");
+    // we build on the previously generated antecedent
+    std::string token = "_dtNCReps" + std::to_string(i);
+    _dtTokens.push_back(token);
+    //make a new dt placeholder
+    BooleanLayerDTPlaceholderPtr blp =
+        generatePtr<BooleanLayerDTPlaceholder>(
+            _t->_limits._dto_param._type,
+            generatePtrPtr<Proposition>((Proposition *)nullptr),
+            token, (int)i);
+    // save the relation between token and the placeholder pointer
+    _dtTokenToPP[token] = blp->getPlaceholderPointer();
+
+    TemporalExpressionPtr toAdd = copy(concatOp);
+    TemporalExpressionPtr toSub = getDTPlaceholder(toAdd, i - 1);
+    if (_t->_limits._dto_param._type == DTO_Type::GoTo) {
+      toSub = generatePtr<SereGoto>(toSub,
+                                    std::make_pair(_nReps, _nReps));
+    } else if (_t->_limits._dto_param._type == DTO_Type::NCReps) {
+      toSub = generatePtr<SereNonConsecutiveRep>(
+          toSub, std::make_pair(_nReps, _nReps));
+    } else {
+      messageError("Unknown DTO_Type");
+    }
+    substituteByToken(toAdd, toSub,
+                      "_dtNCReps" + std::to_string(i - 1));
+
+    if (_t->_applyDynamicShift) {
+      // dtNCRepsM ##N ... ##N dtNCReps1 ##N dtNCReps0
+      concatOp_new->addItem(blp);
+      concatOp_new->addItem(toAdd);
+    } else {
+      // dtNCReps0 ##N dtNCReps1 ##N ... ##N dtNCRepsM
+      concatOp_new->addItem(toAdd);
+      concatOp_new->addItem(blp);
+    }
+    //prepare the concat operator for the next iteration
+    concatOp = concatOp_new;
+
+    //add the new concat operator to the base formula
+    TemporalExpressionPtr formula_new = copy(_formulas[0]);
+    TemporalExpressionPtr sdt_parent =
+        getDTPlaceholderParent(formula_new, 0);
+    messageErrorIf(
+        sdt_parent == nullptr,
+        "Could not find the parent of the dtNCReps placeholder");
+    //this cover two cases: the second one is when the delat operator is the only element in the antecedent
+    //Remember: The order of the elements changes when using a mm implication
+    if (_t->_applyDynamicShift ||
+        std::dynamic_pointer_cast<PropertyImplication>(sdt_parent) !=
+            nullptr) {
+      sdt_parent->getItems().front() = concatOp;
+    } else {
+      sdt_parent->getItems().back() = concatOp;
     }
 
-    Hstring imp = _t->_templateFormula.getImp();
-    _formulas.push_back(Hstring("G(", Hstring::Stype::G) + hant + imp + hcon +
-                        Hstring(")", Hstring::Stype::G));
+    //init all the placeholders with the pointers of the previouse formula: all _formulas must use the same pointers
+    auto pack = extractPlaceholders(_formulas[i - 1]);
+    substitutePlaceholders(formula_new, pack);
 
-    // string to spot formula
-    spot::parsed_formula ant = spot::parse_infix_psl(hant.toSpotString());
-
-    // Synthesising the automata
-    auto antAutomaton = generateDeterministicSpotAutomaton(ant.f);
-
-    // building storing our custom automata
-    _ant.push_back(buildAutomaton(antAutomaton, _t->_tokenToProp));
-
-    // storing depths
-    _antDepth.push_back(_t->getDepth(_ant.back()));
+    //store the new formula and the corresponding evaluators
+    _formulas.push_back(formula_new);
+    _antEvaluators.push_back(generateEvaluator(
+        formula_new->getItems()[0]->getItems()[0], _t->_trace));
+    if (_t->_contains_mma) {
+      _impEvaluators.push_back(
+          generateEvaluator(formula_new->getItems()[0], _t->_trace));
+    }
   }
 }
+
 void DTNCReps::handleParallelDepth() {
+  TemporalExpressionPtr fant =
+      _t->_templateFormula->getItems()[0]->getItems()[0];
+
   if (_t->_applyDynamicShift) {
-    if (onlyToken(
-            "dtNCReps0",
-            selectFirstEvent(
-                spot::parse_infix_psl(_formulas.front().getAnt().toSpotString())
-                    .f))) {
+    if (onlyToken("_dtNCReps0", selectFirstEvent(fant))) {
       //no parallel depth
       return;
     }
-
     int baseDepth = 0;
-    for (auto f : _formulas) {
+    for (const auto &f : _formulas) {
+      TemporalExpressionPtr fant = f->getItems()[0]->getItems()[0];
       //extract first temporal element from the left
-      auto portionBare =
-          selectFirstEvent(spot::parse_infix_psl(f.getAnt().toSpotString()).f);
+      auto portionBare = selectFirstEvent(fant);
 
-      //create an automaton of the first event
-      std::stringstream ss;
-      print_spin_ltl(ss, portionBare, false) << '\n';
-      std::string portion = "{" + ss.str() + "}";
-      auto portionFormula = spot::parse_infix_psl(portion);
-      auto aut = generateDeterministicSpotAutomaton(portionFormula.f);
-      Automaton *pAnt = buildAutomaton(aut, _t->_tokenToProp);
-      //get the max depth of the automaton from the root
-      int depth = _t->getDepth(pAnt);
-      //fails if the automaton has cycles
+      //get the max depth
+      int depth = getTemporalDepth(fant);
+      //fails if the depth cant be quantified
       messageErrorIf(depth == -1, " parallel depth is unknown");
       if (baseDepth == 0) {
         //depth of the original template
         baseDepth = depth;
       } else if (depth > baseDepth) {
         //cannot add any more operands without pushing things
-        delete pAnt;
         break;
       }
-      //adding an operand did not change the maximum depth of the automaton
-      messageError(" parallel depth is not allowed");
+      //adding an operand did not change the maximum depth of the formula
+      _parallelDepth++;
     }
   }
-}
-DTNCReps::~DTNCReps() {
-  for (size_t i = 0; i < _tokens.size(); i++) {
-    delete _ant[i];
-  }
-  delete _tc;
+
+  messageErrorIf(_parallelDepth != 0,
+                 "Parallel depth is not allowed when using DTNCReps");
 }
 
-std::vector<Proposition *> DTNCReps::minimize(bool isOffset) {
+DTNCReps::~DTNCReps() {}
+
+DTSolution DTNCReps::getMinimizedSolution(bool isOffset) {
 
   std::vector<std::vector<size_t>> c;
-  std::vector<Proposition *> propList;
+  std::vector<PropositionPtr> original;
   for (size_t i = 0; i <= _currDepth; i++) {
-    propList.emplace_back((*_t->_tokenToProp.at(_tokens[i])));
-  }
-  std::vector<std::pair<Proposition *, size_t>> originalChoices;
-  for (auto i : _order) {
-    originalChoices.emplace_back(_choices.at(i), i);
+    original.emplace_back((*_dtTokenToPP.at(_dtTokens[i])));
   }
 
-  for (size_t i = 1; i <= propList.size(); i++) {
+  for (size_t i = 1; i <= original.size(); i++) {
     // clear the current combinations
     c.clear();
     // generate combinations for size i
-    comb(propList.size(), i, c);
+    comb(original.size(), i, c);
     // find a combination that satisfies the assertion
     for (auto &comb : c) {
-      // load the combination
-      std::vector<size_t> reduced = comb;
-      std::sort(reduced.begin(), reduced.end());
-      removeItems();
-      for (size_t j = 0; j < reduced.size(); j++) {
-        addItem(propList[reduced[j]], -1);
+      // fill with all true constants
+      for (size_t i = 0; i < original.size(); i++) {
+        (*_dtTokenToPP.at(_dtTokens[i])) = _tc;
       }
-
+      // load the combination
+      for (auto &e : comb) {
+        (*_dtTokenToPP.at(_dtTokens[e])) = original[e];
+      }
       // check if this combination works
       if (isOffset) {
         if (_t->assHoldsOnTraceOffset(harm::Location::Ant)) {
@@ -194,160 +224,161 @@ std::vector<Proposition *> DTNCReps::minimize(bool isOffset) {
           goto end;
         }
       } else {
-        if (_t->assHoldsOnTrace(harm::Location::Ant)) {
-          goto end;
+        // check if this combination works
+        if (isOffset) {
+          if (_t->assHoldsOnTraceOffset(harm::Location::Ant)) {
+            // we found a minimal solution
+            goto end;
+          }
+        } else {
+          if (_t->assHoldsOnTrace(harm::Location::Ant)) {
+            goto end;
+          }
         }
       }
     }
   }
 end:;
-  std::vector<Proposition *> ret;
-  for (size_t i = 0; i <= _currDepth; i++) {
-    ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
-  }
-  removeItems();
-  for (auto &p_d : originalChoices) {
-    addItem(p_d.first, p_d.second);
+  DTSolution ret;
+  for (size_t i = 0; i < original.size(); i++) {
+    ret.emplace_back();
+    ret[i].push_back(*_dtTokenToPP.at(_dtTokens[i]));
+    //restore the original pointers
+    (*_dtTokenToPP.at(_dtTokens[i])) = original[i];
   }
   return ret;
 }
-void DTNCReps::removeItems() {
 
-  _t->_ant = _ant[0];
-  _t->_templateFormula = _formulas[0];
-  _t->_antDepth = _antDepth[0];
-  (*_t->_tokenToProp[_tokens[0]]) = _tc;
+void DTNCReps::removeItems() {
+  updateTemplate(0);
+  (*_dtTokenToPP[_dtTokens[0]]) = _tc;
   _choices.clear();
   _order.clear();
   _currDepth = 0;
 }
+
 void DTNCReps::popItem(int depth) {
   if (depth == -1) {
     depth = _currDepth;
   }
   assert(_order.back() == depth);
-  (*_t->_tokenToProp[_tokens[depth]]) = _tc;
+  (*_dtTokenToPP[_dtTokens[depth]]) = _tc;
   if ((size_t)depth == _currDepth) {
     while (_currDepth > 0 &&
-           (*_t->_tokenToProp.at(_tokens[_currDepth])) == _tc) {
+           (*_dtTokenToPP.at(_dtTokens[_currDepth])) == _tc) {
       _currDepth--;
     }
   }
-  _t->_ant = _ant[_currDepth];
-  _t->_templateFormula = _formulas[_currDepth];
-  _t->_antDepth = _antDepth[_currDepth];
+  updateTemplate(_currDepth);
 
   _choices.erase(depth);
   _order.pop_back();
   assert(_choices.size() == _order.size());
 }
-void DTNCReps::addItem(Proposition *p, int depth) {
+
+void DTNCReps::addItem(const PropositionPtr &p, int depth) {
 
   if (depth == -1) {
     if (!_choices.empty()) {
       _currDepth++;
     }
-    (*_t->_tokenToProp.at(_tokens[_currDepth])) = p;
-    _t->_ant = _ant[_currDepth];
-    _t->_templateFormula = _formulas[_currDepth];
-    _t->_antDepth = _antDepth[_currDepth];
+    (*_dtTokenToPP.at(_dtTokens[_currDepth])) = p;
+    updateTemplate(_currDepth);
     _choices[_currDepth] = p;
     _order.push_back(_currDepth);
   } else {
     _order.push_back(depth);
     if (_parallelDepth) {
-      (*_t->_tokenToProp.at(_tokens[depth])) = p;
+      (*_dtTokenToPP.at(_dtTokens[depth])) = p;
       _choices[depth] = p;
     } else {
-      (*_t->_tokenToProp.at(_tokens[depth])) = p;
+      (*_dtTokenToPP.at(_dtTokens[depth])) = p;
       _choices[depth] = p;
       if ((size_t)depth > _currDepth) {
         // fill gap with tc
         int tmp = _currDepth + 1;
         while (tmp < depth) {
-          (*_t->_tokenToProp.at(_tokens[tmp++])) = _tc;
+          (*_dtTokenToPP.at(_dtTokens[tmp++])) = _tc;
         }
         _currDepth = depth;
-        _t->_ant = _ant[_currDepth];
-        _t->_templateFormula = _formulas[_currDepth];
-        _t->_antDepth = _antDepth[_currDepth];
+        updateTemplate(_currDepth);
       }
     }
   }
   assert(_choices.size() == _order.size());
 }
-std::vector<Proposition *> DTNCReps::getItems() {
-  std::vector<Proposition *> ret;
+
+std::vector<PropositionPtr> DTNCReps::getItems() {
+  std::vector<PropositionPtr> ret;
   for (size_t i = 0; i <= _currDepth; i++) {
-    ret.push_back(*_t->_tokenToProp.at(_tokens[i]));
+    ret.push_back(*_dtTokenToPP.at(_dtTokens[i]));
   }
   return ret;
 }
 bool DTNCReps::isMultiDimensional() { return 0; }
 bool DTNCReps::canInsertAtDepth(int depth) {
   if (depth == -1) {
-    return (_choices.empty() ? 0 : _currDepth + 1) < _limits._maxDepth;
+    return (_choices.empty() ? 0 : _currDepth + 1) <
+           _t->_limits._maxDepth;
   } else {
-    return (size_t)depth < _limits._maxDepth &&
+    return (size_t)depth < _t->_limits._maxDepth &&
            (!_choices.count(depth) || _choices.at(depth) == _tc);
   }
 }
-bool DTNCReps::isRandomConstructed() { return _limits._isRandomConstructed; }
+
+bool DTNCReps::isUnordered() { return _t->_limits._isUnordered; }
 size_t DTNCReps::getNChoices() { return _choices.size(); }
-bool DTNCReps::isTaken(size_t id, bool second, int depth) { return false; }
-void DTNCReps::removeLeaf(size_t id, bool second, int depth) {}
-void DTNCReps::addLeaf(Proposition *p, size_t id, bool second, int depth) {}
-const DTLimits &DTNCReps::getLimits() { return _limits; }
+bool DTNCReps::isTaken(size_t id, bool negated, int depth) {
+  return false;
+}
+void DTNCReps::removeLeaf(size_t id, bool negated, int depth) {}
+void DTNCReps::addLeaf(const PropositionPtr &p, size_t id,
+                       bool negated, int depth) {}
+const DTLimits &DTNCReps::getLimits() { return _t->_limits; }
 size_t DTNCReps::getCurrentDepth() { return _currDepth; }
-std::pair<std::string, std::string> DTNCReps::prettyPrint(bool offset) {
 
-  auto ant = _formulas[_currDepth].getAnt();
-  auto imp = _formulas[_currDepth].getImp();
-  auto con = _formulas[_currDepth].getCon();
-
+TemporalExpressionPtr DTNCReps::getReducedFormula(bool offset) {
+  TemporalExpressionPtr formula = copy(_t->_templateFormula, 1);
   if (offset) {
-    //negate the consequent
-    con = Hstring("!(", Hstring::Stype::Temp, nullptr) + con +
-          Hstring(")", Hstring::Stype::Temp, nullptr);
+    TemporalExpressionPtr fimpl = formula->getItems()[0];
+    TemporalExpressionPtr fcon = getConsequent(fimpl);
+    fimpl->popItem();
+    fimpl->addItem(generatePtr<PropertyNot>(fcon));
   }
-
-  //compose the reduced template
-  auto reducedTemplate = Hstring("G(", Hstring::Stype::G) + ant + imp + con +
-                         Hstring(")", Hstring::Stype::G);
-  return std::make_pair(reducedTemplate.toString(1),
-                        reducedTemplate.toColoredString(1));
+  return formula;
 }
 
-std::vector<Proposition *> DTNCReps::unpack() {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
-};
-std::vector<Proposition *> DTNCReps::unpack(Proposition *pack) {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
-};
-std::vector<Proposition *> DTNCReps::unpack(std::vector<Proposition *> &pack) {
-  messageError("Can't unpack in unidimensional operator'");
-  return std::vector<Proposition *>();
+bool DTNCReps::isSolutionInconsequential(
+    const DTSolution &sol) const {
+  auto uniSol = sol.getUnidimensionalSolution();
+  return uniSol.empty() || uniSol.back() == _tc;
 }
 
-void DTNCReps::clearPack(Proposition *pack) {
-  messageError("Can't clear pack in unidimensional operator'");
-}
-bool DTNCReps::isSolutionInconsequential(std::vector<Proposition *> &sol) {
-  if (_applyDynamicShift) {
-    return sol.empty() || sol.back() == _tc;
-  } else {
-    return sol.empty() || sol.front() == _tc;
-  }
-}
-void DTNCReps::substitute(int depth, int width, Proposition *&sub) {
+void DTNCReps::substitute(int depth, int width, PropositionPtr &sub) {
   if (depth == -1) {
     depth = _currDepth;
   }
-  Proposition *tmp = _choices.at(depth);
+  PropositionPtr tmp = _choices.at(depth);
   _choices.at(depth) = sub;
-  (*_t->_tokenToProp.at(_tokens[depth])) = sub;
+  (*_dtTokenToPP.at(_dtTokens[depth])) = sub;
   sub = tmp;
+}
+
+void DTNCReps::setL1Threads(size_t n) {
+  for (size_t i = 0; i < _dtTokens.size(); i++) {
+    _antEvaluators[i]->setL1Threads(n);
+    if (_t->_contains_mma) {
+      _impEvaluators[i]->setL1Threads(n);
+    }
+  }
+}
+
+DTSolution DTNCReps::getSolution() {
+  DTSolution ret;
+  for (size_t i = 0; i <= _currDepth; i++) {
+    ret.emplace_back();
+    ret[i].push_back(*_dtTokenToPP.at(_dtTokens[i]));
+  }
+  return ret;
 }
 } // namespace harm

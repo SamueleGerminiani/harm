@@ -4,6 +4,16 @@
 
 #include "csv_reader.hpp"
 
+#include <sstream>
+#include <stdexcept>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+
+#include "internal/basic_csv_parser.hpp"
+#include "internal/common.hpp"
+#include "internal/csv_format.hpp"
+
 namespace csv {
 namespace internals {
 CSV_INLINE std::string format_row(const std::vector<std::string> &row,
@@ -28,8 +38,8 @@ CSV_INLINE std::string format_row(const std::vector<std::string> &row,
          *  @param[in] format    Format of the CSV file
          *
          */
-CSV_INLINE std::vector<std::string> _get_col_names(csv::string_view head,
-                                                   CSVFormat format) {
+CSV_INLINE std::vector<std::string>
+_get_col_names(csv::string_view head, CSVFormat format) {
   // Parse the CSV
   auto trim_chars = format.get_trim_chars();
   std::stringstream source(head.data());
@@ -42,7 +52,8 @@ CSV_INLINE std::vector<std::string> _get_col_names(csv::string_view head,
   return CSVRow(std::move(rows[format.get_header()]));
 }
 
-CSV_INLINE GuessScore calculate_score(csv::string_view head, CSVFormat format) {
+CSV_INLINE GuessScore calculate_score(csv::string_view head,
+                                      CSVFormat format) {
   // Frequency counter of row length
   std::unordered_map<size_t, size_t> row_tally = {{0, 0}};
 
@@ -90,8 +101,8 @@ CSV_INLINE GuessScore calculate_score(csv::string_view head, CSVFormat format) {
 }
 
 /** Guess the delimiter used by a delimiter-separated values file */
-CSV_INLINE CSVGuessResult _guess_format(csv::string_view head,
-                                        const std::vector<char> &delims) {
+CSV_INLINE CSVGuessResult _guess_format(
+    csv::string_view head, const std::vector<char> &delims) {
   /** For each delimiter, find out which row length was most common.
              *  The delimiter with the longest mode row length wins.
              *  Then, the line number of the header row is the first row with
@@ -122,22 +133,24 @@ CSV_INLINE CSVGuessResult _guess_format(csv::string_view head,
      *  @param[in] format    Format of the CSV file
      *
      */
-CSV_INLINE std::vector<std::string> get_col_names(csv::string_view filename,
-                                                  CSVFormat format) {
+CSV_INLINE std::vector<std::string>
+get_col_names(csv::string_view filename, CSVFormat format) {
   auto head = internals::get_csv_head(filename);
 
   /** Guess delimiter and header row */
   if (format.guess_delim()) {
-    auto guess_result = guess_format(filename, format.get_possible_delims());
-    format.delimiter(guess_result.delim).header_row(guess_result.header_row);
+    auto guess_result =
+        guess_format(filename, format.get_possible_delims());
+    format.delimiter(guess_result.delim)
+        .header_row(guess_result.header_row);
   }
 
   return internals::_get_col_names(head, format);
 }
 
 /** Guess the delimiter used by a delimiter-separated values file */
-CSV_INLINE CSVGuessResult guess_format(csv::string_view filename,
-                                       const std::vector<char> &delims) {
+CSV_INLINE CSVGuessResult guess_format(
+    csv::string_view filename, const std::vector<char> &delims) {
   auto head = internals::get_csv_head(filename);
   return internals::_guess_format(head, delims);
 }
@@ -153,7 +166,8 @@ CSV_INLINE CSVGuessResult guess_format(csv::string_view filename,
      *  \snippet tests/test_read_csv.cpp CSVField Example
      *
      */
-CSV_INLINE CSVReader::CSVReader(csv::string_view filename, CSVFormat format)
+CSV_INLINE CSVReader::CSVReader(csv::string_view filename,
+                                CSVFormat format)
     : _format(format) {
   auto head = internals::get_csv_head(filename);
   using Parser = internals::MmapParser;
@@ -211,7 +225,8 @@ CSV_INLINE int CSVReader::index_of(csv::string_view col_name) const {
 
 CSV_INLINE void CSVReader::trim_header() {
   if (!this->header_trimmed) {
-    for (int i = 0; i <= this->_format.header && !this->records.empty(); i++) {
+    for (int i = 0;
+         i <= this->_format.header && !this->records.empty(); i++) {
       if (i == this->_format.header && this->col_names->empty()) {
         this->set_col_names(this->records.pop_front());
       } else {
@@ -288,18 +303,20 @@ CSV_INLINE bool CSVReader::read_row(CSVRow &row) {
         if (this->read_csv_worker.joinable())
           this->read_csv_worker.join();
 
-        this->read_csv_worker = std::thread(&CSVReader::read_csv, this,
-                                            internals::ITERATION_CHUNK_SIZE);
+        this->read_csv_worker =
+            std::thread(&CSVReader::read_csv, this,
+                        internals::ITERATION_CHUNK_SIZE);
       }
     } else if (this->records.front().size() != this->n_cols &&
                this->_format.variable_column_policy !=
                    VariableColumnPolicy::KEEP) {
       auto errored_row = this->records.pop_front();
 
-      if (this->_format.variable_column_policy == VariableColumnPolicy::THROW) {
+      if (this->_format.variable_column_policy ==
+          VariableColumnPolicy::THROW) {
         if (errored_row.size() < this->n_cols)
-          throw std::runtime_error("Line too short " +
-                                   internals::format_row(errored_row));
+          throw std::runtime_error(
+              "Line too short " + internals::format_row(errored_row));
 
         throw std::runtime_error("Line too long " +
                                  internals::format_row(errored_row));

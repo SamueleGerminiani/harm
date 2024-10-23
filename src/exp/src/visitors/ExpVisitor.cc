@@ -1,24 +1,39 @@
+#include <vector>
+
+#include "formula/atom/Atom.hh"
+#include "formula/atom/Constant.hh"
+#include "formula/expression/BitSelector.hh"
+#include "formula/expression/GenericExpression.hh"
+#include "formula/expression/TypeCast.hh"
+#include "formula/temporal/BooleanLayer.hh"
+#include "formula/temporal/Property.hh"
+#include "formula/temporal/Sere.hh"
 #include "visitors/ExpVisitor.hh"
 
 //------------------------------------------------------------------------------
-#define LEAF_NODE(LEAF)                                                        \
-    void ExpVisitor::visit(LEAF &) {}
+#define LEAF_NODE(LEAF)                                              \
+  void ExpVisitor::visit(LEAF &) {}
 
-#define EXPRESSION_NODE_1(NODE)                                                \
-    void ExpVisitor::visit(NODE &o) {                                         \
-        auto &propositions = o.getItems();                                     \
-        for (auto *prop : propositions)                                        \
-            prop->acceptVisitor(*this);                                        \
-    }
+#define EXP_OPE(NODE)                                                \
+  void ExpVisitor::visit(NODE &o) {                                  \
+    auto &propositions = o.getItems();                               \
+    for (const auto &prop : propositions)                            \
+      prop->acceptVisitor(*this);                                    \
+  }
 
-#define EXPRESSION_NODE_2(NODE)                                                \
-    void ExpVisitor::visit(NODE &o) { o.getItem().acceptVisitor(*this); }
+#define EXP_OPE_UNARY(NODE)                                          \
+  void ExpVisitor::visit(NODE &o) {                                  \
+    o.getItem()->acceptVisitor(*this);                               \
+  }
 
-#define EXPRESSION_NODE_3(NODE)                                                \
-    void ExpVisitor::visit(NODE &o) {                                         \
-        o.getItem1().acceptVisitor(*this);                                     \
-        o.getItem2().acceptVisitor(*this);                                     \
-    }
+#define UNARY_FUNCTION(TYPE)                                         \
+  void ExpVisitor::visit(TYPE &o) {                                  \
+    if (o.isTemporal()) {                                            \
+      (*o.getPlaceholderPointer())->acceptVisitor(*this);            \
+    } else {                                                         \
+      o.getOperand()->acceptVisitor(*this);                          \
+    }                                                                \
+  }
 //------------------------------------------------------------------------------
 
 namespace expression {
@@ -26,52 +41,88 @@ namespace expression {
 // proposition
 LEAF_NODE(BooleanConstant)
 LEAF_NODE(BooleanVariable)
-EXPRESSION_NODE_1(PropositionAnd)
-EXPRESSION_NODE_1(PropositionOr)
-EXPRESSION_NODE_1(PropositionXor)
-EXPRESSION_NODE_1(PropositionEq)
-EXPRESSION_NODE_1(PropositionNeq)
-EXPRESSION_NODE_1(PropositionNot)
-EXPRESSION_NODE_2(PropositionPast)
-EXPRESSION_NODE_2(LogicToBool)
+EXP_OPE(PropositionAnd)
+EXP_OPE(PropositionOr)
+EXP_OPE(PropositionXor)
+EXP_OPE(PropositionEq)
+EXP_OPE(PropositionNeq)
+EXP_OPE(PropositionNot)
 
-// numeric
-LEAF_NODE(NumericConstant)
-LEAF_NODE(NumericVariable)
-EXPRESSION_NODE_1(NumericSum)
-EXPRESSION_NODE_1(NumericSub)
-EXPRESSION_NODE_1(NumericMul)
-EXPRESSION_NODE_1(NumericDiv)
-EXPRESSION_NODE_1(NumericEq)
-EXPRESSION_NODE_1(NumericNeq)
-EXPRESSION_NODE_1(NumericGreater)
-EXPRESSION_NODE_1(NumericGreaterEq)
-EXPRESSION_NODE_1(NumericLess)
-EXPRESSION_NODE_1(NumericLessEq)
-EXPRESSION_NODE_2(NumericPast)
-EXPRESSION_NODE_2(NumericToBool)
+// float
+LEAF_NODE(FloatConstant)
+LEAF_NODE(FloatVariable)
+EXP_OPE(FloatSum)
+EXP_OPE(FloatSub)
+EXP_OPE(FloatMul)
+EXP_OPE(FloatDiv)
+EXP_OPE(FloatEq)
+EXP_OPE(FloatNeq)
+EXP_OPE(FloatGreater)
+EXP_OPE(FloatGreaterEq)
+EXP_OPE(FloatLess)
+EXP_OPE(FloatLessEq)
+EXP_OPE_UNARY(FloatToBool)
+EXP_OPE_UNARY(FloatToInt)
 
-// logic
-LEAF_NODE(LogicConstant)
-LEAF_NODE(LogicVariable)
-EXPRESSION_NODE_1(LogicSum)
-EXPRESSION_NODE_1(LogicSub)
-EXPRESSION_NODE_1(LogicMul)
-EXPRESSION_NODE_1(LogicDiv)
-EXPRESSION_NODE_1(LogicBAnd)
-EXPRESSION_NODE_1(LogicBOr)
-EXPRESSION_NODE_1(LogicBXor)
-EXPRESSION_NODE_1(LogicEq)
-EXPRESSION_NODE_1(LogicNeq)
-EXPRESSION_NODE_1(LogicGreater)
-EXPRESSION_NODE_1(LogicGreaterEq)
-EXPRESSION_NODE_1(LogicLess)
-EXPRESSION_NODE_1(LogicLessEq)
-EXPRESSION_NODE_1(LogicNot)
-EXPRESSION_NODE_1(LogicLShift)
-EXPRESSION_NODE_1(LogicRShift)
-EXPRESSION_NODE_2(LogicPast)
-EXPRESSION_NODE_2(LogicBitSelector)
-EXPRESSION_NODE_2(LogicToNumeric)
+// int
+LEAF_NODE(IntConstant)
+LEAF_NODE(IntVariable)
+EXP_OPE(IntSum)
+EXP_OPE(IntSub)
+EXP_OPE(IntMul)
+EXP_OPE(IntDiv)
+EXP_OPE(IntBAnd)
+EXP_OPE(IntBOr)
+EXP_OPE(IntBXor)
+EXP_OPE(IntEq)
+EXP_OPE(IntNeq)
+EXP_OPE(IntGreater)
+EXP_OPE(IntGreaterEq)
+EXP_OPE(IntLess)
+EXP_OPE(IntLessEq)
+EXP_OPE(IntNot)
+EXP_OPE(IntLShift)
+EXP_OPE(IntRShift)
+EXP_OPE_UNARY(IntBitSelector)
+EXP_OPE_UNARY(IntToFloat)
+EXP_OPE_UNARY(IntToBool)
 
-} 
+//temporal
+void ExpVisitor::visit(BooleanLayerInst &o) {
+  o.getProposition()->acceptVisitor(*this);
+}
+void ExpVisitor::visit(BooleanLayerPermutationPlaceholder &o) {
+  if (o.getPlaceholderPointer() != nullptr &&
+      (*o.getPlaceholderPointer()) != nullptr)
+    (*o.getPlaceholderPointer())->acceptVisitor(*this);
+}
+void ExpVisitor::visit(BooleanLayerDTPlaceholder &o) {
+  if (o.getPlaceholderPointer() != nullptr &&
+      (*o.getPlaceholderPointer()) != nullptr)
+    (*o.getPlaceholderPointer())->acceptVisitor(*this);
+}
+void ExpVisitor::visit(BooleanLayerNot &o) {
+  o.getBL()->acceptVisitor(*this);
+}
+
+EXP_OPE(PropertyAlways)
+EXP_OPE(PropertyEventually)
+EXP_OPE(PropertyUntil)
+EXP_OPE(PropertyRelease)
+EXP_OPE(PropertyAnd)
+EXP_OPE(PropertyOr)
+EXP_OPE(PropertyNot)
+EXP_OPE(PropertyNext)
+EXP_OPE(PropertyImplication)
+EXP_OPE(SereAnd)
+EXP_OPE(SereOr)
+EXP_OPE(SereConcat)
+EXP_OPE(SereIntersect)
+EXP_OPE(SereFirstMatch)
+EXP_OPE(SereDelay)
+EXP_OPE(SereConsecutiveRep)
+EXP_OPE(SerePlus)
+EXP_OPE(SereGoto)
+EXP_OPE(SereNonConsecutiveRep)
+
+} // namespace expression

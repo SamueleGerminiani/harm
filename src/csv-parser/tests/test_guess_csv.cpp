@@ -28,7 +28,8 @@ TEST_CASE("guess_delim() Test - Semi-Colon", "[test_guess_scolon]") {
   REQUIRE(format.header_row == 0);
 }
 
-TEST_CASE("guess_delim() Test - CSV with Comments", "[test_guess_comment]") {
+TEST_CASE("guess_delim() Test - CSV with Comments",
+          "[test_guess_comment]") {
   CSVGuessResult format =
       guess_format("./tests/data/fake_data/ints_comments.csv");
   REQUIRE(format.delim == ',');

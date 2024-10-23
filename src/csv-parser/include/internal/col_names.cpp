@@ -1,5 +1,9 @@
 #include "col_names.hpp"
 
+#include <utility>
+
+#include "internal/common.hpp"
+
 namespace csv {
 namespace internals {
 CSV_INLINE std::vector<std::string> ColNames::get_col_names() const {

@@ -20,8 +20,8 @@ TEST_CASE("Recognize Integers Properly", "[dtype_int]") {
 }
 
 TEST_CASE("Recognize Strings Properly", "[dtype_str]") {
-  auto str = GENERATE(as<std::string>{}, "test", "999.999.9999", "510-123-4567",
-                      "510 123", "510 123 4567");
+  auto str = GENERATE(as<std::string>{}, "test", "999.999.9999",
+                      "510-123-4567", "510 123", "510 123 4567");
 
   SECTION("String Recognition") {
     REQUIRE(data_type(str) == DataType::CSV_STRING);
@@ -130,7 +130,8 @@ TEST_CASE("Parse Scientific Notation", "[e_notation]") {
   REQUIRE(data_type("4.55E-5", &out) == DataType::CSV_DOUBLE);
   REQUIRE(is_equal(out, 0.0000455L));
 
-  REQUIRE(data_type("4.55E-000000000005", &out) == DataType::CSV_DOUBLE);
+  REQUIRE(data_type("4.55E-000000000005", &out) ==
+          DataType::CSV_DOUBLE);
   REQUIRE(is_equal(out, 0.0000455L));
 }
 //! [Parse Scientific Notation]
@@ -138,9 +139,10 @@ TEST_CASE("Parse Scientific Notation", "[e_notation]") {
 //! [Scientific Notation Flavors]
 TEST_CASE("Parse Different Flavors of Scientific Notation",
           "[sci_notation_diversity]") {
-  auto number = GENERATE(as<std::string>{}, "4.55e5", "4.55E5", "4.55E+5",
-                         "4.55e+5", "4.55E+05", "4.55e0000005", "4.55E0000005",
-                         "4.55e+0000005", "4.55E+0000005");
+  auto number =
+      GENERATE(as<std::string>{}, "4.55e5", "4.55E5", "4.55E+5",
+               "4.55e+5", "4.55E+05", "4.55e0000005", "4.55E0000005",
+               "4.55e+0000005", "4.55E+0000005");
 
   SECTION("Recognize 455 thousand") {
     long double out;
@@ -153,8 +155,8 @@ TEST_CASE("Parse Different Flavors of Scientific Notation",
 TEST_CASE("Parse Scientific Notation Malformed", "[sci_notation]") {
   // Assert parsing butchered scientific notation won't cause a
   // crash or any other weird side effects
-  auto butchered =
-      GENERATE(as<std::string>{}, "4.55E000a", "4.55000x40", "4.55000E40E40");
+  auto butchered = GENERATE(as<std::string>{}, "4.55E000a",
+                            "4.55000x40", "4.55000E40E40");
 
   SECTION("Butchered Parsing Attempt") {
     REQUIRE(data_type(butchered) == DataType::CSV_STRING);

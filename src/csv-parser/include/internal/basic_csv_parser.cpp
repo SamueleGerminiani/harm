@@ -1,5 +1,15 @@
 #include "basic_csv_parser.hpp"
 
+#include <stdexcept>
+#include <string_view>
+#include <system_error>
+
+#include "external/mio.hpp"
+#include "internal/col_names.hpp"
+#include "internal/common.hpp"
+#include "internal/csv_format.hpp"
+#include "internal/csv_row.hpp"
+
 namespace csv {
 namespace internals {
 CSV_INLINE size_t get_file_size(csv::string_view filename) {
@@ -21,10 +31,12 @@ CSV_INLINE std::string get_csv_head(csv::string_view filename,
 
   std::error_code error;
   size_t length = std::min((size_t)file_size, bytes);
-  auto mmap = mio::make_mmap_source(std::string(filename), 0, length, error);
+  auto mmap =
+      mio::make_mmap_source(std::string(filename), 0, length, error);
 
   if (error) {
-    throw std::runtime_error("Cannot open file " + std::string(filename));
+    throw std::runtime_error("Cannot open file " +
+                             std::string(filename));
   }
 
   return std::string(mmap.begin(), mmap.end());
@@ -33,14 +45,15 @@ CSV_INLINE std::string get_csv_head(csv::string_view filename,
 #ifdef _MSC_VER
 #pragma region IBasicCVParser
 #endif
-CSV_INLINE IBasicCSVParser::IBasicCSVParser(const CSVFormat &format,
-                                            const ColNamesPtr &col_names)
+CSV_INLINE
+IBasicCSVParser::IBasicCSVParser(const CSVFormat &format,
+                                 const ColNamesPtr &col_names)
     : _col_names(col_names) {
   if (format.no_quote) {
     _parse_flags = internals::make_parse_flags(format.get_delim());
   } else {
-    _parse_flags =
-        internals::make_parse_flags(format.get_delim(), format.quote_char);
+    _parse_flags = internals::make_parse_flags(format.get_delim(),
+                                               format.quote_char);
   }
 
   _ws_flags = internals::make_ws_flags(format.trim_chars.data(),
@@ -50,10 +63,10 @@ CSV_INLINE IBasicCSVParser::IBasicCSVParser(const CSVFormat &format,
 CSV_INLINE void IBasicCSVParser::end_feed() {
   using internals::ParseFlags;
 
-  bool empty_last_field =
-      this->data_ptr && this->data_ptr->_data &&
-      !this->data_ptr->data.empty() &&
-      parse_flag(this->data_ptr->data.back()) == ParseFlags::DELIMITER;
+  bool empty_last_field = this->data_ptr && this->data_ptr->_data &&
+                          !this->data_ptr->data.empty() &&
+                          parse_flag(this->data_ptr->data.back()) ==
+                              ParseFlags::DELIMITER;
 
   // Push field
   if (this->field_length > 0 || empty_last_field) {
@@ -87,22 +100,25 @@ CSV_INLINE void IBasicCSVParser::parse_field() noexcept {
 
   // Trim off trailing whitespace, this->field_length constraint matters
   // when field is entirely whitespace
-  for (size_t j = data_pos - 1; ws_flag(in[j]) && this->field_length > 0; j--)
+  for (size_t j = data_pos - 1;
+       ws_flag(in[j]) && this->field_length > 0; j--)
     this->field_length--;
 }
 
 CSV_INLINE void IBasicCSVParser::push_field() {
   // Update
   if (field_has_double_quote) {
-    fields->emplace_back(
-        field_start == UNINITIALIZED_FIELD ? 0 : (unsigned int)field_start,
-        field_length, true);
+    fields->emplace_back(field_start == UNINITIALIZED_FIELD
+                             ? 0
+                             : (unsigned int)field_start,
+                         field_length, true);
     field_has_double_quote = false;
 
   } else {
-    fields->emplace_back(
-        field_start == UNINITIALIZED_FIELD ? 0 : (unsigned int)field_start,
-        field_length);
+    fields->emplace_back(field_start == UNINITIALIZED_FIELD
+                             ? 0
+                             : (unsigned int)field_start,
+                         field_length);
   }
 
   current_row.row_length++;
@@ -142,7 +158,8 @@ CSV_INLINE size_t IBasicCSVParser::parse() {
       this->push_row();
 
       // Reset
-      this->current_row = CSVRow(data_ptr, this->data_pos, fields->size());
+      this->current_row =
+          CSVRow(data_ptr, this->data_pos, fields->size());
       break;
 
     case ParseFlags::NOT_SPECIAL:
@@ -222,7 +239,8 @@ CSV_INLINE void IBasicCSVParser::trim_utf8_bom() {
 #ifdef _MSC_VER
 #pragma region Specializations
 #endif
-CSV_INLINE void MmapParser::next(size_t bytes = ITERATION_CHUNK_SIZE) {
+CSV_INLINE void
+MmapParser::next(size_t bytes = ITERATION_CHUNK_SIZE) {
   // Reset parser state
   this->field_start = UNINITIALIZED_FIELD;
   this->field_length = 0;
@@ -231,16 +249,20 @@ CSV_INLINE void MmapParser::next(size_t bytes = ITERATION_CHUNK_SIZE) {
   // Create memory map
   size_t length = std::min(this->source_size - this->mmap_pos, bytes);
   std::error_code error;
-  this->data_ptr->_data = std::make_shared<mio::basic_mmap_source<char>>(
-      mio::make_mmap_source(this->_filename, this->mmap_pos, length, error));
+  this->data_ptr->_data =
+      std::make_shared<mio::basic_mmap_source<char>>(
+          mio::make_mmap_source(this->_filename, this->mmap_pos,
+                                length, error));
   this->mmap_pos += length;
   if (error)
     throw error;
 
-  auto mmap_ptr = (mio::basic_mmap_source<char> *)(this->data_ptr->_data.get());
+  auto mmap_ptr =
+      (mio::basic_mmap_source<char> *)(this->data_ptr->_data.get());
 
   // Create string view
-  this->data_ptr->data = csv::string_view(mmap_ptr->data(), mmap_ptr->length());
+  this->data_ptr->data =
+      csv::string_view(mmap_ptr->data(), mmap_ptr->length());
 
   // Parse
   this->current_row = CSVRow(this->data_ptr);

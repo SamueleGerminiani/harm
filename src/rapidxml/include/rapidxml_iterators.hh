@@ -59,9 +59,13 @@ public:
     return tmp;
   }
 
-  bool operator==(const node_iterator<Ch> &rhs) { return m_node == rhs.m_node; }
+  bool operator==(const node_iterator<Ch> &rhs) {
+    return m_node == rhs.m_node;
+  }
 
-  bool operator!=(const node_iterator<Ch> &rhs) { return m_node != rhs.m_node; }
+  bool operator!=(const node_iterator<Ch> &rhs) {
+    return m_node != rhs.m_node;
+  }
 
 private:
   xml_node<Ch> *m_node;

@@ -3,10 +3,10 @@
  */
 
 #pragma once
-#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "common.hpp"
 

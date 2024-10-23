@@ -1,5 +1,5 @@
 src/api/cpp/example/harm_example
-doc/html/
+doc/html/*
 build/*
 install/*
 *.swp
@@ -21,6 +21,7 @@ src/miner/modules/src/traceReader/vcdTraceReader/pyVCDparser/Verilog_VCD.pyc
 .cache
 third_party/spot
 third_party/antlr4
-third_party/z3/
+third_party/boost
 tests/bl_master/bl_master100k.vcd
 .DS_Store
+examples/sobel/ass.txt

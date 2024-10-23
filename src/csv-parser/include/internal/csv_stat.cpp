@@ -3,20 +3,31 @@
  */
 
 #include "csv_stat.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
 #include <string>
+#include <thread>
+#include <utility>
+
+#include "internal/csv_reader.hpp"
+#include "internal/data_type.h"
 
 namespace csv {
 /** Calculate statistics for an arbitrarily large file. When this constructor
      *  is called, CSVStat will process the entire file iteratively. Once finished,
      *  methods like get_mean(), get_counts(), etc... can be used to retrieve statistics.
      */
-CSV_INLINE CSVStat::CSVStat(csv::string_view filename, CSVFormat format)
+CSV_INLINE CSVStat::CSVStat(csv::string_view filename,
+                            CSVFormat format)
     : reader(filename, format) {
   this->calc();
 }
 
 /** Calculate statistics for a CSV stored in a std::stringstream */
-CSV_INLINE CSVStat::CSVStat(std::stringstream &stream, CSVFormat format)
+CSV_INLINE CSVStat::CSVStat(std::stringstream &stream,
+                            CSVFormat format)
     : reader(stream, format) {
   this->calc();
 }
@@ -58,7 +69,8 @@ CSV_INLINE std::vector<long double> CSVStat::get_maxes() const {
 }
 
 /** Get counts for each column */
-CSV_INLINE std::vector<CSVStat::FreqCount> CSVStat::get_counts() const {
+CSV_INLINE std::vector<CSVStat::FreqCount>
+CSVStat::get_counts() const {
   std::vector<FreqCount> ret;
   for (size_t i = 0; i < this->get_col_names().size(); i++) {
     ret.push_back(this->counts[i]);
@@ -67,7 +79,8 @@ CSV_INLINE std::vector<CSVStat::FreqCount> CSVStat::get_counts() const {
 }
 
 /** Get data type counts for each column */
-CSV_INLINE std::vector<CSVStat::TypeCount> CSVStat::get_dtypes() const {
+CSV_INLINE std::vector<CSVStat::TypeCount>
+CSVStat::get_dtypes() const {
   std::vector<TypeCount> ret;
   for (size_t i = 0; i < this->get_col_names().size(); i++) {
     ret.push_back(this->dtypes[i]);
@@ -139,10 +152,12 @@ CSV_INLINE void CSVStat::calc_worker(const size_t &i) {
         this->variance(x_n, i);
         this->min_max(x_n, i);
       }
-    } else if (this->reader.get_format().get_variable_column_policy() ==
+    } else if (this->reader.get_format()
+                   .get_variable_column_policy() ==
                VariableColumnPolicy::THROW) {
-      throw std::runtime_error("Line has different length than the others " +
-                               internals::format_row(*current_record));
+      throw std::runtime_error(
+          "Line has different length than the others " +
+          internals::format_row(*current_record));
     }
 
     ++current_record;
@@ -182,7 +197,8 @@ CSV_INLINE void CSVStat::count(CSVField &data, const size_t &i) {
   }
 }
 
-CSV_INLINE void CSVStat::min_max(const long double &x_n, const size_t &i) {
+CSV_INLINE void CSVStat::min_max(const long double &x_n,
+                                 const size_t &i) {
   /** Update current minimum and maximum
          *  @param[in]  x_n Data observation
          *  @param[out] i   The column index that should be updated
@@ -198,7 +214,8 @@ CSV_INLINE void CSVStat::min_max(const long double &x_n, const size_t &i) {
     this->maxes[i] = x_n;
 }
 
-CSV_INLINE void CSVStat::variance(const long double &x_n, const size_t &i) {
+CSV_INLINE void CSVStat::variance(const long double &x_n,
+                                  const size_t &i) {
   /** Given a record update rolling mean and variance for all columns
          *  using Welford's Algorithm
          *  @param[in]  x_n Data observation

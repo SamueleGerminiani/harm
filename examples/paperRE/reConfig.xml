@@ -1,30 +1,31 @@
 <harm>
-	<context name="default"> 
+	<context name="default">
 		<prop exp="v1" loc="a, dt"/>
 		<prop exp="v2" loc="a, dt"/>
 		<prop exp="v3" loc="a, dt"/>
 		<prop exp="v4" loc="a, dt"/>
 		<prop exp="v5" loc="c"/>
 		<prop exp="v6" loc="c"/>
-        <!-- 
-        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v10 U v11))" /> 
-        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v11 U v10))" /> 
+        <!--
+        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v10 U v11))" />
+        <template check="1" exp="G({{(v1) ##1 (v2 && v3) ; v4}} []-> X(v11 U v10))" />
                   <sort name="complexity" exp="1/complexity" threshold="3"/>
-        <template check="1" exp="G({{1 ; v4}} []-> X(v6 R v5))" /> 
-        <template check="1" exp=" G({{(!v4) ##1 (v3) ; v4}} []-> X(v6 R v5))" /> 
+        <template check="1" exp="G({{1 ; v4}} []-> X(v6 R v5))" />
+        <template check="1" exp=" G({{(!v4) ##1 (v3) ; v4}} []-> X(v6 R v5))" />
 
 
             -->
 
-        <template dtLimits="2D,2W,3A,0E,R,O" exp="G({..#1&.. ;P0}|-> X(P1 R P2))" /> 
-        <template exp="G(((P0 && P1) || (P2 && P3)) -> X(v7 > 5))" /> 
+        <template dtLimits="2D,2W,3A,0E,U,O" exp="G({..#1&.. ;P0}|-> X(P1 R P2))" />
+        <template exp="G(((P0 && P1) || (P2 && P3)) -> X(v7 > 5))" />
 
                   <filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
-                  <sort name="frequency" exp="atct/traceLength"/> 
+                  <sort name="frequency" exp="atct/traceLength"/>
                   <sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
                   <!--
                   <sort name="causality" exp="1-afct/traceLength"/>
-                  <sort name="frequency" exp="atct/traceLength"/> 
-                      --> 
+                  <sort name="frequency" exp="atct/traceLength"/>
+                      -->
 	</context>
 </harm>
+

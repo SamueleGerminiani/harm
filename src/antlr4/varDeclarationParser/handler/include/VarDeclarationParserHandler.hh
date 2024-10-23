@@ -1,39 +1,42 @@
 
 #pragma once
 
-#include "exp.hh"
-#include "varDeclarationBaseListener.h"
-
-#include <cmath>
-#include <stack>
 #include <string>
+#include <vector>
+
+#include "VarDeclaration.hh"
+#include "support/Declarations.h"
+#include "varDeclarationBaseListener.h"
+#include "varDeclarationParser.h"
+
+namespace antlr4 {
+namespace tree {
+class ErrorNode;
+} // namespace tree
+} // namespace antlr4
 
 using namespace antlr4;
 
 namespace hparser {
 
-using Name = std::string;
-using Type = std::pair<std::string, size_t>;
-using VarDeclaration = std::pair<Name, Type>;
-class VarDeclarationParserHandler : public varDeclarationBaseListener {
+class VarDeclarationParserHandler
+    : public varDeclarationBaseListener {
 public:
   explicit VarDeclarationParserHandler();
-
   ~VarDeclarationParserHandler() override = default;
 
-  virtual void enterVarDec(varDeclarationParser::VarDecContext *ctx) override;
-
   void addErrorMessage(const std::string &msg);
-  VarDeclaration &getVarDeclaration() { return _varDecl; }
+  harm::VarDeclaration &getVarDeclaration();
 
 private:
   std::string printErrorMessage();
-  std::vector<std::string> _errorMessages;
-  bool _abort;
-
-  VarDeclaration _varDecl;
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;
   void exitFile(varDeclarationParser::FileContext *ctx) override;
+  virtual void
+  enterVarDec(varDeclarationParser::VarDecContext *ctx) override;
+
+  std::vector<std::string> _errorMessages;
+  harm::VarDeclaration _varDecl;
 };
 
 } // namespace hparser

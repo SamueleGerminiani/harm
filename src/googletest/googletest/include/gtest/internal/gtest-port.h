@@ -2359,7 +2359,8 @@ template <typename... T>
 using Variant = ::std::variant<T...>;
 }  // namespace internal
 }  // namespace testing
-   // The case where absl is configured NOT to alias std::variant is not supported.
+   // The case where absl is configured NOT to alias std::variant is not
+   // supported.
 #endif  // __has_include(<variant>) && __cplusplus >= 201703L
 #endif  // __has_include
 #endif  // GTEST_HAS_ABSL

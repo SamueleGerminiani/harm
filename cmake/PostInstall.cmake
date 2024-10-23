@@ -1,5 +1,5 @@
 #install third_party libraries
-file(COPY ${S} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
-file(COPY ${B} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
-file(COPY ${A} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
-file(COPY ${Z} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
+file(COPY ${SpotLib} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
+file(COPY ${BddxLib} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
+file(COPY ${AntrLib} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)
+file(COPY ${BoostLib} DESTINATION ${IP}/harm/lib FOLLOW_SYMLINK_CHAIN)

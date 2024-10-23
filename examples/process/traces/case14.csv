@@ -1,0 +1,8 @@
+bool Receive_Loan_Application, bool Assess_Loan_Risk, bool Appraise_Property, bool Assess_Eligibility, bool Reject_Application, bool Send_Acceptance_Pack, bool Notify_Approval, bool Receive_Negative_Feedback, bool Store_feedback
+1,0,0,0,0,0,0,0,0
+0,1,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,1,0
+0,0,1,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,1
+0,0,0,1,0,0,0,0,0
+0,0,0,0,1,0,0,0,0

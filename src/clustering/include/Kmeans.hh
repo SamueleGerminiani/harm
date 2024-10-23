@@ -12,10 +12,10 @@
 #include <unordered_set>
 #include <vector>
 
-
+/// @brief generate ranges using kmeans and the elbow method
 template <typename T>
-std::vector<std::pair<T, T>> kmeansElbow(std::vector<T> elements, size_t max = 20, double SDmin_red = 0.1f, bool keepOnlyBest=false);
-template <typename T>
-std::vector<std::pair<T, T>> kmeans(std::vector<T> elements, size_t k);
+std::vector<std::pair<T, T>>
+kmeansElbow(const std::vector<T> &elements, size_t max = 20,
+            double minWCSS = 0.1f, bool keepOnlyBest = false);
 
 #include "Kmeans.i.hh"

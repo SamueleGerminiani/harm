@@ -22,13 +22,15 @@ TEST_CASE("Basic CSV Writing Cases", "[test_csv_write]") {
 
   SECTION("Quote Escape") {
     writer << std::array<std::string, 1>(
-        {"\"What does it mean to be RFC 4180 compliant?\" she asked."});
-    correct
-        << "\"\"\"What does it mean to be RFC 4180 compliant?\"\" she asked.\"";
+        {"\"What does it mean to be RFC 4180 compliant?\" she "
+         "asked."});
+    correct << "\"\"\"What does it mean to be RFC 4180 "
+               "compliant?\"\" she asked.\"";
   }
 
   SECTION("Quote Minimal") {
-    writer << std::array<std::string, 1>({"This should not be quoted"});
+    writer << std::array<std::string, 1>(
+        {"This should not be quoted"});
     correct << "This should not be quoted";
   }
 
@@ -47,9 +49,9 @@ TEST_CASE("CSV Quote All", "[test_csv_quote_all]") {
 }
 
 //! [CSV Writer Example]
-TEMPLATE_TEST_CASE("CSV/TSV Writer - operator <<", "[test_csv_operator<<]",
-                   std::vector<std::string>, std::deque<std::string>,
-                   std::list<std::string>) {
+TEMPLATE_TEST_CASE("CSV/TSV Writer - operator <<",
+                   "[test_csv_operator<<]", std::vector<std::string>,
+                   std::deque<std::string>, std::list<std::string>) {
   std::stringstream output, correct_comma, correct_tab;
 
   // Build correct strings
@@ -101,7 +103,8 @@ TEST_CASE("CSV Tuple", "[test_csv_tuple]") {
 
   csv_writer << std::make_tuple("One", 2, "Three", 4.0, time)
              << std::make_tuple("One", (short)2, "Three", 4.0f, time)
-             << std::make_tuple(-1, -2.0) << std::make_tuple(20.2, -20.3)
+             << std::make_tuple(-1, -2.0)
+             << std::make_tuple(20.2, -20.3)
              << std::make_tuple(0.0, 0.0f, 0);
 
   correct_output << "One,2,Three,4.0,5:30" << std::endl

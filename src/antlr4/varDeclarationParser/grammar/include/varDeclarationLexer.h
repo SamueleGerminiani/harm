@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.12.0
+// Generated from varDeclaration.g4 by ANTLR 4.10.1
 
 #pragma once
 
@@ -13,13 +13,15 @@ class  varDeclarationLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, Name = 2, VARTYPE = 3, WS = 4, BOOLEAN_CONSTANT = 5, BOOLEAN_VARIABLE = 6, 
-    LOGIC_CONSTANT = 7, LOGIC_VARIABLE = 8, SIGN = 9, CONST_SUFFIX = 10, 
-    NUMERIC_CONSTANT = 11, NUMERIC_VARIABLE = 12, LGPAREN = 13, RGPAREN = 14, 
-    LCPAREN = 15, RCPAREN = 16, LPAREN = 17, RPAREN = 18, NUMERIC = 19, 
-    VERILOG_BINARY = 20, GCC_BINARY = 21, HEX = 22, PLUS = 23, MINUS = 24, 
-    TIMES = 25, DIV = 26, GT = 27, GE = 28, LT = 29, LE = 30, EQ = 31, NEQ = 32, 
-    BAND = 33, BOR = 34, BXOR = 35, NEG = 36, LSHIFT = 37, RSHIFT = 38, 
-    AND = 39, OR = 40, NOT = 41
+    INT_VARIABLE = 7, CONST_SUFFIX = 8, LOGIC_VARIABLE = 9, FLOAT_CONSTANT = 10, 
+    FLOAT_VARIABLE = 11, SUBSTR = 12, STRING_CONSTANT = 13, STRING_VARIABLE = 14, 
+    LCURLY = 15, RCURLY = 16, LSQUARED = 17, RSQUARED = 18, LROUND = 19, 
+    RROUND = 20, INSIDE = 21, FUNCTION = 22, SINTEGER = 23, UINTEGER = 24, 
+    FLOAT = 25, GCC_BINARY = 26, HEX = 27, VERILOG_BINARY = 28, FVL = 29, 
+    SINGLE_QUOTE = 30, PLUS = 31, MINUS = 32, TIMES = 33, DIV = 34, GT = 35, 
+    GE = 36, LT = 37, LE = 38, EQ = 39, NEQ = 40, BAND = 41, BOR = 42, BXOR = 43, 
+    NEG = 44, LSHIFT = 45, RSHIFT = 46, AND = 47, OR = 48, NOT = 49, COL = 50, 
+    DCOL = 51, DOLLAR = 52, RANGE = 53, CLS_TYPE = 54
   };
 
   explicit varDeclarationLexer(antlr4::CharStream *input);

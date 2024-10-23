@@ -9,7 +9,8 @@
 
 using namespace csv;
 
-TEST_CASE("Simple Buffered Integer Round Trip Test", "[test_roundtrip_int]") {
+TEST_CASE("Simple Buffered Integer Round Trip Test",
+          "[test_roundtrip_int]") {
   auto filename = "round_trip.csv";
   std::ofstream outfile(filename, std::ios::binary);
   auto writer = make_csv_writer_buffered(outfile);
@@ -20,7 +21,8 @@ TEST_CASE("Simple Buffered Integer Round Trip Test", "[test_roundtrip_int]") {
 
   for (size_t i = 0; i <= n_rows; i++) {
     auto str = internals::to_string(i);
-    writer << std::array<csv::string_view, 5>({str, str, str, str, str});
+    writer << std::array<csv::string_view, 5>(
+        {str, str, str, str, str});
   }
   writer.flush();
 
@@ -51,7 +53,8 @@ TEST_CASE("Simple Integer Round Trip Test", "[test_roundtrip_int]") {
 
   for (size_t i = 0; i <= n_rows; i++) {
     auto str = internals::to_string(i);
-    writer << std::array<csv::string_view, 5>({str, str, str, str, str});
+    writer << std::array<csv::string_view, 5>(
+        {str, str, str, str, str});
   }
 
   CSVReader reader(filename);

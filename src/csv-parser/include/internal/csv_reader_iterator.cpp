@@ -2,14 +2,21 @@
  *  Defines an input iterator for csv::CSVReader
  */
 
+#include <thread>
+#include <utility>
+
 #include "csv_reader.hpp"
+#include "external/hedley.h"
+#include "internal/basic_csv_parser.hpp"
+#include "internal/common.hpp"
+#include "internal/csv_row.hpp"
 
 namespace csv {
 /** Return an iterator to the first row in the reader */
 CSV_INLINE CSVReader::iterator CSVReader::begin() {
   if (this->records.empty()) {
-    this->read_csv_worker = std::thread(&CSVReader::read_csv, this,
-                                        internals::ITERATION_CHUNK_SIZE);
+    this->read_csv_worker = std::thread(
+        &CSVReader::read_csv, this, internals::ITERATION_CHUNK_SIZE);
     this->read_csv_worker.join();
 
     // Still empty => return end iterator
@@ -24,7 +31,8 @@ CSV_INLINE CSVReader::iterator CSVReader::begin() {
 /** A placeholder for the imaginary past the end row in a CSV.
      *  Attempting to deference this will lead to bad things.
      */
-CSV_INLINE HEDLEY_CONST CSVReader::iterator CSVReader::end() const noexcept {
+CSV_INLINE HEDLEY_CONST CSVReader::iterator
+CSVReader::end() const noexcept {
   return CSVReader::iterator();
 }
 
@@ -32,7 +40,8 @@ CSV_INLINE HEDLEY_CONST CSVReader::iterator CSVReader::end() const noexcept {
 // CSVReader::iterator //
 /////////////////////////
 
-CSV_INLINE CSVReader::iterator::iterator(CSVReader *_daddy, CSVRow &&_row)
+CSV_INLINE CSVReader::iterator::iterator(CSVReader *_daddy,
+                                         CSVRow &&_row)
     : daddy(_daddy) {
   row = std::move(_row);
 }

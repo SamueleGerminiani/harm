@@ -2,7 +2,12 @@
  *  Implements JSON serialization abilities
  */
 
+#include <cstdio>
+#include <string>
+#include <vector>
+
 #include "csv_row.hpp"
+#include "internal/common.hpp"
 
 namespace csv {
 /*
@@ -76,7 +81,8 @@ static std::size_t json_extra_space(csv::string_view &s) noexcept {
   return result;
 }
 
-CSV_INLINE std::string json_escape_string(csv::string_view s) noexcept {
+CSV_INLINE std::string
+json_escape_string(csv::string_view s) noexcept {
   const auto space = json_extra_space(s);
   if (space == 0) {
     return std::string(s);
@@ -168,8 +174,8 @@ CSV_INLINE std::string
 CSVRow::to_json(const std::vector<std::string> &subset) const {
   std::vector<std::string> col_names = subset;
   if (subset.empty()) {
-    col_names =
-        this->data ? this->get_col_names() : std::vector<std::string>({});
+    col_names = this->data ? this->get_col_names()
+                           : std::vector<std::string>({});
   }
 
   const size_t _n_cols = col_names.size();
@@ -184,10 +190,13 @@ CSVRow::to_json(const std::vector<std::string> &subset) const {
 
     // Add quotes around strings but not numbers
     if (field.is_num())
-      ret += internals::json_escape_string(field.get<csv::string_view>());
+      ret += internals::json_escape_string(
+          field.get<csv::string_view>());
     else
       ret += '"' +
-             internals::json_escape_string(field.get<csv::string_view>()) + '"';
+             internals::json_escape_string(
+                 field.get<csv::string_view>()) +
+             '"';
 
     // Do not add comma after last string
     if (i + 1 < _n_cols)
@@ -209,8 +218,8 @@ CSV_INLINE std::string
 CSVRow::to_json_array(const std::vector<std::string> &subset) const {
   std::vector<std::string> col_names = subset;
   if (subset.empty())
-    col_names =
-        this->data ? this->get_col_names() : std::vector<std::string>({});
+    col_names = this->data ? this->get_col_names()
+                           : std::vector<std::string>({});
 
   const size_t _n_cols = col_names.size();
   std::string ret = "[";
@@ -220,10 +229,13 @@ CSVRow::to_json_array(const std::vector<std::string> &subset) const {
 
     // Add quotes around strings but not numbers
     if (field.is_num())
-      ret += internals::json_escape_string(field.get<csv::string_view>());
+      ret += internals::json_escape_string(
+          field.get<csv::string_view>());
     else
       ret += '"' +
-             internals::json_escape_string(field.get<csv::string_view>()) + '"';
+             internals::json_escape_string(
+                 field.get<csv::string_view>()) +
+             '"';
 
     // Do not add comma after last string
     if (i + 1 < _n_cols)

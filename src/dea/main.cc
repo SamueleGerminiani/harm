@@ -1,11 +1,13 @@
 #include "CSVtraceReader.hh"
 #include "ProgressBar.hpp"
 #include "TraceReader.hh"
+#include "Trinary.hh"
 #include "VCDtraceReader.hh"
 #include "commandLineParser.hh"
 #include "csv.hpp"
-#include "evaluator.hh"
+#include "dea.hh"
 #include "globals.hh"
+#include "misc.hh"
 #include "utils.hh"
 #include <filesystem>
 #include <sys/types.h>
@@ -18,6 +20,7 @@
 
 using namespace harm;
 using namespace expression;
+using namespace dea;
 
 void tokenizeString(std::string const &str, const char delim,
                     std::vector<std::string> &out) {
@@ -29,8 +32,9 @@ void tokenizeString(std::string const &str, const char delim,
 }
 
 void parseCommandLineArguments(int argc, char *args[]);
-void dumpDiffs(const std::unordered_map<std::string, Diff> &tokenToDiff,
-               size_t id = -1) {
+void dumpDiffs(
+    const std::unordered_map<std::string, dea::Diff> &tokenToDiff,
+    size_t id = -1) {
 
   std::string fileName = clc::ve_ftPath + "/" + std::string("diff_") +
                          (id == -1 ? "" : std::to_string(id) + "_") +
@@ -85,14 +89,16 @@ void recoverDiffs(std::unordered_map<std::string, Diff> &tokenToDiff,
     std::filesystem::remove(std::filesystem::path(fileName));
   }
 }
-void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
-                     std::unordered_map<std::string, Diff> &tokenToDiff,
-                     size_t i, size_t nProcs) {
+void getDiffParallel(
+    const TracePtr &trace, std::vector<std::string> &assStrs,
+    std::unordered_map<std::string, Diff> &tokenToDiff, size_t i,
+    size_t nProcs) {
 
   // convert string to Template
-  std::vector<Template *> assertions =
-      parseAssertions(assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
-  std::unordered_map<std::string, std::vector<Template *>> tokenToAss;
+  std::vector<TemplateImplicationPtr> assertions = parseAssertions(
+      assStrs, trace, i * clc::ve_chunkSize, clc::ve_chunkSize);
+  std::unordered_map<std::string, std::vector<TemplateImplicationPtr>>
+      tokenToAss;
   std::unordered_map<std::string, size_t> tokenToSize;
   std::vector<std::string> tokens;
 
@@ -102,20 +108,22 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   std::cout << "Number of tokens: " << tokens.size() << "\n";
 
   //gather time units where ant is true on the golden trace
-  std::vector<std::pair<harm::Template *, std::vector<size_t>>>
+  std::vector<
+      std::pair<harm::TemplateImplicationPtr, std::vector<size_t>>>
       assertionsWithAntInstances;
   for (auto &ass : assertions) {
-    assertionsWithAntInstances.emplace_back(ass, std::vector<size_t>());
+    assertionsWithAntInstances.emplace_back(ass,
+                                            std::vector<size_t>());
     for (size_t i = 0; i < ass->_trace->getLength(); i++) {
-      if (ass->evaluateAntNoCache(i) == Trinary::T) {
+      if (ass->evaluate_ant(i) == Trinary::T) {
         assertionsWithAntInstances.back().second.push_back(i);
       }
     }
   }
 
   progresscpp::ParallelProgressBar pb;
-  pb.addInstance(1, std::string("Evaluating assertions... "), tokens.size(),
-                 70);
+  pb.addInstance(1, std::string("Evaluating assertions... "),
+                 tokens.size(), 70);
   pb.display();
 
   size_t elaborated = 0;
@@ -135,8 +143,9 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
       exit(0);
     }
 
-    while (runningProcesses == nProcs ||
-           (elaborated == tokens.size() - 1 && runningProcesses > 0)) {
+    while (
+        runningProcesses == nProcs ||
+        (elaborated == tokens.size() - 1 && runningProcesses > 0)) {
       int status;
       waitpid(-1, &status, 0);
       messageErrorIf(!WIFEXITED(status) || WEXITSTATUS(status) != 0,
@@ -164,9 +173,6 @@ void getDiffParallel(Trace *trace, std::vector<std::string> &assStrs,
   //}
 
   // delete processed assertions
-  for (Template *a : assertions) {
-    delete a;
-  }
 }
 
 void stopExecution(int s) {
@@ -198,31 +204,35 @@ int main(int arg, char *argv[]) {
     //get diffs
 
     // allocate trace
-    std::string goldenTracePath = clc::ve_ftPath + "/golden" +
-                                  (clc::parserType == "vcd" ? ".vcd" : ".csv");
+    std::string goldenTracePath =
+        clc::ve_ftPath + "/golden" +
+        (clc::parserType == "vcd" ? ".vcd" : ".csv");
     if (!std::filesystem::exists(goldenTracePath)) {
       //simulate
-      messageInfo("Simulating golden design to retrieve the golden trace...");
-      systemCustom("bash " + clc::ve_shPath + " golden " + clc::ve_ftPath +
+      messageInfo(
+          "Simulating golden design to retrieve the golden trace...");
+      systemCustom("bash " + clc::ve_shPath + " golden " +
+                   clc::ve_ftPath +
                    (clc::ve_debugScript ? "" : " > /dev/null"));
 
       messageErrorIf(!std::filesystem::exists(goldenTracePath),
                      "Can not find golden trace after simulating");
     }
 
-    Trace *trace = parseTrace(goldenTracePath);
+    const TracePtr &trace = parseTrace(goldenTracePath);
 
     auto assStrs = readAssertionsFromFile(clc::ve_assPath);
 
     int evaluated = 0;
     // eval the assertions one chunk at a time (to avoid memory explosion)
     for (size_t i = 0; ((int)assStrs.size() - evaluated) > 0; i++) {
-      std::cout << evaluated << "/" << assStrs.size() << " evaluated\n";
-      getDiffParallel(trace, assStrs, tokenToDiff, i, clc::maxThreads);
+      std::cout << evaluated << "/" << assStrs.size()
+                << " evaluated\n";
+      getDiffParallel(trace, assStrs, tokenToDiff, i,
+                      clc::maxThreads);
       // update the amount of evaluated assertions
       evaluated += clc::ve_chunkSize;
     }
-    delete trace;
   }
 
   if (clc::ve_recover_diff) {
@@ -234,9 +244,10 @@ int main(int arg, char *argv[]) {
   //dump temporal statistics
   {
     secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
-    std::ofstream outfile(clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
-                          "time.csv");
-    outfile << "timeToEvaluate;timeClusterigP1;timeClusterigP2" << std::endl;
+    std::ofstream outfile(clc::ve_dumpTo + "/" + clc::ve_technique +
+                          "_" + "time.csv");
+    outfile << "timeToEvaluate;timeClusterigP1;timeClusterigP2"
+            << std::endl;
     outfile << secondsEvaluate << ";";
     outfile.close();
   }
@@ -290,13 +301,15 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("ass-file")) {
     clc::ve_assPath = result["ass-file"].as<std::string>();
     messageErrorIf(!std::filesystem::exists(clc::ve_assPath),
-                   "Can not find assertion file '" + clc::ve_assPath + "'");
+                   "Can not find assertion file '" + clc::ve_assPath +
+                       "'");
   }
 
   if (result.count("max-clusters")) {
     messageErrorIf(clc::ve_cls_type != "kmeans",
                    "The cluster option must be used with 'kmeans'");
-    clc::ve_maxClusters = std::stol(result["cluster"].as<std::string>());
+    clc::ve_maxClusters =
+        std::stol(result["cluster"].as<std::string>());
     std::cout << "Clusters: " << clc::ve_maxClusters << "\n";
   }
 
@@ -316,21 +329,23 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::ve_metricName = result["metric-name"].as<std::string>();
   }
   if (result.count("metric-search-interval")) {
-    double lower = std::stod(
-        result["metric-search-interval"].as<std::vector<std::string>>()[0]);
-    double upper = std::stod(
-        result["metric-search-interval"].as<std::vector<std::string>>()[1]);
+    double lower = std::stod(result["metric-search-interval"]
+                                 .as<std::vector<std::string>>()[0]);
+    double upper = std::stod(result["metric-search-interval"]
+                                 .as<std::vector<std::string>>()[1]);
     clc::ve_metricInterval = std::make_pair(lower, upper);
   }
   if (result.count("cls-type")) {
     clc::ve_cls_type = result["cls-type"].as<std::string>();
-    messageErrorIf(clc::ve_cls_type != "nsga2" && clc::ve_cls_type != "kmeans",
+    messageErrorIf(clc::ve_cls_type != "nsga2" &&
+                       clc::ve_cls_type != "kmeans",
                    "Unknown clustering technique");
   }
   if (result.count("dump-to")) {
     clc::ve_dumpTo = result["dump-to"].as<std::string>();
     messageErrorIf(!std::filesystem::is_directory(clc::ve_dumpTo),
-                   "Could not find directory '" + clc::ve_dumpTo + "'");
+                   "Could not find directory '" + clc::ve_dumpTo +
+                       "'");
   }
 
   if (result.count("vcd")) {
@@ -344,7 +359,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     std::cout << "Chunk size: " << clc::ve_chunkSize << "\n";
   }
   if (result.count("nsga2-mi")) {
-    clc::ve_nsga2_mi = std::stod(result["nsga2-mi"].as<std::string>());
+    clc::ve_nsga2_mi =
+        std::stod(result["nsga2-mi"].as<std::string>());
   }
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();
@@ -352,10 +368,11 @@ void parseCommandLineArguments(int argc, char *args[]) {
 
   if (result.count("max-threads")) {
     size_t nt = result["max-threads"].as<size_t>();
-    messageWarningIf(nt > std::thread::hardware_concurrency(),
-                     "This machine should run " +
-                         std::to_string(std::thread::hardware_concurrency()) +
-                         " threads at most");
+    messageWarningIf(
+        nt > std::thread::hardware_concurrency(),
+        "This machine should run " +
+            std::to_string(std::thread::hardware_concurrency()) +
+            " threads at most");
     clc::maxThreads = nt;
   } else {
     clc::maxThreads = 1;
