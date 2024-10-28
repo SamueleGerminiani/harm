@@ -28,6 +28,8 @@ public:
 
   ~Qualifier() override {}
 
+  void init();
+
   /** \brief rank the assertions in the given context (print or dump the result), return the ranked assertions
    */
   virtual std::vector<harm::AssertionPtr>
@@ -46,9 +48,11 @@ private:
   void
   faultBasedQualification(std::vector<harm::AssertionPtr> selected,
                           const harm::TracePtr &trace);
+
   void fbqUsingFaultyTraces(
       const std::vector<harm::AssertionPtr> &selected,
       const harm::TracePtr &originalTrace);
+
   void dumpAssToFile(Context &context, const harm::TracePtr &trace,
                      std::vector<harm::AssertionPtr> &assertions);
 
@@ -114,17 +118,30 @@ private:
   std::vector<harm::AssertionPtr> extractUniqueAssertions(
       const std::vector<harm::AssertionPtr> &inAssertions);
 
-  ///keeps the ids of the assertions covering the maximum numbers of faults
-  std::vector<size_t> _coverageSet;
+  void fillAssertionsWithFaultCoverage(
+      const std::vector<harm::AssertionPtr> &assertions,
+      const harm::TracePtr &trace);
+
+  bool
+  requiresFaultCoverage(const std::vector<harm::MetricPtr> &metrics);
+  bool requiresFaultCoverage(
+      const std::vector<std::pair<harm::MetricPtr, double>> &metrics);
+
+  ///keeps the the assertions covering the maximum numbers of faults: id to assertion
+  std::vector<AssertionPtr> _minCoveringAssertions;
+
+  ///keeps track of the original assertions before filtering or sorting
+  std::vector<AssertionPtr> _originalAssertions;
+
 
   /** \brief max value to calibrate the function in the ranking
    * values go from 1 (range is 0.1-10) to 90 (range is 0.9-1)
    */
   size_t _maxParamIndex = 90;
   ///maps the assertion to the faults they cover
-  std::unordered_map<size_t, std::vector<size_t>> _aToF;
+  std::unordered_map<size_t, std::vector<size_t>> _aidToF;
   ///maps covered faults to the assertion covering them
-  std::unordered_map<size_t, std::vector<size_t>> _fToA;
+  std::unordered_map<size_t, std::vector<size_t>> _fToAid;
 
   friend SetCovTest_randSetCov_Test;
 };

@@ -1,20 +1,27 @@
 <harm>
     <context name="axc">
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p0" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p1" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p2" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p3" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p5" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p6" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="         exp="sobel_tb::p7" loc="dt"/>
-        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="         exp="sobel_tb::p8" loc="dt"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p0" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p1" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="           exp="sobel_tb::p2" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p3" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p5" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="          exp="sobel_tb::p6" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="         exp="sobel_tb::p7" loc="dt,[dt]"/>
+        <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="         exp="sobel_tb::p8" loc="dt,[dt]"/>
         <numeric clustering="K,10Max,0.00001WCSS,><,==,>=,<="          exp="sobel_tb::out" loc="c"/>
 
-        <template dtLimits="ENT,3A,0E" exp="G({..&&..}|->P0)" />
-        <template dtLimits="ENT,3A,0E" exp="G({..##1..}|->P0)" />
-
-        <sort name="frequency" exp="atct/traceLength"/>
+        <template dtLimits="ENT,3A,-0.1E" exp="G({..&&..}|->P0)" />
+        <template dtLimits="ENT,3A,-0.1E" exp="G({..##1..}|->P0)" />
+        <!--
+        <template dtLimits="COV,3A,0E" exp="G({..&&..}|->P0)" />
+        <template dtLimits="COV,3A,0E" exp="G({..##1..}|->P0)" />
+        <template dtLimits="COV,3A,0E" exp="G({..#1&..}|->P0)" />
+        <template dtLimits="ENT,3A,0E" exp="G({..#1&..}|->P0)" />
+        <filter name="faultCoverage" exp="faultCoverage" threshold="0.00001"/>
         <sort name="causality" exp="ct/traceLength"/>
+        -->
+        <sort name="frequency" exp="atct/traceLength"/>
+
     </context>
 
 

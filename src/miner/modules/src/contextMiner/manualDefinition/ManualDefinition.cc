@@ -79,7 +79,7 @@ void addAssertionsFromFile(std::string assPath, const TracePtr &trace,
   for (const TemplateImplicationPtr &t : templs) {
     //create an assertion by making a snapshot of a template
     AssertionPtr ass = generatePtr<Assertion>();
-    fillAssertion(ass, t, false, std::string("(-1,-1)"));
+    fillAssertion(ass, t, false);
     c->_assertions.push_back(ass);
   }
 }
@@ -335,7 +335,7 @@ void ManualDefinition::mineContexts(
           newTemplate->assHoldsOnTrace(Location::AntCon)) {
         //assertioon
         AssertionPtr ass = generatePtr<Assertion>();
-        fillAssertion(ass, newTemplate, 0, "(-1,-1)");
+        fillAssertion(ass, newTemplate, 0);
         context->_assertions.push_back(ass);
       } else {
         context->_templates.push_back(newTemplate);

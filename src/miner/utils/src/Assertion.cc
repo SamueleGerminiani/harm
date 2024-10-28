@@ -9,6 +9,9 @@
 #include "globals.hh"
 
 namespace harm {
+size_t Assertion::idCounter = 0;
+
+Assertion::Assertion() : _id(idCounter++) {}
 
 Assertion::~Assertion() {}
 
@@ -49,8 +52,8 @@ bool operator==(const Assertion &a1, const Assertion &a2) {
   return a1_s == a2_s;
 }
 
-void fillAssertion(const AssertionPtr &ass, const TemplateImplicationPtr &t,
-                   bool isOffset, const std::string &mining_id) {
+void fillAssertion(const AssertionPtr &ass,
+                   const TemplateImplicationPtr &t, bool isOffset) {
 
   //fill assertion features
   t->fillContingency(ass->_ct, isOffset);
@@ -64,10 +67,6 @@ void fillAssertion(const AssertionPtr &ass, const TemplateImplicationPtr &t,
   ass->_pRepetitions = getRepetitions(loadedProps);
   ass->_CT = t->getCT();
   ass->_maxLength = t->getTraceLength();
-}
-std::string makeMiningId(size_t template_id, size_t perm_id) {
-  return "(" + std::to_string(template_id) + "," +
-         std::to_string(perm_id) + ")";
 }
 std::string Assertion::toString(Language lang) const {
   lang = (lang == Language::Unset) ? clc::outputLang : lang;

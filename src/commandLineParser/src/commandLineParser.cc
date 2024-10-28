@@ -152,11 +152,11 @@ cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
                 "recover-diff", "reuse the evaluation result of "
                                 "the previous run")(
                 "gen-rand", "add the random clusters to the front of "
-                            "non-dominated solutions")(
-                "push", "push the front: executes "
-                        "phase 2 of the nsga2 "
-                        "clustering")(
-                "max-push-time",
+                            "non-dominated solutions")
+                                ("push", "push the front: executes " "phase 2 of the nsga2 " "clustering")
+                                ("dont-plot", "silence gnuplot")
+                                ("dump-dmg-vs-metric", "dump a file containing the damage and corresponding metric error for each point of the pareto front")
+                                ("max-push-time",
                 "max time to push the pareto frontier of phase II of "
                 "the nsga2 "
                 "clustering (in seconds)",

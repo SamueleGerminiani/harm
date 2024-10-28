@@ -10,12 +10,61 @@
         -->
 
     <context name="axc">
-        <numeric op="r,e,le,ge" clsEffort="0.0001" exp="in" loc="dt"/>
-        <numeric op="r,e,le,ge" clsEffort="0.0001" exp="out" loc="c"/>
+        <prop exp="in[0]" loc="dt"/>
+        <prop exp="in[1]" loc="dt"/>
+        <prop exp="in[2]" loc="dt"/>
+        <prop exp="in[3]" loc="dt"/>
+        <prop exp="in[4]" loc="dt"/>
+        <prop exp="in[5]" loc="dt"/>
+        <prop exp="in[6]" loc="dt"/>
+        <prop exp="in[7]" loc="dt"/>
+        <prop exp="in[8]" loc="dt"/>
+        <prop exp="in[9]" loc="dt"/>
+        <prop exp="in[10]" loc="dt"/>
+        <prop exp="in[11]" loc="dt"/>
+        <prop exp="in[12]" loc="dt"/>
+        <prop exp="in[13]" loc="dt"/>
+        <prop exp="in[14]" loc="dt"/>
+        <prop exp="in[15]" loc="dt"/>
+
+        <prop exp="out[0]" loc="c"/>
+        <prop exp="out[1]" loc="c"/>
+        <prop exp="out[2]" loc="c"/>
+        <prop exp="out[3]" loc="c"/>
+        <prop exp="out[4]" loc="c"/>
+        <prop exp="out[5]" loc="c"/>
+        <prop exp="out[6]" loc="c"/>
+        <prop exp="out[7]" loc="c"/>
+        <prop exp="out[8]" loc="c"/>
+        <prop exp="out[9]" loc="c"/>
+        <prop exp="out[10]" loc="c"/>
+        <prop exp="out[11]" loc="c"/>
+        <prop exp="out[12]" loc="c"/>
+        <prop exp="out[13]" loc="c"/>
+        <prop exp="out[14]" loc="c"/>
+        <prop exp="out[15]" loc="c"/>
+        <prop exp="out[16]" loc="c"/>
+        <prop exp="out[17]" loc="c"/>
+        <prop exp="out[18]" loc="c"/>
+        <prop exp="out[19]" loc="c"/>
+        <prop exp="out[20]" loc="c"/>
+        <prop exp="out[21]" loc="c"/>
+        <prop exp="out[22]" loc="c"/>
+        <prop exp="out[23]" loc="c"/>
+        <prop exp="out[24]" loc="c"/>
+        <prop exp="out[25]" loc="c"/>
+        <prop exp="out[26]" loc="c"/>
+        <prop exp="out[27]" loc="c"/>
+        <prop exp="out[28]" loc="c"/>
+        <prop exp="out[29]" loc="c"/>
+        <prop exp="out[30]" loc="c"/>
+        <prop exp="out[31]" loc="c"/>
         <!--
+        <numeric clustering="K,50Max,0.000001WCSS,><,==,>=,<=" exp="in" loc="dt,[dt]"/>
+        <numeric clustering="K,50Max,0.00000001WCSS,><,==,>=,<=" exp="out" loc="c"/>
         <sort name="causality" exp="1-afct/traceLength"/>
         -->
-        <template dtLimits="1A,0.1E" exp="G({..&&..}|->X[17](P0))" /> 
+        <template dtLimits="10A,0.1E" exp="G({..&&..}|->X[17](P0))" /> 
 
         <sort name="frequency" exp="1-atct/traceLength"/>
     </context>

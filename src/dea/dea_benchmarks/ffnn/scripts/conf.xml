@@ -1,0 +1,25 @@
+<harm>
+	<context name="axc">
+
+		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="a" loc="dt"/>
+		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="b" loc="dt"/>
+		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="c" loc="dt"/>
+		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="d" loc="dt"/>
+
+		<prop exp="pred == 0" loc="c"/>
+		<prop exp="pred == 1" loc="c"/>
+		<prop exp="pred == 2" loc="c"/>
+
+
+
+		<template dtLimits="4A,1E,!N" exp="G({..&&..}|-> P0)" /> 
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

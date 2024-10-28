@@ -12,7 +12,6 @@
 
 using namespace harm;
 
-
 std::vector<size_t> makeRandomSet(size_t maxSize, size_t maxValue) {
   std::vector<size_t> result;
   size_t size = rand() % (maxSize + 1);
@@ -30,11 +29,11 @@ TEST(SetCovTest, randSetCov) {
   size_t nAss = 10000;
 
   for (size_t i = 0; i < nAss; i++) {
-    q._aToF[i] = makeRandomSet(assMaxCov, maxFaults);
+    q._aidToF[i] = makeRandomSet(assMaxCov, maxFaults);
   }
-  for (auto &[aId, faults] : q._aToF) {
+  for (auto &[aId, faults] : q._aidToF) {
     for (auto f : faults) {
-      q._fToA[f].push_back(aId);
+      q._fToAid[f].push_back(aId);
     }
   }
   std::unordered_set<size_t> coveredFaults;
@@ -43,9 +42,9 @@ TEST(SetCovTest, randSetCov) {
   std::sort(selectesAss.begin(), selectesAss.end());
   messageErrorIf(selectesAss.empty(), "No sets selected");
   for (auto a : selectesAss) {
-    coveredFaults.insert(q._aToF[a].begin(), q._aToF[a].end());
+    coveredFaults.insert(q._aidToF[a].begin(), q._aidToF[a].end());
   }
-  for (auto &[a, ff] : q._aToF) {
+  for (auto &[a, ff] : q._aidToF) {
     for (auto f : ff) {
       messageErrorIf(!coveredFaults.count(f),
                      "Fault " + std::to_string(f) + " not selected");

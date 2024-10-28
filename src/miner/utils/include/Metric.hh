@@ -56,9 +56,13 @@ public:
 
   ~Metric();
 
+  ///Return true if the metric contains the assertion feature
+  bool contains(std::string assertionFeature) const;
+
   ///name of the metric
   std::string _name;
 
+  ///contains the parameters of the function f(x) = 1/(1 + e^(z - kx))^2
   static std::unordered_map<size_t, FunctionParameter> functionParams;
 
 private:

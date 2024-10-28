@@ -31,6 +31,9 @@ extern bool ve_genRand;
 extern size_t ve_minTime;
 extern bool ve_plotDominance;
 extern std::pair<double, double> ve_metricInterval;
+extern size_t ve_plotRate;
+extern bool ve_dump_dmg_vs_metric;
+extern bool ve_dont_plot;
 } // namespace clc
 
 namespace dea {

@@ -175,15 +175,8 @@ void getDiffParallel(
   // delete processed assertions
 }
 
-void stopExecution(int s) {
-  clc::ve_stopExecution = 1;
-  std::cout << "Halting request received!"
-            << "\n";
-}
-
 int main(int arg, char *argv[]) {
   srand(1);
-  //signal(SIGINT, stopExecution);
 
   size_t secondsEvaluate = 0;
   parseCommandLineArguments(arg, argv);
@@ -192,9 +185,17 @@ int main(int arg, char *argv[]) {
 
   dirtyTimerSeconds("startEvaluate", 1);
 
+  std::string diffileName = clc::ve_ftPath + "/" +
+                            std::string("diff_") + clc::ve_technique +
+                            ".csv";
+  if (!std::filesystem::exists(diffileName) && clc::ve_recover_diff) {
+    //disable recovery if the file does not exist
+    clc::ve_recover_diff = 0;
+  }
+
   if (!clc::ve_recover_diff) {
 
-    //gather at from file
+    //gather approximation tokens from file
     std::fstream ass(clc::ve_atList);
     std::string line = "";
     while (std::getline(ass, line)) {
@@ -290,6 +291,15 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("push")) {
     clc::ve_push = 1;
   }
+
+  if (result.count("dont-plot")) {
+    clc::ve_dont_plot = 1;
+  }
+
+  if (result.count("dump-dmg-vs-metric")) {
+    clc::ve_dump_dmg_vs_metric = 1;
+  }
+
   if (result.count("only-sim")) {
     clc::ve_only_sim = 1;
   }

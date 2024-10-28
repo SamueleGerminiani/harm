@@ -52,7 +52,7 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
   std::vector<AssertionPtr> outAssertions;
   std::unordered_set<AssertionPtr> assP;
   std::unordered_set<std::string> keys;
-  //change data structer to allow constant access with id
+  //change data structer to allow constant access with id (in this context the pointer is the id)
   for (const AssertionPtr &ass : inAssertions) {
     assP.insert(ass);
   }
@@ -153,8 +153,19 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertions(
   return outAssertions;
 }
 
+void Qualifier::init() {
+  _maxParamIndex = 90;
+  _aidToF.clear();
+  _fToAid.clear();
+  _minCoveringAssertions.clear();
+  _originalAssertions.clear();
+}
+
 std::vector<AssertionPtr> Qualifier::qualify(Context &context,
                                              const TracePtr &trace) {
+
+  init();
+  _originalAssertions = context._assertions;
 
   if (context._assertions.empty()) {
     messageWarning("Could not mine any assertions for context '" +
@@ -168,24 +179,18 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
               " assertions");
 
   filterRedundantAssertions(assertions);
+  if (requiresFaultCoverage(context._filter)) {
+    fillAssertionsWithFaultCoverage(assertions, trace);
+  }
   filterAssertionsWithMetrics(assertions, context._filter);
 
-  //auto assCls = clusterAssertions(assertions, trace);
-
+  if (requiresFaultCoverage(context._sort)) {
+    fillAssertionsWithFaultCoverage(assertions, trace);
+  }
   std::vector<AssertionPtr> rankedAssertions =
       rankAssertions(assertions, context._sort);
-  filterAssertionsWithFrank(rankedAssertions);
 
-  //std::vector<AssertionPtr> rankedAssertions;
-  //for (auto &[cldID, assertions] : assCls) {
-  //  //ranking
-  //  std::vector<AssertionPtr> tmp_rankedAssertions =
-  //      rankAssertions(assertions, context._sort);
-  //  filterAssertionsWithFrank(tmp_rankedAssertions);
-  //  rankedAssertions.insert(rankedAssertions.end(),
-  //                          tmp_rankedAssertions.begin(),
-  //                          tmp_rankedAssertions.end());
-  //}
+  filterAssertionsWithFrank(rankedAssertions);
 
   hs::nAssertions += rankedAssertions.size();
 
@@ -206,6 +211,7 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
 
   return rankedAssertions;
 }
+
 std::vector<std::pair<size_t, std::vector<AssertionPtr>>>
 Qualifier::clusterAssertions(
     const std::vector<AssertionPtr> &assertions,
@@ -327,29 +333,30 @@ TracePtr Qualifier::parseFaultyTrace(const std::string &ftStr) {
 
 std::vector<size_t> Qualifier::getCoverageSet() {
   std::vector<size_t> ret;
-  if (_aToF.empty()) {
+  if (_aidToF.empty()) {
     return ret;
   }
 
   std::vector<std::vector<int>> set_to_elements;
-  std::unordered_map<int, int> setIdToFaultId;
+  std::unordered_map<int, int> setIdToAssId;
   size_t setId = 0;
-  for (auto &[aID, fIDS] : _aToF) {
+  for (auto &[aID, fIDS] : _aidToF) {
     std::vector<int> cfSubset;
     for (auto fID : fIDS) {
       cfSubset.push_back(fID);
     }
     set_to_elements.push_back(cfSubset);
-    setIdToFaultId[setId] = aID;
+    setIdToAssId[setId] = aID;
     setId++;
   }
   auto selectedSets = findMinSetCover(set_to_elements);
   for (auto setId : selectedSets) {
-    ret.push_back(setIdToFaultId[setId]);
+    ret.push_back(setIdToAssId[setId]);
   }
 
   return ret;
 }
+
 void Qualifier::sortAssertionsWithMetrics(
     std::vector<MetricPtr> &metrics,
     std::vector<AssertionPtr> &assertions, size_t currParamIndex) {
@@ -519,15 +526,24 @@ void Qualifier::fbqUsingFaultyTraces(
     const std::vector<AssertionPtr> &selected,
     const TracePtr &originalTrace) {
 
+  if (!_aidToF.empty()) {
+    messageInfo(
+        "fbq not executed: reusing previouse fault coverage...");
+    return;
+  }
+
   progresscpp::ParallelProgressBar progressBarPS;
   progressBarPS.addInstance(0,
                             "Preparing fault-based qualification...",
                             selected.size(), 70);
   progressBarPS.display();
-  std::vector<TemplateImplicationPtr> noCacheTemplates;
+  std::unordered_map<size_t, TemplateImplicationPtr>
+      aid_to_noCacheTemplates;
+  //make a new template for each assertion to allow the use of templates utils
   for (const AssertionPtr &a : selected) {
-    noCacheTemplates.push_back(hparser::parseTemplateImplication(
-        a->toString(), originalTrace, DTLimits(), 0));
+    aid_to_noCacheTemplates[a->_id] =
+        hparser::parseTemplateImplication(
+            a->toString(), originalTrace, DTLimits(), 0);
 
     progressBarPS.increment(0);
     progressBarPS.display();
@@ -548,33 +564,39 @@ void Qualifier::fbqUsingFaultyTraces(
   progressBar.display();
 
   for (size_t j = 0; j < clc::faultyTraceFiles.size(); j++) {
+    //for each faulty trace
 
     progressBar.changeMessage(
         0, "Fault coverage " +
-               (std::to_string(_fToA.size()) + "/" +
+               (std::to_string(_fToAid.size()) + "/" +
                 std::to_string(clc::faultyTraceFiles.size())) +
                " (" +
                to_string_with_precision(
-                   (_fToA.size() / (double)j) * 100.f, 2) +
+                   (_fToAid.size() / (double)j) * 100.f, 2) +
                "%)" + " (Elaborating " + clc::faultyTraceFiles[j] +
                " [" + std::to_string(j + 1) + "])");
 
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
-    for (size_t i = 0; i < noCacheTemplates.size(); i++) {
-      auto &a = noCacheTemplates[i];
+    size_t elaborated = 0;
+    for (auto [aid, noCacheTemplate] : aid_to_noCacheTemplates) {
+      //test if the assertion fails on the faulty trace
+
       //new assertion with faulty trace
       TemplateImplicationPtr fAss =
-          generatePtr<TemplateImplication>(*a);
+          generatePtr<TemplateImplication>(*noCacheTemplate);
       fAss->changeTrace(ft);
-      //exploit l1 parallelism
+
       if (!fAss->assHoldsOnTrace(Location::AntCon)) {
         // new fault covered
-        _aToF[i].push_back(j);
-        _fToA[j].push_back(i);
+        // store the assertion id that covers the fault
+        _aidToF[aid].push_back(j);
+        // store the fault that is covered by the assertion
+        _fToAid[j].push_back(aid);
         if (!clc::findMinSubset) {
-          //stop search for this fault if do not want the optimal covering set
-
-          progressBar.increment(0, noCacheTemplates.size() - i);
+          //stop search for this fault if you do not want the optimal covering set
+          //fill the progress bar with the remaining assertions not elaborated
+          progressBar.increment(0, aid_to_noCacheTemplates.size() -
+                                       elaborated);
           progressBar.display();
 
           break;
@@ -583,6 +605,9 @@ void Qualifier::fbqUsingFaultyTraces(
 
       progressBar.increment(0);
       progressBar.display();
+
+      //keep track of the number of elaborated assertions (for the progress bar)
+      elaborated++;
     }
   }
 
@@ -590,7 +615,7 @@ void Qualifier::fbqUsingFaultyTraces(
 
   progressBar.changeMessage(
       0, "Fault coverage " +
-             (std::to_string(_fToA.size()) + "/" +
+             (std::to_string(_fToAid.size()) + "/" +
               std::to_string(clc::faultyTraceFiles.size())) +
              " (Elaborating " + clc::faultyTraceFiles.back() + " [" +
              std::to_string(clc::faultyTraceFiles.size()) + "])");
@@ -602,7 +627,7 @@ void Qualifier::fbqUsingFaultyTraces(
 
   //  debug
   //  which ass covers which fault?
-  //  for (auto aff : _aToF) {
+  //  for (auto aff : _aidToF) {
   //    std::cout << aff.first << ") " <<
   //    selected[aff.first]->_toString.second
   //              << "\n";
@@ -613,6 +638,7 @@ void Qualifier::fbqUsingFaultyTraces(
   //  }
   //
 }
+
 std::vector<AssertionPtr>
 sampleAssertionsByConDiversity(std::vector<AssertionPtr> selected,
                                size_t n) {
@@ -661,9 +687,6 @@ void Qualifier::faultBasedQualification(
   auto rng = std::default_random_engine{};
   std::shuffle(std::begin(selected), std::end(selected), rng);
 
-  _aToF.clear();
-  _fToA.clear();
-
   fbqUsingFaultyTraces(selected, trace);
   hs::nFaults = clc::faultyTraceFiles.size();
   std::stringstream ss;
@@ -671,33 +694,46 @@ void Qualifier::faultBasedQualification(
   //gather info on the coverage
 
   ss << "Coverage: "
-     << ((double)_fToA.size() /
+     << ((double)_fToAid.size() /
          (double)clc::faultyTraceFiles.size()) *
             100
      << "%\n";
-  hs::nOfCovFaults = _fToA.size();
+  hs::nOfCovFaults = _fToAid.size();
 
-  if (!_fToA.empty()) {
-    _coverageSet.clear();
-    _coverageSet = getCoverageSet();
-    hs::nFaultCovSubset = _coverageSet.size();
+  if (!_fToAid.empty()) {
+    _minCoveringAssertions.clear();
+
+    auto minCoveringAssertionsIds = getCoverageSet();
+    for (auto aid : minCoveringAssertionsIds) {
+      //we are searching in the _originalAssertions beacause some assertions that were selected in covering set might have been filtered out using other approaches
+      auto ass = std::find_if(_originalAssertions.begin(),
+                              _originalAssertions.end(),
+                              [&aid](const AssertionPtr &ass) {
+                                return aid == ass->_id;
+                              });
+      messageErrorIf(
+          ass == _originalAssertions.end(),
+          "Could not find assertion from the min assertion fault coverage set");
+      _minCoveringAssertions.push_back(*ass);
+    }
+    hs::nFaultCovSubset = _minCoveringAssertions.size();
     ss << "Covering Subset:"
        << "\n\033[0m";
-    for (auto a : _coverageSet) {
-      ss << a << ")"
-         << "\t" << selected[a]->toColoredString() << "\n";
+    for (auto ass : _minCoveringAssertions) {
+      ss << ass->_id << ")"
+         << "\t" << ass->toColoredString() << "\n";
     }
     ss << "\n\e[1m";
   }
 
-  if (_fToA.size() < clc::faultyTraceFiles.size() ||
-      _fToA.size() < nFaultsftm) {
+  if (_fToAid.size() < clc::faultyTraceFiles.size() ||
+      _fToAid.size() < nFaultsftm) {
     ss << "Uncovered:"
        << "\n"
        << "\033[0m";
 
     for (size_t j = 0; j < clc::faultyTraceFiles.size(); j++) {
-      if (!_fToA.count(j)) {
+      if (!_fToAid.count(j)) {
         ss << "\t" << clc::faultyTraceFiles[j] << "\n";
       }
     }
@@ -735,8 +771,8 @@ void Qualifier::dumpAssToFile(Context &context, const TracePtr &trace,
     std::ofstream fc_assFile(clc::dumpPath + "/" + context._name +
                              "_faultCov.txt");
 
-    for (auto a : _coverageSet) {
-      fc_assFile << assertions[a]->toString() << "\n";
+    for (auto &ass : _minCoveringAssertions) {
+      fc_assFile << ass->toString() << "\n";
     }
     fc_assFile.close();
   }
@@ -814,6 +850,51 @@ Qualifier::getMaxValuesForFilterMetrics(
     mToMaxValue[m->_name] = max;
   }
   return mToMaxValue;
+}
+
+void Qualifier::fillAssertionsWithFaultCoverage(
+    const std::vector<harm::AssertionPtr> &assertions,
+    const harm::TracePtr &trace) {
+
+  if (clc::faultyTraceFiles.empty()) {
+    messageWarning("No faulty traces provided, faultCoverage will be "
+                   "equal to 0.0");
+    return;
+  }
+
+  bool prevVal = clc::findMinSubset;
+  clc::findMinSubset = true;
+  fbqUsingFaultyTraces(assertions, trace);
+  clc::findMinSubset = prevVal;
+  for (auto &a : assertions) {
+    if (_aidToF.count(a->_id)) {
+      //store the number of faults covered by the assertion
+      a->_nfCovered = _aidToF.at(a->_id).size();
+    } else {
+      //assertion did not cover any assertion
+      a->_nfCovered = 0;
+    }
+  }
+}
+
+bool Qualifier::requiresFaultCoverage(
+    const std::vector<harm::MetricPtr> &metrics) {
+  for (const auto &m : metrics) {
+    if (m->contains("faultCoverage") || m->contains("nfCovered")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Qualifier::requiresFaultCoverage(
+    const std::vector<std::pair<MetricPtr, double>> &metrics) {
+  for (const auto &[m, th] : metrics) {
+    if (m->contains("faultCoverage") || m->contains("nfCovered")) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace harm

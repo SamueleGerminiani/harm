@@ -1,6 +1,5 @@
 $HARM_ROOT/build/dea \
 --csv \
---clk "clk" \
 --fd traces/ \
 --ass-file ass/axc_ass.txt \
 --tech "br" \

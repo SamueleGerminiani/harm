@@ -16,9 +16,10 @@ using TemplateImplicationPtr = std::shared_ptr<TemplateImplication>;
     \brief Class representing an assertion (it is just a snapshot of an instantiated template)
 */
 class Assertion {
+  static size_t idCounter;
 
 public:
-  Assertion() = default;
+  Assertion();
 
   ~Assertion();
 
@@ -40,21 +41,18 @@ public:
   double _finalScore = 0.f;
   ///length of the trace
   size_t _maxLength = 0;
-
-  ///mining id: (t<id>,p<id>) (template id, proposition id)
-  std::string _mining_id;
+  //when using the faultCoverage metric
+  size_t _nfCovered = 0;
+  ///id of the assertion
+  size_t _id = (size_t)-1;
 };
 //smart pointer
 using AssertionPtr = std::shared_ptr<Assertion>;
 
 /** \brief fill the assertion with all the necessary information
    */
-void fillAssertion(const AssertionPtr &ass, const TemplateImplicationPtr &t,
-                   bool isOffset, const std::string &mining_id);
-
-/** \brief make mining id
-   */
-std::string makeMiningId(size_t template_id, size_t perm_id);
+void fillAssertion(const AssertionPtr &ass,
+                   const TemplateImplicationPtr &t, bool isOffset);
 
 /** \brief just a heuristic to find equivalence between assertions (not a real semantical comparison)
    */

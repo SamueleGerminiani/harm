@@ -292,6 +292,9 @@ Currently available assertion features (more will be added):
 * traceLength : length of the trace (the sum of lengths in case of multiple input traces)
 * complexity : number of variables in the assertion
 * pRepetition : number of repeated propositions in the assertion
+* faultCoverage : number of faults covered by the assertion
+* nfCovered : number of faults covered by the assertion
+* nFaults : number of faulty traces given as input
 
 #  How to check an assertion
 The template expression has an additional parameter "check", if it is set to "1" then the miner analyses the corresponding assertion on the given trace, if the assertion does not hold on the input traces, it reports the cause of failure. Example:

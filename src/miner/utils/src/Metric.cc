@@ -9,6 +9,7 @@
 #include "expUtils/ExpType.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Variable.hh"
+#include "globals.hh"
 #include "message.hh"
 #include "propositionParsingUtils.hh"
 
@@ -52,6 +53,9 @@ std::vector<std::tuple<std::string, expression::ExpType, size_t>>
         std::make_tuple("ct", ExpType::Float, 64),
         std::make_tuple("traceLength", ExpType::Float, 64),
         std::make_tuple("complexity", ExpType::Float, 64),
+        std::make_tuple("faultCoverage", ExpType::Float, 64),
+        std::make_tuple("nfCovered", ExpType::Float, 64),
+        std::make_tuple("nFaults", ExpType::Float, 64),
         std::make_tuple("pRepetitions", ExpType::Float, 64)
 
 };
@@ -146,6 +150,13 @@ double Metric::evaluateMetric(Assertion &a, Metric &m) {
       m.assign(v, (double)a._complexity);
     } else if (v == "pRepetitions") {
       m.assign(v, (double)a._pRepetitions);
+    } else if (v == "faultCoverage") {
+      m.assign(v,
+               (double)a._nfCovered / clc::faultyTraceFiles.size());
+    } else if (v == "nFaults") {
+      m.assign(v, (double)clc::faultyTraceFiles.size());
+    } else if (v == "nfCovered") {
+      m.assign(v, (double)a._nfCovered);
     } else {
       messageError("Unknown metric variable name '" + v + "'");
     }
@@ -162,5 +173,10 @@ void Metric::assign(const std::string &name, double value) {
 double Metric::evaluate() { return _exp->evaluate(0); }
 
 Metric::~Metric() {}
+
+bool Metric::contains(std::string assertionFeature) const {
+  return std::find(_vars.begin(), _vars.end(), assertionFeature) !=
+         _vars.end();
+}
 
 } // namespace harm

@@ -72,7 +72,7 @@ private:
   void handleDTSolutions(const TemplateImplicationPtr &t,
                          std::vector<DTSolution> &solutions,
                          std::vector<harm::AssertionPtr> &assp,
-                         bool isOffset, const std::string &mining_id);
+                         bool isOffset);
 
   std::vector<std::vector<harm::AssertionPtr>> _collectedAssertions;
   std::mutex _collectedAssertionsGuard;

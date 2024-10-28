@@ -279,11 +279,9 @@ void TLMiner::l1Handler(
     antGen.makeAntecedents(t, candidateVariables, numericCandidates);
 
     //onset
-    handleDTSolutions(t, antGen._onSets, assp, false,
-                      makeMiningId(l3InstId, l2InstId));
+    handleDTSolutions(t, antGen._onSets, assp, false);
     //offset
-    handleDTSolutions(t, antGen._offSets, assp, true,
-                      makeMiningId(l3InstId, l2InstId));
+    handleDTSolutions(t, antGen._offSets, assp, true);
 
     candidateVariables.clear();
 
@@ -297,8 +295,7 @@ void TLMiner::l1Handler(
 
       if (!isVacuous || clc::keepVacAss) {
         AssertionPtr ass = generatePtr<Assertion>();
-        fillAssertion(ass, t, false,
-                      makeMiningId(l3InstId, l2InstId));
+        fillAssertion(ass, t, false);
         assp.push_back(ass);
 
         if (isVacuous) {
@@ -329,8 +326,7 @@ end:;
 void TLMiner::handleDTSolutions(const TemplateImplicationPtr &t,
                                 std::vector<DTSolution> &solutions,
                                 std::vector<AssertionPtr> &assp,
-                                bool isOffset,
-                                const std::string &mining_id) {
+                                bool isOffset) {
 
   for (auto &dtSol : solutions) {
     dtSol.sortByWidth(true);
@@ -376,7 +372,7 @@ void TLMiner::handleDTSolutions(const TemplateImplicationPtr &t,
       //create a new assertion by making a snapshot of a template
 
       AssertionPtr ass = generatePtr<Assertion>();
-      fillAssertion(ass, t, isOffset, mining_id);
+      fillAssertion(ass, t, isOffset);
       assp.push_back(ass);
       if (isVacuous) {
         dumpVac(ass->toString());

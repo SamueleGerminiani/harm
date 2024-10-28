@@ -401,7 +401,7 @@ void genConfigFile(std::string &configFile,
               << "\n";
         } else {
           ofs << "\t\t<numeric "
-                 "clustering=\"C,K,10Max,0.01WCSS,><,==\" exp=\"";
+                 "clustering=\"K,10Max,0.01WCSS,><,==\" exp=\"";
           ofs << name;
           ofs << "\"";
           ofs << " loc=\"c,dt\"/>"
@@ -443,7 +443,7 @@ void genConfigFile(std::string &configFile,
         ofs << " loc=\"c,dt\"/>"
             << "\n";
       } else {
-        ofs << "\t\t<numeric clustering=\"C,K,10Max,0.01WCSS,><,==\" "
+        ofs << "\t\t<numeric clustering=\"K,10Max,0.01WCSS,><,==\" "
                "exp=\"";
         ofs << name;
         ofs << "\"";

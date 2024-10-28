@@ -2,6 +2,7 @@
 #include "CSVtraceReader.hh"
 #include "DTUtils.hh"
 #include "EdgeProposition.hh"
+#include "Individual.hh"
 #include "Kmeans.hh"
 #include "Location.hh"
 #include "NSGA2.hh"
@@ -62,6 +63,9 @@ size_t ve_minPushTime = 0;
 size_t ve_minTime = 0;
 std::pair<double, double> ve_metricInterval =
     std::make_pair(0.0f, 1.f);
+size_t ve_plotRate = 1;
+bool ve_dump_dmg_vs_metric = 0;
+bool ve_dont_plot = false;
 } // namespace clc
 
 namespace dea {
@@ -252,9 +256,9 @@ void cluster_with_nsga2(
     std::unordered_map<std::string, Diff> &tokenToDiff) {
 
   //prepare data for nsga2
-  std::vector<NSGA2::Individual> initialPop;
+  std::vector<Individual> initialPop;
   //return is a vector of clusters <size,error/damage,tokens>
-  std::vector<std::tuple<size_t, double, NSGA2::Individual>> ret;
+  std::vector<std::tuple<size_t, double, Individual>> ret;
 
   //group up all the genes <approximation tokens AT>
   std::unordered_map<std::string, std::unordered_set<std::string>>
@@ -268,7 +272,6 @@ void cluster_with_nsga2(
     initialPop.push_back(std::unordered_set<std::string>({gene}));
   }
 
-
   NSGA2 nsga2;
   ret = nsga2.run(allGenes, 100000, clc::ve_nsga2_mi, initialPop);
 
@@ -280,8 +283,8 @@ void cluster_with_nsga2(
              (clc::ve_push ? clc::ve_metricName : "Damage") + "\n";
 
   std::sort(ret.begin(), ret.end(),
-            [](std::tuple<size_t, double, NSGA2::Individual> &e1,
-               std::tuple<size_t, double, NSGA2::Individual> &e2) {
+            [](std::tuple<size_t, double, Individual> &e1,
+               std::tuple<size_t, double, Individual> &e2) {
               return std::get<0>(e1) < std::get<0>(e2);
             });
   size_t cIndex = 0;

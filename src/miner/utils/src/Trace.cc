@@ -256,6 +256,12 @@ void dumpTraceAsCSV(const TracePtr &trace,
   auto vars = trace->getDeclarations();
   std::ofstream file(filename);
   std::stringstream ss;
+  //sort the variables by name, to improve readability
+  std::sort(vars.begin(), vars.end(),
+            [](const VarDeclaration &a, const VarDeclaration &b) {
+              return a.getName() < b.getName();
+            }
+  );
 
   for (auto &v : vars) {
     //skip the clock
