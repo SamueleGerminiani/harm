@@ -125,6 +125,7 @@ private:
       const std::unordered_map<std::string,
                                std::unordered_set<std::string>>
           &geneToAssTime);
+  void initPush();
 
   bool _pushing = 0;
   std::unordered_map<std::string, std::pair<size_t, size_t>>

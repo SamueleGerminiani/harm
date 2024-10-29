@@ -33,7 +33,9 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     const std::vector<Individual> &initialPop) {
 
   //clear all gnuplot windows
-  systemCustom("killall gnuplot");
+  if (!clc::ve_dont_plot) {
+    systemCustom("killall gnuplot");
+  }
 
   //stats utility vars
   size_t secondsPhase1 = 0;
@@ -44,33 +46,42 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
   double maxDominance = -1;
 
   //get max possible value for the objectives (all token together)
+  //needed for the normalization
   _maxObjs = getMaxObjectivesValues(geneToAssTime);
   bool saveParetoMetricBeforePush = 0;
+  //contains the data of the pareto front using the `damage` metric
   std::vector<std::pair<size_t, double>> beforePushMetricFrontData;
+  //contain the population being elaborated
   std::vector<Individual> pop;
 
   if (initialPop.empty()) {
     pop = samplePopulation(geneToAssTime, 1, geneToAssTime.size());
   } else {
+    //reccomended option for this use case
     pop = initialPop;
   }
 
+  //The pop size will not exceed this value
   size_t allowedPopSize = pop.size();
 
-  //used for the halting criteria
+  //there are used for the halting criteria
   double prevDominance = 0;
   double dominance = DBL_MAX;
   dirtyTimerSeconds("startNSGA2", 1);
-
+  //used to slow down the plot speed
   dirtyTimerSeconds("plotRate", 1);
 
   if (clc::ve_only_sim) {
-    //simulate golden
+    //skip nsga2 with `damage` metric
+
+    //simulate the golden once to have something to compare
     messageInfo("Simulating the golden design...");
     systemCustom("bash " + clc::ve_shPath + " golden " +
                  clc::ve_ftPath + " 1 0" +
                  (clc::ve_debugScript ? "" : " > /dev/null"));
     dirtyTimerSeconds("startPush", 1);
+
+    //set the variables for the push phase
     _pushing = 1;
     _simulate = !_simulate;
     _maxObjs.second = _valuePrecision;
@@ -81,7 +92,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     //keep track how long each iteratin takes
     dirtyTimerSeconds("startIteration", 1);
 
-    //skip the first iteration
+    //skip the first iteration: nothing to mutate or crossover
     if (i > 0) {
       //mutation on the entire population
       mutatePop(pop, geneToAssTime);
@@ -92,23 +103,24 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     auto fronts = generateFronts(pop, geneToAssTime);
     selectElites(fronts, geneToAssTime, pop, allowedPopSize);
 
-    //prepare data for printing
+    //prepare data for printing---------------------------------
     std::vector<std::pair<size_t, size_t>> chart_data;
     for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
       evalIndividual(individual, geneToAssTime);
       chart_data.push_back(individual._objective);
     }
-
-    dominance = getDominatedSurface(
-        chart_data, std::make_pair(_maxObjs.first, _valuePrecision));
-    double increment =
-        ((dominance - prevDominance) / dominance) * 100.f;
-
     //convert damage/error to double, and normalize it
     std::vector<std::pair<size_t, double>> front_plot_data;
     for (const auto &[x, y] : chart_data) {
       front_plot_data.emplace_back(x, ((double)y / _valuePrecision));
     }
+
+    //Get the dominance of the front to decide if we need to continue
+    dominance = getDominatedSurface(
+        chart_data, std::make_pair(_maxObjs.first, _valuePrecision));
+    double increment =
+        ((dominance - prevDominance) / dominance) * 100.f;
+    //----------------------------------------------------------
 
     if (saveParetoMetricBeforePush) {
       saveParetoMetricBeforePush = 0;
@@ -116,6 +128,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
       beforePushMetricFrontData = front_plot_data;
     }
 
+    //plot debugging charts-------------------------------------
     if (_pushing) {
       plotBeforeAfter(
           beforePushMetricFrontData, front_plot_data,
@@ -138,9 +151,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
             std::make_pair(0.f, dirtyTimerSeconds("startNSGA2", 0)),
             std::make_pair(0.f, maxDominance), 1);
       }
-
     } else {
-
       plotErrorDamage(
           front_plot_data, "Number of tokens", std::string("Damage"),
           "Dominance: " + std::to_string(dominance * 100) + "%",
@@ -148,15 +159,15 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
           std::make_pair(0.f, 1.f), 1);
     }
 
+    //print monitoring info-------------------------------------
     auto duration = dirtyTimerSeconds("startIteration", 0);
-
     std::cout << "Iteration: " << i << "th\n";
     std::cout << "Duration: " << duration << "s\n";
     std::cout << "PrevDominance: " << prevDominance << "\n";
     std::cout << "Dominance: " << dominance << "\n";
     std::cout << "Dominance increment: " << increment << "%\n";
 
-    //terminal condition
+    //halting conditions---------------------------------------
     if (increment <= minIncrement) {
       if (!clc::ve_only_sim &&
           !isTimeOutSeconds("startNSGA2", clc::ve_minTime)) {
@@ -182,25 +193,14 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
             std::make_pair(0.f, _maxObjs.first),
             std::make_pair(0.f, 1.f), 1,
             clc::ve_dumpTo + "/" + clc::ve_technique + "_" +
-                "damage.cvs",
+                "damage.csv",
             clc::ve_dumpTo + "/" + clc::ve_technique + "_damage.png");
 
         if (clc::ve_push) {
-          printPushing();
-
-          dirtyTimerSeconds("startPush", 1);
-          _pushing = 1;
-          _simulate = !_simulate;
-          _cachedIndividual.clear();
-          _maxObjs.second = _valuePrecision;
+          //start phase 2
+          initPush();
           prevDominance = 0;
           dominance = DBL_MAX;
-          saveParetoMetricBeforePush = 1;
-          //simulate golden
-          messageInfo("Simulating the golden design...");
-          systemCustom("bash " + clc::ve_shPath + " golden " +
-                       clc::ve_ftPath + " 1 0" +
-                       (clc::ve_debugScript ? "" : " > /dev/null"));
           continue;
         }
       }
@@ -214,6 +214,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
         }
       }
     }
+    //-----------------------------------------------------
 
   continueUpdate:;
     prevDominance = dominance;
@@ -730,6 +731,7 @@ void NSGA2::addOffspring(
     mutateIndividual(child, geneToAssTime);
     offSpring.push_back(child);
   }
+
   //add the offpring to the elite population
   pop.insert(std::end(pop), std::begin(offSpring),
              std::end(offSpring));
@@ -855,4 +857,20 @@ void NSGA2::dumpDamageToMetricFront(
     out << norm_damage[i] << ", " << norm_metric[i] << "\n";
   }
 }
+
+void NSGA2::initPush() {
+
+  printPushing();
+  dirtyTimerSeconds("startPush", 1);
+  _pushing = 1;
+  _simulate = !_simulate;
+  _cachedIndividual.clear();
+  _maxObjs.second = _valuePrecision;
+  //simulate golden
+  messageInfo("Simulating the golden design...");
+  systemCustom("bash " + clc::ve_shPath + " golden " +
+               clc::ve_ftPath + " 1 0" +
+               (clc::ve_debugScript ? "" : " > /dev/null"));
+}
+
 } // namespace dea
