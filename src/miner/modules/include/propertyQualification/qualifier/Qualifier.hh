@@ -36,6 +36,12 @@ public:
   qualify(Context &context, const harm::TracePtr &trace) override;
 
 private:
+  /** remove assertions of the form G(a -> a)
+   */
+  std::vector<AssertionPtr>
+  patchDiscardAssertions(std::vector<AssertionPtr> &inAssertions,
+                         TracePtr trace);
+
   /** \brief parse a trace containing a fault
    */
   harm::TracePtr parseFaultyTrace(const std::string &ftStr);
@@ -132,7 +138,6 @@ private:
 
   ///keeps track of the original assertions before filtering or sorting
   std::vector<AssertionPtr> _originalAssertions;
-
 
   /** \brief max value to calibrate the function in the ranking
    * values go from 1 (range is 0.1-10) to 90 (range is 0.9-1)

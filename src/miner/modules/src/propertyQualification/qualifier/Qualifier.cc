@@ -46,6 +46,38 @@ static double scoreFunction(double x, Metric::FunctionParameter &fp) {
 
 Qualifier::Qualifier() : PropertyQualifier() {}
 
+std::vector<AssertionPtr> Qualifier::patchDiscardAssertions(
+    std::vector<AssertionPtr> &inAssertions, TracePtr trace) {
+  messageInfo(
+      "Discarding trivial assertions of the form G(x -> x)...");
+  std::vector<AssertionPtr> outAssertions;
+  size_t discard_count = 0;
+  //remove x -> x assertions
+  for (auto a : inAssertions) {
+    if (a->_ct[1][0] == 0) {
+      auto assTemp =
+          hparser::parseTemplateImplication(a->toString(), trace);
+      auto antProps = assTemp->getLoadedPropositionsAnt();
+      if (antProps.size() == 1) {
+        auto conProps = assTemp->getLoadedPropositionsCon();
+        if (conProps.size() == 1) {
+          auto antPropStr = prop2String(antProps.back());
+          auto conPropStr = prop2String(conProps.back());
+          if (antPropStr == conPropStr) {
+            discard_count++;
+            continue;
+          }
+        }
+      }
+    }
+    outAssertions.push_back(a);
+  }
+  messageInfoIf(discard_count > 0, "Discarded " +
+                                       std::to_string(discard_count) +
+                                       " trivial assertions");
+  return outAssertions;
+}
+
 std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     const std::vector<AssertionPtr> &inAssertions) {
 
@@ -177,6 +209,8 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
 
   messageInfo("Qualifying " + std::to_string(assertions.size()) +
               " assertions");
+
+  assertions = patchDiscardAssertions(assertions, trace);
 
   filterRedundantAssertions(assertions);
   if (requiresFaultCoverage(context._filter)) {
@@ -711,9 +745,9 @@ void Qualifier::faultBasedQualification(
                               [&aid](const AssertionPtr &ass) {
                                 return aid == ass->_id;
                               });
-      messageErrorIf(
-          ass == _originalAssertions.end(),
-          "Could not find assertion from the min assertion fault coverage set");
+      messageErrorIf(ass == _originalAssertions.end(),
+                     "Could not find assertion from the min "
+                     "assertion fault coverage set");
       _minCoveringAssertions.push_back(*ass);
     }
     hs::nFaultCovSubset = _minCoveringAssertions.size();

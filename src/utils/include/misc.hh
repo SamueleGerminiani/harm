@@ -432,6 +432,7 @@ inline std::vector<std::string> parseCSV(const std::string &input) {
     std::string token;
     std::istringstream tokenStream(input);
     while (std::getline(tokenStream, token, ',')) {
+      removeSpacesInPlace(token);
       output.push_back(token);
     }
   } catch (std::exception &e) {
@@ -488,5 +489,22 @@ inline void deleteLastLine(const std::string &filename) {
 
   // Close the output file
   outputFile.close();
+}
+
+inline std::vector<std::string>
+splitString(const std::string &s, const std::string &delimiter) {
+  std::vector<std::string> parts;
+  size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+  std::string token;
+
+  while ((pos_end = s.find(delimiter, pos_start)) !=
+         std::string::npos) {
+    token = s.substr(pos_start, pos_end - pos_start);
+    pos_start = pos_end + delim_len;
+    parts.push_back(token);
+  }
+
+  parts.push_back(s.substr(pos_start));
+  return parts;
 }
 
