@@ -54,7 +54,8 @@ private:
       std::vector<Individual> &pop,
       const std::unordered_map<std::string,
                                std::unordered_set<std::string>>
-          &geneToAssTime, bool dontUseCache = false);
+          &geneToAssTime,
+      bool dontUseCache = false);
 
   void trimPop(std::vector<Individual> &pop);
 
@@ -126,6 +127,7 @@ private:
                                std::unordered_set<std::string>>
           &geneToAssTime);
   void initPush();
+  void repair(std::vector<Individual> &pop);
 
   bool _pushing = 0;
   std::unordered_map<std::string, std::pair<size_t, size_t>>
@@ -134,5 +136,9 @@ private:
   bool _simulate = false;
   std::pair<size_t, size_t> _maxObjs;
   size_t _valuePrecision = 10000;
+  std::unordered_map<std::string, std::unordered_set<std::string>>
+      _groupLabelToMutuallyExclusiveGenes;
+  std::unordered_map<std::string, std::string>
+      _geneToExclusiveGroupLabel;
 };
 } // namespace dea

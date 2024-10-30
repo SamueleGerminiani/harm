@@ -57,6 +57,7 @@ toDefineBR(const std::unordered_set<std::string> &individual,
 
   return define;
 }
+
 inline std::string
 toDefineSR(const std::unordered_set<std::string> &individual) {
   std::string define = "";
@@ -535,6 +536,19 @@ getRandomItem(const std::unordered_map<T, U> &map) {
   std::advance(it, randomIndex);
   return *it;
 }
+template <typename T>
+inline T getRandomItem(const std::unordered_set<T> &map) {
+  auto seed =
+      std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator(seed);
+  std::uniform_int_distribution<int> distribution(0, map.size() - 1);
+  int randomIndex = distribution(generator);
+
+  auto it = map.begin();
+  std::advance(it, randomIndex);
+  return *it;
+}
+
 inline Individual getRandomIndividual(
     const std::unordered_map<
         std::string, std::unordered_set<std::string>> &geneToAssTime,
@@ -657,6 +671,23 @@ inline std::pair<size_t, size_t> getMaxObjectivesValues(
   return std::make_pair(geneToAssTime.size(), uniqueInstances.size());
 }
 
+inline void gatherMutuallyExclusiveGenes(
+    const std::unordered_map<
+        std::string, std::unordered_set<std::string>> &allGenes,
+    std::unordered_map<std::string, std::unordered_set<std::string>>
+        &groupLabelToMutuallyExclusiveGenes,
+    std::unordered_map<std::string, std::string>
+        &geneToExclusiveGroupLabel) {
+
+  for (auto &[at, assTimes] : allGenes) {
+    if (std::find(at.begin(), at.end(), '#') != at.end()) {
+      auto componentsStr = splitString(at, "#");
+      groupLabelToMutuallyExclusiveGenes[componentsStr[0]].insert(at);
+      geneToExclusiveGroupLabel[at] = componentsStr[0];
+    }
+  }
+}
+
 inline void printPushing() {
 
   std::cout << "######  #     #  #####  #     # ### #     "
@@ -674,5 +705,6 @@ inline void printPushing() {
   std::cout << "#        #####   #####  #     # ### #     "
                "#  #####\n";
 }
+
 
 } // namespace dea

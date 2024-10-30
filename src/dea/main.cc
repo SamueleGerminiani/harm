@@ -30,6 +30,65 @@ void tokenizeString(std::string const &str, const char delim,
     token = strtok(nullptr, &delim);
   }
 }
+void gatherAT(std::unordered_map<std::string, Diff> &tokenToDiff) {
+
+  std::fstream ass(clc::ve_atList);
+  std::string line = "";
+  if (clc::ve_technique == "br" || clc::ve_technique == "sr") {
+    while (std::getline(ass, line)) {
+      tokenToDiff[line];
+    }
+
+  } else if (clc::ve_technique == "cs") {
+
+    std::unordered_map<std::string, std::vector<std::string>>
+        subLabelToAlternatives;
+    bool parsingHeader = 1;
+    while (std::getline(ass, line)) {
+      if (line == "---") {
+        parsingHeader = 0;
+        continue;
+      }
+      if (parsingHeader) {
+        std::cout <<  "Parsing header"<< "\n";
+        //parsing the sublabels to alternatives
+        //parse line until ':'
+        const auto sep_pos = line.find_first_of(':');
+        const std::string subLabel = line.substr(0, sep_pos);
+        //parse the rest after the separator
+        const std::string alternatives_csv =
+            line.substr(sep_pos + 1, std::string::npos);
+        std::cout << subLabel<<"->"<<alternatives_csv << "\n";
+        //split alternatuves_csv into labels
+        subLabelToAlternatives[subLabel] = parseCSV(alternatives_csv);
+
+        //print header line
+      } else {
+        std::cout <<  "Parsing body"<< "\n";
+        //parsing the ids
+        const auto sep_pos = line.find_first_of(':');
+        const std::string tokenId = line.substr(0, sep_pos);
+        //parse the rest after the separator
+        const std::string id_subLabel =
+            line.substr(sep_pos + 1, std::string::npos);
+        //print tokenId and id_subLabel
+        std::cout << tokenId << " " << id_subLabel << "\n";
+        
+        //unroll
+        for (auto &alternative :
+             subLabelToAlternatives.at(id_subLabel)) {
+          tokenToDiff[tokenId + "#" + id_subLabel + "#" + alternative];
+        }
+      }
+    }
+  }
+
+  //debug
+  ///print tokens
+  //for (auto &[token, diff] : tokenToDiff) {
+  //  std::cout << token << "\n";
+  //}
+}
 
 void parseCommandLineArguments(int argc, char *args[]);
 void dumpDiffs(
@@ -196,11 +255,7 @@ int main(int arg, char *argv[]) {
   if (!clc::ve_recover_diff) {
 
     //gather approximation tokens from file
-    std::fstream ass(clc::ve_atList);
-    std::string line = "";
-    while (std::getline(ass, line)) {
-      tokenToDiff[line];
-    }
+    gatherAT(tokenToDiff);
 
     //get diffs
 

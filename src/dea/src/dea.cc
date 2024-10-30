@@ -263,6 +263,7 @@ void cluster_with_nsga2(
   //group up all the genes <approximation tokens AT>
   std::unordered_map<std::string, std::unordered_set<std::string>>
       allGenes;
+
   for (auto &[id, diff] : tokenToDiff) {
     allGenes[id] = diff._coveredInstances;
   }

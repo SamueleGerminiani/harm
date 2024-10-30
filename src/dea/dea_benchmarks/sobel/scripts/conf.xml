@@ -10,8 +10,8 @@
         <numeric clustering="K,3Max,0.001WCSS,><,==,>=,<="         exp="sobel_tb::p8" loc="dt,[dt]"/>
         <numeric clustering="K,10Max,0.00001WCSS,><,==,>=,<="          exp="sobel_tb::out" loc="c"/>
 
-        <template dtLimits="ENT,3A,-0.1E" exp="G({..&&..}|->P0)" />
-        <template dtLimits="ENT,3A,-0.1E" exp="G({..##1..}|->P0)" />
+        <template dtLimits="ENT,3A,0E,!N" exp="G({..&&..}|->P0)" />
+        <template dtLimits="ENT,3A,0E,!N" exp="G({..##1..}|->P0)" />
         <!--
         <template dtLimits="COV,3A,0E" exp="G({..&&..}|->P0)" />
         <template dtLimits="COV,3A,0E" exp="G({..##1..}|->P0)" />

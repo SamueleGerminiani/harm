@@ -1,0 +1,19 @@
+$HARM_ROOT/build/dea \
+--csv \
+--clk "clk" \
+--fd traces/ \
+--ass-file ass/axc_ass.txt \
+--tech "cs" \
+--metric-name "EP" \
+--bash "scripts/simulateCS.sh" \
+--at-list info/csIDS.txt \
+--dump-to dea_out/ \
+--push \
+--cls-type "nsga2" \
+--nsga2-mi 0.1 \
+--min-time 60 \
+--max-push-time 3600 \
+--min-push-time 240 \
+--metric-direction 0 \
+--gen-rand \
+--max-threads 16  

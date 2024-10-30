@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+#define enableME 0
+
 namespace dea {
 
 std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
@@ -44,11 +46,27 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
   double dominancePhase2 = 0.f;
   std::vector<std::pair<size_t, double>> dominance_plot_data;
   double maxDominance = -1;
+#if enableME
+  gatherMutuallyExclusiveGenes(geneToAssTime,
+                               _groupLabelToMutuallyExclusiveGenes,
+                               _geneToExclusiveGroupLabel);
+#endif
 
   //get max possible value for the objectives (all token together)
   //needed for the normalization
   _maxObjs = getMaxObjectivesValues(geneToAssTime);
-  bool saveParetoMetricBeforePush = 0;
+  //adjust the first element _maxObjs to remove tokens that cant appear together from the coutn
+#if enableME
+  _maxObjs.first -= (_geneToExclusiveGroupLabel.size() -
+                     _groupLabelToMutuallyExclusiveGenes.size());
+#endif
+
+  //std::cout << "------------->"<<_numberOfIncompatibitiesDueToMutualExclusivity << "\n";
+  //std::cout << "------------->"<<_geneToExclusiveGroupLabel.size() << "\n";
+  //std::cout << "------------->"<<_maxObjs.first << "\n";
+  //std::cout << _groupLabelToMutuallyExclusiveGenes.size() << "\n";
+  //exit(0);
+  bool saveParetoMetricBeforePush = 1;
   //contains the data of the pareto front using the `damage` metric
   std::vector<std::pair<size_t, double>> beforePushMetricFrontData;
   //contain the population being elaborated
@@ -85,6 +103,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     _pushing = 1;
     _simulate = !_simulate;
     _maxObjs.second = _valuePrecision;
+    saveParetoMetricBeforePush = 0;
   }
 
   for (size_t i = 0; i < maxIterations; i++) {
@@ -98,6 +117,10 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
       mutatePop(pop, geneToAssTime);
       addOffspring(pop, geneToAssTime);
       removeDuplicates(pop);
+#if enableME
+      //repair the population to avoid incompatibilities
+      repair(pop);
+#endif
     }
 
     auto fronts = generateFronts(pop, geneToAssTime);
@@ -109,6 +132,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
       evalIndividual(individual, geneToAssTime);
       chart_data.push_back(individual._objective);
     }
+
     //convert damage/error to double, and normalize it
     std::vector<std::pair<size_t, double>> front_plot_data;
     for (const auto &[x, y] : chart_data) {
@@ -871,6 +895,47 @@ void NSGA2::initPush() {
   systemCustom("bash " + clc::ve_shPath + " golden " +
                clc::ve_ftPath + " 1 0" +
                (clc::ve_debugScript ? "" : " > /dev/null"));
+}
+
+//if there are genes that are mutually exclusive, keep only a random one of them
+void NSGA2::repair(std::vector<Individual> &pop) {
+  if (_groupLabelToMutuallyExclusiveGenes.empty()) {
+    return;
+  }
+
+  for (auto &ind : pop) {
+    //cluster the genes in the individual
+    std::unordered_map<std::string, std::unordered_set<std::string>>
+        clusterLabelToGenes;
+    std::vector<std::string> toBeRemoved;
+    for (const auto &gene : ind._genes) {
+      if (_geneToExclusiveGroupLabel.count(gene)) {
+        clusterLabelToGenes[_geneToExclusiveGroupLabel.at(gene)]
+            .insert(gene);
+      }
+    }
+
+    //if there are multiple genes in a cluster, keep a random one
+    for (auto &[clusterLabel, genes] : clusterLabelToGenes) {
+      if (genes.size() > 1) {
+        ////print the genes
+        //for (const auto &gene : genes) {
+        //  std::cout << "\n\t\t" << gene;
+        //}
+        //std::cout << "\n";
+        std::string geneToKeep = getRandomItem(genes);
+        //std::cout << "toKeep--->" << geneToKeep << "\n";
+        for (auto &gene : genes) {
+          if (gene != geneToKeep) {
+            toBeRemoved.push_back(gene);
+          }
+        }
+      }
+    }
+    for (const auto &gene : toBeRemoved) {
+      ind._genes.erase(gene);
+    }
+  }
 }
 
 } // namespace dea
