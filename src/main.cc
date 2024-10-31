@@ -273,6 +273,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
           clc::faultyTraceFiles.push_back(entry.path().u8string());
         }
       }
+      //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage
+      std::random_shuffle(clc::faultyTraceFiles.begin(),
+                          clc::faultyTraceFiles.end());
 
     } else if (clc::parserType == "csv") {
       for (const auto &entry : std::filesystem::directory_iterator(

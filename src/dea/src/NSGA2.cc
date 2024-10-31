@@ -324,10 +324,13 @@ void NSGA2::evalIndividual(
     auto obj = std::make_pair<size_t, size_t>(
         individual._genes.size(), uniqueFeatures.size());
 
-    obj.second = ((double)obj.second / (double)_maxObjs.second) *
+    obj.second = (log((double)obj.second + 1) /
+                  log((double)_maxObjs.second + 1)) *
                  _valuePrecision;
 
-    messageErrorIf(obj.first == 0, "?");
+    messageErrorIf(obj.first == 0, "The individual does not have any "
+                                   "gene? This should not happend");
+
     std::string si = serializeIndividual(individual);
     if (!dontUseCache) {
       _cacheGuard.lock();
