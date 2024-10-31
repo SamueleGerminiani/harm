@@ -19,6 +19,7 @@
 #include "globals.hh"
 #include "misc.hh"
 #include "visitors/PrinterVisitor.hh"
+#include <cmath>
 
 namespace expression {
 PrinterVisitor::PrinterVisitor(Language lang, bool colored,
@@ -51,8 +52,11 @@ std::string PrinterVisitor::get() {
 #define INT_CONSTANT(LEAF)                                           \
   void PrinterVisitor::visit(LEAF &o) {                              \
     if (o.getType().first == ExpType::UInt) {                        \
-      _ss << selCol(std::to_string((UInt)o.evaluate(0)),             \
-                    VAR(std::to_string((UInt)o.evaluate(0))));       \
+      UInt val = (UInt)o.evaluate(0);                                \
+      _ss << selCol(std::to_string(val) +                            \
+                        (std::log2(val) > 63.f ? "ull" : ""),        \
+                    VAR(std::to_string(val) +                        \
+                        (std::log2(val) > 63.f ? "ull" : "")));      \
     } else {                                                         \
       _ss << selCol(std::to_string((SInt)o.evaluate(0)),             \
                     VAR(std::to_string((SInt)o.evaluate(0))));       \
