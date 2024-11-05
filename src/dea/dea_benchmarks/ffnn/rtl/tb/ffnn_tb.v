@@ -36,7 +36,7 @@ reg [SIZE-1:0] d;
 wire [SIZE-1:0] result;
 
 integer input_data_1, input_data_2, input_data_3, input_data_4;
-integer csv_file, ep_file, goldp_file, temp, inferencecount;
+integer csv_file, ep_file, goldp_file, temp, inferencecount, ass_file;
 integer eof1, eof2, eof3, eof4;
 integer counter;
 integer gold_prediction;
@@ -66,6 +66,7 @@ initial begin
     $info("%s",{`GET_OUT_PATH,"results.csv"});
 	csv_file = $fopen({`GET_OUT_PATH,"trace.csv"},"w");
 	ep_file = $fopen({`GET_OUT_PATH,"ep.txt"},"w");
+	ass_file = $fopen({`GET_OUT_PATH,"axc_ass.txt"},"w");
 	goldp_file = $fopen({`GET_IN_PATH,"gold_prediction.txt"},"r");
 
 	// Write the CSV header
@@ -97,6 +98,7 @@ initial begin
 
 
 	      $fwrite(csv_file, "%d,%d,%d,%d,%d\n", a, b, c, d, result);
+	      $fwrite(ass_file, "G(a==%d && b==%d && c==%d && d==%d -> pred==%d)\n", a, b, c, d, result);
 
           if (result!=gold_prediction) wrongPredictions = wrongPredictions + 1;
             

@@ -88,105 +88,52 @@ options.add_options()
 }
 
 // dea
+// clang-format off
 cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
-  try {
-    cxxopts::Options options(argv[0], "");
-    options.positional_help("[optional args]").show_positional_help();
+    try {
+        cxxopts::Options options(argv[0], "");
+        options.positional_help("[optional args]").show_positional_help();
 
-    std::string file = "";
+        std::string file = "";
 
-    options.add_options()("vcd", "vcd trace file type")(
-        "csv", "csv trace file type")(
-        "ass-file", "", cxxopts::value<std::string>(),
-        "path to assertion file (one per each line)")(
-        "metric-name", "", cxxopts::value<std::string>(),
-        "name of the metric (default is 'Metric')")(
-        "metric-search-interval", "",
-        cxxopts::value<std::vector<std::string>>(),
-        "narrow the search of the nsga2 algo phase 2 clustering to a "
-        "specified "
-        "interval 'lower,upper' (default is '0.0,1.0')")(
-        "max-clusters",
-        "max number of clusters (must be used with kmeans)",
-        cxxopts::value<std::string>(),
-        "divide the score into N clusters")(
-        "cs", "<INT>", cxxopts::value<std::string>(),
-        "chunk-size number of assertions processed at a time (to "
-        "avoid memory "
-        "explosion) ")("nsga2-mi", "<FLOAT>",
-                       cxxopts::value<std::string>(),
-                       "minimum surface dominance increment to "
-                       "continue the nsga2 algo with "
-                       "an other iteration, default is 1% (1)")(
-        "tech", "", cxxopts::value<std::string>(),
-        "name axc technique used to perform the estimation (used to "
-        "label the "
-        "output files)")(
-        "cls-type", "", cxxopts::value<std::string>(),
-        "technique used to perform the clustering (nsga2, kmeans)")(
-        "clk", "clk signal", cxxopts::value<std::string>(),
-        "<String>")(
-        "at-list",
-        "path to a file containing a list of approximation token ids",
-        cxxopts::value<std::string>(), "<FILE>")
-
-        ("fd",
-         "path to the directory containing the faulty traces (this "
-         "is the "
-         "second input of the script)",
-         cxxopts::value<std::string>(), "<DIRECTORY>")(
-            "bash",
-            "path to the bash script capable of simulating the "
-            "design (will be called using the 'bash' command)",
-            cxxopts::value<std::string>(), "<FILE>")
-
-            ("debug-script",
-             "debug the input script (enables the script output)")(
-                "max-threads",
-                "max number of threads that harm is allowed to spawn",
-                cxxopts::value<size_t>(), "<uint>")(
-                "dump-to",
-                "directory path to dump dea output (dea will not "
-                "create the directory)",
-                cxxopts::value<std::string>(), "<DIRECTORY>")(
-                "recover-diff", "reuse the evaluation result of "
-                                "the previous run")(
-                "gen-rand", "add the random clusters to the front of "
-                            "non-dominated solutions")
-                                ("push", "push the front: executes " "phase 2 of the nsga2 " "clustering")
-                                ("dont-plot", "silence gnuplot")
-                                ("dump-dmg-vs-metric", "dump a file containing the damage and corresponding metric error for each point of the pareto front")
-                                ("max-push-time",
-                "max time to push the pareto frontier of phase II of "
-                "the nsga2 "
-                "clustering (in seconds)",
-                cxxopts::value<std::size_t>(), "<unint>")(
-                "min-push-time",
-                "min time to push the pareto frontier of phase II "
-                "of the nsga2 clustering (in seconds)",
-                cxxopts::value<std::size_t>(),
-                "<unint>")("min-time",
-                           "min time to push the pareto frontier of "
-                           "phase I of the nsga2 clustering "
-                           "(in seconds)",
-                           cxxopts::value<std::size_t>(), "<unint>")(
-                "only-sim",
-                "run only phase 2 of the nsga2 clustering")(
-                "plot-dominance",
-                "plot the pareto dominance over time when "
-                "running nsga2")("metric-direction",
-                                 "if 0, metric direction is from 0 "
-                                 "(best) to 1 (worst), else "
-                                 "metric direction is from 1 (best) "
-                                 "to 0 (worst), default is 0",
-                                 cxxopts::value<std::size_t>(),
-                                 "<unint>")("silent",
-                                            "disable all outputs")(
-                "wsilent", "disable all "
-                           "warning")("isilent", "disable all "
-                                                 "info")(
-                "psilent",
-                "disable all progress bars")("help", "Show options");
+        options.add_options()
+            ("vcd", "vcd trace file type")
+            ("csv", "csv trace file type")
+            ("ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")
+            ("metric-name", "", cxxopts::value<std::string>(), "name of the metric (default is 'Metric')")
+            ("metric-search-interval", "", cxxopts::value<std::vector<std::string>>(),
+             "narrow the search of the nsga2 algo phase 2 clustering to a specified interval 'lower,upper' (default is '0.0,1.0')")
+            ("max-clusters", "max number of clusters (must be used with kmeans)", cxxopts::value<std::string>(), "divide the score into N clusters")
+            ("cs", "<INT>", cxxopts::value<std::string>(), "chunk-size number of assertions processed at a time (to avoid memory explosion)")
+            ("nsga2-mi", "<FLOAT>", cxxopts::value<std::string>(), "minimum surface dominance increment to continue the nsga2 algo with another iteration, default is 1% (1)")
+            ("nsga2-nt", "<INT>", cxxopts::value<std::string>(), "number of restarts in the nsga2 algorithm (default 3)")
+            ("tech", "", cxxopts::value<std::string>(), "name axc technique used to perform the estimation (used to label the output files)")
+            ("cls-type", "", cxxopts::value<std::string>(), "technique used to perform the clustering (nsga2, kmeans)")
+            ("clk", "clk signal", cxxopts::value<std::string>(), "<String>")
+            ("at-list", "path to a file containing a list of approximation token ids", cxxopts::value<std::string>(), "<FILE>")
+            ("fd", "path to the directory containing the faulty traces (this is the second input of the script)", cxxopts::value<std::string>(), "<DIRECTORY>")
+            ("bash", "path to the bash script capable of simulating the design (will be called using the 'bash' command)", cxxopts::value<std::string>(), "<FILE>")
+            ("debug-script", "debug the input script (enables the script output)")
+            ("max-threads", "max number of threads that harm is allowed to spawn", cxxopts::value<size_t>(), "<uint>")
+            ("dump-to", "directory path to dump dea output (dea will not create the directory)", cxxopts::value<std::string>(), "<DIRECTORY>")
+            ("recover-diff", "reuse the evaluation result of the previous run")
+            ("gen-rand", "add the random clusters to the front of non-dominated solutions")
+            ("push", "push the front: executes phase 2 of the nsga2 clustering")
+            ("log", "plot damage in log scale")
+            ("dont-plot", "silence gnuplot")
+            ("dump-dmg-vs-metric", "dump a file containing the damage and corresponding metric error for each point of the pareto front")
+            ("max-push-time", "max time to push the pareto frontier of phase II of the nsga2 clustering (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+            ("min-push-time", "min time to push the pareto frontier of phase II of the nsga2 clustering (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+            ("min-time", "min time to push the pareto frontier of phase I of the nsga2 clustering (in seconds)", cxxopts::value<std::size_t>(), "<unint>")
+            ("only-sim", "run only phase 2 of the nsga2 clustering")
+            ("plot-dominance", "plot the pareto dominance over time when running nsga2")
+            ("metric-direction", "if 0, metric direction is from 0 (best) to 1 (worst), else metric direction is from 1 (best) to 0 (worst), default is 0", cxxopts::value<std::size_t>(), "<unint>")
+            ("silent", "disable all outputs")
+            ("wsilent", "disable all warning")
+            ("isilent", "disable all info")
+            ("psilent", "disable all progress bars")
+            ("help", "Show options");
+    // clang-format on
 
     auto result = options.parse(argc, argv);
 

@@ -13,6 +13,16 @@
 #include <vector>
 
 namespace dea {
+
+extern std::mt19937 rng;
+
+inline void seed_rng(int trial_number) {
+  auto seed =
+      std::chrono::system_clock::now().time_since_epoch().count() +
+      trial_number;
+  rng.seed(seed);
+}
+
 inline std::string serializeIndividual(const Individual &individual) {
   std::set<std::string> sorted_individual(individual._genes.begin(),
                                           individual._genes.end());
@@ -92,9 +102,14 @@ inline void plotDominance(
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
     const std::optional<std::string> &dumpFilePath = std::nullopt,
-    const std::optional<std::string> &pngFilePath = std::nullopt) {
+    const std::optional<std::string> &pngFilePath = std::nullopt,
+    bool reset = false) {
 
   static FILE *pipe = nullptr;
+  if (reset) {
+    pipe = nullptr;
+    return;
+  }
 
   if (!clc::ve_dont_plot) {
     if (!dontClose || pipe == nullptr) {
@@ -179,9 +194,15 @@ inline void plotErrorDamage(
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
     const std::optional<std::string> &dumpFilePath = std::nullopt,
-    const std::optional<std::string> &pngFilePath = std::nullopt) {
+    const std::optional<std::string> &pngFilePath = std::nullopt,
+    bool reset = false) {
 
   static FILE *pipe = nullptr;
+
+  if (reset) {
+    pipe = nullptr;
+    return;
+  }
 
   if (!clc::ve_dont_plot) {
 
@@ -276,9 +297,14 @@ inline void plotBeforeAfter(
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
     const std::optional<std::string> &dumpFilePath = std::nullopt,
-    const std::optional<std::string> &pngFilePath = std::nullopt) {
+    const std::optional<std::string> &pngFilePath = std::nullopt,
+    bool reset = false) {
 
   static FILE *pipe = nullptr;
+  if (reset) {
+    pipe = nullptr;
+    return;
+  }
 
   if (!clc::ve_dont_plot) {
     if (!dontClose || pipe == nullptr) {
@@ -387,9 +413,14 @@ inline void plotBeforeAfterRandom(
     std::optional<std::pair<double, double>> yrange = std::nullopt,
     bool dontClose = true,
     const std::optional<std::string> &dumpFilePath = std::nullopt,
-    const std::optional<std::string> &pngFilePath = std::nullopt) {
+    const std::optional<std::string> &pngFilePath = std::nullopt,
+    bool reset = false) {
 
   static FILE *pipe = nullptr;
+  if (reset) {
+    pipe = nullptr;
+    return;
+  }
 
   if (!clc::ve_dont_plot) {
     if (!dontClose || pipe == nullptr) {
@@ -517,20 +548,15 @@ inline void plotBeforeAfterRandom(
 }
 
 inline bool getRandomBool() {
-  std::time_t seed = std::time(nullptr) + getpid();
-  std::default_random_engine generator(seed);
   std::uniform_int_distribution<int> distribution(0, 1);
-  return distribution(generator);
+  return distribution(rng);
 }
 
 template <typename T, typename U>
 inline std::pair<T, U>
 getRandomItem(const std::unordered_map<T, U> &map) {
-  auto seed =
-      std::chrono::system_clock::now().time_since_epoch().count();
-  std::default_random_engine generator(seed);
   std::uniform_int_distribution<int> distribution(0, map.size() - 1);
-  int randomIndex = distribution(generator);
+  int randomIndex = distribution(rng);
 
   auto it = map.begin();
   std::advance(it, randomIndex);
@@ -538,11 +564,8 @@ getRandomItem(const std::unordered_map<T, U> &map) {
 }
 template <typename T>
 inline T getRandomItem(const std::unordered_set<T> &map) {
-  auto seed =
-      std::chrono::system_clock::now().time_since_epoch().count();
-  std::default_random_engine generator(seed);
   std::uniform_int_distribution<int> distribution(0, map.size() - 1);
-  int randomIndex = distribution(generator);
+  int randomIndex = distribution(rng);
 
   auto it = map.begin();
   std::advance(it, randomIndex);
@@ -564,11 +587,8 @@ inline Individual getRandomIndividual(
     allGenes.push_back(id);
   }
 
-  std::random_device rd;
-  std::mt19937 g(rd());
-
   // Shuffle the tokens
-  std::shuffle(allGenes.begin(), allGenes.end(), g);
+  std::shuffle(allGenes.begin(), allGenes.end(), rng);
 
   Individual individual;
   for (size_t i = 0; i < numberOfGenes; i++) {
@@ -705,6 +725,5 @@ inline void printPushing() {
   std::cout << "#        #####   #####  #     # ### #     "
                "#  #####\n";
 }
-
 
 } // namespace dea

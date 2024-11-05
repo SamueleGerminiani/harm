@@ -24,9 +24,11 @@
 #include <utility>
 #include <vector>
 
-#define enableME 0
+#define enableME 1
 
 namespace dea {
+
+std::mt19937 rng;
 
 std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     const std::unordered_map<
@@ -34,9 +36,24 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     size_t maxIterations, double minIncrement,
     const std::vector<Individual> &initialPop) {
 
-  //clear all gnuplot windows
   if (!clc::ve_dont_plot) {
+    //clear all gnuplot windows
     systemCustom("killall gnuplot");
+    //reset the pipes
+    plotDominance({}, "Time(s)", "Dominance", "Dominance in time",
+                  std::make_pair(0.f, 1.f), std::make_pair(0.f, 1.f),
+                  false, "", "", true);
+    plotBeforeAfter({}, {}, "Number of tokens", "Damage", "Dominance",
+                    "Before push", "After push",
+                    std::make_pair(0.f, 1.f),
+                    std::make_pair(0.f, 1.f), false, "", "", true);
+    plotErrorDamage({}, "Number of tokens", "Damage", "Dominance",
+                    std::make_pair(0.f, 1.f),
+                    std::make_pair(0.f, 1.f), false, "", "", true);
+    plotBeforeAfterRandom(
+        {}, {}, {}, "Number of tokens", "Damage", "", "Before push",
+        "After push", "Random", std::make_pair(0.f, 1.f),
+        std::make_pair(0.f, 1.f), false, "", "", true);
   }
 
   //stats utility vars
@@ -46,6 +63,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
   double dominancePhase2 = 0.f;
   std::vector<std::pair<size_t, double>> dominance_plot_data;
   double maxDominance = -1;
+
 #if enableME
   gatherMutuallyExclusiveGenes(geneToAssTime,
                                _groupLabelToMutuallyExclusiveGenes,
@@ -66,16 +84,20 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
   //std::cout << "------------->"<<_maxObjs.first << "\n";
   //std::cout << _groupLabelToMutuallyExclusiveGenes.size() << "\n";
   //exit(0);
-  bool saveParetoMetricBeforePush = 1;
+  bool saveParetoMetricBeforePush = 0;
   //contains the data of the pareto front using the `damage` metric
   std::vector<std::pair<size_t, double>> beforePushMetricFrontData;
   //contain the population being elaborated
   std::vector<Individual> pop;
 
+  double ph1_best_dominance = 0.f;
+  size_t ph1_trials = clc::ve_nsga2_nt;
+  std::vector<Individual> ph1_best_pop;
+
   if (initialPop.empty()) {
     pop = samplePopulation(geneToAssTime, 1, geneToAssTime.size());
   } else {
-    //reccomended option for this use case
+    //recomended option for this use case
     pop = initialPop;
   }
 
@@ -86,6 +108,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
   double prevDominance = 0;
   double dominance = DBL_MAX;
   dirtyTimerSeconds("startNSGA2", 1);
+
   //used to slow down the plot speed
   dirtyTimerSeconds("plotRate", 1);
 
@@ -106,6 +129,11 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     saveParetoMetricBeforePush = 0;
   }
 
+restart:
+  seed_rng(ph1_trials);
+
+  dirtyTimerSeconds("trialTimer", 1);
+
   for (size_t i = 0; i < maxIterations; i++) {
     std::cout << "Population size " << pop.size() << "\n";
     //keep track how long each iteratin takes
@@ -123,12 +151,25 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
 #endif
     }
 
+    ///debug
+    ////computer average gene size
+    //float avgGeneSize = 0.f;
+    //size_t maxGeneSize = 0;
+    //for (auto &ind : pop) {
+    //  avgGeneSize += ind._genes.size();
+    //  maxGeneSize = std::max(maxGeneSize, ind._genes.size());
+    //}
+
+    //avgGeneSize /= (float)pop.size();
+    //std::cout << "------------------>Max gene size: " << maxGeneSize << "\n";
+    //std::cout << "------------------>Average gene size: " << avgGeneSize << "\n";
     auto fronts = generateFronts(pop, geneToAssTime);
     selectElites(fronts, geneToAssTime, pop, allowedPopSize);
 
     //prepare data for printing---------------------------------
     std::vector<std::pair<size_t, size_t>> chart_data;
     for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
+    //for (auto &individual : pop) {
       evalIndividual(individual, geneToAssTime);
       chart_data.push_back(individual._objective);
     }
@@ -187,14 +228,14 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
     auto duration = dirtyTimerSeconds("startIteration", 0);
     std::cout << "Iteration: " << i << "th\n";
     std::cout << "Duration: " << duration << "s\n";
-    std::cout << "PrevDominance: " << prevDominance << "\n";
-    std::cout << "Dominance: " << dominance << "\n";
+    // std::cout << "PrevDominance: " << prevDominance << "\n";
+    // std::cout << "Dominance: " << dominance << "\n";
     std::cout << "Dominance increment: " << increment << "%\n";
 
     //halting conditions---------------------------------------
     if (increment <= minIncrement) {
       if (!clc::ve_only_sim &&
-          !isTimeOutSeconds("startNSGA2", clc::ve_minTime)) {
+          !isTimeOutSeconds("trialTimer", clc::ve_minTime)) {
         goto continueUpdate;
       }
 
@@ -204,6 +245,20 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
         }
 
       } else {
+        ph1_trials--;
+        if (dominance > ph1_best_dominance) {
+          ph1_best_dominance = dominance;
+          ph1_best_pop = pop;
+        }
+        if (ph1_trials > 0) {
+          pop = initialPop;
+          goto restart;
+        }
+
+        //restore the best pop and dominance
+        pop = ph1_best_pop;
+        dominance = ph1_best_dominance;
+
         //save the best front using only the damage
         if (clc::ve_dump_dmg_vs_metric) {
           dumpDamageToMetricFront(
@@ -223,6 +278,7 @@ std::vector<std::tuple<size_t, double, Individual>> NSGA2::run(
         if (clc::ve_push) {
           //start phase 2
           initPush();
+          saveParetoMetricBeforePush = 1;
           prevDominance = 0;
           dominance = DBL_MAX;
           continue;
@@ -324,9 +380,15 @@ void NSGA2::evalIndividual(
     auto obj = std::make_pair<size_t, size_t>(
         individual._genes.size(), uniqueFeatures.size());
 
-    obj.second = (log((double)obj.second + 1) /
-                  log((double)_maxObjs.second + 1)) *
-                 _valuePrecision;
+    if (clc::ve_log) {
+      obj.second = (log((double)obj.second + 1) /
+                    log((double)_maxObjs.second + 1)) *
+                   _valuePrecision;
+    } else {
+      obj.second =
+          (((double)obj.second) / ((double)_maxObjs.second)) *
+          _valuePrecision;
+    }
 
     messageErrorIf(obj.first == 0, "The individual does not have any "
                                    "gene? This should not happend");
@@ -658,38 +720,32 @@ void NSGA2::selectElites(
 
 std::pair<Individual, Individual>
 NSGA2::tournamentSelection(const std::vector<Individual> &pop) {
-
-  std::pair<Individual, Individual> parents;
-
-  //select first parent
-  std::random_device rd1;
-  std::mt19937 rng1(rd1());
   std::uniform_int_distribution<int> dist(0, pop.size() - 1);
 
-  int a1 = 0;
-  int b1 = 0;
+  // Select the first random index
+  int a = dist(rng);
 
-  while (a1 == b1) {
-    a1 = dist(rng1);
-    b1 = dist(rng1);
+  // Select the second random index, ensuring it is not the same as the first
+  int b = dist(rng);
+  if (b == a) {
+    b = (b + 1) % pop.size();
   }
 
-  parents.first = pop[a1]._rank > pop[b1]._rank ? pop[b1] : pop[a1];
+  // Determine the parent based on rank
+  Individual parent1 =
+      (pop[a]._rank > pop[b]._rank) ? pop[b] : pop[a];
 
-  //select second parent
-  std::random_device rd2;
-  std::mt19937 rng2(rd2());
-
-  int a2 = 0;
-  int b2 = 0;
-
-  while (a2 == b2) {
-    a2 = dist(rng2);
-    b2 = dist(rng2);
+  // Select two new indices for the second parent
+  a = dist(rng);
+  b = dist(rng);
+  if (b == a) {
+    b = (b + 1) % pop.size();
   }
-  parents.second = pop[a2]._rank > pop[b2]._rank ? pop[b2] : pop[a2];
 
-  return parents;
+  Individual parent2 =
+      (pop[a]._rank > pop[b]._rank) ? pop[b] : pop[a];
+
+  return {parent1, parent2};
 }
 
 Individual
@@ -705,7 +761,7 @@ NSGA2::crossover(std::pair<Individual, Individual> &parents) {
     kidGenes.insert(gene);
   }
 
-  return kidGenes;
+  return Individual(kidGenes);
 }
 
 //Not used

@@ -13,10 +13,11 @@
         -->
 
     <context name="axc">
-        <numeric op="r,e,ge,le" clsEffort="0.01" exp="x" loc="dt"/>
-        <numeric op="r,e,ge,le" clsEffort="0.01" exp="y" loc="dt"/>
-        <numeric op="r,e,ge,le" clsEffort="0.01" exp="sum" loc="c"/>
-        <template dtLimits="2A,-0.1E" exp="G({..&&..}|->(P0))" /> 
+        <numeric clustering="K,10Max,0.00001WCSS,><,==,>=,<=" exp="x" loc="dt,[dt]"/>
+        <numeric clustering="K,10Max,0.00001WCSS,><,==,>=,<=" exp="y" loc="dt,[dt]"/>
+        <numeric clustering="K,10Max,0.00001WCSS,><,==,>=,<=" exp="sum" loc="c"/>
+
+        <template dtLimits="2A,1E,!N,DR" exp="G({..&&..}|->(P0))" /> 
 
         <sort name="frequency" exp="atct/traceLength"/>
         <sort name="causality" exp="1-afct/traceLength"/>

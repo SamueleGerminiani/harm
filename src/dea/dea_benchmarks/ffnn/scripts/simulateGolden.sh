@@ -1,1 +1,1 @@
-bash scripts/simulateBR.sh "golden" "traces/" 0 0
+bash scripts/simulateCS.sh "golden" "traces/" 1 0

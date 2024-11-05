@@ -1,10 +1,10 @@
 <harm>
 	<context name="axc">
 
-		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="a" loc="dt"/>
-		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="b" loc="dt"/>
-		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="c" loc="dt"/>
-		<numeric clustering="K,10Max,0.00001WCSS,><,==" exp="d" loc="dt"/>
+		<numeric clustering="K,30Max,0.0001WCSS,==" exp="a" loc="dt, [dt]"/>
+		<numeric clustering="K,30Max,0.0001WCSS,==" exp="b" loc="dt, [dt]"/>
+		<numeric clustering="K,30Max,0.0001WCSS,==" exp="c" loc="dt, [dt]"/>
+		<numeric clustering="K,30Max,0.0001WCSS,==" exp="d" loc="dt, [dt]"/>
 
 		<prop exp="pred == 0" loc="c"/>
 		<prop exp="pred == 1" loc="c"/>
@@ -12,7 +12,7 @@
 
 
 
-		<template dtLimits="4A,1E,!N" exp="G({..&&..}|-> P0)" /> 
+		<template dtLimits="4A,1E,!N,DR" exp="G({..&&..}|-> P0)" /> 
 
 
 

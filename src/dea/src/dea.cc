@@ -66,6 +66,8 @@ std::pair<double, double> ve_metricInterval =
 size_t ve_plotRate = 1;
 bool ve_dump_dmg_vs_metric = 0;
 bool ve_dont_plot = false;
+bool ve_log = false;
+size_t ve_nsga2_nt = 3;
 } // namespace clc
 
 namespace dea {
@@ -272,6 +274,14 @@ void cluster_with_nsga2(
   for (auto &[gene, instances] : allGenes) {
     initialPop.push_back(std::unordered_set<std::string>({gene}));
   }
+
+  //Individual bestInitialIndividual;
+  //for (auto &[id, diff] : tokenToDiff) {
+  //  if (diff._coveredInstances.empty()) {
+  //    bestInitialIndividual._genes.insert(id);
+  //  }
+  //}
+  //initialPop.push_back(bestInitialIndividual);
 
   NSGA2 nsga2;
   ret = nsga2.run(allGenes, 100000, clc::ve_nsga2_mi, initialPop);

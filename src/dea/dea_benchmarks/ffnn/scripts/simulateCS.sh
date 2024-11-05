@@ -43,6 +43,7 @@ if [[ $mode == "1" ]]; then
     if [[ $faultList == "golden" ]]; then
         #no metric value is generated if we are simulating the golden
         cp "$work/trace.csv" "traces/golden.csv"
+        cp "$work/axc_ass.txt" "prediction/axc_ass.txt"
     else
         mv "$work/ep.txt" "$outputDir/$threadID.txt"
     fi

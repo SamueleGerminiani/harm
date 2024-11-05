@@ -1,0 +1,26 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Mon Nov  4 10:50:13 2024
+[*]
+[dumpfile] "/home/sam/harm-public/src/dea/dea_benchmarks/fir/sim.vcd"
+[dumpfile_mtime] "Mon Nov  4 10:49:48 2024"
+[dumpfile_size] 32838171
+[savefile] "/home/sam/harm-public/src/dea/dea_benchmarks/fir/sf.gtkw"
+[timestart] 0
+[size] 1784 866
+[pos] -1 -1
+*-20.000000 100000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 302
+[signals_width] 206
+[sst_expanded] 1
+[sst_vpaned_height] 245
+@24
+tb_FIR.reset
+tb_FIR.clk
+@98025
+tb_FIR.s_axis_fir_tdata[15:0]
+#{tb_FIR.m_axis_fir_tdata[31:0]} tb_FIR.m_axis_fir_tdata[31] tb_FIR.m_axis_fir_tdata[30] tb_FIR.m_axis_fir_tdata[29] tb_FIR.m_axis_fir_tdata[28] tb_FIR.m_axis_fir_tdata[27] tb_FIR.m_axis_fir_tdata[26] tb_FIR.m_axis_fir_tdata[25] tb_FIR.m_axis_fir_tdata[24] tb_FIR.m_axis_fir_tdata[23] tb_FIR.m_axis_fir_tdata[22] tb_FIR.m_axis_fir_tdata[21] tb_FIR.m_axis_fir_tdata[20] tb_FIR.m_axis_fir_tdata[19] tb_FIR.m_axis_fir_tdata[18] tb_FIR.m_axis_fir_tdata[17] tb_FIR.m_axis_fir_tdata[16] tb_FIR.m_axis_fir_tdata[15] tb_FIR.m_axis_fir_tdata[14] tb_FIR.m_axis_fir_tdata[13] tb_FIR.m_axis_fir_tdata[12] tb_FIR.m_axis_fir_tdata[11] tb_FIR.m_axis_fir_tdata[10] tb_FIR.m_axis_fir_tdata[9] tb_FIR.m_axis_fir_tdata[8] tb_FIR.m_axis_fir_tdata[7] tb_FIR.m_axis_fir_tdata[6] tb_FIR.m_axis_fir_tdata[5] tb_FIR.m_axis_fir_tdata[4] tb_FIR.m_axis_fir_tdata[3] tb_FIR.m_axis_fir_tdata[2] tb_FIR.m_axis_fir_tdata[1] tb_FIR.m_axis_fir_tdata[0]
+@22
+tb_FIR.state_reg[4:0]
+[pattern_trace] 1
+[pattern_trace] 0

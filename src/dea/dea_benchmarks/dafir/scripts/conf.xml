@@ -1,0 +1,117 @@
+<harm>
+
+<context name="axc">
+        <!--
+        <prop exp="in[0]" loc="dt"/>
+        <prop exp="in[1]" loc="dt"/>
+        <prop exp="in[2]" loc="dt"/>
+        <prop exp="in[3]" loc="dt"/>
+        <prop exp="in[4]" loc="dt"/>
+        <prop exp="in[5]" loc="dt"/>
+        <prop exp="in[6]" loc="dt"/>
+        <prop exp="in[7]" loc="dt"/>
+        <prop exp="in[8]" loc="dt"/>
+        <prop exp="in[9]" loc="dt"/>
+        <prop exp="in[10]" loc="dt"/>
+        <prop exp="in[11]" loc="dt"/>
+        <prop exp="in[12]" loc="dt"/>
+        <prop exp="in[13]" loc="dt"/>
+        <prop exp="in[14]" loc="dt"/>
+        <prop exp="in[15]" loc="dt"/>
+        <prop exp="in[16]" loc="dt"/>
+        <prop exp="in[17]" loc="dt"/>
+        <prop exp="in[18]" loc="dt"/>
+        <prop exp="in[19]" loc="dt"/>
+        <prop exp="in[20]" loc="dt"/>
+        <prop exp="in[21]" loc="dt"/>
+        <prop exp="in[22]" loc="dt"/>
+        <prop exp="in[23]" loc="dt"/>
+        <prop exp="in[24]" loc="dt"/>
+        <prop exp="in[25]" loc="dt"/>
+        <prop exp="in[26]" loc="dt"/>
+        <prop exp="in[27]" loc="dt"/>
+        <prop exp="in[28]" loc="dt"/>
+        <prop exp="in[29]" loc="dt"/>
+        <prop exp="in[30]" loc="dt"/>
+        <prop exp="in[31]" loc="dt"/>
+
+        <prop exp="out[0]" loc="c"/>
+        <prop exp="out[1]" loc="c"/>
+        <prop exp="out[2]" loc="c"/>
+        <prop exp="out[3]" loc="c"/>
+        <prop exp="out[4]" loc="c"/>
+        <prop exp="out[5]" loc="c"/>
+        <prop exp="out[6]" loc="c"/>
+        <prop exp="out[7]" loc="c"/>
+        <prop exp="out[8]" loc="c"/>
+        <prop exp="out[9]" loc="c"/>
+        <prop exp="out[10]" loc="c"/>
+        <prop exp="out[11]" loc="c"/>
+        <prop exp="out[12]" loc="c"/>
+        <prop exp="out[13]" loc="c"/>
+        <prop exp="out[14]" loc="c"/>
+        <prop exp="out[15]" loc="c"/>
+        <prop exp="out[16]" loc="c"/>
+        <prop exp="out[17]" loc="c"/>
+        <prop exp="out[18]" loc="c"/>
+        <prop exp="out[19]" loc="c"/>
+        <prop exp="out[20]" loc="c"/>
+        <prop exp="out[21]" loc="c"/>
+        <prop exp="out[22]" loc="c"/>
+        <prop exp="out[23]" loc="c"/>
+        <prop exp="out[24]" loc="c"/>
+        <prop exp="out[25]" loc="c"/>
+        <prop exp="out[26]" loc="c"/>
+        <prop exp="out[27]" loc="c"/>
+        <prop exp="out[28]" loc="c"/>
+        <prop exp="out[29]" loc="c"/>
+        <prop exp="out[30]" loc="c"/>
+        <prop exp="out[31]" loc="c"/>
+        <prop exp="!out[0]" loc="c"/>
+        <prop exp="!out[1]" loc="c"/>
+        <prop exp="!out[2]" loc="c"/>
+        <prop exp="!out[3]" loc="c"/>
+        <prop exp="!out[4]" loc="c"/>
+        <prop exp="!out[5]" loc="c"/>
+        <prop exp="!out[6]" loc="c"/>
+        <prop exp="!out[7]" loc="c"/>
+        <prop exp="!out[8]" loc="c"/>
+        <prop exp="!out[9]" loc="c"/>
+        <prop exp="!out[10]" loc="c"/>
+        <prop exp="!out[11]" loc="c"/>
+        <prop exp="!out[12]" loc="c"/>
+        <prop exp="!out[13]" loc="c"/>
+        <prop exp="!out[14]" loc="c"/>
+        <prop exp="!out[15]" loc="c"/>
+        <prop exp="!out[16]" loc="c"/>
+        <prop exp="!out[17]" loc="c"/>
+        <prop exp="!out[18]" loc="c"/>
+        <prop exp="!out[19]" loc="c"/>
+        <prop exp="!out[20]" loc="c"/>
+        <prop exp="!out[21]" loc="c"/>
+        <prop exp="!out[22]" loc="c"/>
+        <prop exp="!out[23]" loc="c"/>
+        <prop exp="!out[24]" loc="c"/>
+        <prop exp="!out[25]" loc="c"/>
+        <prop exp="!out[26]" loc="c"/>
+        <prop exp="!out[27]" loc="c"/>
+        <prop exp="!out[28]" loc="c"/>
+        <prop exp="!out[29]" loc="c"/>
+        <prop exp="!out[30]" loc="c"/>
+        <prop exp="!out[31]" loc="c"/>
+        -->
+
+        <!--
+
+        -->
+        <numeric clustering="K,30Max,0.0001WCSS,==" exp="in" loc="[dt]"/>
+        <numeric clustering="K,30Max,0.0001WCSS,><,==,>=,<=" exp="out" loc="c"/>
+        <template dtLimits="10A,0E,DR,!N" exp="G({..&&..}|->P0)" /> 
+
+        <sort name="frequency" exp="1-atct/traceLength"/>
+
+        </context>
+</harm>
+
+
+

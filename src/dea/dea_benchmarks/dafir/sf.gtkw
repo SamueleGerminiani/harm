@@ -1,0 +1,24 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Mon Nov  4 13:34:41 2024
+[*]
+[dumpfile] "/home/sam/harm-public/src/dea/dea_benchmarks/dafir/sim.vcd"
+[dumpfile_mtime] "Mon Nov  4 13:33:22 2024"
+[dumpfile_size] 243384
+[savefile] "/home/sam/harm-public/src/dea/dea_benchmarks/dafir/sf.gtkw"
+[timestart] 0
+[size] 1728 912
+[pos] -1 -1
+*-17.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 221
+[signals_width] 142
+[sst_expanded] 1
+[sst_vpaned_height] 261
+@28
+fir_tb.clk
+fir_tb.Reset
+@18023
+fir_tb.Data_in[31:0]
+#{fir_tb.Data_out[31:0]} fir_tb.Data_out[31] fir_tb.Data_out[30] fir_tb.Data_out[29] fir_tb.Data_out[28] fir_tb.Data_out[27] fir_tb.Data_out[26] fir_tb.Data_out[25] fir_tb.Data_out[24] fir_tb.Data_out[23] fir_tb.Data_out[22] fir_tb.Data_out[21] fir_tb.Data_out[20] fir_tb.Data_out[19] fir_tb.Data_out[18] fir_tb.Data_out[17] fir_tb.Data_out[16] fir_tb.Data_out[15] fir_tb.Data_out[14] fir_tb.Data_out[13] fir_tb.Data_out[12] fir_tb.Data_out[11] fir_tb.Data_out[10] fir_tb.Data_out[9] fir_tb.Data_out[8] fir_tb.Data_out[7] fir_tb.Data_out[6] fir_tb.Data_out[5] fir_tb.Data_out[4] fir_tb.Data_out[3] fir_tb.Data_out[2] fir_tb.Data_out[1] fir_tb.Data_out[0]
+[pattern_trace] 1
+[pattern_trace] 0

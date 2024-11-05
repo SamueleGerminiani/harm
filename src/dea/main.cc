@@ -50,7 +50,6 @@ void gatherAT(std::unordered_map<std::string, Diff> &tokenToDiff) {
         continue;
       }
       if (parsingHeader) {
-        std::cout <<  "Parsing header"<< "\n";
         //parsing the sublabels to alternatives
         //parse line until ':'
         const auto sep_pos = line.find_first_of(':');
@@ -58,26 +57,29 @@ void gatherAT(std::unordered_map<std::string, Diff> &tokenToDiff) {
         //parse the rest after the separator
         const std::string alternatives_csv =
             line.substr(sep_pos + 1, std::string::npos);
-        std::cout << subLabel<<"->"<<alternatives_csv << "\n";
+        //debug
+        //std::cout << subLabel<<"->"<<alternatives_csv << "\n";
         //split alternatuves_csv into labels
         subLabelToAlternatives[subLabel] = parseCSV(alternatives_csv);
 
         //print header line
       } else {
-        std::cout <<  "Parsing body"<< "\n";
         //parsing the ids
         const auto sep_pos = line.find_first_of(':');
         const std::string tokenId = line.substr(0, sep_pos);
         //parse the rest after the separator
         const std::string id_subLabel =
             line.substr(sep_pos + 1, std::string::npos);
+
+        //debug
         //print tokenId and id_subLabel
-        std::cout << tokenId << " " << id_subLabel << "\n";
-        
+        //std::cout << tokenId << " " << id_subLabel << "\n";
+
         //unroll
         for (auto &alternative :
              subLabelToAlternatives.at(id_subLabel)) {
-          tokenToDiff[tokenId + "#" + id_subLabel + "#" + alternative];
+          tokenToDiff[tokenId + "#" + id_subLabel + "#" +
+                      alternative];
         }
       }
     }
@@ -128,7 +130,7 @@ void recoverDiffs(std::unordered_map<std::string, Diff> &tokenToDiff,
   csv::CSVRow row;
 
   while (reader.read_row(row)) {
-    tokenToDiff[row[0].get()]._atcf = std::stoull(row[1].get());
+    tokenToDiff[row[0].get()]._atcf = safeStoull(row[1].get());
     std::vector<std::string> instances;
     tokenizeString(row[2].get(), ' ', instances);
     for (auto &inst : instances) {
@@ -223,24 +225,27 @@ void getDiffParallel(
 
   //debug - print instances
   //for (auto &[token, diff] : tokenToDiff) {
-  //  std::cout << "[" << token << "]"
-  //            << "\n";
-  //  for (auto ci : diff._coveredInstances) {
-  //    std::cout << ci << " ";
-  //  }
-  //  std::cout << "\n";
+  //std::cout << "[" << token << "]"
+  //          << "\n";
+  //for (auto ci : diff._coveredInstances) {
+  //  std::cout << ci << " ";
   //}
-
-  // delete processed assertions
+  //std::cout << "\n";
+  //}
 }
 
 int main(int arg, char *argv[]) {
+
   srand(1);
 
   size_t secondsEvaluate = 0;
   parseCommandLineArguments(arg, argv);
 
-  std::unordered_map<std::string, Diff> tokenToDiff;
+  //    std::unordered_map<std::string, dea::Diff> test_tokenToDiff;
+  //
+  //  restart:;
+
+  std::unordered_map<std::string, dea::Diff> tokenToDiff;
 
   dirtyTimerSeconds("startEvaluate", 1);
 
@@ -259,14 +264,13 @@ int main(int arg, char *argv[]) {
 
     //get diffs
 
-    // allocate trace
     std::string goldenTracePath =
         clc::ve_ftPath + "/golden" +
         (clc::parserType == "vcd" ? ".vcd" : ".csv");
     if (!std::filesystem::exists(goldenTracePath)) {
-      //simulate
-      messageInfo(
-          "Simulating golden design to retrieve the golden trace...");
+      //simulate golden design
+      messageInfo("Simulating golden design to retrieve the golden "
+                  "trace...");
       systemCustom("bash " + clc::ve_shPath + " golden " +
                    clc::ve_ftPath +
                    (clc::ve_debugScript ? "" : " > /dev/null"));
@@ -275,6 +279,7 @@ int main(int arg, char *argv[]) {
                      "Can not find golden trace after simulating");
     }
 
+    //allocate the golden trace
     const TracePtr &trace = parseTrace(goldenTracePath);
 
     auto assStrs = readAssertionsFromFile(clc::ve_assPath);
@@ -297,6 +302,17 @@ int main(int arg, char *argv[]) {
     dumpDiffs(tokenToDiff);
   }
 
+  //debug
+  //if (!test_tokenToDiff.empty()) {
+  //  for (auto &[token, diff] : tokenToDiff) {
+  //    messageErrorIf(
+  //        !(dea::isEqualDebug(test_tokenToDiff.at(token), diff)),
+  //        "Diffs are different");
+  //  }
+  //}
+  //test_tokenToDiff = tokenToDiff;
+  //goto restart;
+
   //dump temporal statistics
   {
     secondsEvaluate = dirtyTimerSeconds("startEvaluate", 0);
@@ -308,7 +324,6 @@ int main(int arg, char *argv[]) {
     outfile.close();
   }
 
-  //abs
   cluster(tokenToDiff, 0);
 
   return 0;
@@ -345,6 +360,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
 
   if (result.count("push")) {
     clc::ve_push = 1;
+  }
+
+  if (result.count("log")) {
+    clc::ve_log = 1;
   }
 
   if (result.count("dont-plot")) {
@@ -426,6 +445,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("nsga2-mi")) {
     clc::ve_nsga2_mi =
         std::stod(result["nsga2-mi"].as<std::string>());
+  }
+  if (result.count("nsga2-nt")) {
+    clc::ve_nsga2_nt =
+        std::stoull(result["nsga2-nt"].as<std::string>());
   }
   if (result.count("clk")) {
     clc::clk = result["clk"].as<std::string>();

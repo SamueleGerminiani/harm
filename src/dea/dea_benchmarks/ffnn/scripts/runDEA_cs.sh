@@ -13,7 +13,7 @@ $HARM_ROOT/build/dea \
 --nsga2-mi 0.1 \
 --min-time 60 \
 --max-push-time 3600 \
---min-push-time 240 \
+--min-push-time 120 \
 --metric-direction 0 \
 --gen-rand \
 --max-threads 16  

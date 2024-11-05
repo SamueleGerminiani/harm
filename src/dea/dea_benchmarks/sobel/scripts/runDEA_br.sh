@@ -15,4 +15,5 @@ $HARM_ROOT/build/dea \
 --max-push-time 3600 \
 --metric-direction 1 \
 --gen-rand \
---max-threads 16
+--max-threads 16 \
+--log 

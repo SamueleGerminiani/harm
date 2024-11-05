@@ -57,7 +57,7 @@ work="work$threadID"
 $MODELSIM_BIN/vlib "$work"
 
 #simulate to get the metric value (Err)
-$MODELSIM_BIN/vlog -work "work$threadID" +define+OUT_PATH=""$work"/" $compDefine -sv "$BENCHMARK_ROOT/brentKung32b/rtl/br/*" "$BENCHMARK_ROOT/brentKung32b/rtl/tb/*"
+$MODELSIM_BIN/vlog -work "work$threadID" +define+TRACE_LENGTH=$traceLength +define+OUT_PATH=""$work"/" $compDefine -sv "$BENCHMARK_ROOT/brentKung32b/rtl/br/*" "$BENCHMARK_ROOT/brentKung32b/rtl/tb/*"
 $MODELSIM_BIN/vsim -L $work "$work.$top" -c -voptargs="+acc" -do "run -all; quit"
 
 
@@ -66,6 +66,7 @@ if [[ $mode == "1" ]]; then
     if [[ $faultList == "golden" ]]; then
         #no metric value is generated if we are simulating the golden
         cp "$work/output.csv" "sum/golden.csv"
+        cp "$work/ass.txt" "sum/"
     else
         #get the metric value by comparing the output
         retErr=$("$BENCHMARK_ROOT/brentKung32b/scripts/getError/getError.x" "$BENCHMARK_ROOT/brentKung32b/sum/golden.csv" "$work/output.csv" "0")
