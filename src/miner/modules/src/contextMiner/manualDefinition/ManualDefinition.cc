@@ -59,29 +59,31 @@ void addAssertionsFromFile(std::string assPath, const TracePtr &trace,
   pb.addInstance(0, "Parsing assertions from file...", assStrs.size(),
                  70);
 
+  //lower the number of threads to avoid wasting memory
+  size_t prevl1Val = l1Constants::MAX_THREADS;
+  l1Constants::MAX_THREADS = 1;
+
   for (size_t i = 0; i < assStrs.size(); i++) {
-    TemplateImplicationPtr ass =
+    TemplateImplicationPtr ti =
         hparser::parseTemplateImplication(assStrs[i], trace);
-    if (!ass->assHoldsOnTrace(harm::Location::None)) {
+    if (!ti->assHoldsOnTrace(harm::Location::None)) {
       messageWarning("External assertion does not hold: '" +
-                     ass->getAssertionStr(Language::SpotLTL) +
+                     ti->getAssertionStr(Language::SpotLTL) +
                      "', discarding it");
     }
-    // save
-    templs.push_back(ass);
+
+    //create an assertion by making a snapshot of a template
+    AssertionPtr ass = generatePtr<Assertion>();
+    fillAssertion(ass, ti, false);
+    c->_assertions.push_back(ass);
 
     pb.increment(0);
     pb.display();
   }
   pb.done(0);
 
-  //these assertions were not mined
-  for (const TemplateImplicationPtr &t : templs) {
-    //create an assertion by making a snapshot of a template
-    AssertionPtr ass = generatePtr<Assertion>();
-    fillAssertion(ass, t, false);
-    c->_assertions.push_back(ass);
-  }
+  //restore the previous number of threads
+  l1Constants::MAX_THREADS = prevl1Val;
 }
 
 ClusteringConfig parseClusteringConfig(std::string config) {

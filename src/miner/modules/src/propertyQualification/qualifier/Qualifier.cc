@@ -18,6 +18,7 @@
 #include "DTLimits.hh"
 #include "Float.hh"
 #include "Hierarchical.hh"
+#include "exp.hh"
 
 #include "Location.hh"
 #include "Metric.hh"
@@ -50,25 +51,22 @@ std::vector<AssertionPtr> Qualifier::patchDiscardAssertions(
     std::vector<AssertionPtr> &inAssertions, TracePtr trace) {
   messageInfo(
       "Discarding trivial assertions of the form G(x -> x)...");
+
   std::vector<AssertionPtr> outAssertions;
   size_t discard_count = 0;
   //remove x -> x assertions
   for (auto a : inAssertions) {
-    if (a->_ct[1][0] == 0) {
-      auto assTemp =
-          hparser::parseTemplateImplication(a->toString(), trace);
-      auto antProps = assTemp->getLoadedPropositionsAnt();
-      if (antProps.size() == 1) {
-        auto conProps = assTemp->getLoadedPropositionsCon();
-        if (conProps.size() == 1) {
-          auto antPropStr = prop2String(antProps.back());
-          auto conPropStr = prop2String(conProps.back());
-          if (antPropStr == conPropStr) {
-            discard_count++;
-            continue;
-          }
-        }
-      }
+
+    const TemporalExpressionPtr &ant =
+        a->_formula->getItems()[0]->getItems()[0];
+
+    const TemporalExpressionPtr &con =
+        a->_formula->getItems()[0]->getItems()[1];
+
+    if (temp2String(ant, Language::SpotLTL, PrintMode::ShowAll) ==
+        temp2String(con, Language::SpotLTL, PrintMode::ShowAll)) {
+      discard_count++;
+      continue;
     }
     outAssertions.push_back(a);
   }
@@ -560,6 +558,10 @@ void Qualifier::fbqUsingFaultyTraces(
     const std::vector<AssertionPtr> &selected,
     const TracePtr &originalTrace) {
 
+  //lower the number of threads to avoid wasting memory
+  size_t prevl1Val = l1Constants::MAX_THREADS;
+  l1Constants::MAX_THREADS = 1;
+
   if (!_aidToF.empty()) {
     messageInfo(
         "fbq not executed: reusing previouse fault coverage...");
@@ -573,6 +575,7 @@ void Qualifier::fbqUsingFaultyTraces(
   progressBarPS.display();
   std::unordered_map<size_t, TemplateImplicationPtr>
       aid_to_noCacheTemplates;
+
   //make a new template for each assertion to allow the use of templates utils
   for (const AssertionPtr &a : selected) {
     aid_to_noCacheTemplates[a->_id] =
@@ -671,6 +674,11 @@ void Qualifier::fbqUsingFaultyTraces(
   //    }
   //  }
   //
+
+  //deallocate the Templates created with only 1 thread
+  aid_to_noCacheTemplates.clear();
+  //restore the previous number of threads
+  l1Constants::MAX_THREADS = prevl1Val;
 }
 
 std::vector<AssertionPtr>

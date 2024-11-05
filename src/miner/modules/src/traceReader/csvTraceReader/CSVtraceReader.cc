@@ -115,7 +115,7 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
     ++number_of_entries;
   }
 
-  if(number_of_entries < 1){
+  if (number_of_entries < 1) {
     messageWarning("No data found in trace csv file:" + file);
     return nullptr;
   }
@@ -187,7 +187,8 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
         }
         ifieldIndex++;
       } else {
-        messageError("Unknown var type");
+        messageError("Unknown var type in trace file: '" + file +
+                     "'");
       }
       fieldIndex++;
     }

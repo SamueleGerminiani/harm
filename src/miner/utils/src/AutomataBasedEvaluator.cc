@@ -5,6 +5,7 @@
 #include "globals.hh"
 #include "minerUtils.hh"
 #include <thread>
+#include <unordered_map>
 
 #ifdef SPOTLTL
 #include "spot/twa/bddprint.hh"
@@ -13,6 +14,7 @@
 #include "spot/twaalgos/translate.hh"
 #include <spot/tl/formula.hh>
 #include <spot/tl/parse.hh>
+#include <spot/tl/print.hh>
 #include <spot/twaalgos/isdet.hh>
 #include <spot/twaalgos/postproc.hh>
 #endif
@@ -532,6 +534,13 @@ std::string to_string(const spot::formula &f) {
 
 std::shared_ptr<spot::twa_graph>
 generateDeterministicSpotAutomaton(const spot::formula &formula) {
+  static std::unordered_map<std::string,
+                            std::shared_ptr<spot::twa_graph>>
+      cache;
+  std::string formulaStr = to_string(formula);
+  if (cache.count(formulaStr)) {
+    return cache.at(formulaStr);
+  }
 
   spot::formula formula_to_use = formula;
 
@@ -561,6 +570,10 @@ generateDeterministicSpotAutomaton(const spot::formula &formula) {
       aut->num_states() == 1,
       "The formula '" + to_string(formula_to_use) +
           "' generates a trivial automaton with only one state");
+
+  //add to cache
+  cache.insert({formulaStr, aut});
+
   return aut;
 }
 
