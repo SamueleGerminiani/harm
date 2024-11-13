@@ -435,6 +435,34 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("vcd")) {
     clc::parserType = "vcd";
   }
+
+  //------------------------
+  //vcd cases
+  //vcd-ss or vcd-ss + vcd-r == 0 : get signals only in selected scope
+  //vcd-ss + vcd-r = n with n>0 : get signals in selected scope and recursive with depth n
+  //vcd-ss + vcd-unroll = n with n>0 : get signals in selected scope and recursive with depth n and make a context for each scope
+  if (result.count("vcd-ss")) {
+    clc::selectedScope = result["vcd-ss"].as<std::string>();
+    clc::vcdRecursive = 0;
+  }
+  if (result.count("vcd-r")) {
+    clc::vcdRecursive = safeStoull(result["vcd-r"].as<std::string>());
+  }
+
+  messageErrorIf(result.count("vcd-unroll") &&
+                     (result.count("vcd-r")),
+                 "Can not use 'vcd-unroll' with 'vcd-r'");
+
+  messageErrorIf(
+      result.count("vcd-unroll") && !result.count("generate-config"),
+      "Can not use 'vcd-unroll' without 'generate-config'");
+
+  if (result.count("vcd-unroll")) {
+    clc::vcdUnroll =
+        safeStoull(result["vcd-unroll"].as<std::string>());
+    messageErrorIf(clc::vcdUnroll == 0,
+                   "vcd-unroll must be greater than 0");
+  }
   if (result.count("csv")) {
     clc::parserType = "csv";
   }

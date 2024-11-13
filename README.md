@@ -211,7 +211,7 @@ The user can specify a set of numerics to automatically generate propositions (u
  	* K : use the Kmeans algorithm
  	* \<number\>E : exclude \<number\> from the values used to perform the clustering (this option can be specified multiple times with different values). WARNING: \<number\> must be a base-10 integer or float (even if the numeric expression is of logic type).
  	* \<N\>Max : keep only the top N (using support) generated propositions
- 	* \<Float\>WCSS : when using Kmeans, stop the elbow method when the reduction of variance is below the specified percentage
+ 	* \<Float\>WCSS : when using Kmeans, stop the elbow method when the reduction of variance is below the specified percentage (a number between 0 and 1)
   	* == : generate propositions of the form \<numeric-exp\> == c
  	* \>= : generate propositions of the form \<numeric-exp\> \>= c
  	* \<= : generate propositions of the form \<numeric-exp\> \<= c

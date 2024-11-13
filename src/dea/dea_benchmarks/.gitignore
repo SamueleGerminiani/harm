@@ -15,4 +15,8 @@ transcript
 *work*
 *axc_ass.txt
 traces/*
+dea_out/*
+prediction/*
+filtered/*
+ass/*
 

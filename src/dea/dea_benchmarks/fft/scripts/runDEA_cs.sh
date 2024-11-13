@@ -1,0 +1,21 @@
+$HARM_ROOT/build/dea \
+--csv \
+--fd traces/ \
+--ass-file ass/axc_ass.txt \
+--tech "cs" \
+--metric-name "MREP" \
+--bash "scripts/simulateCS.sh" \
+--at-list info/csIDS.txt \
+--dump-to dea_out/ \
+--push \
+--nsga2-nt 1 \
+--cls-type "nsga2" \
+--nsga2-mi 0.1 \
+--min-time 60 \
+--max-push-time 3600 \
+--min-push-time 120 \
+--metric-direction 0 \
+--gen-rand \
+--wsilent \
+--log \
+--max-threads 16  

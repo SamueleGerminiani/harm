@@ -1,0 +1,20 @@
+adder_16bit: add16u_0AV, add16u_0EM, add16u_0Q7, add16u_073, add16u_0M0, add16u_0DL, add16u_0GK, add16u_02E, add16u_0MH
+mul16u_exact: mul16u_BMC, mul16u_AQ1, mul16u_5FA, mul16u_DAE, mul16u_F6B, mul16u_CK3, mul16u_8VH, mul16u_GPF, mul16u_HGP, mul16u_HGY
+---
+component_01:adder_16bit
+component_02:adder_16bit
+component_03:adder_16bit
+component_04:adder_16bit
+component_05:adder_16bit
+component_06:adder_16bit
+component_07:adder_16bit
+component_08:adder_16bit
+component_09:mul16u_exact
+component_10:mul16u_exact
+component_11:mul16u_exact
+component_12:mul16u_exact
+component_13:mul16u_exact
+component_14:mul16u_exact
+component_15:mul16u_exact
+component_16:mul16u_exact
+component_17:mul16u_exact

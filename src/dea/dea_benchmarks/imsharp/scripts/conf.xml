@@ -1,0 +1,281 @@
+<harm>
+	<context name="axc">
+
+
+
+      <!--
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip0" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip1" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip2" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip3" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip4" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip5" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip6" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip7" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip8" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip9" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip10" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip11" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip12" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip13" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip14" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip15" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip16" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip17" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip18" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip19" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip20" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip21" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip22" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip23" loc="dt,[dt]"/>
+        <numeric clustering="K,20Max,0.00001WCSS,><" exp="ip24" loc="dt,[dt]"/>
+
+        <numeric clustering="K,10Max,0.00001WCSS,><" exp="op" loc="c"/>
+
+      -->
+
+        <prop exp="ip0[0]" loc="dt"/>
+        <prop exp="ip0[1]" loc="dt"/>
+        <prop exp="ip0[2]" loc="dt"/>
+        <prop exp="ip0[3]" loc="dt"/>
+        <prop exp="ip0[4]" loc="dt"/>
+        <prop exp="ip0[5]" loc="dt"/>
+        <prop exp="ip0[6]" loc="dt"/>
+        <prop exp="ip0[7]" loc="dt"/>
+
+        <prop exp="ip1[0]" loc="dt"/>
+        <prop exp="ip1[1]" loc="dt"/>
+        <prop exp="ip1[2]" loc="dt"/>
+        <prop exp="ip1[3]" loc="dt"/>
+        <prop exp="ip1[4]" loc="dt"/>
+        <prop exp="ip1[5]" loc="dt"/>
+        <prop exp="ip1[6]" loc="dt"/>
+        <prop exp="ip1[7]" loc="dt"/>
+
+        <prop exp="ip2[0]" loc="dt"/>
+        <prop exp="ip2[1]" loc="dt"/>
+        <prop exp="ip2[2]" loc="dt"/>
+        <prop exp="ip2[3]" loc="dt"/>
+        <prop exp="ip2[4]" loc="dt"/>
+        <prop exp="ip2[5]" loc="dt"/>
+        <prop exp="ip2[6]" loc="dt"/>
+        <prop exp="ip2[7]" loc="dt"/>
+
+        <prop exp="ip3[0]" loc="dt"/>
+        <prop exp="ip3[1]" loc="dt"/>
+        <prop exp="ip3[2]" loc="dt"/>
+        <prop exp="ip3[3]" loc="dt"/>
+        <prop exp="ip3[4]" loc="dt"/>
+        <prop exp="ip3[5]" loc="dt"/>
+        <prop exp="ip3[6]" loc="dt"/>
+        <prop exp="ip3[7]" loc="dt"/>
+
+        <prop exp="ip4[0]" loc="dt"/>
+        <prop exp="ip4[1]" loc="dt"/>
+        <prop exp="ip4[2]" loc="dt"/>
+        <prop exp="ip4[3]" loc="dt"/>
+        <prop exp="ip4[4]" loc="dt"/>
+        <prop exp="ip4[5]" loc="dt"/>
+        <prop exp="ip4[6]" loc="dt"/>
+        <prop exp="ip4[7]" loc="dt"/>
+
+        <prop exp="ip5[0]" loc="dt"/>
+        <prop exp="ip5[1]" loc="dt"/>
+        <prop exp="ip5[2]" loc="dt"/>
+        <prop exp="ip5[3]" loc="dt"/>
+        <prop exp="ip5[4]" loc="dt"/>
+        <prop exp="ip5[5]" loc="dt"/>
+        <prop exp="ip5[6]" loc="dt"/>
+        <prop exp="ip5[7]" loc="dt"/>
+
+        <prop exp="ip6[0]" loc="dt"/>
+        <prop exp="ip6[1]" loc="dt"/>
+        <prop exp="ip6[2]" loc="dt"/>
+        <prop exp="ip6[3]" loc="dt"/>
+        <prop exp="ip6[4]" loc="dt"/>
+        <prop exp="ip6[5]" loc="dt"/>
+        <prop exp="ip6[6]" loc="dt"/>
+        <prop exp="ip6[7]" loc="dt"/>
+
+        <prop exp="ip7[0]" loc="dt"/>
+        <prop exp="ip7[1]" loc="dt"/>
+        <prop exp="ip7[2]" loc="dt"/>
+        <prop exp="ip7[3]" loc="dt"/>
+        <prop exp="ip7[4]" loc="dt"/>
+        <prop exp="ip7[5]" loc="dt"/>
+        <prop exp="ip7[6]" loc="dt"/>
+        <prop exp="ip7[7]" loc="dt"/>
+
+        <prop exp="ip8[0]" loc="dt"/>
+        <prop exp="ip8[1]" loc="dt"/>
+        <prop exp="ip8[2]" loc="dt"/>
+        <prop exp="ip8[3]" loc="dt"/>
+        <prop exp="ip8[4]" loc="dt"/>
+        <prop exp="ip8[5]" loc="dt"/>
+        <prop exp="ip8[6]" loc="dt"/>
+        <prop exp="ip8[7]" loc="dt"/>
+
+        <prop exp="ip9[0]" loc="dt"/>
+        <prop exp="ip9[1]" loc="dt"/>
+        <prop exp="ip9[2]" loc="dt"/>
+        <prop exp="ip9[3]" loc="dt"/>
+        <prop exp="ip9[4]" loc="dt"/>
+        <prop exp="ip9[5]" loc="dt"/>
+        <prop exp="ip9[6]" loc="dt"/>
+        <prop exp="ip9[7]" loc="dt"/>
+
+        <prop exp="ip10[0]" loc="dt"/>
+        <prop exp="ip10[1]" loc="dt"/>
+        <prop exp="ip10[2]" loc="dt"/>
+        <prop exp="ip10[3]" loc="dt"/>
+        <prop exp="ip10[4]" loc="dt"/>
+        <prop exp="ip10[5]" loc="dt"/>
+        <prop exp="ip10[6]" loc="dt"/>
+        <prop exp="ip10[7]" loc="dt"/>
+
+        <prop exp="ip11[0]" loc="dt"/>
+        <prop exp="ip11[1]" loc="dt"/>
+        <prop exp="ip11[2]" loc="dt"/>
+        <prop exp="ip11[3]" loc="dt"/>
+        <prop exp="ip11[4]" loc="dt"/>
+        <prop exp="ip11[5]" loc="dt"/>
+        <prop exp="ip11[6]" loc="dt"/>
+        <prop exp="ip11[7]" loc="dt"/>
+
+        <prop exp="ip12[0]" loc="dt"/>
+        <prop exp="ip12[1]" loc="dt"/>
+        <prop exp="ip12[2]" loc="dt"/>
+        <prop exp="ip12[3]" loc="dt"/>
+        <prop exp="ip12[4]" loc="dt"/>
+        <prop exp="ip12[5]" loc="dt"/>
+        <prop exp="ip12[6]" loc="dt"/>
+        <prop exp="ip12[7]" loc="dt"/>
+
+        <prop exp="ip13[0]" loc="dt"/>
+        <prop exp="ip13[1]" loc="dt"/>
+        <prop exp="ip13[2]" loc="dt"/>
+        <prop exp="ip13[3]" loc="dt"/>
+        <prop exp="ip13[4]" loc="dt"/>
+        <prop exp="ip13[5]" loc="dt"/>
+        <prop exp="ip13[6]" loc="dt"/>
+        <prop exp="ip13[7]" loc="dt"/>
+
+        <prop exp="ip14[0]" loc="dt"/>
+        <prop exp="ip14[1]" loc="dt"/>
+        <prop exp="ip14[2]" loc="dt"/>
+        <prop exp="ip14[3]" loc="dt"/>
+        <prop exp="ip14[4]" loc="dt"/>
+        <prop exp="ip14[5]" loc="dt"/>
+        <prop exp="ip14[6]" loc="dt"/>
+        <prop exp="ip14[7]" loc="dt"/>
+
+        <prop exp="ip15[0]" loc="dt"/>
+        <prop exp="ip15[1]" loc="dt"/>
+        <prop exp="ip15[2]" loc="dt"/>
+        <prop exp="ip15[3]" loc="dt"/>
+        <prop exp="ip15[4]" loc="dt"/>
+        <prop exp="ip15[5]" loc="dt"/>
+        <prop exp="ip15[6]" loc="dt"/>
+        <prop exp="ip15[7]" loc="dt"/>
+
+        <prop exp="ip16[0]" loc="dt"/>
+        <prop exp="ip16[1]" loc="dt"/>
+        <prop exp="ip16[2]" loc="dt"/>
+        <prop exp="ip16[3]" loc="dt"/>
+        <prop exp="ip16[4]" loc="dt"/>
+        <prop exp="ip16[5]" loc="dt"/>
+        <prop exp="ip16[6]" loc="dt"/>
+        <prop exp="ip16[7]" loc="dt"/>
+
+        <prop exp="ip17[0]" loc="dt"/>
+        <prop exp="ip17[1]" loc="dt"/>
+        <prop exp="ip17[2]" loc="dt"/>
+        <prop exp="ip17[3]" loc="dt"/>
+        <prop exp="ip17[4]" loc="dt"/>
+        <prop exp="ip17[5]" loc="dt"/>
+        <prop exp="ip17[6]" loc="dt"/>
+        <prop exp="ip17[7]" loc="dt"/>
+
+        <prop exp="ip18[0]" loc="dt"/>
+        <prop exp="ip18[1]" loc="dt"/>
+        <prop exp="ip18[2]" loc="dt"/>
+        <prop exp="ip18[3]" loc="dt"/>
+        <prop exp="ip18[4]" loc="dt"/>
+        <prop exp="ip18[5]" loc="dt"/>
+        <prop exp="ip18[6]" loc="dt"/>
+        <prop exp="ip18[7]" loc="dt"/>
+
+        <prop exp="ip19[0]" loc="dt"/>
+        <prop exp="ip19[1]" loc="dt"/>
+        <prop exp="ip19[2]" loc="dt"/>
+        <prop exp="ip19[3]" loc="dt"/>
+        <prop exp="ip19[4]" loc="dt"/>
+        <prop exp="ip19[5]" loc="dt"/>
+        <prop exp="ip19[6]" loc="dt"/>
+        <prop exp="ip19[7]" loc="dt"/>
+
+        <prop exp="ip20[0]" loc="dt"/>
+        <prop exp="ip20[1]" loc="dt"/>
+        <prop exp="ip20[2]" loc="dt"/>
+        <prop exp="ip20[3]" loc="dt"/>
+        <prop exp="ip20[4]" loc="dt"/>
+        <prop exp="ip20[5]" loc="dt"/>
+        <prop exp="ip20[6]" loc="dt"/>
+        <prop exp="ip20[7]" loc="dt"/>
+
+        <prop exp="ip21[0]" loc="dt"/>
+        <prop exp="ip21[1]" loc="dt"/>
+        <prop exp="ip21[2]" loc="dt"/>
+        <prop exp="ip21[3]" loc="dt"/>
+        <prop exp="ip21[4]" loc="dt"/>
+        <prop exp="ip21[5]" loc="dt"/>
+        <prop exp="ip21[6]" loc="dt"/>
+        <prop exp="ip21[7]" loc="dt"/>
+
+        <prop exp="ip22[0]" loc="dt"/>
+        <prop exp="ip22[1]" loc="dt"/>
+        <prop exp="ip22[2]" loc="dt"/>
+        <prop exp="ip22[3]" loc="dt"/>
+        <prop exp="ip22[4]" loc="dt"/>
+        <prop exp="ip22[5]" loc="dt"/>
+        <prop exp="ip22[6]" loc="dt"/>
+        <prop exp="ip22[7]" loc="dt"/>
+
+        <prop exp="ip23[0]" loc="dt"/>
+        <prop exp="ip23[1]" loc="dt"/>
+        <prop exp="ip23[2]" loc="dt"/>
+        <prop exp="ip23[3]" loc="dt"/>
+        <prop exp="ip23[4]" loc="dt"/>
+        <prop exp="ip23[5]" loc="dt"/>
+        <prop exp="ip23[6]" loc="dt"/>
+        <prop exp="ip23[7]" loc="dt"/>
+
+        <prop exp="ip24[0]" loc="dt"/>
+        <prop exp="ip24[1]" loc="dt"/>
+        <prop exp="ip24[2]" loc="dt"/>
+        <prop exp="ip24[3]" loc="dt"/>
+        <prop exp="ip24[4]" loc="dt"/>
+        <prop exp="ip24[5]" loc="dt"/>
+        <prop exp="ip24[6]" loc="dt"/>
+        <prop exp="ip24[7]" loc="dt"/>
+
+        <template dtLimits="ENT,15A,-0.1E,O" exp="G({..&&..}|->P0)" />           
+                                                                              
+        <!--
+        <numeric clustering="K,8Max,0.0001WCSS,>=,<=,==" exp="op" loc="c"/>
+        -->
+        <prop exp="op[0]" loc="c"/>
+        <prop exp="op[1]" loc="c"/>
+        <prop exp="op[2]" loc="c"/>
+        <prop exp="op[3]" loc="c"/>
+        <prop exp="op[4]" loc="c"/>
+        <prop exp="op[5]" loc="c"/>
+        <prop exp="op[6]" loc="c"/>
+        <prop exp="op[7]" loc="c"/>
+
+                                                                              
+                                                                              
+		<sort name="causality" exp="1-afct/traceLength"/>                     
+		<sort name="frequency" exp="atct/traceLength"/>                       
+	</context>                                                                
+</harm>                                                                       

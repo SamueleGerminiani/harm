@@ -1,0 +1,52 @@
+<harm>
+	<context name="axc">
+
+        <numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x0_r" loc="dt,[dt]"/>
+        <numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x0_im" loc="dt,[dt]"/>
+        <numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x1_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x1_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x2_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x2_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x3_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x3_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x4_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x4_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x5_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x5_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x6_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x6_im" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x7_r" loc="dt,[dt]"/>
+		<numeric clustering="K,0E,5Max,0.001WCSS,><" exp="x7_im" loc="dt,[dt]"/>
+                                
+        <numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y0_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y0_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y1_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y1_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y2_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y2_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y3_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y3_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y4_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y4_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y5_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y5_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y6_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y6_im" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y7_r" loc="c"/>
+		<numeric clustering="K,0E,5Max,0.0001WCSS,><" exp="y7_im" loc="c"/>
+
+
+		<template dtLimits="16A,-0.1E,!N" exp="G({..&&..}|-> P0)" /> 
+        <!--
+        -->
+
+
+
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="atct/traceLength"/>
+	</context>
+</harm>
+
+
+

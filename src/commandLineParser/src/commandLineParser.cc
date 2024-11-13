@@ -98,6 +98,9 @@ cxxopts::ParseResult parseDEA(int argc, char *argv[]) {
 
         options.add_options()
             ("vcd", "vcd trace file type")
+            ( "vcd-ss", "select a scope of signals in the .vcd trace (disables vcd-r, use " "\"--vcd-r=1\" to enable it again)", cxxopts::value<std::string>(), "<String>")
+            ( "vcd-r", "recursively add signals for sub-scopes, default recursion depth is <max depth>", cxxopts::value<std::string>()->implicit_value( std::to_string((size_t)-1)), "<uint>")
+            ( "vcd-unroll", "create a context for each scope when generating the config file " "(mutually esclusive with vcd-r, default recursion depth is <max depth>)", cxxopts::value<std::string>()->implicit_value( std::to_string((size_t)-1)), "<uint>")
             ("csv", "csv trace file type")
             ("ass-file", "", cxxopts::value<std::string>(), "path to assertion file (one per each line)")
             ("metric-name", "", cxxopts::value<std::string>(), "name of the metric (default is 'Metric')")

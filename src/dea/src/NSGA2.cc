@@ -428,7 +428,8 @@ void NSGA2::evalIndividual(
         clc::ve_metricDirection ? 1.f - metricValue : metricValue;
 
     //debug
-    //std::cout << metricValue << "\n";
+    //std::cout <<si<<"\n";
+    //std::cout <<"\t\t\t\---------->"<< metricValue << "\n";
 
     auto obj = std::make_pair<size_t, size_t>(
         individual._genes.size(), metricValue * _valuePrecision);
