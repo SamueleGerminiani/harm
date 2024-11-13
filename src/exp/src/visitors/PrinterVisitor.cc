@@ -20,6 +20,7 @@
 #include "misc.hh"
 #include "visitors/PrinterVisitor.hh"
 #include <cmath>
+#include <iomanip>
 
 namespace expression {
 PrinterVisitor::PrinterVisitor(Language lang, bool colored,
@@ -64,7 +65,9 @@ std::string PrinterVisitor::get() {
   }
 
 #define REAL_CONSTANT(LEAF)                                          \
-  void PrinterVisitor::visit(LEAF &o) { _ss << o.evaluate(0); }
+  void PrinterVisitor::visit(LEAF &o) {                              \
+    _ss << std::setprecision(17) << o.evaluate(0);                   \
+  }
 
 #define BOOLEAN_CONSTANT(LEAF)                                       \
   void PrinterVisitor::visit(LEAF &o) {                              \
