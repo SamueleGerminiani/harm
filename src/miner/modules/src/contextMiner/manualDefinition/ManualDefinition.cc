@@ -64,12 +64,16 @@ void addAssertionsFromFile(std::string assPath, const TracePtr &trace,
   l1Constants::MAX_THREADS = 1;
 
   for (size_t i = 0; i < assStrs.size(); i++) {
+    pb.changeMessage(0, "Parsing assertions from file... " +
+                            std::to_string(i + 1) + "/" +
+                            std::to_string(assStrs.size()));
     TemplateImplicationPtr ti =
         hparser::parseTemplateImplication(assStrs[i], trace);
     if (!ti->assHoldsOnTrace(harm::Location::None)) {
       messageWarning("External assertion does not hold: '" +
                      ti->getAssertionStr(Language::SpotLTL) +
                      "', discarding it");
+      continue;
     }
 
     //create an assertion by making a snapshot of a template
