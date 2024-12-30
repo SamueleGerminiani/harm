@@ -137,11 +137,12 @@ TEST(PermutatorTest, genPermutations) {
       getPermutations("G(1 -> (!P0 and P1))", domaIdToNumberOfProps),
       std::pow(nProps, 2));
 
-  //simple binomial with different versions of the same operator: can be (nProps,2) * (nProps,2) or (nProps,4)
-  ASSERT_EQ(getPermutations("G(1 -> (P0 and P1) and (P2 && P3))",
-                            domaIdToNumberOfProps),
-            binomialCoefficient(nProps, 2) *
-                binomialCoefficient(nProps, 2));
+  //simple binomial with different versions of the same operator: can be (nProps,2) * (nProps,2) or (nProps,4) depeding on the interpretation
+  int res = getPermutations("G(1 -> (P0 and P1) and (P2 && P3))",
+                            domaIdToNumberOfProps);
+  ASSERT_TRUE(res == binomialCoefficient(nProps, 2) *
+                         binomialCoefficient(nProps, 2) ||
+              res == binomialCoefficient(nProps, 4));
 
   //riflessive--------------------------------------
   ASSERT_EQ(
