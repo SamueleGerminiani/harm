@@ -169,7 +169,7 @@ restart:
     //prepare data for printing---------------------------------
     std::vector<std::pair<size_t, size_t>> chart_data;
     for (auto &individual : generateParetoFront(pop, geneToAssTime)) {
-    //for (auto &individual : pop) {
+      //for (auto &individual : pop) {
       evalIndividual(individual, geneToAssTime);
       chart_data.push_back(individual._objective);
     }
@@ -832,7 +832,7 @@ void NSGA2::genAndDumpRandomClusters(
 
   std::vector<std::pair<size_t, double>> afterPushData;
   std::vector<std::pair<size_t, double>> randomData;
-  //    std::vector<Individual> randomRepresentatives;
+  std::vector<Individual> randomRepresentatives;
 
   //keep track the elaborated pop
   size_t geObIndex = 0;
@@ -863,21 +863,21 @@ void NSGA2::genAndDumpRandomClusters(
       double rnd =
           (((double)ind._objective.second / _valuePrecision));
       avgRandom += rnd;
-      //        candidatesRand.emplace_back(rnd, ind);
+      candidatesRand.emplace_back(rnd, ind);
     }
 
     avgRandom /= (double)randomIndividuals.size();
 
     //sort by distance from the avg
-    //      std::sort(begin(candidatesRand), end(candidatesRand),
-    //                [&avgRandom](std::pair<double, Individual> &e1,
-    //                             std::pair<double, Individual> &e2) {
-    //                  return std::abs(e1.first - avgRandom) <
-    //                         std::abs(e2.first - avgRandom);
-    //                });
+    std::sort(begin(candidatesRand), end(candidatesRand),
+              [&avgRandom](std::pair<double, Individual> &e1,
+                           std::pair<double, Individual> &e2) {
+                return std::abs(e1.first - avgRandom) <
+                       std::abs(e2.first - avgRandom);
+              });
 
     //store a good rand candidate (close to the average)
-    //      randomRepresentatives.push_back(candidatesRand.front().second);
+    randomRepresentatives.push_back(candidatesRand.front().second);
 
     randomData.emplace_back(individual._genes.size(), avgRandom);
   }
@@ -894,20 +894,23 @@ void NSGA2::genAndDumpRandomClusters(
   std::ofstream out(clc::ve_dumpTo + "/" + clc::ve_technique +
                     "_randCandidates.csv");
 
-  //  std::sort(randomRepresentatives.begin(), randomRepresentatives.end(),
-  //            [](Individual &e1, Individual &e2) {
-  //              return e1._genes.size() < e2._genes.size();
-  //            });
+  std::sort(randomRepresentatives.begin(),
+            randomRepresentatives.end(),
+            [](Individual &e1, Individual &e2) {
+              return e1._genes.size() < e2._genes.size();
+            });
 
-  //  //dump verilog defines
-  //  out << "size,define\n";
-  //  for (auto &rp : randomRepresentatives) {
-  //    out << rp._genes.size() << ","
-  //        << (clc::ve_technique == "br" ? toDefineBR(rp._genes, 0)
-  //                                      : toDefineSR(rp._genes))
-  //        << "\n";
-  //  }
-  //  out.close();
+  //dump radom clusters
+  out << "tokenID,clusterID,clusterSize,"<< (_pushing ? clc::ve_metricName : std::string("Damage")) << "\n";
+  size_t cIndex = 0;
+  for (auto rp : randomRepresentatives) {
+    for (auto gene : rp._genes) {
+      out << gene << "," << cIndex << "," << rp._genes.size() << ","
+          << (double)rp._objective.second / _valuePrecision << "\n";
+    }
+    cIndex++;
+  }
+  out.close();
 }
 void NSGA2::dumpDamageToMetricFront(
     std::vector<Individual> paretoFront,

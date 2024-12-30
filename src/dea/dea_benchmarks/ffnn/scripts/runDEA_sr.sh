@@ -10,9 +10,10 @@ $HARM_ROOT/build/dea \
 --dump-to dea_out/ \
 --push \
 --cls-type "nsga2" \
+--nsga2-nt 1 \
 --nsga2-mi 0.01 \
 --min-time 30 \
---min-push-time 240 \
+--max-push-time 360 \
 --metric-direction 0 \
 --gen-rand \
 --max-threads 16  

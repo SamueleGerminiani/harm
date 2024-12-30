@@ -6,4 +6,7 @@ dea_benchmarks/fir/traces/*
 dea_benchmarks/inversek2j/traces/*
 dea_benchmarks/paperRunningExample/traces/*
 dea_benchmarks/brentKung32b/traces/*
+src/dea/dea_benchmarks/fft/traces/*
+dea_benchmarks/gauss_blur/traces/*
+dea_benchmarks/imsharp/traces/*
 

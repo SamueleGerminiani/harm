@@ -8,12 +8,11 @@ $HARM_ROOT/build/dea \
 --at-list info/csIDS.txt \
 --dump-to dea_out/ \
 --push \
---nsga2-nt 1 \
+--nsga2-nt 3 \
 --cls-type "nsga2" \
 --nsga2-mi 0.1 \
---min-time 60 \
---max-push-time 3600 \
---min-push-time 120 \
+--min-time 5 \
+--max-push-time 600 \
 --metric-direction 0 \
 --gen-rand \
 --wsilent \
