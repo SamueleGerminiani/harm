@@ -37,6 +37,9 @@ The official repo of the Hint-Based AsseRtion Miner
 
 HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (LTL) assertions starting from a set of user-defined hints and the simulation traces of the design under verification (DUV). The tool is agnostic with respect to the design from which the trace was generated, thus the DUV source code is not necessary. The user-defined hints involve LTL templates, propositions and ranking metrics that are exploited by the assertion miner to reduce the search space and improve the quality of the generated assertions. This way, the tool supports the work of the verification engineer by including his/her insights in the process of automatically generating assertions.
 
+![](harm_demo.gif)
+
+
 # Quick start
 
 For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clang (c++17) and cmake 3.14+.
