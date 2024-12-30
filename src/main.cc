@@ -336,6 +336,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
       std::filesystem::remove(clc::dumpPath);
       std::ofstream fs(clc::dumpPath);
       fs.close();
+      //Error if the file is not created
+      messageErrorIf(!std::filesystem::exists(clc::dumpPath),
+                     "Could not create file '" + clc::dumpPath + "'");
     }
   }
 

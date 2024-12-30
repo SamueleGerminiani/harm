@@ -790,10 +790,11 @@ void Qualifier::faultBasedQualification(
 void Qualifier::dumpAssToFile(Context &context, const TracePtr &trace,
                               std::vector<AssertionPtr> &assertions) {
   progresscpp::ParallelProgressBar pb;
-  pb.addInstance(0, "Dumping assertions...", assertions.size(), 70);
 
   std::ofstream assFile;
 
+  pb.addInstance(0, "Dumping assertions to '" + clc::dumpPath + "'",
+                 assertions.size(), 70);
   if (clc::dumpAssSplitContexts) {
     assFile = std::ofstream(clc::dumpPath + "/" + context._name +
                             "_ass.txt");
@@ -806,6 +807,8 @@ void Qualifier::dumpAssToFile(Context &context, const TracePtr &trace,
     pb.increment(0);
     pb.display();
   }
+  assFile.close();
+  pb.done(0);
 
   //dump fault coverage
   if (clc::dumpAssSplitContexts && !clc::faultyTraceFiles.empty()) {
@@ -818,9 +821,6 @@ void Qualifier::dumpAssToFile(Context &context, const TracePtr &trace,
     }
     fc_assFile.close();
   }
-
-  assFile.close();
-  pb.done(0);
 }
 void Qualifier::filterRedundantAssertions(
     std::vector<AssertionPtr> &assertions) {
