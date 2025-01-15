@@ -3,6 +3,7 @@
 #parameters
 top="gauss_blur_tb"
 traceLength=1000
+#traceLength=16384
 
 #inputs from DEA
 faultList=$1

@@ -1,0 +1,19 @@
+all: mul16u_AQ1, mul16u_5FA, mul16u_DAE, mul16u_F6B, mul16u_CK3, mul16u_8VH, mul16u_GPF, mul16u_HGP, mul16u_HGY, add16u_0AV, add16u_0EM, add16u_0Q7, add16u_073, add16u_0M0, add16u_0DL, add16u_0GK, add16u_02E, add16u_0MH
+---
+component_01:all
+component_02:all
+component_03:all
+component_04:all
+component_05:all
+component_06:all
+component_07:all
+component_08:all
+component_09:all
+component_10:all
+component_11:all
+component_12:all
+component_13:all
+component_14:all
+component_15:all
+component_16:all
+component_17:all

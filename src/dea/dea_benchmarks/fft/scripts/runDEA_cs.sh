@@ -12,9 +12,10 @@ $HARM_ROOT/build/dea \
 --cls-type "nsga2" \
 --nsga2-mi 0.1 \
 --min-time 5 \
+--min-push-time 300 \
 --max-push-time 600 \
 --metric-direction 0 \
---gen-rand \
+--dont-plot \
 --wsilent \
 --log \
 --max-threads 16  
