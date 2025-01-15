@@ -82,18 +82,18 @@ TEST_F(TraceTest, BasicTypesVCD) {
   EXPECT_EQ(trace->getCuts().size(), 1);
 
   //o1
-  EXPECT_EQ(o1->evaluate(0), (int)1);
-  EXPECT_EQ(o1->evaluate(1), (int)0);
+  EXPECT_EQ(o1->evaluate(0), (int)0);
+  EXPECT_EQ(o1->evaluate(1), (int)1);
   EXPECT_EQ(o1->evaluate(2), (int)0);
   EXPECT_EQ(o1->evaluate(3), (int)0);
   EXPECT_EQ(o1->evaluate(4), (int)0);
 
   //o2
-  EXPECT_EQ(o2->evaluate(0), (unsigned char)139);
-  EXPECT_EQ(o2->evaluate(1), (unsigned char)109);
-  EXPECT_EQ(o2->evaluate(2), (unsigned char)151);
-  EXPECT_EQ(o2->evaluate(3), (unsigned char)28);
-  EXPECT_EQ(o2->evaluate(4), (unsigned char)23);
+  EXPECT_EQ(o2->evaluate(0), (unsigned char)0);
+  EXPECT_EQ(o2->evaluate(1), (unsigned char)139);
+  EXPECT_EQ(o2->evaluate(2), (unsigned char)109);
+  EXPECT_EQ(o2->evaluate(3), (unsigned char)151);
+  EXPECT_EQ(o2->evaluate(4), (unsigned char)28);
 }
 
 ///test merged csv trace
@@ -175,27 +175,27 @@ TEST_F(TraceTest, MergedVCD) {
   EXPECT_EQ(trace->getCuts().size(), 2);
 
   //o1
-  EXPECT_EQ(o1->evaluate(0), (bool)1);
-  EXPECT_EQ(o1->evaluate(1), (bool)0);
+  EXPECT_EQ(o1->evaluate(0), (bool)0);
+  EXPECT_EQ(o1->evaluate(1), (bool)1);
   EXPECT_EQ(o1->evaluate(2), (bool)0);
   EXPECT_EQ(o1->evaluate(3), (bool)0);
   EXPECT_EQ(o1->evaluate(4), (bool)0);
-  EXPECT_EQ(o1->evaluate(5), (bool)1);
-  EXPECT_EQ(o1->evaluate(6), (bool)0);
+  EXPECT_EQ(o1->evaluate(5), (bool)0);
+  EXPECT_EQ(o1->evaluate(6), (bool)1);
   EXPECT_EQ(o1->evaluate(7), (bool)0);
   EXPECT_EQ(o1->evaluate(8), (bool)0);
   EXPECT_EQ(o1->evaluate(9), (bool)0);
 
   //o2
-  EXPECT_EQ(o2->evaluate(0), (unsigned char)139);
-  EXPECT_EQ(o2->evaluate(1), (unsigned char)109);
-  EXPECT_EQ(o2->evaluate(2), (unsigned char)151);
-  EXPECT_EQ(o2->evaluate(3), (unsigned char)28);
-  EXPECT_EQ(o2->evaluate(4), (unsigned char)23);
-  EXPECT_EQ(o2->evaluate(5), (unsigned char)139);
-  EXPECT_EQ(o2->evaluate(6), (unsigned char)109);
-  EXPECT_EQ(o2->evaluate(7), (unsigned char)151);
-  EXPECT_EQ(o2->evaluate(8), (unsigned char)28);
-  EXPECT_EQ(o2->evaluate(9), (unsigned char)23);
+  EXPECT_EQ(o2->evaluate(0), (unsigned char)0);
+  EXPECT_EQ(o2->evaluate(1), (unsigned char)139);
+  EXPECT_EQ(o2->evaluate(2), (unsigned char)109);
+  EXPECT_EQ(o2->evaluate(3), (unsigned char)151);
+  EXPECT_EQ(o2->evaluate(4), (unsigned char)28);
+  EXPECT_EQ(o2->evaluate(5), (unsigned char)0);
+  EXPECT_EQ(o2->evaluate(6), (unsigned char)139);
+  EXPECT_EQ(o2->evaluate(7), (unsigned char)109);
+  EXPECT_EQ(o2->evaluate(8), (unsigned char)151);
+  EXPECT_EQ(o2->evaluate(9), (unsigned char)28);
 }
 

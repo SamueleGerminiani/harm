@@ -233,6 +233,11 @@ void handleSplittedSignal(
   l = trace->getIntVariable(n_vv.first);
 
   auto sigsV = n_vv.second;
+  for (auto sigV : sigsV) {
+    messageErrorIf((*sigV)[0]->time != 0, "First sample of signal '" +
+                                              n_vv.first +
+                                              "' is not at time 0");
+  }
 
   size_t index[n_vv.second.size()];
   std::fill(index, index + n_vv.second.size(), 0);
@@ -250,7 +255,7 @@ void handleSplittedSignal(
       //find the next sample time
       for (size_t i = 0; i < n_vv.second.size(); i++) {
         while (index[i] < lastChange[i] &&
-               v_t->time >= (*sigsV[i])[index[i] + 1]->time) {
+               v_t->time > (*sigsV[i])[index[i] + 1]->time) {
           index[i]++;
         }
       }
@@ -295,6 +300,9 @@ void handleWholeSignal(
   }
 
   VCDSignalValues *sigV = n_vv.second[0];
+  messageErrorIf((*sigV)[0]->time != 0, "First sample of signal '" +
+                                            n_vv.first +
+                                            "' is not at time 0");
 
   size_t index = 0;
   size_t time = 0;
@@ -305,7 +313,7 @@ void handleWholeSignal(
   for (auto &v_t : *clkV) {
     if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
       while (index < lastChange &&
-             v_t->time >= (*sigV)[index + 1]->time) {
+             v_t->time > (*sigV)[index + 1]->time) {
         index++;
       }
       std::string val = "";
@@ -346,6 +354,9 @@ void handleFloatSignal(
   n = trace->getFloatVariable(n_vv.first);
 
   VCDSignalValues *sigV = n_vv.second[0];
+  messageErrorIf((*sigV)[0]->time != 0, "First sample of signal '" +
+                                            n_vv.first +
+                                            "' is not at time 0");
 
   size_t index = 0;
   size_t time = 0;
@@ -356,7 +367,7 @@ void handleFloatSignal(
     if (getSingleBitValue(v_t) == VCDBit::VCD_1) {
       //find the next sample time
       while (index < lastChange &&
-             v_t->time >= (*sigV)[index + 1]->time) {
+             v_t->time > (*sigV)[index + 1]->time) {
         index++;
       }
       //add the value to the trace
