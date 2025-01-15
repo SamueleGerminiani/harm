@@ -636,11 +636,8 @@ void TemplateImplication::check() {
     }
   } else {
     printContingency();
-    char reasonVac[100];
-    if (isVacuous(harm::Location::AntCon, reasonVac)) {
-      std::cout << TIMPL("Assertion is vacuous: " +
-                         std::string(reasonVac))
-                << "\n";
+    if (isVacuous(harm::Location::AntCon)) {
+      std::cout << TIMPL("Assertion is vacuous") << "\n";
     } else {
       std::cout << BOOL("Assertion holds") << "\n";
     }
@@ -917,8 +914,7 @@ bool TemplateImplication::assHoldsOnTraceOffset(
   return true;
 }
 
-bool TemplateImplication::isVacuous(harm::Location update,
-                                    char *cause) {
+bool TemplateImplication::isVacuous(harm::Location update) {
   switch (update) {
   case harm::Location::Ant:
     setCacheAntFalse();
@@ -940,9 +936,6 @@ bool TemplateImplication::isVacuous(harm::Location update,
   //ATCT > 0
   for (size_t i = 0; i < _trace->getLength(); i++) {
     if (evaluate_ant(i) == Trinary::T && evaluate(i) == Trinary::T) {
-      if (cause) {
-        strcpy(cause, "ATCT == 0");
-      }
       return false;
     }
   }

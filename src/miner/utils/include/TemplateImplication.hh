@@ -201,7 +201,7 @@ public:
    *\param update specifies if the template should be reevaluated and where 
    * \param cause if the assertion is vacuous, it will be filled with the cause of the vacuity, the function expects cause to be allocated and deallocated by the caller
    * */
-  bool isVacuous(harm::Location update, char *cause = nullptr);
+  bool isVacuous(harm::Location update);
   /** \brief returns true if the assertion is vacuouse (offset), false otherwise 
    *\param update specifies if the template should be reevaluated and where 
     */
