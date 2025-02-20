@@ -72,46 +72,37 @@ void TemporalParserHandler::exitImplication(
   TemporalExpressionPtr left = _tsubFormulas.top();
   _tsubFormulas.pop();
 
-  messageErrorIf(
+  messageWarningIf(
       clc::outputLang == Language::SVA &&
           (!isSere(left) && !isBooleanLayer(left)),
-      "SystemVerilog requires the antecedent of an "
+      "SystemVerilog output language detected, SVA requires the "
+      "antecedent of an "
       "implication to be a "
       "SERE, '" +
           temp2String(left, clc::outputLang,
                       PrintMode::ShowOnlyPermuationPlaceholders) +
           "' is not a SERE.\n"
-          "Change the output language to PSL or SpotLTL to "
-          "allow this.\n" +
+          "The semantics of the generated assertions might change "
+          "once they are printed, leading to hard-to-understand errors. Do not ignore this.\n" +
           printErrorMessage());
 
-  messageErrorIf(
+  messageWarningIf(
       clc::outputLang == Language::SVA &&
           (ctx->IMPL() != nullptr || ctx->IMPLO() != nullptr),
-      "SystemVerilog implications requires to use |-> or |=>\n"
-      "Change the output language to PSL or SpotLTL to "
-      "allow the use of -> or =>\n" +
+      "SystemVerilog output language detected, SystemVerilog "
+      "implications requires to use |-> or |=>\n"
+      "The semantics of the generated assertions might change once "
+      "they are printed, leading to hard-to-understand errors. Do not ignore this.\n" +
           printErrorMessage());
 
-  //property
-  if (ctx->tformula().size() == 2 &&
-      (ctx->IMPL() != nullptr || ctx->IMPLO() != nullptr)) {
-    _tsubFormulas.push(generatePtr<PropertyImplication>(
-        left, right, false,
-        (ctx->IMPLO() != nullptr) ? true : false));
+  bool isOverlapping =
+      ctx->SEREIMPLO() != nullptr || ctx->IMPLO() != nullptr;
+  bool isMMImplication =
+      ctx->SEREIMPLO() != nullptr || ctx->SEREIMPL() != nullptr;
+  _tsubFormulas.push(generatePtr<PropertyImplication>(
+      left, right, isMMImplication, isOverlapping));
 
-    return;
-  }
-
-  //sere
-  if (ctx->tformula().size() == 1 && ctx->sere() != nullptr &&
-      (ctx->SEREIMPL() != nullptr || ctx->SEREIMPLO() != nullptr)) {
-    _tsubFormulas.push(generatePtr<PropertyImplication>(
-        left, right, true,
-        (ctx->SEREIMPLO() != nullptr) ? true : false));
-
-    return;
-  }
+  return;
   messageError("Error in formula\n" + printErrorMessage());
 }
 

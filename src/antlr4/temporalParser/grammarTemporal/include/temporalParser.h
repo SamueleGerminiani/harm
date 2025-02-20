@@ -7,7 +7,7 @@ bool canUseSharedOperator(const std::string& unaryOp, const std::string& sharedO
 bool canTakeThisNot(const std::string& unaryOp, const std::string& ph);
 
 
-// Generated from temporal.g4 by ANTLR 4.10.1
+// Generated from temporal.g4 by ANTLR 4.12.0
 
 #pragma once
 

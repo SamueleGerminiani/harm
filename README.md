@@ -327,7 +327,7 @@ Note that the template must be fully instantiated (no placeholders).
 * \-\-keep-vac-ass \<FILE\> : do not discard vacuous assertions
 * \-\-include-ass \<FILE\> : create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context
 * \-\-sva : output assertions in SystemVerilog Assertion format
-* \-\-sva-assert : output simulable sva assertions in the format 'assert property( (posedge \<input\_clk\>) \<assertion\> )'. Must be used together with \-\-sva
+* \-\-sva-assert : output simulable sva assertions in the format 'assert property( (posedge \<input\_clk\>) \<assertion\> )'. 
 * \-\-psl : output assertions in PSL format
 * \-\-spotltl : output assertions in spot ltl format
 * \-\-dont-normalize : print the assertions with their ranking metrics not normalized

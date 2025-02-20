@@ -186,6 +186,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(result.count("spotltl") || result.count("psl"),
                    "sva-assert available only with --sva");
     clc::svaAssert = true;
+    clc::outputLang = Language::SVA;
   }
 
   if (result.count("psl")) {

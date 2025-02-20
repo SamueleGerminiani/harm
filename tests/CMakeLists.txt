@@ -22,4 +22,5 @@ addTest("TemporalDepthTest" ./temporalDepthTests.cc )
 addTest("PermutatorTest" ./permutatorTests.cc )
 addTest("DTOTest" ./dtoTests.cc )
 addTest("TempExpSyntaxTreeTests" ./tempExpSyntaxTreeTests.cc )
+addTest("svaParserPrinterTests" ./svaParserPrinterTests.cc )
 

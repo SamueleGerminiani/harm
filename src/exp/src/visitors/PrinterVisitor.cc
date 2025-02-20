@@ -292,9 +292,11 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     }                                                                \
                                                                      \
     if (clc::svaAssert &&                                            \
-        _printMode != PrintMode::ShowOnlyPermuationPlaceholders) {   \
+        _printMode != PrintMode::ShowOnlyPermuationPlaceholders &&   \
+        ope::temporalOpe::NODE ==                                    \
+            ope::temporalOpe::PropertyAlways) {                      \
       std::string assert =                                           \
-          "assert property ((@posedge " + clc::clk + ") ";           \
+          "assert property (@(posedge " + clc::clk + ") ";           \
       _ss << selCol(assert, chooseTemporalOpColor(                   \
                                 assert, ope::temporalOpe::NODE));    \
     } else {                                                         \
@@ -302,6 +304,9 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
                     chooseTemporalOpColor(                           \
                         opeToString(ope::temporalOpe::NODE, _lang),  \
                         ope::temporalOpe::NODE));                    \
+      if (_lang != Language::SpotLTL && items.size() == 1) {         \
+        _ss << " ";                                                  \
+      }                                                              \
     }                                                                \
                                                                      \
     if (items.size() == 1 && putBrakets) {                           \
@@ -318,7 +323,9 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
           ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
     }                                                                \
     if (clc::svaAssert &&                                            \
-        _printMode != PrintMode::ShowOnlyPermuationPlaceholders) {   \
+        _printMode != PrintMode::ShowOnlyPermuationPlaceholders &&   \
+        ope::temporalOpe::NODE ==                                    \
+            ope::temporalOpe::PropertyAlways) {                      \
       _ss << selCol(                                                 \
           ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
     }                                                                \
@@ -496,10 +503,15 @@ void PrinterVisitor::visit(PropertyNext &o) {
     _ss << selCol(std::to_string(o.getDelay()),
                   TEMP(std::to_string(o.getDelay())));
     _ss << selCol("]", TEMP("]"));
+  }
+  if (o.getDelay() != 1 && _lang == Language::SpotLTL) {
     _ss << selCol("(", TEMP("("));
   }
+  if (_lang != Language::SpotLTL) {
+    _ss << " ";
+  }
   o.getItems()[0]->acceptVisitor(*this);
-  if (o.getDelay() != 1) {
+  if (o.getDelay() != 1 && _lang == Language::SpotLTL) {
     _ss << selCol(")", TEMP(")"));
   }
   _temporal_ope_stack.pop();
@@ -520,7 +532,7 @@ void PrinterVisitor::visit(PropertyImplication &o) {
     _ss << selCol(close, TEMP(close));
   }
   _ss << selCol(" ", TIMPL(" "));
-  if (o.isMMImplication()) {
+  if (o.isMMImplication() || _lang == Language::SVA) {
     _ss << selCol("|", TIMPL("|"));
   }
   if (o.isOverlapping()) {

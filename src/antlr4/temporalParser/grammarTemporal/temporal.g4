@@ -36,7 +36,7 @@ formula : <assoc=right> ALWAYS LROUND implication RROUND EOF
 
 sva_assert : 'assert property' LROUND sva_assert RROUND
             | LROUND sva_assert RROUND
-            | LROUND '@posedge' boolean RROUND sva_assert
+            | '@(posedge' boolean RROUND sva_assert
             | <assoc=right> LROUND implication RROUND
             | <assoc=right> implication
             ;
