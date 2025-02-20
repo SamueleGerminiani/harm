@@ -294,7 +294,7 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     if (clc::svaAssert &&                                            \
         _printMode != PrintMode::ShowOnlyPermuationPlaceholders) {   \
       std::string assert =                                           \
-          "assert property ((@posedge " + clc::clk + ") ";           \
+          "assert property (@(posedge " + clc::clk + ") ";           \
       _ss << selCol(assert, chooseTemporalOpColor(                   \
                                 assert, ope::temporalOpe::NODE));    \
     } else {                                                         \
