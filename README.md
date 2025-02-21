@@ -77,8 +77,6 @@ mkdir build && cd build
 
 Run cmake.
 
-Build without SpotLTL: the generate binaries will comply with the MIT license.
-Evaluation of temporal formulas will follow a modular-based approach.
 ```
 cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
