@@ -18,7 +18,7 @@ else
 fi
 
 
-wget --no-check-certificate https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/boost_1_83_0.tar.gz
+wget --no-check-certificate https://archives.boost.io/release/1.83.0/source/boost_1_83_0.tar.gz
 tar -xvf boost_1_83_0.tar.gz
 cd boost_1_83_0
 bash bootstrap.sh
