@@ -384,8 +384,7 @@ void genConfigFile(std::string &configFile,
     auto mapDec = trace->getDeclarationsAsMap();
 
     for (auto &[scopeName, sfn] : sfn_to_sfn) {
-      ofs << "\t<context name=\"" + scopeName + "\">"
-          << "\n\n";
+      ofs << "\t<context name=\"" + scopeName + "\">" << "\n\n";
 
       for (auto &name : sfn) {
         const auto &type = mapDec.at(name).first;

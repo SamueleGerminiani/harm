@@ -117,6 +117,7 @@ The user can find several working examples in the "examples" directory.
 * clock is the signal used to sample time (every posedge).
 * config.xml is the configuration file containing propositions and templates.
 * Use --vcd-dir <DIRECTORY> to give as input a set of .vcd traces
+* IMPORTANT: see the options --vcd-ss and --vcd-r to make harm capture the correct VCD scope and signals
 
 ## Run with a csv trace
 
@@ -314,8 +315,8 @@ Note that the template must be fully instantiated (no placeholders).
 * \-\-wsilent : disable all warnings
 
 ### Trace
-* \-\-vcd-ss \<string\> : select a scope of signals in the .vcd traces (sets \-\-vcd-r to 0).
-* \-\-vcd-r=\<uint\> : recursively add signals for sub-scopes, default recursion depth is \<max depth\>
+* \-\-vcd-ss \<string\> : specify a scope of signals in the .vcd traces. The format of the scope path is root\_scope::sub\_scope::sub\_sub\_\_scope::...::signal
+* \-\-vcd-r=\<uint\> : recursively add signals for sub-scopes, default recursion depth is \<max depth of vcd\>, WARNING: signals in subscopes (with respect to the root scope) will require a scope prefix (same format of scope path) in the configuration file (and in the clock siglan specified with --clk option, if applicable). If --vcd-ss is used, the root scope becomes the one specified with that option.
 * \-\-vcd-unroll=\<uint\> : create a context for each scope when generating the config file (mutually exclusive with vcd-r, default recursion depth is \<max depth\>)
 * \-\-split-logic : generate a config file where all bivectors are split into single bit variables (must be used with --generate-config)
 
