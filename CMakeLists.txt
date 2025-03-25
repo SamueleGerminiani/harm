@@ -223,6 +223,7 @@ INSTALL(
         -DSpotLib=${SPOTLTL_LIB}
         -DBddxLib=${BDDX_LIB}
         -DAntrLib=${ANTLR4_RUNTIME}
+        -DBoostLib=${BoostLinkedLibraries}
         -DIP=${CMAKE_INSTALL_PREFIX}
         -P
         ${CMAKE_SOURCE_DIR}/cmake/PostInstall.cmake

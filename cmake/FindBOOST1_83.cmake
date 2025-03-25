@@ -7,8 +7,20 @@ set(BOOST_LIBRARYDIR ${CMAKE_SOURCE_DIR}/third_party/boost/lib )
 
 find_package(Boost 1.83 COMPONENTS regex) 
 
-set(BoostLinkedLibaries)
-foreach(lib_target ${Boost_LIBRARIES})
-    get_target_property(lib_location ${lib_target} LOCATION)
-    list(APPEND BoostLinkedLibaries ${lib_location})
+set(BoostLinkedLibraries)
+foreach(lib_target IN LISTS Boost_LIBRARIES)
+    if(TARGET ${lib_target})
+        # It's a CMake target (e.g., Boost::regex)
+        get_target_property(lib_location ${lib_target} IMPORTED_LOCATION_RELEASE)
+        if(NOT lib_location)
+            get_target_property(lib_location ${lib_target} IMPORTED_LOCATION)
+        endif()
+    else()
+        # Not a target – assume it's a full path or library name
+        set(lib_location ${lib_target})
+    endif()
+
+    list(APPEND BoostLinkedLibraries ${lib_location})
 endforeach()
+
+message(STATUS "All Boost linked libraries: ${BoostLinkedLibraries}")
