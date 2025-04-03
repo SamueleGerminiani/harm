@@ -135,6 +135,8 @@ ClusteringConfig parseClusteringConfig(std::string config) {
 
   messageErrorIf(seen.count("K") && seen.count("K+"),
                  "Cannot use both K and K+ in " + config);
+  messageErrorIf(res._clusteringType.empty(),
+                 "No clustering type set in " + config);
   return res;
 }
 
