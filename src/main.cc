@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -24,6 +25,7 @@
 #include "harmIcon.hh"
 #include "message.hh"
 #include "misc.hh"
+#include <random>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -275,8 +277,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
         }
       }
       //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage
-      std::random_shuffle(clc::faultyTraceFiles.begin(),
-                          clc::faultyTraceFiles.end());
+      std::shuffle(clc::faultyTraceFiles.begin(),
+                   clc::faultyTraceFiles.end(),
+                   std::mt19937{std::random_device{}()});
 
     } else if (clc::parserType == "csv") {
       for (const auto &entry : std::filesystem::directory_iterator(

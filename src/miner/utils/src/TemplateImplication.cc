@@ -199,8 +199,10 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
 
     for (size_t time = 0; time < _trace->getLength(); time++) {
       auto [ant, antShift] = _antEvaluator->evaluate(time);
-      size_t shift =
-          time + (_applyDynamicShift ? antShift : 0) + _constShift;
+      if (ant == Trinary::T) {
+        antShift += _constShift;
+      }
+      size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
           (shift >= _trace->getLength()) ? Trinary::U : conValue;
@@ -238,8 +240,10 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
 
     for (size_t time = 0; time < _trace->getLength(); time++) {
       auto [ant, antShift] = _antEvaluator->evaluate(time);
-      size_t shift =
-          time + (_applyDynamicShift ? antShift : 0) + _constShift;
+      if (ant == Trinary::T) {
+        antShift += _constShift;
+      }
+      size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
           (shift >= _trace->getLength()) ? Trinary::U : conValue;
@@ -615,9 +619,12 @@ void TemplateImplication::check() {
         size_t counterExampleEnd = 0;
         if (!_contains_mma) {
           auto [antValue, antShift] = _antEvaluator->evaluate(i);
+          if (antValue == Trinary::T) {
+            antShift += _constShift;
+          }
           auto [conValue, conShift] =
-              _conEvaluator->evaluate(i + antShift + _constShift);
-          counterExampleEnd = i + antShift + _constShift + conShift;
+              _conEvaluator->evaluate(i + antShift);
+          counterExampleEnd = i + antShift + conShift;
         } else {
           counterExampleEnd = i + _impEvaluator->evaluate(i).second;
         }
@@ -974,8 +981,10 @@ bool TemplateImplication::isVacuousOffset(harm::Location update) {
 Trinary TemplateImplication::evaluate(size_t time) {
   if (!_contains_mma) {
     auto [antValue, antShift] = _antEvaluator->evaluate(time);
-    size_t shift =
-        time + (_applyDynamicShift ? antShift : 0) + _constShift;
+    if (antValue == Trinary::T) {
+      antShift += _constShift;
+    }
+    size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
            (shift >= _trace->getLength() ? Trinary::U : conValue);
@@ -992,8 +1001,10 @@ Trinary TemplateImplication::evaluate_con(size_t time) {
 Trinary TemplateImplication::evaluateOffset(size_t time) {
   if (!_contains_mma) {
     auto [antValue, antShift] = _antEvaluator->evaluate(time);
-    size_t shift =
-        time + (_applyDynamicShift ? antShift : 0) + _constShift;
+    if (antValue == Trinary::T) {
+      antShift += _constShift;
+    }
+    size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
            (shift >= _trace->getLength() ? Trinary::U : !conValue);
