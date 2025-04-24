@@ -30,6 +30,9 @@
 #include "minerUtils.hh"
 #include "misc.hh"
 
+//If 1 AFCT is calculated by using the truth value of the consequent whose evaluation starts at "the current evaluation unit" + "maximum temporal length of the antecedent" when using |-> or |=> even if the antecedent fails before its max temporal length. If 0, AFCT always considers the consequent at the same instant in which the antecedent becomes false.
+#define enforce_mma_sc_atcf 1
+
 namespace harm {
 
 TemplateImplication::TemplateImplication(
@@ -198,15 +201,20 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
     //ant -> !con
 
     for (size_t time = 0; time < _trace->getLength(); time++) {
-      auto [ant, antShift] = _antEvaluator->evaluate(time);
-      if (ant == Trinary::T) {
+      auto [antValue, antShift] = _antEvaluator->evaluate(time);
+      if (antValue == Trinary::T) {
         antShift += _constShift;
       }
+#if enforce_mma_sc_atcf
+      if (antValue == Trinary::F && _antDepth != -1) {
+        antShift = _antDepth + _constShift;
+      }
+#endif
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
           (shift >= _trace->getLength()) ? Trinary::U : conValue;
-      if (ant == Trinary::T && (!con) == Trinary::T) {
+      if (antValue == Trinary::T && (!con) == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
         } else {
@@ -217,21 +225,21 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
             ct[0][1]++;
           }
         }
-      } else if (ant == Trinary::T && (!con) == Trinary::F) {
+      } else if (antValue == Trinary::T && (!con) == Trinary::F) {
         ct[0][1]++;
-      } else if (ant == Trinary::T && (!con) == Trinary::U) {
+      } else if (antValue == Trinary::T && (!con) == Trinary::U) {
         ct[0][2]++;
-      } else if (ant == Trinary::F && (!con) == Trinary::T) {
+      } else if (antValue == Trinary::F && (!con) == Trinary::T) {
         ct[1][0]++;
-      } else if (ant == Trinary::F && (!con) == Trinary::F) {
+      } else if (antValue == Trinary::F && (!con) == Trinary::F) {
         ct[1][1]++;
-      } else if (ant == Trinary::F && (!con) == Trinary::U) {
+      } else if (antValue == Trinary::F && (!con) == Trinary::U) {
         ct[1][2]++;
-      } else if (ant == Trinary::U && (!con) == Trinary::T) {
+      } else if (antValue == Trinary::U && (!con) == Trinary::T) {
         ct[2][0]++;
-      } else if (ant == Trinary::U && (!con) == Trinary::F) {
+      } else if (antValue == Trinary::U && (!con) == Trinary::F) {
         ct[2][1]++;
-      } else if (ant == Trinary::U && (!con) == Trinary::U) {
+      } else if (antValue == Trinary::U && (!con) == Trinary::U) {
         ct[2][2]++;
       }
     }
@@ -239,15 +247,21 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
     //ant -> con
 
     for (size_t time = 0; time < _trace->getLength(); time++) {
-      auto [ant, antShift] = _antEvaluator->evaluate(time);
-      if (ant == Trinary::T) {
+      auto [antValue, antShift] = _antEvaluator->evaluate(time);
+      if (antValue == Trinary::T) {
         antShift += _constShift;
       }
+#if enforce_mma_sc_atcf
+      if (_applyDynamicShift && antValue == Trinary::F &&
+          _antDepth != -1) {
+        antShift = _antDepth + _constShift;
+      }
+#endif
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
           (shift >= _trace->getLength()) ? Trinary::U : conValue;
-      if (ant == Trinary::T && con == Trinary::T) {
+      if (antValue == Trinary::T && con == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
         } else {
@@ -259,21 +273,21 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
             ct[0][1]++;
           }
         }
-      } else if (ant == Trinary::T && con == Trinary::F) {
+      } else if (antValue == Trinary::T && con == Trinary::F) {
         ct[0][1]++;
-      } else if (ant == Trinary::T && con == Trinary::U) {
+      } else if (antValue == Trinary::T && con == Trinary::U) {
         ct[0][2]++;
-      } else if (ant == Trinary::F && con == Trinary::T) {
+      } else if (antValue == Trinary::F && con == Trinary::T) {
         ct[1][0]++;
-      } else if (ant == Trinary::F && con == Trinary::F) {
+      } else if (antValue == Trinary::F && con == Trinary::F) {
         ct[1][1]++;
-      } else if (ant == Trinary::F && con == Trinary::U) {
+      } else if (antValue == Trinary::F && con == Trinary::U) {
         ct[1][2]++;
-      } else if (ant == Trinary::U && con == Trinary::T) {
+      } else if (antValue == Trinary::U && con == Trinary::T) {
         ct[2][0]++;
-      } else if (ant == Trinary::U && con == Trinary::F) {
+      } else if (antValue == Trinary::U && con == Trinary::F) {
         ct[2][1]++;
-      } else if (ant == Trinary::U && con == Trinary::U) {
+      } else if (antValue == Trinary::U && con == Trinary::U) {
         ct[2][2]++;
       }
     }
@@ -612,27 +626,33 @@ void TemplateImplication::check() {
     std::cout << "Failing sub-traces (top " +
                      std::to_string(maxSubtracesToPrint) + "):\n";
 
-    for (size_t i = 0; i < _trace->getLength(); i++) {
-      if (evaluate(i) == Trinary::F) {
+    for (size_t time = 0; time < _trace->getLength(); time++) {
+      if (evaluate(time) == Trinary::F) {
         std::cout << "===================================="
                   << "\n";
         size_t counterExampleEnd = 0;
         if (!_contains_mma) {
-          auto [antValue, antShift] = _antEvaluator->evaluate(i);
+          auto [antValue, antShift] = _antEvaluator->evaluate(time);
           if (antValue == Trinary::T) {
             antShift += _constShift;
           }
-          auto [conValue, conShift] =
-              _conEvaluator->evaluate(i + antShift);
-          counterExampleEnd = i + antShift + conShift;
+#if enforce_mma_sc_atcf
+          if (antValue == Trinary::F && _antDepth != -1) {
+            antShift = _antDepth + _constShift;
+          }
+#endif
+          size_t shift = time + (_applyDynamicShift ? antShift : 0);
+          auto [conValue, conShift] = _conEvaluator->evaluate(shift);
+          counterExampleEnd = time + antShift + conShift;
         } else {
-          counterExampleEnd = i + _impEvaluator->evaluate(i).second;
+          counterExampleEnd =
+              time + _impEvaluator->evaluate(time).second;
         }
 
-        std::cout << "[" << i << "," << counterExampleEnd << "]"
+        std::cout << "[" << time << "," << counterExampleEnd << "]"
                   << "\n";
-        std::cout << _trace->printTrace(i,
-                                        (counterExampleEnd - i) + 1)
+        std::cout << _trace->printTrace(
+                         time, (counterExampleEnd - time) + 1)
                   << "\n";
         std::cout << "===================================="
                   << "\n";
@@ -661,9 +681,10 @@ void TemplateImplication::check() {
         "The assertion contains multiple matches operators in the "
         "antecedent, the shift refers only to the first match");
     std::cout << "Ant: ";
-    for (size_t i = 0;
-         i < std::min(maxPrintableTrace, _trace->getLength()); i++) {
-      std::cout << evaluate_ant(i) << "(" << i << ")"
+    for (size_t time = 0;
+         time < std::min(maxPrintableTrace, _trace->getLength());
+         time++) {
+      std::cout << evaluate_ant(time) << "(" << time << ")"
                 << " ";
     }
 
@@ -671,12 +692,19 @@ void TemplateImplication::check() {
       std::cout << "\n";
       std::cout << "\n";
       std::cout << "Sft: ";
-      for (size_t i = 0;
-           i < std::min(maxPrintableTrace, _trace->getLength());
-           i++) {
-        auto [antValue, antShift] = _antEvaluator->evaluate(i);
-        size_t shift = antShift + _constShift;
-        std::cout << shift << "(" << i << ")"
+      for (size_t time = 0;
+           time < std::min(maxPrintableTrace, _trace->getLength());
+           time++) {
+        auto [antValue, antShift] = _antEvaluator->evaluate(time);
+        if (antValue == Trinary::T) {
+          antShift += _constShift;
+        }
+#if enforce_mma_sc_atcf
+        if (antValue == Trinary::F && _antDepth != -1) {
+          antShift = _antDepth + _constShift;
+        }
+#endif
+        std::cout << antShift << "(" << time << ")"
                   << " ";
       }
     }
@@ -684,20 +712,24 @@ void TemplateImplication::check() {
     std::cout << "\n";
 
     std::cout << "Con: ";
-    for (size_t i = 0;
-         i < std::min(maxPrintableTrace, _trace->getLength()); i++) {
-      std::cout << evaluate_con(i) << "(" << i << ")"
+    for (size_t time = 0;
+         time < std::min(maxPrintableTrace, _trace->getLength());
+         time++) {
+      std::cout << evaluate_con(time) << "(" << time << ")"
                 << " ";
     }
-    std::cout << "\n";
-    std::cout << "\n";
-    std::cout << "Ass: ";
-    for (size_t i = 0;
-         i < std::min(maxPrintableTrace, _trace->getLength()); i++) {
-      std::cout << evaluate(i) << "(" << i << ")"
-                << " ";
+    if (!assHoldsOnTrace(harm::Location::AntCon)) {
+      std::cout << "\n";
+      std::cout << "\n";
+      std::cout << "Ass: ";
+      for (size_t time = 0;
+           time < std::min(maxPrintableTrace, _trace->getLength());
+           time++) {
+        std::cout << evaluate(time) << "(" << time << ")"
+                  << " ";
+      }
+      std::cout << "\n";
     }
-    std::cout << "\n";
   }
   std::cout << "\n";
   std::cout << "====================================================="

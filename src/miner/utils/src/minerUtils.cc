@@ -363,4 +363,31 @@ void substitutePlaceholders(TemporalExpressionPtr &original,
   });
 }
 
+void maxTemporalDepth(int &max, Automaton::Node *cn, size_t currDepth,
+                      std::unordered_set<size_t> &marked) {
+  //if the automaton contains cycles, the depth is unknown (-1)
+
+  marked.insert(cn->_id);
+  for (auto i : cn->_outEdges) {
+    if (max == -1) {
+      return;
+    } else if (i->_toNode->_type != Automaton::Node::Type::Pending) {
+      max = currDepth > (size_t)max ? currDepth : max;
+    } else if (marked.count(i->_toNode->_id)) {
+      max = -1;
+      return;
+    } else {
+      maxTemporalDepth(max, i->_toNode, ++currDepth, marked);
+    }
+  }
+  marked.erase(cn->_id);
+}
+
+int getTemporalDepth(Automaton *aut) {
+  std::unordered_set<size_t> marked;
+  int max = 0;
+  maxTemporalDepth(max, aut->_root, 1, marked);
+  return max;
+}
+
 } // namespace harm

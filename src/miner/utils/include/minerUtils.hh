@@ -82,4 +82,6 @@ int getTemporalDepth(const expression::TemporalExpressionPtr &te);
 void substitutePlaceholders(
     expression::TemporalExpressionPtr &original,
     const PlaceholderPack &pack);
+
+int getTemporalDepth(Automaton *aut);
 } // namespace harm
