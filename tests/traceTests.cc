@@ -199,3 +199,27 @@ TEST_F(TraceTest, MergedVCD) {
   EXPECT_EQ(o2->evaluate(9), (unsigned char)28);
 }
 
+TEST_F(TraceTest, Logic) {
+  clc::reset = "";
+  std::vector<std::string> traces;
+  traces.push_back("../tests/input/LogicTrace.csv");
+  TraceReader *tr = new CSVtraceReader(traces);
+  const TracePtr &trace = tr->readTrace();
+
+  BooleanVariablePtr v1 = trace->getBooleanVariable("v1");
+  IntVariablePtr v2 = trace->getIntVariable("v2");
+  IntVariablePtr v3 = trace->getIntVariable("v3");
+  IntVariablePtr v4 = trace->getIntVariable("v4");
+  IntVariablePtr v5 = trace->getIntVariable("v5");
+
+  EXPECT_EQ(v1->evaluate(0), 1);
+  EXPECT_EQ(v2->evaluate(0), 6);
+  EXPECT_EQ(v3->evaluate(0), 1542);
+  EXPECT_EQ(v4->evaluate(0), 101058054);
+  EXPECT_EQ(v5->evaluate(0), -2);
+
+  EXPECT_EQ(v1->evaluate(1), 0);
+  EXPECT_EQ(v2->evaluate(1), 6);
+  EXPECT_EQ(v2->evaluate(1), 6);
+}
+

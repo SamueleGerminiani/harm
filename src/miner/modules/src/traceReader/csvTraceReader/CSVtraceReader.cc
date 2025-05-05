@@ -157,16 +157,21 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
     size_t fieldIndex = 0;
     //for each field of the row
     for (CSVField &field : row) {
+      std::string val = removeSpaces(field.get());
+
       //varIndexToBucket[fieldIndex] is the type of the variable in the field, all vars are ordered by type and occurrence in the csv header
       if (vars_dt[fieldIndex].getType() == ExpType::Bool) {
-        boolVars[bfieldIndex++]->assign(time,
-                                        safeStoull(field.get(), 10));
+        //if the boolean was converted from a logic of size 1 we need to remove the 'x' and 'z' from the string
+        if (val == "x" || val == "z" || val == "X" || val == "Z") {
+          val = "0";
+        }
+        boolVars[bfieldIndex++]->assign(
+            time, (val == "1" || val == "true"));
       } else if (vars_dt[fieldIndex].getType() == ExpType::Float) {
         //float type is no longer supported
         numVars[ffieldIndex++]->assign(time, safeStod(field.get()));
       } else if (isInt(vars_dt[fieldIndex].getType())) {
         size_t base = vars_dt[fieldIndex].getBase();
-        auto val = field.get();
         if (base == 2) {
           messageErrorIf(!isBase2(val),
                          "val '" + val +
@@ -178,7 +183,10 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
           }
           std::replace_if(
               val.begin(), val.end(),
-              [](char c) { return c == 'x' || c == 'z'; }, '0');
+              [](char c) {
+                return c == 'x' || c == 'z' || c == 'X' || c == 'Z';
+              },
+              '0');
         }
         if (intVars[ifieldIndex]->getType().first == ExpType::SInt) {
           intVars[ifieldIndex]->assign(time, safeStoll(val, base));
