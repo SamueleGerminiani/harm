@@ -223,3 +223,27 @@ TEST_F(TraceTest, Logic) {
   EXPECT_EQ(v2->evaluate(1), 6);
 }
 
+TEST_F(TraceTest, SignedLogic) {
+  clc::reset = "";
+  std::vector<std::string> traces;
+  clc::selectedScope = "SignedTypes::dut";
+  tr = new VCDtraceReader("../tests/input/SignedTypes.vcd", "clk");
+  const TracePtr &trace = tr->readTrace();
+
+  IntVariablePtr c_0 = trace->getIntVariable("c_0");
+  IntVariablePtr a_0 = trace->getIntVariable("a_0");
+  IntVariablePtr a_1 = trace->getIntVariable("a_1");
+
+  EXPECT_EQ(c_0->evaluate(1), -1);
+  EXPECT_EQ(c_0->evaluate(2), -2);
+  EXPECT_EQ(c_0->evaluate(3), -3);
+
+  EXPECT_EQ((int)a_0->evaluate(1), -1);
+  EXPECT_EQ((int)a_0->evaluate(2), 0);
+  EXPECT_EQ((int)a_0->evaluate(3), -3);
+
+  EXPECT_EQ((int)a_1->evaluate(1), 0);
+  EXPECT_EQ((int)a_1->evaluate(2), -2);
+  EXPECT_EQ((int)a_1->evaluate(3), 0);
+}
+

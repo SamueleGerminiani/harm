@@ -285,13 +285,17 @@ void handleWholeSignal(
     const TracePtr &trace, VCDSignalValues *clkV,
     const std::pair<std::string, std::vector<VCDSignalValues *>>
         &n_vv,
-    std::vector<VCDSignal *> &signal) {
+    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec) {
   messageErrorIf(
       n_vv.second.size() > 1,
       "Internal error: whole signal has more than one value vector");
 
   //pointer to the variable
   GenericPtr<void> l = nullptr;
+
+  auto isSigned = var_dec.getType() == ExpType::SInt;
+
+  size_t base = (signal[0]->size > 1) ? var_dec.getBase() : 2;
 
   if (signal[0]->size > 1) {
     l = trace->getIntVariable(n_vv.first);
@@ -334,7 +338,8 @@ void handleWholeSignal(
       }
       if (signal[0]->size > 1) {
         std::static_pointer_cast<IntVariable>(l)->assign(
-            time, safeStoull(val, 2));
+            time,
+            isSigned ? safeStoll(val, base) : safeStoull(val, base));
       } else {
         std::static_pointer_cast<BooleanVariable>(l)->assign(
             time, val == "1");
@@ -499,7 +504,7 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
         vars.push_back(toVarDeclaration(n_ss.first, type, 64));
       } else {
         if (isInt(s->type)) {
-          type = "int";
+          type = "integer";
         } else {
           type = "logic";
         }
@@ -560,7 +565,13 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
         handleSplittedSignal(trace, clkV, n_vv, signal);
       } else {
         //signal is whole
-        handleWholeSignal(trace, clkV, n_vv, signal);
+        //get var declaration
+        VarDeclaration &var_dec =
+            std::find_if(vars.begin(), vars.end(),
+                         [&n_vv](const VarDeclaration &v) {
+                           return v.getName() == n_vv.first;
+                         })[0];
+        handleWholeSignal(trace, clkV, n_vv, signal, var_dec);
       }
     }
   }

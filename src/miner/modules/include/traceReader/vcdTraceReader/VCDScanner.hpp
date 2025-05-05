@@ -2,9 +2,9 @@
 #define VCDParserHEADER_H 1
 #define VCDParserIN_HEADER 1
 
-#line 6 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
+#line 5 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
 
-#line 8 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
+#line 7 "../../../../include/traceReader/vcdTraceReader//VCDScanner.hpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -302,6 +302,7 @@ typedef int16_t flex_int16_t;
 typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
+typedef uint64_t flex_uint64_t;
 #else
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
@@ -397,7 +398,7 @@ typedef size_t yy_size_t;
 #endif
 
 /* %if-not-reentrant */
-extern int yyleng;
+extern yy_size_t yyleng;
 /* %endif */
 
 /* %if-c-only */
@@ -428,7 +429,7 @@ struct yy_buffer_state
 	/* Number of characters read into yy_ch_buf, not including EOB
 	 * characters.
 	 */
-	int yy_n_chars;
+	yy_size_t yy_n_chars;
 
 	/* Whether we "own" the buffer - i.e., we know we created it,
 	 * and can realloc() it to grow it, and should free() it to
@@ -484,7 +485,7 @@ void yypop_buffer_state ( void );
 
 YY_BUFFER_STATE yy_scan_buffer ( char *base, yy_size_t size  );
 YY_BUFFER_STATE yy_scan_string ( const char *yy_str  );
-YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, int len  );
+YY_BUFFER_STATE yy_scan_bytes ( const char *bytes, yy_size_t len  );
 
 /* %endif */
 
@@ -575,7 +576,7 @@ FILE *yyget_out ( void );
 
 void yyset_out  ( FILE * _out_str  );
 
-			int yyget_leng ( void );
+			yy_size_t yyget_leng ( void );
 
 char *yyget_text ( void );
 

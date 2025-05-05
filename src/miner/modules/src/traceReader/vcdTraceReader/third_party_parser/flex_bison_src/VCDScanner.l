@@ -52,7 +52,7 @@ KW_TASK             task
 TIME_NUMBER         1|10|100
 TIME_UNIT           s|ms|us|ns|ps|fs
 VAR_TYPE_EVENT      event
-VAR_TYPE_INTEGER    int|byte
+VAR_TYPE_INTEGER    int|byte|integer
 VAR_TYPE_PARAMETER  parameter
 VAR_TYPE_REAL       real
 VAR_TYPE_REALTIME   realtime
@@ -67,7 +67,7 @@ VAR_TYPE_TRIREG     trireg
 VAR_TYPE_TRI0       tri0
 VAR_TYPE_TRI1       tri1
 VAR_TYPE_WAND       wand
-VAR_TYPE_WIRE       wire|logic|bit|integer
+VAR_TYPE_WIRE       wire|logic|bit
 VAR_TYPE_WOR        wor
 HASH                #
 SCALAR_NUM          0|1|x|X|z|Z       
