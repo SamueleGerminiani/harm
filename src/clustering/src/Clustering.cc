@@ -123,12 +123,17 @@ std::vector<Signed> gatherElements(const std::vector<size_t> &ivs,
       }
     }
   }
+
   //debug
-  //  std::cout << num2String(*cn) << "\n";
-  //  for (size_t i = 0; i < std::min(elements.size(), (size_t)50); i++) {
-  //    std::cout << elements[i] << " ";
-  //  }
-  //  std::cout << "\n";
+  //std::cout << num2String(cn) << "\n";
+  //std::map<Signed, size_t> elementCount;
+  //for (auto &e : elements) {
+  //  elementCount[e]++;
+  //}
+  //for (auto &[k, v] : elementCount) {
+  //  std::cout << k << "(#" << v << ") ";
+  //}
+  //std::cout << "\n";
 
   return elements;
 }

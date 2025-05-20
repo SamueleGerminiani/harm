@@ -420,10 +420,31 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
 
   //sort the split signals in ascending order of index
   for (auto &n_s : _nameToSignal) {
-    std::sort(begin(n_s.second), end(n_s.second),
-              [](VCDSignal *e1, VCDSignal *e2) {
-                return e1->lindex > e2->lindex;
-              });
+    if (n_s.second.size() > 1) {
+
+      //check that all indexes are unique
+      std::unordered_set<size_t> indexes;
+      for (auto &s : n_s.second) {
+        if (indexes.count(s->lindex)) {
+          messageWarning("Splitted signal '" + n_s.first +
+                         "' has multiple bits with the same index " +
+                         std::to_string(s->lindex) +
+                         ", it will be ignored\n");
+        }
+        indexes.insert(s->lindex);
+      }
+      std::sort(begin(n_s.second), end(n_s.second),
+                [](VCDSignal *e1, VCDSignal *e2) {
+                  return e1->lindex > e2->lindex;
+                });
+
+      //remove duplicates
+      n_s.second.erase(std::unique(begin(n_s.second), end(n_s.second),
+                                   [](VCDSignal *e1, VCDSignal *e2) {
+                                     return e1->lindex == e2->lindex;
+                                   }),
+                       end(n_s.second));
+    }
   }
 
   //    debug

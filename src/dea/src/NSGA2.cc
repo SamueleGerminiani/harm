@@ -172,6 +172,7 @@ restart:
       //for (auto &individual : pop) {
       evalIndividual(individual, geneToAssTime);
       chart_data.push_back(individual._objective);
+      //}
     }
 
     //convert damage/error to double, and normalize it
@@ -901,7 +902,9 @@ void NSGA2::genAndDumpRandomClusters(
             });
 
   //dump radom clusters
-  out << "tokenID,clusterID,clusterSize,"<< (_pushing ? clc::ve_metricName : std::string("Damage")) << "\n";
+  out << "tokenID,clusterID,clusterSize,"
+      << (_pushing ? clc::ve_metricName : std::string("Damage"))
+      << "\n";
   size_t cIndex = 0;
   for (auto rp : randomRepresentatives) {
     for (auto gene : rp._genes) {
