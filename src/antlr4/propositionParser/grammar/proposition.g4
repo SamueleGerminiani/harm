@@ -111,19 +111,6 @@ RROUND
     : ')'
     ;
 
-INSIDE
-    : 'inside'
-    ;
-
-
-FUNCTION
-: '$stable'
-| '$past'
-| '$rose'
-| '$fell'
-;
-
-
 //==== Token VARIABLE ==========================================================
 fragment VARIABLE
    : VALID_ID_START VALID_ID_CHAR* 

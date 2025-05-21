@@ -82,7 +82,7 @@ harm::TemplateImplicationPtr parseTemplateImplication(
         "Offset disabled in template " +
         temp2String(te, Language::SpotLTL,
                     PrintMode::ShowOnlyPermuationPlaceholders) +
-        ". Saving the offset is not reccomended in "
+        ". Saving the offset is not recomended in "
         "complex consequents");
   }
   if (limits_copy._saveOffset &&

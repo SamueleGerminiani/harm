@@ -7,7 +7,7 @@ bool canUseSharedOperator(const std::string& unaryOp, const std::string& sharedO
 bool canTakeThisNot(const std::string& unaryOp, const std::string& ph);
 
 
-// Generated from temporal.g4 by ANTLR 4.12.0
+// Generated from temporal.g4 by ANTLR 4.10.1
 
 #pragma once
 
@@ -27,12 +27,12 @@ public:
     INTERSECT = 26, TOR = 27, BOOLEAN_CONSTANT = 28, BOOLEAN_VARIABLE = 29, 
     INT_VARIABLE = 30, CONST_SUFFIX = 31, FLOAT_CONSTANT = 32, FLOAT_VARIABLE = 33, 
     LCURLY = 34, RCURLY = 35, LSQUARED = 36, RSQUARED = 37, LROUND = 38, 
-    RROUND = 39, INSIDE = 40, FUNCTION = 41, SINTEGER = 42, UINTEGER = 43, 
-    FLOAT = 44, GCC_BINARY = 45, HEX = 46, VERILOG_BINARY = 47, FVL = 48, 
-    SINGLE_QUOTE = 49, PLUS = 50, MINUS = 51, TIMES = 52, DIV = 53, GT = 54, 
-    GE = 55, LT = 56, LE = 57, EQ = 58, NEQ = 59, BAND = 60, BOR = 61, BXOR = 62, 
-    NEG = 63, LSHIFT = 64, RSHIFT = 65, AND = 66, OR = 67, NOT = 68, COL = 69, 
-    DCOL = 70, DOLLAR = 71, RANGE = 72, CLS_TYPE = 73, WS = 74
+    RROUND = 39, SINTEGER = 40, UINTEGER = 41, FLOAT = 42, GCC_BINARY = 43, 
+    HEX = 44, VERILOG_BINARY = 45, FVL = 46, SINGLE_QUOTE = 47, PLUS = 48, 
+    MINUS = 49, TIMES = 50, DIV = 51, GT = 52, GE = 53, LT = 54, LE = 55, 
+    EQ = 56, NEQ = 57, BAND = 58, BOR = 59, BXOR = 60, NEG = 61, LSHIFT = 62, 
+    RSHIFT = 63, AND = 64, OR = 65, NOT = 66, COL = 67, DCOL = 68, DOLLAR = 69, 
+    RANGE = 70, CLS_TYPE = 71, WS = 72
   };
 
   enum {
