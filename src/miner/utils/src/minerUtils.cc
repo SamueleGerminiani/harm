@@ -53,10 +53,14 @@ variableTypeFromString(const std::string &type, size_t size) {
   } else if (type == "unsigned short" ||
              type == "shortint unsigned") {
     return std::make_pair(ExpType::UInt, 16);
+  } else if (type == "int32_t") {
+    return std::make_pair(ExpType::SInt, 32);
   } else if (type == "int") {
     return std::make_pair(ExpType::SInt, sizeof(int) * 8);
   } else if (type == "unsigned int") {
     return std::make_pair(ExpType::UInt, sizeof(int) * 8);
+  } else if (type == "uint32_t") {
+    return std::make_pair(ExpType::UInt, 32);
   } else if (type == "long int" || type == "int64_t" ||
              type == "longint") {
     return std::make_pair(ExpType::SInt, 64);
@@ -72,7 +76,6 @@ variableTypeFromString(const std::string &type, size_t size) {
   } else if (type == "size_t") {
     return std::make_pair(ExpType::UInt, sizeof(size_t) * 8);
 
-    //4-value
   } else if (type == "integer") {
     return std::make_pair(ExpType::SInt, 32);
   } else if (type == "integer unsigned") {
