@@ -180,8 +180,8 @@ For csv:
 		<numeric clustering="K,10Max,0.01WCSS,==" exp="var13" loc="[dt]"/>
 		<numeric clustering="K,10Max,0.01WCSS,><,==,>=,<=" exp="var7 + var8" loc="a"/>
 		
-		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0)" />
-		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0)" /> 
+		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" />
+		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
 		<filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
 		<sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
