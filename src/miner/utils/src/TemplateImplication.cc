@@ -70,6 +70,9 @@ TemplateImplication::TemplateImplication(
 TemplateImplication::~TemplateImplication() {}
 
 size_t TemplateImplication::getNumberOfPermutations() const {
+  if (isFullyInstantiated()) {
+    return 1;
+  }
   return _permutator._permMatrix->_nRows;
 }
 
@@ -171,7 +174,8 @@ void TemplateImplication::loadPerm(size_t n) {
   _permIndex = n;
 }
 
-size_t TemplateImplication::getNumPlaceholders(harm::Location where) {
+size_t
+TemplateImplication::getNumPlaceholders(harm::Location where) const {
   if (where == harm::Location::Ant) {
     return _aphToPP.size();
   } else if (where == harm::Location::Con) {
@@ -181,7 +185,7 @@ size_t TemplateImplication::getNumPlaceholders(harm::Location where) {
   }
 }
 
-size_t TemplateImplication::getNumPlaceholders() {
+size_t TemplateImplication::getNumPlaceholders() const {
   return _aphToPP.size() + _cphToPP.size() + _acphToPP.size();
 }
 
@@ -838,7 +842,7 @@ void TemplateImplication::setL1Threads(size_t n) {
 void TemplateImplication::setDTLimits(const DTLimits &l) {
   _limits = l;
 }
-bool TemplateImplication::isFullyInstantiated() {
+bool TemplateImplication::isFullyInstantiated() const {
   return getNumPlaceholders() == 0 && _dtOp == nullptr;
 }
 

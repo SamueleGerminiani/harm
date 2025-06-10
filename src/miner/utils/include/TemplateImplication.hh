@@ -144,8 +144,8 @@ public:
   /** \brief 
    * \param where ant or con
    */
-  size_t getNumPlaceholders(harm::Location where);
-  size_t getNumPlaceholders();
+  size_t getNumPlaceholders(harm::Location where) const;
+  size_t getNumPlaceholders() const;
 
   /** \brief  generates a sequence of permutations for the current template,
    * each permutation is a set of propositions to be used to instantiate the
@@ -243,7 +243,7 @@ public:
 
   /** \brief returns true if the template is fully instantiated, false otherwise
    */
-  bool isFullyInstantiated();
+  bool isFullyInstantiated() const;
 
   void printContingency();
 
