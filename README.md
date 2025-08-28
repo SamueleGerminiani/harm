@@ -337,6 +337,7 @@ Note that the template must be fully instantiated (no placeholders).
 * \-\-dump-to \<DIRECTORY\> or \<FILE\> : dump assertions to file. If the path points to a directory, each context will be dumped to a separate file in \<DIRECTORY\>; otherwise, all assertions will be dumped to \<FILE\>
 * \-\-dump-stat : dump mining statistics to file
 * \-\-dump-vac-ass \<FILE\> : dump vacuous assertions to file
+* \-\-check-dump-eval \<DIRECTORY\> : for each 'check' assertion, dump the evaluation on the input traces of antecedent, consequent, shift (each assertion is dumped to a different file)
 
 ### Fault analysis
 * \-\-fd \<DIRECTORY\> : path to the directory containing the faulty traces (for fault coverage)

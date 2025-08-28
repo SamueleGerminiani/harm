@@ -23,6 +23,18 @@ inline std::ostream &operator<<(std::ostream &os, Trinary t) {
   return os;
 }
 
+inline std::string toString(Trinary t) {
+  switch (t) {
+  case Trinary::T:
+    return "T";
+  case Trinary::F:
+    return "F";
+  case Trinary::U:
+    return "U";
+  }
+  return "U";
+}
+
 //Boolean operators with Trinary type
 
 inline Trinary operator!(Trinary t) {

@@ -740,6 +740,40 @@ void TemplateImplication::check() {
                "=========="
                "==========="
             << "\n";
+
+  if (clc::checkDumpEvalDirectory != "") {
+    std::string filename =
+        clc::checkDumpEvalDirectory + "/" +
+        sanitizeFilename(getAssertionStr(Language::SpotLTL)) + ".csv";
+    std::ofstream file;
+    file.open(filename);
+    messageErrorIf(!file.is_open(), "Could not open file '" +
+                                        filename + "' for writing");
+
+    file << "t, Ant, Shift, Con, Ass\n";
+
+    for (size_t time = 0; time < _trace->getLength(); time++) {
+      file << time << ", ";
+      auto [antValue, antShift] = _antEvaluator->evaluate(time);
+      file << toString(antValue) << ", ";
+
+      if (_applyDynamicShift || _constShift > 0) {
+        if (antValue == Trinary::T) {
+          antShift += _constShift;
+        }
+#if enforce_mma_sc_atcf
+        if (antValue == Trinary::F && _antDepth != -1) {
+          antShift = _antDepth + _constShift;
+        }
+#endif
+        file << antShift << ", ";
+        file << toString(evaluate_con(time)) << ", ";
+        file << toString(evaluate(time)) << "\n";
+      }
+    }
+
+    file.close();
+  }
 }
 const TemporalExpressionPtr &
 TemplateImplication::getTemplateFormula() {
