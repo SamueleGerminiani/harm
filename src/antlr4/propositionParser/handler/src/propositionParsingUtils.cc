@@ -25,6 +25,18 @@ class ParseTree;
 } // namespace tree
 } // namespace antlr4
 
+class PropFatalLexerErrorListener : public antlr4::BaseErrorListener {
+public:
+  void syntaxError(antlr4::Recognizer *recognizer,
+                   antlr4::Token *offendingSymbol, size_t line,
+                   size_t charPositionInLine, const std::string &msg,
+                   std::exception_ptr e) override {
+    throw std::runtime_error(
+        "Lexer error at line " + std::to_string(line) + ":" +
+        std::to_string(charPositionInLine) + " " + msg);
+  }
+};
+
 namespace hparser {
 using namespace expression;
 expression::PropositionPtr
@@ -38,6 +50,8 @@ parseProposition(std::string formula, const harm::TracePtr &trace) {
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
+  PropFatalLexerErrorListener fatal;
+  lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
   //print tokens
@@ -71,6 +85,8 @@ parseIntExpression(std::string formula, const harm::TracePtr &trace) {
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
+  PropFatalLexerErrorListener fatal;
+  lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
   //print tokens
@@ -105,6 +121,8 @@ parseFloatExpression(std::string formula,
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
+  PropFatalLexerErrorListener fatal;
+  lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
   //print tokens
@@ -137,6 +155,8 @@ parsePropositionAlreadyTyped(std::string formula,
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
+  PropFatalLexerErrorListener fatal;
+  lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
   antlr4::tree::ParseTree *treeFragAnt = parser.startBoolean();
