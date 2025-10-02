@@ -21,6 +21,7 @@ std::vector<std::string> traceFiles;
 std::vector<std::string> faultyTraceFiles;
 std::string includeAss = "";
 std::string configFile = "";
+std::string checkDumpEvalDirectory = "";
 std::string parserType = "";
 std::string clk = "";
 std::string reset = "";

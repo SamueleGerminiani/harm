@@ -508,3 +508,19 @@ splitString(const std::string &s, const std::string &delimiter) {
   return parts;
 }
 
+inline std::string sanitizeFilename(const std::string &input) {
+  std::string output;
+  output.reserve(input.size());
+
+  for (unsigned char c : input) {
+    // Allowed: alphanumeric, dash, underscore, dot, plus
+    if (std::isalnum(c) || c == '-' || c == '_' || c == '.' ||
+        c == '+' || c == '(' || c == ')' || c == '[' || c == ']' ||
+        c == '#' || c == '=' || c == '>' || c == '|' || c == ':') {
+      output.push_back(c);
+    }
+    // Everything else (spaces, slashes, control chars) is skipped
+  }
+
+  return output;
+}

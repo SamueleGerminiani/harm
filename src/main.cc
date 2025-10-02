@@ -359,6 +359,23 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   messageErrorIf(clc::splitLogic && !clc::genConfig,
                  "--split-logic must be used with --generate-config");
+
+  if (result.count("check-dump-eval")) {
+    clc::checkDumpEvalDirectory =
+        result["check-dump-eval"].as<std::string>();
+    if (std::filesystem::exists(clc::checkDumpEvalDirectory)) {
+      messageWarning(
+          "check-dump-eval directory already exists, removing it");
+      messageErrorIf(std::filesystem::remove_all(
+                         clc::checkDumpEvalDirectory) == 0,
+                     "Can not remove directory '" +
+                         clc::checkDumpEvalDirectory + "'");
+    }
+    messageErrorIf(!std::filesystem::create_directory(
+                       clc::checkDumpEvalDirectory),
+                   "Can not create directory '" +
+                       clc::checkDumpEvalDirectory + "'");
+  }
 }
 void genConfigFile(std::string &configFile,
                    const TraceReaderPtr &tr) {
