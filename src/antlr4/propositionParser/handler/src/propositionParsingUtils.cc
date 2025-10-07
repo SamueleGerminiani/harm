@@ -27,14 +27,21 @@ class ParseTree;
 
 class PropFatalLexerErrorListener : public antlr4::BaseErrorListener {
 public:
+  PropFatalLexerErrorListener() = default;
+  PropFatalLexerErrorListener(std::string being_parse)
+      : being_parsed(being_parse) {}
   void syntaxError(antlr4::Recognizer *recognizer,
                    antlr4::Token *offendingSymbol, size_t line,
                    size_t charPositionInLine, const std::string &msg,
                    std::exception_ptr e) override {
-    throw std::runtime_error(
-        "Lexer error at line " + std::to_string(line) + ":" +
-        std::to_string(charPositionInLine) + " " + msg);
+    messageError(
+        "Lexer Error while parsing proposition '" + being_parsed +
+        "', char position: " + std::to_string(charPositionInLine) +
+        ", reason: " + msg);
   }
+
+private:
+  std::string being_parsed = "";
 };
 
 namespace hparser {
@@ -50,7 +57,7 @@ parseProposition(std::string formula, const harm::TracePtr &trace) {
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
-  PropFatalLexerErrorListener fatal;
+  PropFatalLexerErrorListener fatal(formula);
   lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
@@ -85,7 +92,7 @@ parseIntExpression(std::string formula, const harm::TracePtr &trace) {
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
-  PropFatalLexerErrorListener fatal;
+  PropFatalLexerErrorListener fatal(formula);
   lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
@@ -121,7 +128,7 @@ parseFloatExpression(std::string formula,
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
-  PropFatalLexerErrorListener fatal;
+  PropFatalLexerErrorListener fatal(formula);
   lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);
@@ -155,7 +162,7 @@ parsePropositionAlreadyTyped(std::string formula,
   listener.addErrorMessage("\t\t\tIn formula: " + formula);
   antlr4::ANTLRInputStream input(formula);
   propositionLexer lexer(&input);
-  PropFatalLexerErrorListener fatal;
+  PropFatalLexerErrorListener fatal(formula);
   lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   propositionParser parser(&tokens);

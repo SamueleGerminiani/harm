@@ -25,14 +25,22 @@ class ParseTree;
 
 class TempFatalLexerErrorListener : public antlr4::BaseErrorListener {
 public:
+  TempFatalLexerErrorListener() = default;
+  TempFatalLexerErrorListener(std::string being_parse)
+      : being_parsed(being_parse) {}
+
   void syntaxError(antlr4::Recognizer *recognizer,
                    antlr4::Token *offendingSymbol, size_t line,
                    size_t charPositionInLine, const std::string &msg,
                    std::exception_ptr e) override {
-    throw std::runtime_error(
-        "Lexer error at line " + std::to_string(line) + ":" +
-        std::to_string(charPositionInLine) + " " + msg);
+    messageError(
+        "Lexer Error while parsing temporal '" + being_parsed +
+        "', char position: " + std::to_string(charPositionInLine) +
+        ", reason: " + msg);
   }
+
+private:
+  std::string being_parsed = "";
 };
 
 namespace hparser {
@@ -53,7 +61,7 @@ parse(std::string formula, const harm::TracePtr &trace,
   listener->_useCache = useCache;
   antlr4::ANTLRInputStream input(formula);
   temporalLexer lexer(&input);
-  TempFatalLexerErrorListener fatal;
+  TempFatalLexerErrorListener fatal(formula);
   lexer.addErrorListener(&fatal);
   antlr4::CommonTokenStream tokens(&lexer);
   temporalParser parser(&tokens);
