@@ -17,10 +17,13 @@ else
     installPrefix="$1"
 fi
 
+echo "Installing ANTLR4 C++ runtime to: $installPrefix"
 
 git clone https://github.com/antlr/antlr4 --depth 1 antlr4_tmp
 cd antlr4_tmp/runtime/Cpp
 mkdir build && cd build
+git fetch --all --tags --prune
+git checkout 4.13.2
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$installPrefix" -DCMAKE_CXX_STANDARD=17 ..
 make -j"$NThreads"
 make install

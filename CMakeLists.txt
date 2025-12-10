@@ -1,4 +1,15 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.30)
+
+# Use the modern handling of upper-case
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
+
+# Use Boost's upstream config instead of the removed FindBoost module
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
 
 # set the project name
 project("HARM" CXX)

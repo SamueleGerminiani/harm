@@ -21,6 +21,7 @@ wget --no-check-certificate http://www.lrde.epita.fr/dload/spot/spot-2.9.7.tar.g
 tar -xvf spot-2.9.7.tar.gz && rm spot-2.9.7.tar.gz
 cd spot-2.9.7
 ./configure --disable-python --prefix "$installPrefix"
+
 make -j"$NThreads"
 make install
 cd ../
