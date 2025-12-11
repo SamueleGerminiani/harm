@@ -19,6 +19,9 @@ applyCStandardConversion(const std::pair<ExpType, size_t> &e1,
   messageErrorIf((e1.first == ExpType::Float && e1.second == 32) ||
                      (e2.first == ExpType::Float && e2.second == 32),
                  "float no longer supported, must use double");
+  messageErrorIf(e1.first == ExpType::String ||
+                     e2.first == ExpType::String,
+                 "string type no supported in C conversion");
 
   // Float & Double
   if (curr_e1.first == ExpType::Float &&
@@ -32,21 +35,44 @@ applyCStandardConversion(const std::pair<ExpType, size_t> &e1,
     return curr_e1.second > curr_e2.second ? curr_e1 : curr_e2;
   }
 
+  messageErrorIf(
+      !((isInt(curr_e1.first) || isLogic(curr_e1.first)) &&
+        (isInt(curr_e2.first) || isLogic(curr_e2.first))),
+      "C conversion error: types should be both integers or logics "
+      "at this point, instead got: " +
+          to_string(curr_e1.first) + " and " +
+          to_string(curr_e2.first));
+
   // If both operands are integers (or logics), then, integer promotions (logic promotion):
   if ((isInt(curr_e1.first) /* || isLogic(curr_e1.first)*/) &&
       curr_e1.second < 32) {
-    curr_e1.first = ExpType::SInt;
+    curr_e1.first = isInt(e1.first) ? ExpType::SInt : ExpType::SLogic;
     curr_e1.second = 32;
   }
   if ((isInt(curr_e2.first) /* || isLogic(curr_e2.first)*/) &&
       curr_e2.second < 32) {
-    curr_e2.first = ExpType::SInt;
+    curr_e2.first = isInt(e2.first) ? ExpType::SInt : ExpType::SLogic;
     curr_e2.second = 32;
   }
 
   //if both share the same type, then that is the common type
   if (curr_e1 == curr_e2) {
     return curr_e1;
+  }
+
+  //Int to Logic - size is fixed later
+  if ((isInt(curr_e1.first) && isLogic(curr_e2.first)) ||
+      (isLogic(curr_e1.first) && isInt(curr_e2.first))) {
+
+    if (isInt(e2.first)) {
+      //convert second operand to logic
+      curr_e2.first = e2.first == ExpType::UInt ? ExpType::ULogic
+                                                : ExpType::SLogic;
+    } else {
+      //convert first operand to logic
+      curr_e1.first = e1.first == ExpType::UInt ? ExpType::ULogic
+                                                : ExpType::SLogic;
+    }
   }
 
   // If the types have the same signedness (both signed or both unsigned), the operand whose type has the lesser conversion rank1 is implicitly converted2 to the other type (simply extend he size)

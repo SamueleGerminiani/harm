@@ -4,7 +4,10 @@
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/expression/SetMembership.hh"
+#include "formula/expression/Substring.hh"
 #include "formula/expression/TypeCast.hh"
+#include "formula/function/SVAfunction.hh"
 
 #define VARIABLE(LEAF)                                               \
   void VarExtractVisitor::visit(LEAF &o) {                           \
@@ -19,6 +22,8 @@ VarExtractVisitor::VarExtractVisitor() : ExpVisitor() {}
 VARIABLE(BooleanVariable)
 VARIABLE(FloatVariable)
 VARIABLE(IntVariable)
+VARIABLE(LogicVariable)
+VARIABLE(StringVariable)
 
 std::vector<std::pair<std::string, VarType>>
 VarExtractVisitor::get_vars() {

@@ -1,5 +1,6 @@
 #pragma once
 #include "Int.hh"
+#include "Logic.hh"
 #include "exp.hh"
 #include <vector>
 namespace expression {

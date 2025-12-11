@@ -54,7 +54,6 @@ void VarDeclarationParserHandler::enterVarDec(
   //remove « and »
   name = name.substr(2, name.size() - 4);
   _varDecl = harm::toVarDeclaration(name, type.first, type.second);
-  _varDecl.setBase(harm::getTypeBase(type.first));
 }
 
 std::string VarDeclarationParserHandler::printErrorMessage() {

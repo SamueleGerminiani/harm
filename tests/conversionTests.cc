@@ -11,7 +11,9 @@
 #include <vector>
 
 #include "ClsOp.hh"
+#include "Edit.hh"
 #include "Float.hh"
+#include "Logic.hh"
 #include "PointerUtils.hh"
 #include "Trace.hh"
 #include "VarDeclaration.hh"
@@ -329,6 +331,203 @@ TEST(ConvTest, floatConversion) {
                ((rand() % 2 ? 1 : -1) + (double)rand() / 1000.f);
     checkFloatConversionBinary<int64_t, ExpType::SInt, double,
                                ExpType::Float, __LINE__>(a, b);
+  }
+}
+
+template <typename R1, typename R2, ExpType T1, ExpType T2, int line>
+void checkBinaryOpLogic(R1 a, R2 b) {
+
+  std::vector<VarDeclaration> vars;
+  vars.emplace_back("v1", T1, sizeof(R1) * 8);
+  vars.emplace_back("v2", T2, sizeof(R2) * 8);
+
+  const TracePtr &trace = generatePtr<Trace>(vars, 1);
+  auto v1 = trace->getLogicVariable("v1");
+  auto v2 = trace->getLogicVariable("v2");
+  v1->assign(0, Logic(sizeof(R1) * 8, isSigned(T1), a, 0, 0));
+  v2->assign(0, Logic(sizeof(R2) * 8, isSigned(T2), b, 0, 0));
+
+  auto res = hparser::parseLogicExpression("v1 * v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a * b), line, '*');
+
+  res = hparser::parseLogicExpression("v1 + v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a + b), line, '+');
+
+  res = hparser::parseLogicExpression("v1 - v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a - b), line, '-');
+
+  res = hparser::parseLogicExpression("v1 / v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a / b), line, '/');
+
+  res = hparser::parseLogicExpression("v1 & v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a & b), line, '&');
+
+  res = hparser::parseLogicExpression("v1 | v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a | b), line, '|');
+
+  res = hparser::parseLogicExpression("v1 ^ v2", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(a ^ b), line, '^');
+
+  res = hparser::parseLogicExpression("~v1", trace);
+  customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                        (SLogic)(~a), line, '~');
+
+  auto pres = hparser::parseProposition("v1 == v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a == b), line, "==");
+
+  pres = hparser::parseProposition("v1 != v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a != b), line, "!=");
+
+  pres = hparser::parseProposition("v1 > v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a > b), line, '>');
+
+  pres = hparser::parseProposition("v1 >= v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a >= b), line, ">=");
+
+  pres = hparser::parseProposition("v1 < v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a < b), line, "<");
+
+  pres = hparser::parseProposition("v1 <= v2", trace);
+  customASSERT_EQ_Prop(pres->evaluate(0), (a <= b), line, "<=");
+
+  if (a >= 0) {
+    b = 5;
+    v2->assign(0, Logic(sizeof(R2) * 8, isSigned(T2), b, 0, 0));
+    res = hparser::parseLogicExpression("v1 << v2", trace);
+    customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                          (SLogic)(a << b), line, "<<");
+
+    res = hparser::parseLogicExpression("v1 >> v2", trace);
+    customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
+                          (SLogic)(a >> b), line, ">>");
+  }
+}
+
+TEST(ConvTest, logicTologicConversion) {
+  checkBinaryOpLogic<int32_t, int64_t, ExpType::SLogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<int32_t>::min(),
+      std::numeric_limits<int64_t>::max());
+
+  //  //integer promotion - no longer needed
+  //  checkBinaryOpLogic<char, int, ExpType::SLogic, ExpType::SLogic, __LINE__>(
+  //      std::numeric_limits<char>::max(), 2);
+  //
+  //  checkBinaryOpLogic<char, int, ExpType::SLogic, ExpType::SLogic, __LINE__>(
+  //      std::numeric_limits<char>::min(), -2);
+
+  checkBinaryOpLogic<uint32_t, int64_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint32_t>::max(), 2);
+  checkBinaryOpLogic<uint32_t, int64_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint32_t>::min(), -2);
+
+  //signed vs unsigned with different size
+
+  ////unsigned
+  checkBinaryOpLogic<uint32_t, uint64_t, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<uint32_t>::max(), 2);
+  checkBinaryOpLogic<uint32_t, uint64_t, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<uint32_t>::min(), -2);
+
+  //signed
+  checkBinaryOpLogic<int32_t, uint64_t, ExpType::SLogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<int32_t>::max(), 2);
+
+  //signed to unsigned (higher size)
+  //
+  checkBinaryOpLogic<int32_t, uint64_t, ExpType::SLogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<int32_t>::min(), -1);
+
+  checkBinaryOpLogic<uint64_t, int32_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint32_t>::max(), -2);
+
+  checkBinaryOpLogic<uint32_t, int64_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint32_t>::max(), -1);
+
+  checkBinaryOpLogic<int64_t, uint32_t, ExpType::SLogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<int32_t>::max(), -2);
+
+  checkBinaryOpLogic<uint64_t, int32_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(0, -1);
+
+  //overflow & underflow
+  checkBinaryOpLogic<int64_t, int64_t, ExpType::SLogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<int64_t>::min(), -2);
+  checkBinaryOpLogic<int, int, ExpType::SLogic, ExpType::SLogic,
+                     __LINE__>(std::numeric_limits<int>::min(), -2);
+  checkBinaryOpLogic<int64_t, int64_t, ExpType::SLogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<int64_t>::max(), 2);
+
+  checkBinaryOpLogic<int, int, ExpType::SLogic, ExpType::SLogic,
+                     __LINE__>(std::numeric_limits<int>::max(), 2);
+
+  checkBinaryOpLogic<uint64_t, uint64_t, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<uint64_t>::max(), 2);
+  checkBinaryOpLogic<unsigned int, unsigned int, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<unsigned int>::max(), 2);
+  checkBinaryOpLogic<uint64_t, int64_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint64_t>::min(), -2);
+  checkBinaryOpLogic<unsigned int, int, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<unsigned int>::min(), -2);
+
+  checkBinaryOpLogic<uint64_t, uint64_t, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<uint64_t>::max(), 2);
+  checkBinaryOpLogic<unsigned int, unsigned int, ExpType::ULogic,
+                     ExpType::ULogic, __LINE__>(
+      std::numeric_limits<unsigned int>::max(), 2);
+  checkBinaryOpLogic<uint64_t, int64_t, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<uint64_t>::min(), -2);
+  checkBinaryOpLogic<unsigned int, int, ExpType::ULogic,
+                     ExpType::SLogic, __LINE__>(
+      std::numeric_limits<unsigned int>::min(), -2);
+
+  size_t length = 300;
+  //random s v s
+  for (size_t i = 0; i < length; i++) {
+    int64_t a = (rand() + 1) * (rand() % 2 ? 1 : -1);
+    int64_t b = (rand() + 1) * (rand() % 2 ? 1 : -1);
+    checkBinaryOpLogic<int64_t, int64_t, ExpType::SLogic,
+                       ExpType::SLogic, __LINE__>(a, b);
+  }
+
+  //random u vs u
+  for (size_t i = 0; i < length; i++) {
+    uint64_t a = (rand() + 1);
+    uint32_t b = (rand() + 1);
+    checkBinaryOpLogic<uint64_t, uint32_t, ExpType::ULogic,
+                       ExpType::ULogic, __LINE__>(a, b);
+  }
+
+  ////random s vs u
+  for (size_t i = 0; i < length; i++) {
+    int32_t a = (rand() + 1) * (rand() % 2 ? 1 : -1);
+    uint64_t b = (rand() + 1);
+    checkBinaryOpLogic<int32_t, uint64_t, ExpType::SLogic,
+                       ExpType::ULogic, __LINE__>(a, b);
   }
 }
 

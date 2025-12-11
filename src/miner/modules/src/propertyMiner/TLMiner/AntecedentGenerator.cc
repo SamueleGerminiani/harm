@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <fstream>
+#include <ios>
 #include <iterator>
 #include <mutex>
 #include <ostream>
@@ -13,6 +15,7 @@
 #include "DTOperator.hh"
 #include "TemplateImplication.hh"
 #include "Trinary.hh"
+#include "ddd.hh"
 #include "expUtils/expUtils.hh"
 #include "globals.hh"
 #include "message.hh"
@@ -27,6 +30,9 @@ class NumericExpression;
 #define numLeavesOffset 1'000'000
 
 namespace harm {
+//ddd: keep in memory all the generated propositions to avoid letting the program reuse the same pointers for different propositions (unused propositions naturally go out of scope and get deleted)
+static std::vector<PropositionPtr> generatedProps;
+static int dtTreeID = 0;
 std::mutex dtTreeIDmutex;
 
 /// @brief analyse the trace to find a set of values on which to perform the clustering
@@ -72,8 +78,44 @@ void AntecedentGenerator::makeAntecedents(
     messageError("Unknown heuristic");
   }
 
+  if (clc::dumpDebugData) {
+    ss_tree.str(std::string(""));
+    ss_tree.precision(2);
+    foundAss.str(std::string(""));
+    nStateToAss.clear();
+    nStateToClsProps.clear();
+    nStates = 0;
+  }
+
   runDecisionTree(unusedVars, dcVariables, unusedNumerics,
                   numericCandidates, t, initialScore);
+
+  if (clc::dumpDebugData) {
+    dtTreeIDmutex.lock();
+    std::string dt_path = clc::debugDataPath + "/dt_" +
+                          std::to_string(dtTreeID) + ".dot";
+    dtTreeID++;
+    dtTreeIDmutex.unlock();
+    std::ofstream fs(dt_path.c_str(), std::ios_base::out);
+    fs << "digraph G {"
+       << "\n";
+    fs << "label=\"" << t->getAssertionStr(Language::SpotLTL)
+       << "\"\n\n\n";
+    fs << "labelloc=\"t\"\n";
+    fs << ss_tree.str() << "\n";
+    fs << foundAss.str() << "\n";
+    for (auto &ass : nStateToAss) {
+      fs << "a" << ass.first
+         << "[shape=box, color=\"green4\" label=\"" << ass.second
+         << "\""
+         << "]\n";
+    }
+    fs << "}"
+       << "\n";
+    fs.close();
+    ddd::addDecisionTree(t->getOriginalId(), t->getCurrentPermIndex(),
+                         dt_path);
+  }
 }
 
 inline void AntecedentGenerator::findCandidates(
@@ -253,6 +295,19 @@ AntecedentGenerator::gatherPropositionsFromNumerics(
   //std::cout << "-----------------------"
   //          << "\n";
 
+  if (clc::dumpDebugData) {
+    std::vector<std::pair<void *, std::string>> propsStrPtr;
+    for (auto p : props) {
+      propsStrPtr.emplace_back(p.get(), prop2String(p));
+      generatedProps.push_back(p);
+    }
+    std::string dumpPath = dumpClusteringValues(positives, cn);
+    ddd::addNumericWithExpansion(cn.get(), "", num2String(cn),
+                                 {(int)Location::DecTree},
+                                 propsStrPtr, dumpPath, true);
+    nStateToClsProps[nStates] += dumpPath + " ";
+  }
+
   return props;
 }
 
@@ -274,6 +329,14 @@ inline void AntecedentGenerator::findCandidatesNumeric(
   // retrieve the propositions (props)
   std::vector<PropositionPtr> props = gatherPropositionsFromNumerics(
       dcVariables.at(candidate), t, depth);
+
+  if (clc::dumpDebugData) {
+    nStateToClsProps[nStates] +=
+        " depth: " + std::to_string(depth) + "\n";
+    for (auto &p : props) {
+      nStateToClsProps[nStates] += prop2String(p) + "\n";
+    }
+  }
 
   for (auto prop : props) {
 
@@ -435,6 +498,19 @@ void AntecedentGenerator::runDecisionTree(
     } // for
   }
 
+  if (clc::dumpDebugData) {
+    if (nStateToClsProps.count(nStates)) {
+      std::string propsStr = nStateToClsProps.at(nStates);
+      replace("}", "\\}", propsStr);
+      replace("{", "\\{", propsStr);
+      ss_tree << "n" << nStates << "->" << nStates << " "
+              << "[color=\"blue\"];\n";
+      ss_tree << "n" << nStates
+              << "[shape=box, color=\"blue\" label=\"" << propsStr
+              << "\"]\n";
+    }
+  }
+
   std::sort(begin(candidates), end(candidates),
             [](const CandidateDec &e1, const CandidateDec &e2) {
               return e1._gain > e2._gain;
@@ -487,12 +563,23 @@ void AntecedentGenerator::runDecisionTree(
     }
   }
 
+  //for printing the tree
+  size_t currStates = nStates;
+
   for (auto &cand : candidates) {
     dto->addItem(cand._prop, cand._depth);
     dto->addLeaf(cand._prop,
                  cand._id +
                      (cand._ofNumericOrigin ? numLeavesOffset : 0),
                  cand._negated, cand._depth);
+    if (clc::dumpDebugData) {
+      ss_tree << currStates << " -> " << ++nStates << "[label= \""
+              << prop2String(cand._prop) << " \\[depth: "
+              << (cand._depth == -1 ? dto->getCurrentDepth()
+                                    : cand._depth)
+              << ", gain: " << cand._gain << "\\]"
+              << "\"];\n";
+    }
 
     if (cand._ofNumericOrigin) {
       if (dto->getLimits()._dontReuseNumeric)
@@ -546,6 +633,27 @@ void AntecedentGenerator::storeSolution(
   if (isKnownSolution(dto, 0, sol) ||
       dto->isSolutionInconsequential(sol)) {
     return;
+  }
+
+  if (clc::dumpDebugData) {
+    if (!nStateToAss.count(nStates)) {
+      foundAss << nStates << "->a" << nStates
+               << "[color=\"green4\"];\n";
+      nStateToAss[nStates];
+    }
+    std::string ass = t->getAssertionStr(Language::SpotLTL);
+    replace("}", "\\}", ass);
+    replace("{", "\\{", ass);
+    if (isOffset) {
+      replace("-> ", "-> !(", ass);
+      replace("=> ", "=> !(", ass);
+      ass.push_back(')');
+      replace(">", "\\>", ass);
+      nStateToAss.at(nStates) = nStateToAss.at(nStates) + ass + "\\n";
+    } else {
+      replace(">", "\\>", ass);
+      nStateToAss.at(nStates) = nStateToAss.at(nStates) + ass + "\\n";
+    }
   }
 
   //print items

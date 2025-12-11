@@ -1,3 +1,4 @@
+#include "ddd.hh"
 #include <algorithm>
 #include <assert.h>
 #include <fstream>
@@ -26,6 +27,7 @@ class NumericExpression;
 } // namespace expression
 
 namespace harm {
+class Edit;
 
 TLMiner::TLMiner() : PropertyMiner() {}
 
@@ -246,6 +248,10 @@ void TLMiner::l1Handler(
 
   //load the permutation in the template
   t->loadPerm(l2InstId);
+  if (clc::dumpDebugData) {
+    ddd::addPermutation(t->getOriginalId(), l2InstId,
+                        t->getAssertionStr());
+  }
 
   std::vector<AssertionPtr> assp;
 
@@ -296,6 +302,16 @@ void TLMiner::l1Handler(
       if (!isVacuous || clc::keepVacAss) {
         AssertionPtr ass = generatePtr<Assertion>();
         fillAssertion(ass, t, false);
+        if (clc::dumpDebugData) {
+          std::string note = "";
+          if (isVacuous) {
+            note = "Vacuous";
+          }
+          ddd::addAssertion(ass.get(), t->getOriginalId(),
+                            t->getCurrentPermIndex(), ass->toString(),
+                            note);
+          ddd::addContingency(ass.get(), ass->_ct);
+        }
         assp.push_back(ass);
 
         if (isVacuous) {
@@ -373,6 +389,16 @@ void TLMiner::handleDTSolutions(const TemplateImplicationPtr &t,
 
       AssertionPtr ass = generatePtr<Assertion>();
       fillAssertion(ass, t, isOffset);
+      if (clc::dumpDebugData) {
+        std::string note = "";
+        if (isVacuous) {
+          note = "Vacuous";
+        }
+        ddd::addAssertion(ass.get(), t->getOriginalId(),
+                          t->getCurrentPermIndex(), ass->toString(),
+                          note);
+        ddd::addContingency(ass.get(), ass->_ct);
+      }
       assp.push_back(ass);
       if (isVacuous) {
         dumpVac(ass->toString());

@@ -45,6 +45,8 @@ static std::string to_string(const spot::formula &f);
 
 ///@brief returns tree if the string is a tokenplaceholder
 static bool isPlaceholderStr(const std::string &s);
+///@brief returns true if the string is a function placeholder
+static bool isFunctionStr(const std::string &s);
 ///@brief returns true if the string is an instance
 static bool isInstStr(const std::string &s);
 ///@brief returns true if the string is a DTO placeholder
@@ -706,7 +708,11 @@ EdgeProposition *spotEdgeToProposition(const spot::formula &f,
 
   // Atomic proposition
   if (f.is(spot::op::ap)) {
-    if (isPlaceholderStr(f.ap_name())) {
+    if (isFunctionStr(f.ap_name())) {
+      messageErrorIf(!pack._tokenToFun.count(f.ap_name()),
+                     "Function not found" + f.ap_name());
+      return new EdgeFunction(pack._tokenToFun.at(f.ap_name()));
+    } else if (isPlaceholderStr(f.ap_name())) {
       messageErrorIf(!pack._tokenToPP.count(f.ap_name()),
                      "Placeholder not found: " + f.ap_name());
       return new EdgePlaceholder(pack._tokenToPP.at(f.ap_name()),
@@ -740,6 +746,9 @@ EdgeProposition *spotEdgeToProposition(const spot::formula &f,
 }
 
 bool isPlaceholderStr(const std::string &s) { return s[0] == 'P'; }
+bool isFunctionStr(const std::string &s) {
+  return s.size() > 3 && s.substr(0, 4) == "_fun";
+}
 bool isInstStr(const std::string &s) {
   return s.size() > 5 && s.substr(0, 5) == "_inst";
 }

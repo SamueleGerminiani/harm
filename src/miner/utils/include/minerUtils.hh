@@ -54,7 +54,7 @@ std::string
 dumpClusteringValues(std::vector<size_t> &ivs,
                      const expression::NumericExpressionPtr &cn);
 
-size_t getTypeBase(const std::string &type);
+bool isBase2InputIntepretation(const std::string &type);
 
 /// @brief converts a variable declaration into VarDeclaration
 VarDeclaration toVarDeclaration(std::string name, std::string type,
@@ -79,9 +79,11 @@ PlaceholderPack
 extractPlaceholders(const expression::TemporalExpressionPtr &formula);
 
 int getTemporalDepth(const expression::TemporalExpressionPtr &te);
+
+int getTemporalDepth(Automaton *aut);
+
 void substitutePlaceholders(
     expression::TemporalExpressionPtr &original,
     const PlaceholderPack &pack);
 
-int getTemporalDepth(Automaton *aut);
 } // namespace harm

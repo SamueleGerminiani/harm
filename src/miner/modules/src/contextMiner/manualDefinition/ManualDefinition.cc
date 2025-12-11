@@ -14,12 +14,15 @@
 #include "ClusteringConfig.hh"
 #include "Context.hh"
 #include "DTLimits.hh"
+#include "Edit.hh"
 #include "Location.hh"
+#include "Logic.hh"
 #include "ManualDefinition.hh"
 #include "Metric.hh"
 #include "ProgressBar.hpp"
 #include "TemplateImplication.hh"
 #include "Trace.hh"
+#include "ddd.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Atom.hh"
 #include "formula/atom/NumericExpression.hh"
@@ -37,6 +40,9 @@ namespace harm {
 
 using namespace rapidxml;
 using namespace expression;
+
+//ddd: keep in memory all the numerics to avoid letting the program reuse the same pointers for different propositions (unused propositions naturally go out of scope and get deleted)
+static std::vector<NumericExpressionPtr> generatedNumerics;
 
 ManualDefinition::ManualDefinition(std::string &configFile)
     : ContextMiner(configFile) {}
@@ -102,6 +108,12 @@ ClusteringConfig parseClusteringConfig(std::string config) {
     } else if (option == "K+") {
       res._clusteringType.insert(ClsType::Kmeans_UseAllIVsInDT);
       seen.insert("K+");
+    } else if (option == "C") {
+      res._clusteringType.insert(ClsType::Contiguous);
+      seen.insert("C");
+    } else if (option == "C+") {
+      res._clusteringType.insert(ClsType::Contiguous_UseAllIVsInDT);
+      seen.insert("C+");
     } else if (option.size() > 3 &&
                option.substr(option.size() - 3) == "Max") {
       res._maxClusters =
@@ -137,6 +149,8 @@ ClusteringConfig parseClusteringConfig(std::string config) {
                  "Cannot use both K and K+ in " + config);
   messageErrorIf(res._clusteringType.empty(),
                  "No clustering type set in " + config);
+  messageErrorIf(seen.count("C") && seen.count("C+"),
+                 "Cannot use both C and C+ in " + config);
   return res;
 }
 
@@ -169,7 +183,14 @@ std::vector<ParsedDomain> parseDomain(std::string loc) {
     } else if (option == "dt") {
       ret.emplace_back((int)Location::DecTree, false);
       continue;
+    } else if (isPositiveInteger(option)) {
+      uint64_t id = safeStoull(option);
+      messageErrorIf(id > INT_MAX, "Domain id too big, max is " +
+                                       std::to_string(INT_MAX));
+      ret.emplace_back((int)id, false);
+      continue;
     }
+
     if constexpr (isNumericDomain) {
       if (option.size() > 2 && option.front() == '[' &&
           option.back() == ']' &&
@@ -192,7 +213,9 @@ std::vector<ParsedDomain> parseDomain(std::string loc) {
         "(consequent), "
         "'ac' "
         "both antecedent and consequent, 'dt' (decision tree) , "
-        "'[dt]' (decision tree not expanded, only for numerics)");
+        "'[dt]' (decision tree not expanded, only for numerics) and "
+        "'[uint] (decision tree not expanded, only for numerics) or "
+        "uint (domain id)");
   }
   return ret;
 }
@@ -309,6 +332,9 @@ void ManualDefinition::mineContexts(
         "Multiple contexts with the same name are not allowed");
 
     ContextPtr context = generatePtr<Context>(contextName);
+    if (clc::dumpDebugData) {
+      ddd::addContext(context.get(), contextName);
+    }
 
     // templates
     std::vector<rapidxml::xml_node<> *> templatesTag;
@@ -346,6 +372,19 @@ void ManualDefinition::mineContexts(
         fillAssertion(ass, newTemplate, 0);
         context->_assertions.push_back(ass);
       } else {
+        if (clc::dumpDebugData) {
+          std::unordered_map<
+              std::string,
+              std::pair<std::string, std::unordered_set<int>>>
+              placeholderData;
+          for (auto &[ph, domain_tokens] : newTemplate->getPhIds()) {
+            placeholderData[ph] = std::make_pair(
+                toString(newTemplate->getPlaceholderLocation(ph)),
+                domain_tokens);
+          }
+          ddd::addTemplate(newTemplate.get(), contextName, exp,
+                           placeholderData);
+        }
         context->_templates.push_back(newTemplate);
       }
     }
@@ -372,6 +411,37 @@ void ManualDefinition::mineContexts(
                                     safeStod(th));
     }
 
+    // get edits
+    std::vector<rapidxml::xml_node<> *> editsTag;
+    getNodesFromName(contextTag, "edit", editsTag);
+    for (auto &editTag : editsTag) {
+      auto rewrite = getAttributeValue(editTag, "rewrite", "");
+      auto to = getAttributeValue(editTag, "to", "");
+      auto remove = getAttributeValue(editTag, "remove", "");
+      auto constraint = getAttributeValue(editTag, "constraint", "");
+
+      //debug
+      //std::cout << "rewrite:" << rewrite << "\n";
+      //std::cout << "to:" << to << "\n";
+      //std::cout << "remove:" << remove << "\n";
+
+      messageErrorIf(rewrite == "" && remove == "",
+                     "edit requires 'rewrite' "
+                     "or 'remove' attribute");
+      messageErrorIf(rewrite != "" && remove != "",
+                     "edit requires 'rewrite' or 'remove' "
+                     "attribute, not both");
+      messageErrorIf(rewrite != "" && to == "", "to undefined");
+
+      if (rewrite != "") {
+        context->_rewrite.emplace_back(
+            generatePtr<Edit>(rewrite, to, constraint));
+      } else {
+        context->_remove.push_back(
+            generatePtr<Edit>(remove, constraint));
+      }
+    }
+
     // get propositions
     std::vector<rapidxml::xml_node<> *> propsTag;
     getNodesFromName(contextTag, "prop", propsTag);
@@ -392,6 +462,15 @@ void ManualDefinition::mineContexts(
       for (auto &[id, dontExpand] : domains) {
         //dontExpand is not used for non-numerics
         context->_domainIdToProps[id].push_back(p);
+      }
+
+      if (clc::dumpDebugData) {
+        std::vector<int> domains_int;
+        for (auto &[id, dontExpand] : domains) {
+          domains_int.push_back(id);
+        }
+        ddd::addProposition(p.get(), contextName, prop2String(p),
+                            domains_int);
       }
     }
 
@@ -429,7 +508,8 @@ void ManualDefinition::mineContexts(
         PropositionPtr np = hparser::parseProposition(exp, trace);
 
         messageErrorIf(
-            std::dynamic_pointer_cast<IntToBool>(np) == nullptr &&
+            std::dynamic_pointer_cast<LogicToBool>(np) == nullptr &&
+                std::dynamic_pointer_cast<IntToBool>(np) == nullptr &&
                 std::dynamic_pointer_cast<FloatToBool>(np) == nullptr,
             "Exp '" + exp + "' is not of numeric type");
 
@@ -437,10 +517,19 @@ void ManualDefinition::mineContexts(
         if (std::dynamic_pointer_cast<IntToBool>(np) != nullptr) {
           nn = generatePtr<expression::NumericExpression>(
               std::dynamic_pointer_cast<IntToBool>(np)->getItem());
+        } else if (std::dynamic_pointer_cast<LogicToBool>(np) !=
+                   nullptr) {
+          nn = generatePtr<expression::NumericExpression>(
+              std::dynamic_pointer_cast<LogicToBool>(np)->getItem());
+
         } else if (std::dynamic_pointer_cast<FloatToBool>(np) !=
                    nullptr) {
           nn = generatePtr<expression::NumericExpression>(
               std::dynamic_pointer_cast<FloatToBool>(np)->getItem());
+        }
+
+        if (clc::dumpDebugData) {
+          generatedNumerics.push_back(nn);
         }
 
         ClusteringConfig cf = parseClusteringConfig(getAttributeValue(
@@ -460,6 +549,16 @@ void ManualDefinition::mineContexts(
         }
 
         //non-expanded domains
+        if (clc::dumpDebugData) {
+          std::vector<int> unexpandedDomains;
+          for (auto &[id, dontExpand] : domains) {
+            if (dontExpand) {
+              unexpandedDomains.push_back(id);
+            }
+          }
+          ddd::addNumeric(nn.get(), contextName, nnStr,
+                          unexpandedDomains);
+        }
 
         if (!expandedDomains.empty()) {
           //generate props though clustering using the whole trace
@@ -474,6 +573,18 @@ void ManualDefinition::mineContexts(
             context->_domainIdToProps[id].insert(
                 context->_domainIdToProps[id].end(), props.begin(),
                 props.end());
+          }
+
+          //expanded domains
+          if (clc::dumpDebugData) {
+            std::vector<std::pair<void *, std::string>> propsStrPtr;
+            for (auto p : props) {
+              propsStrPtr.emplace_back(p.get(), prop2String(p));
+            }
+            std::string dumpPath = dumpClusteringValues(ivs, nn);
+            ddd::addNumericWithExpansion(nn.get(), contextName, nnStr,
+                                         expandedDomains, propsStrPtr,
+                                         dumpPath, false);
           }
         }
 

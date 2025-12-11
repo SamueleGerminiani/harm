@@ -20,10 +20,12 @@ class Assertion;
 using AssertionPtr = std::shared_ptr<Assertion>;
 class Metric;
 using MetricPtr = std::shared_ptr<Metric>;
+class Edit;
+using EditPtr = std::shared_ptr<Edit>;
 enum class Location;
 
 /*! \class Context
-    \brief Class representing a set of props, numerics, templates, metrics and assertions
+    \brief Class representing a set of props, numerics, templates, metrics, edits and assertions
 */
 class Context {
 
@@ -56,6 +58,11 @@ public:
   std::vector<MetricPtr> _sort;
   ///filtering metrics
   std::vector<std::pair<MetricPtr, double>> _filter;
+
+  ///rewrite assertions rules
+  std::vector<EditPtr> _rewrite;
+  ///remove assertions rules
+  std::vector<EditPtr> _remove;
 };
 //using shared pointer for the context
 using ContextPtr = std::shared_ptr<Context>;

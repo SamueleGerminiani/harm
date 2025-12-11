@@ -69,6 +69,33 @@ enum ope : int {
   IntRShift,
   IntSetMembership,
 
+  LogicSum,
+  LogicSub,
+  LogicMul,
+  LogicDiv,
+  LogicBAnd,
+  LogicBOr,
+  LogicBXor,
+  LogicNot,
+  LogicEq,
+  LogicNeq,
+  LogicGreater,
+  LogicGreaterEq,
+  LogicLess,
+  LogicLessEq,
+  LogicLShift,
+  LogicRShift,
+  LogicSetMembership,
+
+  StringEq,
+  StringNeq,
+  StringGreater,
+  StringGreaterEq,
+  StringLess,
+  StringLessEq,
+  StringConcat,
+  Substring,
+
   Function,
 
   NoOp
@@ -325,6 +352,58 @@ inline std::string opeToString(ope o) {
   case IntSetMembership:
     return "inside";
 
+  case LogicSum:
+    return "+";
+  case LogicSub:
+    return "-";
+  case LogicMul:
+    return "*";
+  case LogicDiv:
+    return "/";
+  case LogicBAnd:
+    return "&";
+  case LogicBOr:
+    return "|";
+  case LogicBXor:
+    return "^";
+  case LogicNot:
+    return "~";
+  case LogicEq:
+    return "==";
+  case LogicNeq:
+    return "!=";
+  case LogicGreater:
+    return ">";
+  case LogicGreaterEq:
+    return ">=";
+  case LogicLess:
+    return "<";
+  case LogicLessEq:
+    return "<=";
+  case LogicLShift:
+    return "<<";
+  case LogicRShift:
+    return ">>";
+  case LogicSetMembership:
+    return "inside";
+
+  case StringEq:
+    return "==";
+  case StringNeq:
+    return "!=";
+  case StringGreater:
+    return ">";
+  case StringGreaterEq:
+    return ">=";
+  case StringLess:
+    return "<";
+  case StringLessEq:
+    return "<=";
+  case StringConcat:
+    return "+";
+  case Substring:
+    return ".substr";
+
   case NoOp:
     return "NoOp";
 
@@ -400,11 +479,17 @@ inline int opeToPrecedenceClass(ope o) {
     return 0;
   case IntNot:
     return 0;
+  case LogicNot:
+    return 0;
   case IntSetMembership:
+    return 0;
+  case LogicSetMembership:
     return 0;
   case FloatSetMembership:
     return 0;
   case PropositionNot:
+    return 0;
+  case Substring:
     return 0;
 
   case FloatMul:
@@ -413,7 +498,11 @@ inline int opeToPrecedenceClass(ope o) {
     return 1;
   case IntMul:
     return 1;
+  case LogicMul:
+    return 1;
   case IntDiv:
+    return 1;
+  case LogicDiv:
     return 1;
 
   case FloatSum:
@@ -422,22 +511,39 @@ inline int opeToPrecedenceClass(ope o) {
     return 2;
   case IntSum:
     return 2;
+  case LogicSum:
+    return 2;
+  case StringConcat:
+    return 2;
   case IntSub:
+    return 2;
+  case LogicSub:
     return 2;
 
   case IntLShift:
     return 3;
+  case LogicLShift:
+    return 3;
   case IntRShift:
+    return 3;
+  case LogicRShift:
     return 3;
 
   case FloatLess:
     return 4;
   case IntLess:
     return 4;
+  case LogicLess:
+    return 4;
+  case StringLess:
+    return 4;
   case FloatLessEq:
     return 4;
   case IntLessEq:
     return 4;
+  case LogicLessEq:
+    return 4;
+  case StringLessEq:
     return 4;
   case FloatGreater:
     return 4;
@@ -445,7 +551,15 @@ inline int opeToPrecedenceClass(ope o) {
     return 4;
   case IntGreater:
     return 4;
+  case LogicGreater:
+    return 4;
+  case StringGreater:
+    return 4;
   case IntGreaterEq:
+    return 4;
+  case LogicGreaterEq:
+    return 4;
+  case StringGreaterEq:
     return 4;
 
   case PropositionEq:
@@ -454,7 +568,15 @@ inline int opeToPrecedenceClass(ope o) {
     return 5;
   case IntEq:
     return 5;
+  case LogicEq:
+    return 5;
+  case StringEq:
+    return 5;
   case IntNeq:
+    return 5;
+  case LogicNeq:
+    return 5;
+  case StringNeq:
     return 5;
   case FloatNeq:
     return 5;
@@ -463,11 +585,17 @@ inline int opeToPrecedenceClass(ope o) {
 
   case IntBAnd:
     return 6;
+  case LogicBAnd:
+    return 6;
 
   case IntBXor:
     return 7;
+  case LogicBXor:
+    return 7;
 
   case IntBOr:
+    return 8;
+  case LogicBOr:
     return 8;
 
   case PropositionAnd:

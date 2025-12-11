@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "Logic.hh"
 #include "Trace.hh"
 #include "VarDeclaration.hh"
 #include "exp.hh"

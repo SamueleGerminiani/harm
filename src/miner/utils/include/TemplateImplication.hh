@@ -241,6 +241,8 @@ public:
 
   void setDTLimits(const DTLimits &l);
 
+  void *getOriginalId();
+
   /** \brief returns true if the template is fully instantiated, false otherwise
    */
   bool isFullyInstantiated() const;
@@ -354,6 +356,9 @@ public:
 
   /// if true, the template contains multi-match operators in the antecedent
   bool _contains_mma = 0;
+
+  ///used in ddd: keeps the pointer to the original template (if this is a copy)
+  void *_original_id = nullptr;
 
   friend DTAnd;
   friend DTNext;

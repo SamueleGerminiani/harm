@@ -1,9 +1,11 @@
 #pragma once
 
 // only included in case there's a C++11 compiler out there that doesn't support `#pragma once`
+#include <boost/multiprecision/detail/number_base.hpp>
 #ifndef DKM_KMEANS_H
 #define DKM_KMEANS_H
 
+#include "Logic.hh"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -40,18 +42,20 @@ T distance_squared(const std::array<T, N> &point_a,
 }
 
 template <typename T, size_t N>
-T distance(const std::array<T, N> &point_a,
-           const std::array<T, N> &point_b) {
-  return std::sqrt(distance_squared(point_a, point_b));
+T distance(const std::array<T, N> &point_a, const std::array<T, N> &point_b) {
+  if constexpr (std::is_same<T, expression::SLogic>::value) {
+    return boost::multiprecision::sqrt(distance_squared(point_a, point_b));
+  } else {
+    return std::sqrt(distance_squared(point_a, point_b));
+  }
 }
 
 /*
 Calculate the smallest distance between each of the data points and any of the input means.
 */
 template <typename T, size_t N>
-std::vector<T>
-closest_distance(const std::vector<std::array<T, N>> &means,
-                 const std::vector<std::array<T, N>> &data) {
+std::vector<T> closest_distance(const std::vector<std::array<T, N>> &means,
+                                const std::vector<std::array<T, N>> &data) {
   std::vector<T> distances;
   distances.reserve(data.size());
   for (auto &d : data) {
@@ -97,8 +101,8 @@ random_plusplus(const std::vector<std::array<T, N>> &data, uint32_t k,
     // Pick a random point weighted by the distance from existing means
     // TODO: This might convert floating point weights to ints, distorting the distribution for small weights
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-    std::discrete_distribution<input_size_t> generator(
-        distances.begin(), distances.end());
+    std::discrete_distribution<input_size_t> generator(distances.begin(),
+                                                       distances.end());
 #else // MSVC++ older than 14.0
     input_size_t i = 0;
     std::discrete_distribution<input_size_t> generator(
@@ -151,16 +155,13 @@ template <typename T, size_t N>
 std::vector<std::array<T, N>>
 calculate_means(const std::vector<std::array<T, N>> &data,
                 const std::vector<uint32_t> &clusters,
-                const std::vector<std::array<T, N>> &old_means,
-                uint32_t k) {
+                const std::vector<std::array<T, N>> &old_means, uint32_t k) {
   std::vector<std::array<T, N>> means(k);
   std::vector<T> count(k, T());
-  for (size_t i = 0; i < std::min(clusters.size(), data.size());
-       ++i) {
+  for (size_t i = 0; i < std::min(clusters.size(), data.size()); ++i) {
     auto &mean = means[clusters[i]];
     count[clusters[i]] += 1;
-    for (size_t j = 0; j < std::min(data[i].size(), mean.size());
-         ++j) {
+    for (size_t j = 0; j < std::min(data[i].size(), mean.size()); ++j) {
       mean[j] += data[i][j];
     }
   }
@@ -216,9 +217,8 @@ of optional parameters, including:
 template <typename T> class clustering_parameters {
 public:
   explicit clustering_parameters(uint32_t k)
-      : _k(k), _has_max_iter(false), _max_iter(),
-        _has_min_delta(false), _min_delta(), _has_rand_seed(false),
-        _rand_seed() {}
+      : _k(k), _has_max_iter(false), _max_iter(), _has_min_delta(false),
+        _min_delta(), _has_rand_seed(false), _rand_seed() {}
 
   void set_max_iteration(uint64_t max_iter) {
     _max_iter = max_iter;
@@ -281,14 +281,19 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>>
 kmeans_lloyd(const std::vector<std::array<T, N>> &data,
              clustering_parameters<T> &parameters) {
 
+  if constexpr (!std::is_same<T, expression::SLogic>::value ||
+                std::is_same<T, expression::ULogic>::value) {
+    static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
+                  "kmeans_lloyd requires the template parameter T to be a "
+                  "signed arithmetic type (e.g. float, double, int)");
+  }
   assert(parameters.get_k() > 0); // k must be greater than zero
   assert(data.size() >=
          parameters.get_k()); // there must be at least k data points
   parameters.set_random_seed(1);
   std::random_device rand_device;
-  uint64_t seed = parameters.has_random_seed()
-                      ? parameters.get_random_seed()
-                      : rand_device();
+  uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed()
+                                               : rand_device();
   std::vector<std::array<T, N>> means =
       details::random_plusplus(data, parameters.get_k(), seed);
 
@@ -301,19 +306,18 @@ kmeans_lloyd(const std::vector<std::array<T, N>> &data,
     clusters = details::calculate_clusters(data, means);
     old_old_means = old_means;
     old_means = means;
-    means = details::calculate_means(data, clusters, old_means,
-                                     parameters.get_k());
+    means =
+        details::calculate_means(data, clusters, old_means, parameters.get_k());
     ++count;
-  } while (
-      means != old_means && means != old_old_means &&
-      !(parameters.has_max_iteration() &&
-        count == parameters.get_max_iteration()) &&
-      !(parameters.has_min_delta() &&
-        details::deltas_below_limit(details::deltas(old_means, means),
-                                    parameters.get_min_delta())));
+  } while (means != old_means && means != old_old_means &&
+           !(parameters.has_max_iteration() &&
+             count == parameters.get_max_iteration()) &&
+           !(parameters.has_min_delta() &&
+             details::deltas_below_limit(details::deltas(old_means, means),
+                                         parameters.get_min_delta())));
 
-  return std::tuple<std::vector<std::array<T, N>>,
-                    std::vector<uint32_t>>(means, clusters);
+  return std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>>(
+      means, clusters);
 }
 
 /*

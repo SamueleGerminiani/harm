@@ -10,6 +10,7 @@
 #include "EdgeProposition.hh"
 #include "Float.hh"
 #include "Int.hh"
+#include "Logic.hh"
 #include "VarDeclaration.hh"
 #include "expUtils/ExpType.hh"
 #include "formula/atom/NumericExpression.hh"
@@ -17,6 +18,10 @@
 #include "message.hh"
 #include "minerUtils.hh"
 #include <mutex>
+
+namespace expression {
+template <typename OT, typename ET> class Function;
+} // namespace expression
 
 namespace harm {
 using namespace expression;
@@ -76,6 +81,7 @@ variableTypeFromString(const std::string &type, size_t size) {
   } else if (type == "size_t") {
     return std::make_pair(ExpType::UInt, sizeof(size_t) * 8);
 
+    //4-value
   } else if (type == "integer") {
     return std::make_pair(ExpType::SInt, 32);
   } else if (type == "integer unsigned") {
@@ -85,10 +91,10 @@ variableTypeFromString(const std::string &type, size_t size) {
   } else if (type == "time signed") {
     return std::make_pair(ExpType::SInt, 64);
   } else if (type == "reg" || type == "wire" || type == "logic") {
-    return std::make_pair(ExpType::UInt, size);
+    return std::make_pair(ExpType::ULogic, size);
   } else if (type == "reg signed" || type == "wire signed" ||
              type == "logic signed") {
-    return std::make_pair(ExpType::SInt, size);
+    return std::make_pair(ExpType::SLogic, size);
 
     //float
   } else if (type == "double" || type == "float" || type == "real" ||
@@ -128,6 +134,13 @@ std::string varTypeToString(const ExpType &type, size_t size) {
         return "uint64_t";
       }
     }
+  } else if (isLogic(type)) {
+    if (size == 1) {
+      return std::string("logic");
+    } else {
+      return std::string("logic") + "[" + std::to_string(size - 1) +
+             ":0]";
+    }
   } else if (isFloat(type)) {
     return "double";
   } else if (isBool(type)) {
@@ -139,30 +152,30 @@ std::string varTypeToString(const ExpType &type, size_t size) {
   return "error";
 }
 
-size_t getTypeBase(const std::string &type) {
+bool isBase2InputIntepretation(const std::string &type) {
 
   if (type == "reg") {
-    return 2;
+    return true;
   } else if (type == "wire") {
-    return 2;
+    return true;
   } else if (type == "logic") {
-    return 2;
+    return true;
   } else if (type == "integer") {
-    return 2;
+    return true;
   } else if (type == "time") {
-    return 2;
+    return true;
   } else if (type == "wire signed") {
-    return 2;
+    return true;
   } else if (type == "logic signed") {
-    return 2;
+    return true;
   } else if (type == "time signed") {
-    return 2;
+    return true;
   } else if (type == "integer unsigned") {
-    return 2;
+    return true;
   } else if (type == "bit") {
-    return 2;
+    return true;
   }
-  return 10;
+  return false;
 }
 
 std::vector<PropositionPtr>
@@ -178,6 +191,10 @@ genPropsThroughClustering(std::vector<size_t> &ivs,
     ret = runClustering<SInt>(ivs, cn, inDTAlgo);
   } else if (cn->getType().first == ExpType::UInt) {
     ret = runClustering<UInt>(ivs, cn, inDTAlgo);
+  } else if (cn->getType().first == ExpType::SLogic) {
+    ret = runClustering<SLogic>(ivs, cn, inDTAlgo);
+  } else if (cn->getType().first == ExpType::ULogic) {
+    ret = runClustering<ULogic>(ivs, cn, inDTAlgo);
   } else {
     messageError("gebPropsThroughClustering: unknown numeric type "
                  "for expression: '" +
@@ -191,22 +208,73 @@ genPropsThroughClustering(std::vector<size_t> &ivs,
   return ret;
 }
 
+std::string dumpClusteringValues(std::vector<size_t> &ivs,
+                                 const NumericExpressionPtr &cn) {
+  static size_t dumpID = 0;
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
+
+  std::string path = clc::debugDataPath + "/cls_values_" +
+                     std::to_string(dumpID++) + ".txt";
+  std::ofstream file;
+  try {
+    file.open(path);
+  } catch (const std::exception &e) {
+    messageError("Could not open file: " + clc::debugDataPath + path);
+  }
+
+  if (cn->getType().first == ExpType::Float) {
+    auto elements = gatherElements<Float, Float>(ivs, cn);
+    for (auto &e : elements) {
+      file << e << " ";
+    }
+    file << "\n";
+  } else if (cn->getType().first == ExpType::SInt ||
+             cn->getType().first == ExpType::UInt) {
+    auto elements = gatherElements<SInt, SInt>(ivs, cn);
+    for (auto &e : elements) {
+      file << e << " ";
+    }
+    file << "\n";
+  } else if (cn->getType().first == ExpType::ULogic ||
+             cn->getType().first == ExpType::SLogic) {
+    auto elements = gatherElements<SLogic, SLogic>(ivs, cn);
+    for (auto &e : elements) {
+      file << e << " ";
+    }
+    file << "\n";
+  } else {
+    messageError("dumpClusteringValues: unknown numeric type "
+                 "for expression: '" +
+                 num2String(cn) + "'");
+  }
+  return path;
+}
+
 ///var declaration to cpp class
 VarDeclaration toVarDeclaration(std::string name, std::string type,
                                 size_t size) {
 
   VarDeclaration ret;
   auto [t, s] = variableTypeFromString(type, size);
-  ret.setBase(getTypeBase(type));
 
-  if (isInt(t) && s > 64) {
+  if ((clc::forceInt || isInt(t)) && s > 64) {
     messageWarning("Truncating '" + name + "' to 64 bits");
     s = 64;
   }
 
-  //optimization: 1 bit logic to bool
-  if (isInt(t) && s == 1) {
-    t = ExpType::Bool;
+  if (isLogic(t) && s > 511) {
+    messageWarning("Truncating '" + name + "' to 511 bits");
+    s = 511;
+  }
+
+  //convert logic to int
+  if (clc::forceInt && isLogic(t)) {
+    t = isSigned(t) ? ExpType::SInt : ExpType::UInt;
+  }
+
+  if (isInt(t) || isLogic(t)) {
+    ret.setInputBase(isBase2InputIntepretation(type) ? 2 : 10);
   }
 
   ret.setName(name);
@@ -228,6 +296,11 @@ PlaceholderPack extractPlaceholders(
       BooleanLayerInstPtr i =
           std::dynamic_pointer_cast<BooleanLayerInst>(current);
       ret._tokenToInst[i->getToken()] = i->getProposition();
+      return true;
+    } else if (isBooleanLayerFunction(current)) {
+      BooleanLayerFunctionPtr f =
+          std::dynamic_pointer_cast<BooleanLayerFunction>(current);
+      ret._tokenToFun[f->getToken()] = f->getFunction();
       return true;
     }
     //dont skip the children of this formula
@@ -360,6 +433,13 @@ void substitutePlaceholders(TemporalExpressionPtr &original,
       if (pack._tokenToPP.count(getBooleanLayerToken(current))) {
         getPlaceholderPointer(current) =
             pack._tokenToPP.at(getBooleanLayerToken(current));
+      }
+    }
+    if (isBooleanLayerFunction(current)) {
+      if (pack._tokenToFun.count(getBooleanLayerToken(current))) {
+        getFunctionPlaceholderPointer(current) =
+            pack._tokenToFun.at(getBooleanLayerToken(current))
+                ->getPlaceholderPointer();
       }
     }
 

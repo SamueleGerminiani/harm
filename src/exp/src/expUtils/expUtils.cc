@@ -85,12 +85,16 @@ std::string temp2ColoredString(const TemporalExpressionPtr &exp, const Language 
   }
 expToString(float, FloatExpressionPtr)
 expToString(int, IntExpressionPtr)
+expToString(log, LogicExpressionPtr)
+expToString(str, StringExpressionPtr)
 expToString(num, NumericExpressionPtr)
 
 expOutOp(prop, PropositionPtr)
 expOutOp(temp, TemporalExpressionPtr)
 expOutOp(float, FloatExpressionPtr)
 expOutOp(int, IntExpressionPtr)
+expOutOp(log, LogicExpressionPtr)
+expOutOp(str, StringExpressionPtr)
 expOutOp(num, NumericExpressionPtr)
 
 
@@ -103,6 +107,8 @@ expCopyOp(Proposition, PropositionPtr)
   }
 expCopyOp(Float, FloatExpressionPtr)
 expCopyOp(Int, IntExpressionPtr)
+expCopyOp(Logic, LogicExpressionPtr)
+expCopyOp(String, StringExpressionPtr)
     // clang-format on
     NumericExpressionPtr copy(const NumericExpressionPtr &o) {
   CopyVisitor copier(false);
@@ -117,6 +123,8 @@ expGetVars(Proposition, PropositionPtr)
 expGetVars(Temporal, TemporalExpressionPtr)
 expGetVars(Float, FloatExpressionPtr)
 expGetVars(Int, IntExpressionPtr)
+expGetVars(Logic, LogicExpressionPtr)
+expGetVars(String, StringExpressionPtr)
     // clang-format on
 
     void sortPropositions(std::vector<PropositionPtr> &props) {

@@ -8,7 +8,11 @@
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/expression/SetMembership.hh"
+#include "formula/expression/Substring.hh"
 #include "formula/expression/TypeCast.hh"
+#include "formula/function/Function.hh"
+#include "formula/function/SVAfunction.hh"
 #include "formula/temporal/Property.hh"
 #include "formula/temporal/Sere.hh"
 #include "misc.hh"
@@ -80,6 +84,8 @@ void CopyVisitor::reset() {
   _proposition = nullptr;
   _float = nullptr;
   _int = nullptr;
+  _logic = nullptr;
+  _string = nullptr;
   _temporal = nullptr;
 }
 
@@ -115,11 +121,31 @@ TemporalExpressionPtr CopyVisitor::getTemporal() {
   return ret;
 }
 
+LogicExpressionPtr CopyVisitor::getLogic() {
+  messageErrorIf(
+      _logic == nullptr,
+      "CopyVisitor::getLogic() : no logic expression found");
+  LogicExpressionPtr ret = _logic;
+  reset();
+  return ret;
+}
+
+StringExpressionPtr CopyVisitor::getString() {
+  messageErrorIf(
+      _string == nullptr,
+      "CopyVisitor::getString() : no string expression found");
+  StringExpressionPtr ret = _string;
+  reset();
+  return ret;
+}
+
 NumericExpressionPtr CopyVisitor::getNum() {
   if (_float != nullptr) {
     return generatePtr<NumericExpression>(getFloat());
   } else if (_int != nullptr) {
     return generatePtr<NumericExpression>(getInt());
+  } else if (_logic != nullptr) {
+    return generatePtr<NumericExpression>(getLogic());
   }
   messageError("CopyVisitor::getNum() : no numeric expression found");
   return nullptr;
@@ -134,6 +160,10 @@ EXPRESSION(PropositionXor, _proposition, _proposition)
 EXPRESSION(PropositionEq, _proposition, _proposition)
 EXPRESSION(PropositionNeq, _proposition, _proposition)
 EXPRESSION(PropositionNot, _proposition, _proposition)
+UNARY_FUNCTION(PropositionPast, _proposition)
+UNARY_FUNCTION(PropositionStable, _proposition)
+UNARY_FUNCTION(PropositionFell, _proposition)
+UNARY_FUNCTION(PropositionRose, _proposition)
 
 // float
 LEAF_NODE(FloatConstant, _float)
@@ -150,6 +180,14 @@ EXPRESSION(FloatGreater, _float, _proposition)
 EXPRESSION(FloatGreaterEq, _float, _proposition)
 TYPE_CAST(FloatToBool, _float, _proposition)
 TYPE_CAST(FloatToInt, _float, _int)
+TYPE_CAST(FloatToLogic, _float, _logic)
+UNARY_FUNCTION(FloatPast, _float)
+UNARY_FUNCTION(FloatStable, _proposition)
+
+void CopyVisitor::visit(FloatSetMembership &o) {
+  o.getItem()->acceptVisitor(*this);
+  _proposition = generatePtr<FloatSetMembership>(o);
+}
 
 // int
 LEAF_NODE(IntConstant, _int)
@@ -172,11 +210,76 @@ EXPRESSION(IntRShift, _int, _int)
 EXPRESSION(IntLShift, _int, _int)
 TYPE_CAST(IntToBool, _int, _proposition)
 TYPE_CAST(IntToFloat, _int, _float)
+TYPE_CAST(IntToLogic, _int, _logic)
+UNARY_FUNCTION(IntPast, _int)
+UNARY_FUNCTION(IntStable, _proposition)
+UNARY_FUNCTION(IntFell, _proposition)
+UNARY_FUNCTION(IntRose, _proposition)
 
 void CopyVisitor::visit(IntBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
   _int = generatePtr<IntBitSelector>(_int, o.getUpperBound(),
                                      o.getLowerBound());
+}
+
+void CopyVisitor::visit(IntSetMembership &o) {
+  o.getItem()->acceptVisitor(*this);
+  _proposition = generatePtr<IntSetMembership>(o);
+}
+
+//logic
+LEAF_NODE(LogicConstant, _logic)
+LEAF_NODE(LogicVariable, _logic)
+EXPRESSION(LogicSum, _logic, _logic)
+EXPRESSION(LogicSub, _logic, _logic)
+EXPRESSION(LogicMul, _logic, _logic)
+EXPRESSION(LogicDiv, _logic, _logic)
+EXPRESSION(LogicBAnd, _logic, _logic)
+EXPRESSION(LogicBOr, _logic, _logic)
+EXPRESSION(LogicBXor, _logic, _logic)
+EXPRESSION(LogicNot, _logic, _logic)
+EXPRESSION(LogicEq, _logic, _proposition)
+EXPRESSION(LogicNeq, _logic, _proposition)
+EXPRESSION(LogicLess, _logic, _proposition)
+EXPRESSION(LogicLessEq, _logic, _proposition)
+EXPRESSION(LogicGreater, _logic, _proposition)
+EXPRESSION(LogicGreaterEq, _logic, _proposition)
+EXPRESSION(LogicRShift, _logic, _logic)
+EXPRESSION(LogicLShift, _logic, _logic)
+TYPE_CAST(LogicToBool, _logic, _proposition)
+TYPE_CAST(LogicToFloat, _logic, _float)
+TYPE_CAST(LogicToInt, _logic, _int)
+UNARY_FUNCTION(LogicPast, _logic)
+UNARY_FUNCTION(LogicStable, _proposition)
+UNARY_FUNCTION(LogicFell, _proposition)
+UNARY_FUNCTION(LogicRose, _proposition)
+
+void CopyVisitor::visit(LogicBitSelector &o) {
+  o.getItem()->acceptVisitor(*this);
+  _logic = generatePtr<LogicBitSelector>(_logic, o.getUpperBound(),
+                                         o.getLowerBound());
+}
+
+void CopyVisitor::visit(LogicSetMembership &o) {
+  o.getItem()->acceptVisitor(*this);
+  _proposition = generatePtr<LogicSetMembership>(o);
+}
+
+// string
+LEAF_NODE(StringConstant, _string)
+LEAF_NODE(StringVariable, _string)
+EXPRESSION(StringConcat, _string, _string)
+EXPRESSION(StringEq, _string, _proposition)
+EXPRESSION(StringNeq, _string, _proposition)
+EXPRESSION(StringLess, _string, _proposition)
+EXPRESSION(StringLessEq, _string, _proposition)
+EXPRESSION(StringGreater, _string, _proposition)
+EXPRESSION(StringGreaterEq, _string, _proposition)
+
+void CopyVisitor::visit(Substring &o) {
+  o.getItem()->acceptVisitor(*this);
+  _string = generatePtr<Substring>(_string, o.getStartIndex(),
+                                   o.getNChars());
 }
 
 //temporal
@@ -244,6 +347,29 @@ void CopyVisitor::visit(BooleanLayerInst &o) {
     _temporal = _tokenToTempExp.at(o.getToken());
   }
   _proposition = nullptr;
+}
+
+void CopyVisitor::visit(BooleanLayerFunction &o) {
+
+  if (!_removePlaceholders) {
+    messageErrorIf(_proposition != nullptr,
+                   "CopyVisitor::visit(BooleanLayerFunction) : "
+                   "there should not be a proposition here");
+    _temporal = generatePtr<BooleanLayerFunction>(
+        o.getFunction()->clone(), o.getToken());
+  } else {
+    //copy the function to the propositional layer
+    (*o.getFunction()->getPlaceholderPointer())->acceptVisitor(*this);
+    //FIXME: this is not optimal, we should not modify the original function, can we do better?
+    o.getFunction()->setTemporal(0);
+    o.getFunction()->setOperand(_proposition);
+    FunctionPropositionPtr f = o.getFunction()->clone();
+    o.getFunction()->setOperand(nullptr);
+    o.getFunction()->setTemporal(1);
+
+    _proposition = nullptr;
+    _temporal = generatePtr<BooleanLayerInst>(f, o.getToken() + "_r");
+  }
 }
 
 void CopyVisitor::visit(PropertyImplication &o) {

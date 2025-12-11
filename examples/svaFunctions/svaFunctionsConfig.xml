@@ -1,0 +1,27 @@
+<harm>
+	<context name="default">
+
+		<prop exp="busy" loc="c,dt"/>
+		<prop exp="error_from_bus" loc="c,dt"/>
+		<prop exp="write" loc="c,dt"/>
+		<prop exp="request" loc="c,dt"/>
+		<prop exp="wb_ack" loc="c,dt"/>
+		<prop exp="wb_stall" loc="c,dt"/>
+		<prop exp="wb_err" loc="c,dt"/>
+		<prop exp="wb_cyc" loc="c,dt"/>
+		<prop exp="wb_stb" loc="c,dt"/>
+		<prop exp="wb_we" loc="c,dt"/>
+		<prop exp="ready_from_bus" loc="c,dt"/>
+        
+        <template dtLimits="ENT,3D,3W,5A,-0.1E,U,O" exp="G({..#1&..}|-> {##1 $stable(P0)})" /> 
+        <template dtLimits="ENT,3D,3W,5A,-0.1E,U,O" exp="G({..#1&..}|-> {##1 $rose(P0)})" /> 
+        <template dtLimits="ENT,3D,3W,5A,-0.1E,U,O" exp="G({..#1&..}|-> {##1 $fell(P0)})" /> 
+        <template dtLimits="ENT,3D,3W,5A,-0.1E,U,O" exp="G({..#1&..}|-> {##1 $past(P0)})" /> 
+
+		<sort name="causality" exp="1-afct/traceLength"/>
+		<sort name="frequency" exp="ct/traceLength"/>
+	</context>
+</harm>
+
+
+

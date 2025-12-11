@@ -15,4 +15,12 @@ template <> void Constant<UInt>::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
 
+template <> void Constant<Logic>::acceptVisitor(ExpVisitor &vis) {
+  vis.visit(*this);
+}
+
+template <> void Constant<String>::acceptVisitor(ExpVisitor &vis) {
+  vis.visit(*this);
+}
+
 } // namespace expression

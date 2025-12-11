@@ -1,6 +1,7 @@
 #include <string>
 #include <utility>
 
+#include "Logic.hh"
 #include "expUtils/ExpType.hh"
 #include "expUtils/expUtils.hh"
 #include "expUtils/implicitConversion.hh"
@@ -57,6 +58,32 @@ VISITOR_CALL(IntNot, IntExpression, IntExpression)
 VISITOR_CALL(IntLShift, IntExpression, IntExpression)
 VISITOR_CALL(IntRShift, IntExpression, IntExpression)
 
+// logic
+VISITOR_CALL(LogicSum, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicSub, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicMul, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicDiv, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicBAnd, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicBOr, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicBXor, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicEq, LogicExpression, Proposition)
+VISITOR_CALL(LogicNeq, LogicExpression, Proposition)
+VISITOR_CALL(LogicGreater, LogicExpression, Proposition)
+VISITOR_CALL(LogicGreaterEq, LogicExpression, Proposition)
+VISITOR_CALL(LogicLess, LogicExpression, Proposition)
+VISITOR_CALL(LogicLessEq, LogicExpression, Proposition)
+VISITOR_CALL(LogicNot, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicLShift, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicRShift, LogicExpression, LogicExpression)
+
+//string
+VISITOR_CALL(StringConcat, StringExpression, StringExpression)
+VISITOR_CALL(StringEq, StringExpression, Proposition)
+VISITOR_CALL(StringNeq, StringExpression, Proposition)
+VISITOR_CALL(StringGreater, StringExpression, Proposition)
+VISITOR_CALL(StringGreaterEq, StringExpression, Proposition)
+VISITOR_CALL(StringLess, StringExpression, Proposition)
+VISITOR_CALL(StringLessEq, StringExpression, Proposition)
 //------------------------------------------------------------------------------
 
 //==== evaluate methods for propositions =======================================
@@ -677,4 +704,305 @@ void GenericExpression<ope::ope::IntRShift, IntExpression,
   disableCache();
 }
 
+//==== evaluate methods for logic ==============================================
+template <>
+void GenericExpression<ope::ope::LogicSum, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto sumType = this->getType();
+    return sum(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               sumType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicSub, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto subType = this->getType();
+    return sub(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               subType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicMul, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto mulType = this->getType();
+    return mul(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               mulType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicDiv, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto divType = this->getType();
+    return div(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               divType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicBAnd, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto bandType = this->getType();
+    return band(_items[0]->evaluate(time), _items[1]->evaluate(time),
+                bandType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicBOr, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto bOrType = this->getType();
+    return bor(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               bOrType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicBXor, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto bXorType = this->getType();
+    return bxor(_items[0]->evaluate(time), _items[1]->evaluate(time),
+                bXorType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicLShift, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    auto blsType = this->getType();
+    return bls(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               blsType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicRShift, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto brsType = this->getType();
+    return brs(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               brsType);
+  };
+  disableCache();
+}
+template <>
+void GenericExpression<ope::ope::LogicEq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return eq(_items[0]->evaluate(time), _items[1]->evaluate(time),
+              resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicNeq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return neq(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicGreater, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return gt(_items[0]->evaluate(time), _items[1]->evaluate(time),
+              resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicGreaterEq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return gte(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicLess, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return lt(_items[0]->evaluate(time), _items[1]->evaluate(time),
+              resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicLessEq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[1]->getType());
+    return lte(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicNot, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 1,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[0]->getType());
+    return bnot(_items[0]->evaluate(time), resType);
+  };
+  disableCache();
+}
+//------------------------------------------------------------------------------
+//==== evaluate methods for string ==============================================
+template <>
+void GenericExpression<ope::ope::StringEq, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) == _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringNeq, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) != _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringGreater, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) > _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringGreaterEq, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) >= _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringLess, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) < _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringLessEq, StringExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+
+    return _items[0]->evaluate(time) <= _items[1]->evaluate(time);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::StringConcat, StringExpression,
+                       StringExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    String concat = "";
+    for (size_t i = 0; i < _items.size(); i++) {
+      concat = concat + _items[i]->evaluate(time);
+    }
+
+    return concat;
+  };
+  disableCache();
+}
 } // namespace expression

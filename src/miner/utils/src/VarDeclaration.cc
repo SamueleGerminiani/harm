@@ -29,13 +29,15 @@ ExpType VarDeclaration::getType() const { return _type; }
 
 size_t VarDeclaration::getSize() const { return _size; }
 
-size_t VarDeclaration::getBase() const {
+size_t VarDeclaration::getInputBase() const {
   messageErrorIf(_type != expression::ExpType::SInt &&
                      _type != expression::ExpType::UInt,
-                 "Base is only defined for int types got " +
+                 "Base is only defined for integer types got " +
                      to_string(_type) + " for variable " + _name);
 
-  return _base;
+  return _input_base;
 }
-void VarDeclaration::setBase(size_t base) { _base = base; }
+void VarDeclaration::setInputBase(size_t input_base) {
+  _input_base = input_base;
+}
 } // namespace harm

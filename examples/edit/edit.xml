@@ -1,0 +1,46 @@
+<!--
+Important: edit rules ignore white spaces
+-->
+<harm>
+    <context name="remove1">
+        <template exp="always(v1|-> v1)"/>
+        <edit remove="always(@(P,a)|->@(P,b))" constraint="a==b"/>
+        <!--
+            - Remove assertions of the form always(X|->X)
+            - If the rule 'remove' matches and the constraint is true, then the assertion is removed.
+            - @(P,a) and @(P,b) match a proposition and store it in variables 'a' and 'b', respectively. Variable 'a' and 'b' are of String type.       
+            - The constraint a==b is true if both variables contain the same string
+        -->
+    </context>
+
+    <context name="edit1">
+        <template exp="always(v1 ##2 true|-> ##1 v2)"/>
+        <template exp="always(v1 ##2 1|-> ##1 v2)"/>
+        <edit rewrite="always(@(..##..,a) ##@(N,b) @(P,c)|->##@(N,d) @(P,e))" to="always(@(a)|->##@(b+d) @(e))" constraint='c=="true" || c=="1"' />
+        <!--
+            - If the rule 'edit' matches and the constraint is true, then the assertion is rewritten according to the rule 'to'.
+            - Rewrite assertions of the form always(p1 ##N p2 ##N ... pM ##1 true|->##K p))
+            For the assertion above: 
+            - variables 'a' will contain v1 (String type), 'b' will contain 1 (int type), 'c' will contain true or 1 (String type), 'd' will contain 1 (int type), 'e' will contain v2 (String type)
+            - @(b+d) evaluates to 3
+            - Note that in this case, the constraint is defined inside single quotes to avoid conflicts with the double quotes used for string literals such as "true" and "1".
+        -->
+    </context>
+
+    <context name="edit2">
+        <template exp="always(v3|-> (v4 ##1 v4) or (!v4 ##1 !v4) )"/>
+        <edit rewrite="always(@(P,a) |-> (@(P,b) ##1 @(P,c)) or (@(P,d) ##1 @(P,e)))" to="always(@(a)|->##1 $stable(@(b)))" constraint="b==c && d==e && b==d.substr(1)" />
+        <!--
+            The only difference between this rule and the previous one is the use of substring (which follows the same syntax and semantics of C++ substr) to check if variable 'd' is just the negation of 'b'; substr(1) returns the string inside d without the first character '!'.
+        -->
+    </context>
+
+    <context name="edit3">
+        <template exp="always(v5|->!v6 ##1 v6 )"/>
+        <edit rewrite="always(@(P,a)|->@(P,b) ##1 @(P,c))" to="always(@(a)|->##1 $rose(@(c)))" constraint='c==b.substr(1) && b.substr(0,1) == "!"' />
+    </context>
+
+</harm>
+
+
+

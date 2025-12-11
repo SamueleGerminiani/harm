@@ -16,6 +16,7 @@
 #include "CSVtraceReader.hh"
 #include "Context.hh"
 #include "DTLimits.hh"
+#include "Edit.hh"
 #include "Float.hh"
 #include "Hierarchical.hh"
 #include "exp.hh"
@@ -28,6 +29,7 @@
 #include "Trace.hh"
 #include "TraceReader.hh"
 #include "VCDtraceReader.hh"
+#include "ddd.hh"
 #include "expUtils/expUtils.hh"
 #include "fort.h"
 #include "fort.hpp"
@@ -127,6 +129,9 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
       outAssertions.push_back(ass);
       keys.insert(key);
     } else {
+      if (clc::dumpDebugData) {
+        ddd::appendNote(ass.get(), "Redundant");
+      }
       discarded++;
     }
   }
@@ -215,6 +220,12 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
     fillAssertionsWithFaultCoverage(assertions, trace);
   }
   filterAssertionsWithMetrics(assertions, context._filter);
+
+  if (rewriteUsingEdits(assertions, context._rewrite, trace) > 0) {
+    //rewriting might have introduced redundant assertions
+    filterRedundantAssertions(assertions);
+  }
+  filterUsingEdits(assertions, context._remove, trace);
 
   if (requiresFaultCoverage(context._sort)) {
     fillAssertionsWithFaultCoverage(assertions, trace);
@@ -436,6 +447,9 @@ void Qualifier::filterAssertionsWithMetrics(
       if (Metric::evaluateMetric(*a, *m.first) /
               mToMaxValue.at(m.first->_name) <
           m.second) {
+        if (clc::dumpDebugData) {
+          ddd::appendNote(a.get(), "Filtered by " + m.first->_name);
+        }
         a = nullptr;
         filtered++;
         break;
@@ -464,6 +478,9 @@ void Qualifier::filterAssertionsWithFrank(
   size_t filtered = 0;
   for (auto &a : assertions) {
     if (a->_finalScore < clc::minFrank) {
+      if (clc::dumpDebugData) {
+        ddd::appendNote(a.get(), "Filtered by min-frank");
+      }
       a = nullptr;
       filtered++;
     }
@@ -834,7 +851,70 @@ void Qualifier::filterRedundantAssertions(
   //    assertions = extractUniqueAssertions(assertions);
   //  }
 }
+size_t Qualifier::rewriteUsingEdits(
+    const std::vector<AssertionPtr> &assertions,
+    std::vector<EditPtr> &rewrite, const TracePtr &trace) {
+  if (rewrite.empty()) {
+    return 0;
+  }
 
+  progresscpp::ParallelProgressBar pb;
+  pb.addInstance(0, "Rewriting with edits... 0 rewritten",
+                 assertions.size(), 70);
+
+  size_t rewritten = 0;
+  for (auto &ass : assertions) {
+    if (rewriteAssertion(ass, rewrite, trace)) {
+      pb.changeMessage(0, "Rewriting with edits..." +
+                              std::to_string(++rewritten) +
+                              " rewritten");
+      if (clc::dumpDebugData) {
+        ddd::appendNote(ass.get(), "Rewritten");
+      }
+    }
+    pb.increment(0);
+    pb.display();
+  }
+
+  pb.done(0);
+  return rewritten;
+}
+
+void Qualifier::filterUsingEdits(
+    std::vector<AssertionPtr> &assertions,
+    std::vector<EditPtr> &remove, const TracePtr &trace) {
+  if (remove.empty()) {
+    return;
+  }
+
+  progresscpp::ParallelProgressBar pb;
+  pb.addInstance(0, "Filtering with edits... 0 discarded",
+                 assertions.size(), 70);
+  size_t discarded = 0;
+
+  for (auto &ass : assertions) {
+    if (toBeRemoved(ass->toString(), remove, trace)) {
+      if (clc::dumpDebugData) {
+        ddd::appendNote(ass.get(), "Filtered by edit rule");
+      }
+      ass = nullptr;
+
+      pb.changeMessage(0, "Filtering with edits..." +
+                              std::to_string(++discarded) +
+                              " discarded");
+    }
+    pb.increment(0);
+    pb.display();
+  }
+
+  pb.done(0);
+
+  //actually remove the assertions from the container
+  assertions.erase(
+      remove_if(assertions.begin(), assertions.end(),
+                [](const AssertionPtr &a) { return a == nullptr; }),
+      assertions.end());
+}
 std::vector<AssertionPtr> Qualifier::rankAssertions(
     const std::vector<AssertionPtr> &inAssertions,
     std::vector<MetricPtr> &sort) {

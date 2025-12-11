@@ -8,6 +8,7 @@
 
 #include "CSVtraceReader.hh"
 #include "DTOperator.hh"
+#include "Edit.hh"
 #include "Float.hh"
 #include "Location.hh"
 #include "TemplateImplication.hh"
@@ -19,7 +20,9 @@
 
 #include "formula/atom/Atom.hh"
 #include "formula/atom/Variable.hh"
+#include "formula/expression/SetMembership.hh"
 #include "formula/expression/TypeCast.hh"
+#include "formula/function/SVAfunction.hh"
 #include "globals.hh"
 #include "misc.hh"
 #include "propositionParsingUtils.hh"

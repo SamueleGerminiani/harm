@@ -3,6 +3,7 @@
 #include "TemporalExpression.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Atom.hh"
+#include "formula/function/Function.hh"
 #include "globals.hh"
 #include <memory>
 #include <type_traits>
@@ -181,6 +182,38 @@ using BooleanLayerDTPlaceholderPtr =
     std::shared_ptr<BooleanLayerDTPlaceholder>;
 
 /**
+ * @class BooleanLayerFunction
+ * @brief Represents a function in a boolean layer.
+ */
+class BooleanLayerFunction : public BooleanLayer {
+public:
+  /**
+   * @brief Constructor for BooleanLayerFunction.
+   * @param f The function proposition pointer.
+   * @param token The token for the boolean layer function.
+   */
+  BooleanLayerFunction(const FunctionPropositionPtr &f,
+                       const std::string &token)
+      : BooleanLayer(token), _f(f){};
+
+  ~BooleanLayerFunction() override {}
+
+  void acceptVisitor(ExpVisitor &vis) override;
+
+  /**
+   * @brief Get the function of the boolean layer.
+   * @return The function proposition pointer reference.
+   */
+  FunctionPropositionPtr &getFunction() { return _f; }
+
+private:
+  /// The function proposition pointer.
+  FunctionPropositionPtr _f = nullptr;
+};
+
+using BooleanLayerFunctionPtr = std::shared_ptr<BooleanLayerFunction>;
+
+/**
  * @class BooleanLayerNot
  * @brief Represents a negation in a boolean layer.
  */
@@ -214,6 +247,11 @@ using BooleanLayerNotPtr = std::shared_ptr<BooleanLayerNot>;
 using BooleanLayerPtr = std::shared_ptr<BooleanLayer>;
 using BooleanLayerInstPtr = std::shared_ptr<BooleanLayerInst>;
 
+inline bool isBooleanLayerFunction(const TemporalExpressionPtr &e) {
+  return std::dynamic_pointer_cast<BooleanLayerFunction>(e) !=
+         nullptr;
+}
+
 inline bool isInst(const TemporalExpressionPtr &e) {
   return std::dynamic_pointer_cast<BooleanLayerInst>(e) != nullptr;
 }
@@ -233,7 +271,7 @@ inline bool isBooleanLayerNot(const TemporalExpressionPtr &e) {
  * @return True if it is a boolean layer, false otherwise.
  */
 inline bool isBooleanLayer(const TemporalExpressionPtr &e) {
-  return isInst(e) || isPlaceholder(e);
+  return isInst(e) || isPlaceholder(e) || isBooleanLayerFunction(e);
 }
 
 /**
@@ -283,6 +321,7 @@ inline bool isSameBooleanLayerType(const TemporalExpressionPtr &e1,
          (isDTPlaceholder(e1) && isDTPlaceholder(e2)) ||
          (isPermutationPlaceholder(e1) &&
           isPermutationPlaceholder(e2)) ||
+         (isBooleanLayerFunction(e1) && isBooleanLayerFunction(e2)) ||
          (isBooleanLayerNot(e1) && isBooleanLayerNot(e2));
 }
 
@@ -319,11 +358,43 @@ inline PropositionPtr getProposition(const TemporalExpressionPtr &e) {
   } else if (isDTPlaceholder(e)) {
     return *std::dynamic_pointer_cast<BooleanLayerDTPlaceholder>(e)
                 ->getPlaceholderPointer();
+  } else if (isBooleanLayerFunction(e)) {
+    return std::dynamic_pointer_cast<BooleanLayerFunction>(e)
+        ->getFunction();
   }
 
   messageError(
       "getProposition, not a proposition boolean layer expression");
   return nullptr;
+}
+
+/**
+ * @brief Get the function placeholder pointer of the temporal expression.
+ * @param e The temporal expression pointer.
+ * @return The function placeholder pointer reference.
+ */
+inline PropositionPtrPtr &
+getFunctionPlaceholderPointer(const TemporalExpressionPtr &e) {
+  messageErrorIf(!isBooleanLayerFunction(e),
+                 "getFunctionPlaceholderPointer, not a function "
+                 "boolean layer expression");
+  return std::dynamic_pointer_cast<BooleanLayerFunction>(e)
+      ->getFunction()
+      ->getPlaceholderPointer();
+}
+
+/**
+ * @brief Get the function proposition of the temporal expression.
+ * @param e The temporal expression pointer.
+ * @return The function proposition pointer reference.
+ */
+inline FunctionPropositionPtr &
+getPropositionFunction(const TemporalExpressionPtr &e) {
+  messageErrorIf(
+      !isBooleanLayerFunction(e),
+      "getFunction, not a function boolean layer expression");
+  return std::dynamic_pointer_cast<BooleanLayerFunction>(e)
+      ->getFunction();
 }
 
 /**

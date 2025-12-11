@@ -6,6 +6,7 @@
 
 #include "../../miner/utils/include/DTLimits.hh"
 #include "Int.hh"
+#include "Logic.hh"
 #include "colors.hh"
 #include "expUtils/ExpType.hh"
 
@@ -15,12 +16,13 @@
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/expression/SetMembership.hh"
+#include "formula/expression/Substring.hh"
 #include "formula/expression/TypeCast.hh"
+#include "formula/function/SVAfunction.hh"
 #include "globals.hh"
 #include "misc.hh"
 #include "visitors/PrinterVisitor.hh"
-#include <cmath>
-#include <iomanip>
 
 namespace expression {
 PrinterVisitor::PrinterVisitor(Language lang, bool colored,
@@ -67,6 +69,26 @@ std::string PrinterVisitor::get() {
 #define REAL_CONSTANT(LEAF)                                          \
   void PrinterVisitor::visit(LEAF &o) {                              \
     _ss << std::setprecision(17) << o.evaluate(0);                   \
+  }
+
+#define LOGIC_CONSTANT(LEAF)                                         \
+  void PrinterVisitor::visit(LEAF &o) {                              \
+    if (clc::printLogicAsInt) {                                      \
+      if (o.getType().first == ExpType::ULogic) {                    \
+        _ss << selCol(                                               \
+            to_string(o.evaluate(0).getUnsignedValue()),             \
+            VAR(to_string(o.evaluate(0).getUnsignedValue())));       \
+      } else {                                                       \
+        _ss << selCol(                                               \
+            to_string(o.evaluate(0).getSignedValue()),               \
+            VAR(to_string(o.evaluate(0).getSignedValue())));         \
+      }                                                              \
+    } else {                                                         \
+      _ss << selCol(std::to_string(o.getType().second) + "'b" +      \
+                        o.evaluate(0).toString(),                    \
+                    VAR(std::to_string(o.getType().second) + "'b" +  \
+                        o.evaluate(0).toString()));                  \
+    }                                                                \
   }
 
 #define BOOLEAN_CONSTANT(LEAF)                                       \
@@ -165,6 +187,10 @@ EXP_OPE(PropositionAnd)
 EXP_OPE(PropositionXor)
 EXP_OPE(PropositionEq)
 EXP_OPE(PropositionNeq)
+UNARY_FUNCTION(PropositionPast)
+UNARY_FUNCTION(PropositionStable)
+UNARY_FUNCTION(PropositionRose)
+UNARY_FUNCTION(PropositionFell)
 
 void PrinterVisitor::visit(expression::PropositionNot &o) {
   _ope_stack.push(ope::ope::PropositionNot);
@@ -195,8 +221,28 @@ EXP_OPE(FloatGreater)
 EXP_OPE(FloatGreaterEq)
 EXP_OPE(FloatLess)
 EXP_OPE(FloatLessEq)
+TYPE_CAST(FloatToLogic)
 TYPE_CAST(FloatToInt)
 TYPE_CAST(FloatToBool)
+UNARY_FUNCTION(FloatStable)
+UNARY_FUNCTION(FloatPast)
+
+void PrinterVisitor::visit(FloatSetMembership &o) {
+  _ope_stack.push(ope::ope::FloatSetMembership);
+  o.getItem()->acceptVisitor(*this);
+  if (_colored) {
+    _ss << BOOL(" " + ope::opeToString(ope::ope::FloatSetMembership) +
+                " ");
+    _ss << VAR(o.valuesToString());
+    _ss << " ";
+
+  } else {
+    _ss << " " + ope::opeToString(ope::ope::FloatSetMembership) + " ";
+    _ss << o.valuesToString();
+    _ss << " ";
+  }
+  _ope_stack.pop();
+}
 
 // int
 VARIABLE(IntVariable)
@@ -219,6 +265,97 @@ EXP_OPE(IntLShift)
 EXP_OPE(IntRShift)
 TYPE_CAST(IntToFloat)
 TYPE_CAST(IntToBool)
+TYPE_CAST(IntToLogic)
+UNARY_FUNCTION(IntPast)
+UNARY_FUNCTION(IntStable)
+UNARY_FUNCTION(IntRose)
+UNARY_FUNCTION(IntFell)
+
+void PrinterVisitor::visit(IntSetMembership &o) {
+  _ope_stack.push(ope::ope::IntSetMembership);
+  o.getItem()->acceptVisitor(*this);
+  if (_colored) {
+    _ss << BOOL(" " + ope::opeToString(ope::ope::IntSetMembership) +
+                " ");
+    _ss << VAR(o.valuesToString());
+    _ss << " ";
+  } else {
+    _ss << " " + ope::opeToString(ope::ope::IntSetMembership) + " ";
+    _ss << o.valuesToString();
+    _ss << " ";
+  }
+  _ope_stack.pop();
+}
+
+// logic
+VARIABLE(LogicVariable)
+LOGIC_CONSTANT(LogicConstant)
+EXP_OPE(LogicSum)
+EXP_OPE(LogicSub)
+EXP_OPE(LogicMul)
+EXP_OPE(LogicDiv)
+EXP_OPE(LogicBAnd)
+EXP_OPE(LogicBOr)
+EXP_OPE(LogicBXor)
+EXP_OPE(LogicEq)
+EXP_OPE(LogicNeq)
+EXP_OPE(LogicGreater)
+EXP_OPE(LogicGreaterEq)
+EXP_OPE(LogicLess)
+EXP_OPE(LogicLessEq)
+EXP_OPE_BIT_SELECTION(LogicBitSelector)
+EXP_OPE(LogicLShift)
+EXP_OPE(LogicRShift)
+TYPE_CAST(LogicToFloat)
+TYPE_CAST(LogicToBool)
+TYPE_CAST(LogicToInt)
+UNARY_FUNCTION(LogicPast)
+UNARY_FUNCTION(LogicStable)
+UNARY_FUNCTION(LogicRose)
+UNARY_FUNCTION(LogicFell)
+
+void PrinterVisitor::visit(expression::LogicNot &o) {
+  _ope_stack.push(ope::ope::LogicNot);
+  _ss << selCol(opeToString(ope::LogicNot),
+                BOOL(opeToString(ope::LogicNot)));
+  o.getItems()[0]->acceptVisitor(*this);
+  _ope_stack.pop();
+}
+
+void PrinterVisitor::visit(LogicSetMembership &o) {
+  _ope_stack.push(ope::ope::LogicSetMembership);
+  o.getItem()->acceptVisitor(*this);
+  if (_colored) {
+    _ss << BOOL(" " + ope::opeToString(ope::ope::LogicSetMembership) +
+                " ");
+    _ss << VAR(o.valuesToString());
+    _ss << " ";
+
+  } else {
+    _ss << " " + ope::opeToString(ope::ope::LogicSetMembership) + " ";
+    _ss << o.valuesToString();
+    _ss << " ";
+  }
+  _ope_stack.pop();
+}
+
+//string
+STRING_CONSTANT(StringConstant)
+VARIABLE(StringVariable)
+EXP_OPE(StringConcat)
+EXP_OPE(StringEq)
+EXP_OPE(StringNeq)
+EXP_OPE(StringGreater)
+EXP_OPE(StringGreaterEq)
+EXP_OPE(StringLess)
+EXP_OPE(StringLessEq)
+
+void PrinterVisitor::visit(expression::Substring &o) {
+  _ope_stack.push(ope::ope::Substring);
+  _ss << selCol(o.toString(), o.toColoredString());
+  o.getItem()->acceptVisitor(*this);
+  _ope_stack.pop();
+}
 
 //TemporalExpression------------------------------------------------------------------------------
 
@@ -480,6 +617,13 @@ void PrinterVisitor::visit(BooleanLayerInst &o) {
     }
   } else {
     _ss << selCol(o.getToken(), VAR(o.getToken()));
+  }
+}
+void PrinterVisitor::visit(BooleanLayerFunction &o) {
+  if (_printMode == PrintMode::Hide) {
+    _ss << selCol(o.getToken(), VAR(o.getToken()));
+  } else {
+    o.getFunction()->acceptVisitor(*this);
   }
 }
 

@@ -41,6 +41,8 @@ size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;
 std::string dumpPath = "";
 bool intMode = false;
+bool forceInt = false;
+bool printLogicAsInt = false;
 bool splitLogic = false;
 size_t vcdRecursive = true;
 size_t vcdUnroll = 0;
@@ -53,6 +55,8 @@ bool psilent = false;
 bool dumpStat = false;
 bool dontNormalize = false;
 bool sampleByCon = false;
+bool dumpDebugData = false;
+std::string debugDataPath = "";
 } // namespace clc
 
 // harm stat

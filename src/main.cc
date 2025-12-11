@@ -20,6 +20,7 @@
 #include "VarDeclaration.hh"
 #include "commandLineParser.hh"
 #include "cxxopts.hpp"
+#include "ddd.hh"
 #include "expUtils/ExpType.hh"
 #include "globals.hh"
 #include "harmIcon.hh"
@@ -177,6 +178,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
                        result["csv_dir"].as<std::string>());
   }
 
+  if (result.count("reset")) {
+    clc::reset = result["reset"].as<std::string>();
+  }
+
   if (result.count("sva")) {
     messageErrorIf(
         result.count("spotltl") || result.count("psl"),
@@ -223,6 +228,44 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(!result.count("max-ass"),
                    "'sample-by-con' must be used with 'max-ass'");
     clc::sampleByCon = 1;
+  }
+
+  if (result.count("ddd")) {
+    clc::dumpDebugData = 1;
+    std::string tmp_path = result["ddd"].as<std::string>();
+    messageErrorIf(!std::filesystem::exists(tmp_path),
+                   "the provided ddd path does not exists");
+    messageErrorIf(
+        !std::filesystem::is_directory(tmp_path),
+        "the provided ddd path does not lead to a directory");
+
+    tmp_path += "/ddd";
+    if (!std::filesystem::exists(tmp_path)) {
+      std::filesystem::create_directory(tmp_path);
+    }
+    if (!std::filesystem::exists(tmp_path + "/.run_info")) {
+      //create the .run_info file
+      std::ofstream ri_of(tmp_path + "/.run_info");
+      ri_of << 1;
+    }
+    std::ifstream ri_if(tmp_path + "/.run_info");
+    std::string runInfoData = "";
+    messageErrorIf(!std::getline(ri_if, runInfoData),
+                   "Corrupted ddd");
+    ri_if.close();
+    int run_id = safeStoull(runInfoData);
+    messageErrorIf(run_id == 0, "Corrupted ddd");
+
+    clc::debugDataPath = tmp_path + "/run" + std::to_string(run_id);
+    messageErrorIf(std::filesystem::exists(clc::debugDataPath),
+                   "Corrupted ddd");
+    std::filesystem::create_directory(clc::debugDataPath);
+
+    ddd::createDebugDB();
+
+    //update the run_info
+    std::ofstream ri_of(tmp_path + "/.run_info");
+    ri_of << ++run_id;
   }
 
   if (result.count("dump-vac-ass")) {
@@ -360,6 +403,14 @@ void parseCommandLineArguments(int argc, char *args[]) {
   messageErrorIf(clc::splitLogic && !clc::genConfig,
                  "--split-logic must be used with --generate-config");
 
+  if (result.count("force-int")) {
+    clc::forceInt = true;
+  }
+
+  if (result.count("print-logic-as-int")) {
+    clc::printLogicAsInt = true;
+  }
+
   if (result.count("check-dump-eval")) {
     clc::checkDumpEvalDirectory =
         result["check-dump-eval"].as<std::string>();
@@ -409,7 +460,7 @@ void genConfigFile(std::string &configFile,
       for (auto &name : sfn) {
         const auto &type = mapDec.at(name).first;
         const auto &size = mapDec.at(name).second;
-        if (clc::splitLogic && isInt(type)) {
+        if (clc::splitLogic && isLogic(type)) {
           for (size_t i = 0; i < size; i++) {
             ofs << "\t\t<prop exp=\"";
             ofs << name + "[" + std::to_string(i) + "]";
@@ -452,7 +503,7 @@ void genConfigFile(std::string &configFile,
       const auto &size = dec.getSize();
       const auto &type = dec.getType();
 
-      if (clc::splitLogic && isInt(type)) {
+      if (clc::splitLogic && isLogic(type)) {
         for (size_t i = 0; i < size; i++) {
           ofs << "\t\t<prop exp=\"";
           ofs << name + "[" + std::to_string(i) + "]";

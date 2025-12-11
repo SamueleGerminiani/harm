@@ -22,3 +22,5 @@ add_test(NAME bl_master1k COMMAND harm --vcd ${EXAMPLE_DIR}/bl_master/bl_master1
 add_test(NAME bl_master10k COMMAND harm --vcd ${EXAMPLE_DIR}/bl_master/bl_master10k.vcd --clk wb_clk --conf ${EXAMPLE_DIR}/bl_master/bl_masterConfig.xml --vcd-ss sim1::p::core::master_interface --min-frank 0.9 WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME sobel COMMAND harm --vcd ${EXAMPLE_DIR}/sobel/sobel1k.vcd --clk sobel_tb::clk --conf ${EXAMPLE_DIR}/sobel/sobelConf.xml --dump-to ${EXAMPLE_DIR}/sobel/ass.txt --max-ass 1000 --sample-by-con --fd ${EXAMPLE_DIR}/sobel/faults/ --find-min-subset  WORKING_DIRECTORY ${WORK_DIR})
 add_test(NAME process COMMAND harm --sva --csv-dir ${EXAMPLE_DIR}/process/traces --conf ${EXAMPLE_DIR}/process/processConfig.xml WORKING_DIRECTORY ${WORK_DIR})
+add_test(NAME edit COMMAND harm --csv ${EXAMPLE_DIR}/edit/edit.csv --clk clk --conf ${EXAMPLE_DIR}/edit/edit.xml WORKING_DIRECTORY ${WORK_DIR})
+add_test(NAME svaFunctions COMMAND harm --vcd ${EXAMPLE_DIR}/svaFunctions/bl_master1h.vcd --clk wb_clk --conf ${EXAMPLE_DIR}/svaFunctions/svaFunctionsConfig.xml --vcd-ss sim1::p::core::master_interface --min-frank 0.9 WORKING_DIRECTORY ${WORK_DIR})

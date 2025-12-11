@@ -22,6 +22,8 @@ class Assertion;
 using AssertionPtr = std::shared_ptr<Assertion>;
 class Context;
 using ContextPtr = std::shared_ptr<Context>;
+class Edit;
+using EditPtr = std::shared_ptr<Edit>;
 class TemplateImplication;
 using TemplateImplicationPtr = std::shared_ptr<TemplateImplication>;
 class Trace;

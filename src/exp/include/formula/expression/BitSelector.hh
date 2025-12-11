@@ -8,6 +8,7 @@
 
 namespace expression {
 class ExpVisitor;
+class Logic;
 } // namespace expression
 
 namespace expression {
@@ -20,7 +21,8 @@ public:
   BitSelector(const GenericPtr<ET> &e, size_t lower_bound,
               size_t upper_bound);
 
-  using ReturnType = UInt;
+  using ReturnType = typename std::conditional<
+      std::is_same<RT, IntExpression>::value, UInt, Logic>::type;
   BitSelector(const BitSelector &other) = delete;
 
   virtual ~BitSelector();
@@ -51,6 +53,8 @@ private:
   using RT::disableCache;
 };
 using IntBitSelector = BitSelector<IntExpression, IntExpression>;
+using LogicBitSelector =
+    BitSelector<LogicExpression, LogicExpression>;
 
 } // namespace expression
 

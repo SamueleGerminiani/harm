@@ -11,29 +11,33 @@
 #include "Float.hh"
 #include "Int.hh"
 #include "Kmeans.hh" // IWYU pragma: keep
+#include "Logic.hh"
 #include "expUtils/ExpType.hh"
-#include "expUtils/expUtils.hh"
 #include "formula/atom/Atom.hh"
 #include "formula/atom/Constant.hh"
 #include "formula/atom/NumericExpression.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/expression/SetMembership.hh" // IWYU pragma: keep
 #include "message.hh"
 
 namespace harm {
 using namespace expression;
 
 template <typename ET>
-using GetGreaterEqType =
-    std::conditional_t<std::is_same_v<ET, FloatExpression>,
-                       FloatGreaterEq, IntGreaterEq>;
+using GetGreaterEqType = std::conditional_t<
+    std::is_same_v<ET, FloatExpression>, FloatGreaterEq,
+    std::conditional_t<std::is_same_v<ET, IntExpression>,
+                       IntGreaterEq, LogicGreaterEq>>;
 template <typename ET>
-using GetLessEqType =
-    std::conditional_t<std::is_same_v<ET, FloatExpression>,
-                       FloatLessEq, IntLessEq>;
+using GetLessEqType = std::conditional_t<
+    std::is_same_v<ET, FloatExpression>, FloatLessEq,
+    std::conditional_t<std::is_same_v<ET, IntExpression>, IntLessEq,
+                       LogicLessEq>>;
 template <typename ET>
-using GetEqType =
-    std::conditional_t<std::is_same_v<ET, FloatExpression>, FloatEq,
-                       IntEq>;
+using GetEqType = std::conditional_t<
+    std::is_same_v<ET, FloatExpression>, FloatEq,
+    std::conditional_t<std::is_same_v<ET, IntExpression>, IntEq,
+                       LogicEq>>;
 
 template <typename C>
 std::vector<PropositionPtr>
@@ -74,6 +78,57 @@ makeRange(const std::vector<std::pair<GenericPtr<C>, GenericPtr<C>>>
   return ret;
 }
 
+template <typename ET>
+using GetSetMembershipType = std::conditional_t<
+    std::is_same_v<ET, FloatExpression>, FloatSetMembership,
+    std::conditional_t<std::is_same_v<ET, IntExpression>,
+                       IntSetMembership, LogicSetMembership>>;
+template <typename C>
+std::vector<PropositionPtr>
+makeInside(const std::vector<std::pair<GenericPtr<C>, GenericPtr<C>>>
+               &constants,
+           std::pair<ExpType, size_t> type, const GenericPtr<C> &n,
+           const std::unordered_set<harm::ClsOp> &operators) {
+
+  std::vector<PropositionPtr> ret;
+  for (auto &[left, right] : constants) {
+    if (left->evaluate(0) == right->evaluate(0)) {
+      //set
+      if (operators.count(ClsOp::E)) {
+        ret.push_back(
+            makeGenericExpression<GetEqType<C>>(copy(n), copy(left)));
+      }
+    } else {
+      //range
+      if (operators.count(ClsOp::Range)) {
+        ret.push_back(generatePtr<GetSetMembershipType<C>>(
+            copy(n), std::vector<GenericPtr<C>>{},
+            std::vector<std::pair<GenericPtr<C>, GenericPtr<C>>>(
+                {std::make_pair(copy(left), copy(right))})));
+      }
+      if (operators.count(ClsOp::GE)) {
+        ret.push_back(generatePtr<GetSetMembershipType<C>>(
+            copy(n), std::vector<GenericPtr<C>>{},
+            std::vector<std::pair<GenericPtr<C>, GenericPtr<C>>>(
+                {std::make_pair(
+                    copy(right),
+                    makeMaxConstant<C>(n->getType(),
+                                       n->getMaxTime()))})));
+      }
+      if (operators.count(ClsOp::LE)) {
+        ret.push_back(generatePtr<GetSetMembershipType<C>>(
+            copy(n), std::vector<GenericPtr<C>>{},
+            std::vector<std::pair<GenericPtr<C>, GenericPtr<C>>>(
+                {std::make_pair(
+                    makeMinConstant<C>(n->getType(), n->getMaxTime()),
+                    copy(left))})));
+      }
+    }
+  }
+
+  return ret;
+}
+
 template <typename T>
 std::vector<std::pair<GenericPtr<GetNumericExpType<T>>,
                       GenericPtr<GetNumericExpType<T>>>>
@@ -97,6 +152,17 @@ makeConstants(const std::vector<std::pair<T, T>> &clusters,
       IntExpressionPtr rc = generatePtr<IntConstant>(
           (UInt)c.second, type.first, type.second, max_time);
       ret.emplace_back(lc, rc);
+    } else if constexpr (std::is_same<T, SLogic>::value) {
+      LogicExpressionPtr lc = generatePtr<LogicConstant>(
+          Logic(type.second, isSigned(type.first), (ULogic)c.first, 0,
+                0),
+          type.first, type.second, max_time);
+
+      LogicExpressionPtr rc = generatePtr<LogicConstant>(
+          Logic(type.second, isSigned(type.first), (ULogic)c.second,
+                0, 0),
+          type.first, type.second, max_time);
+      ret.emplace_back(lc, rc);
     } else {
       messageError("Unsupported type");
     }
@@ -116,6 +182,14 @@ std::vector<Signed> gatherElements(const std::vector<size_t> &ivs,
         elements.push_back(val);
       }
 
+    } else if constexpr (std::is_same_v<Original, ULogic> ||
+                         std::is_same_v<Original, SLogic>) {
+      Signed val = (Signed)cn->evaluate<Original>(iv);
+      if (!cn->containsXZ(iv) &&
+          !cn->_clsConfig._excluded.count(
+              boost::multiprecision::to_string(val))) {
+        elements.push_back(val);
+      }
     } else {
       if (!cn->_clsConfig._excluded.count(std::to_string(iv))) {
         Signed val = (Signed)cn->evaluate<Signed>(iv);
@@ -123,7 +197,6 @@ std::vector<Signed> gatherElements(const std::vector<size_t> &ivs,
       }
     }
   }
-
   //debug
   //std::cout << num2String(cn) << "\n";
   //std::map<Signed, size_t> elementCount;
@@ -145,8 +218,9 @@ runClustering(const std::vector<size_t> &ivs,
   std::vector<PropositionPtr> ret;
 
   //cluster only signed types
-  using SignedType =
-      std::conditional_t<std::is_same_v<T, UInt>, SInt, T>;
+  using SignedType = std::conditional_t<
+      std::is_same_v<T, UInt>, SInt,
+      std::conditional_t<std::is_same_v<T, ULogic>, SLogic, T>>;
 
   //gather signed elements
   std::vector<SignedType> elements =
@@ -187,6 +261,28 @@ runClustering(const std::vector<size_t> &ivs,
       tmpProps = makeRange<GetNumericExpType<SignedType>>(
           constants, type, cn->get<GetNumericExpType<SignedType>>(),
           cn->_clsConfig._clsOps);
+
+    } else if (isContiguous(ct)) {
+      messageErrorIf(
+          type.first == ExpType::Float,
+          "Float type is not supported in sequenced clustering");
+      if (inDTAlgo && ct == ClsType::Contiguous_UseAllIVsInDT) {
+        //dont cluster, use all IVs
+        clusters.emplace_back(
+            *std::min_element(elements.begin(), elements.end()),
+            *std::max_element(elements.begin(), elements.end()));
+      } else {
+        clusters = contiguousClustering<SignedType>(
+            elements, maxClusters,
+            clsOps.size() == 1 && clsOps.count(ClsOp::E));
+      }
+
+      //make inside propositions
+      constants =
+          makeConstants<SignedType>(clusters, type, cn->getMaxTime());
+      tmpProps = makeInside<GetNumericExpType<SignedType>>(
+          constants, type, cn->get<GetNumericExpType<SignedType>>(),
+          cn->_clsConfig._clsOps);
     } else {
       messageError("Unsupported clustering type");
     }
@@ -213,6 +309,8 @@ runClustering(const std::vector<size_t> &ivs,
 // clang-format off
 runClustering(UInt)
 runClustering(SInt)
+runClustering(ULogic)
+runClustering(SLogic)
 runClustering(Float)
 // clang-format on
 #define gatherElements(type)                                         \
@@ -222,6 +320,7 @@ runClustering(Float)
 
     // clang-format off
 gatherElements(SInt)
+gatherElements(SLogic)
 gatherElements(Float)
 // clang-format on
 

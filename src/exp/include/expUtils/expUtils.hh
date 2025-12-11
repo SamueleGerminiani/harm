@@ -59,6 +59,8 @@ dec_expToString(prop, PropositionPtr)
 std::string temp2String(const TemporalExpressionPtr &exp, const Language lang, const PrintMode mode);
 dec_expToString(float, FloatExpressionPtr)
 dec_expToString(int, IntExpressionPtr)
+dec_expToString(log, LogicExpressionPtr)
+dec_expToString(str, StringExpressionPtr)
 dec_expToString(num, NumericExpressionPtr)
 
 
@@ -66,17 +68,23 @@ dec_expOutOp(prop, PropositionPtr)
 std::string temp2ColoredString(const TemporalExpressionPtr &exp,const Language lang, const PrintMode mode);
 dec_expOutOp(float, FloatExpressionPtr)
 dec_expOutOp(int, IntExpressionPtr)
+dec_expOutOp(log, LogicExpressionPtr)
+dec_expOutOp(str, StringExpressionPtr)
 dec_expOutOp(num, NumericExpressionPtr)
 
 dec_expCopyOp(Proposition, PropositionPtr)
 dec_expCopyOp(Float, FloatExpressionPtr)
 dec_expCopyOp(Int, IntExpressionPtr)
+dec_expCopyOp(Logic, LogicExpressionPtr)
+dec_expCopyOp(String, StringExpressionPtr)
 dec_expCopyOp(num, NumericExpressionPtr)
 
 dec_expGetVars(Proposition, PropositionPtr)
 dec_expGetVars(TemporalExpression, TemporalExpressionPtr)
 dec_expGetVars(Float, FloatExpressionPtr)
 dec_expGetVars(Int, IntExpressionPtr)
+dec_expGetVars(Logic, LogicExpressionPtr)
+dec_expGetVars(String, StringExpressionPtr)
     // clang-format on
 
     template <typename T>
@@ -87,6 +95,10 @@ dec_expGetVars(Int, IntExpressionPtr)
     return float2String(exp);
   } else if constexpr (std::is_same_v<T, IntExpression>) {
     return int2String(exp);
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    return log2String(exp);
+  } else if constexpr (std::is_same_v<T, StringExpression>) {
+    return str2String(exp);
   } else {
     messageError("Unknown Expression in exp2String");
   }
@@ -101,6 +113,10 @@ std::string exp2ColoredString(const GenericPtr<T> &exp) {
     return float2ColoredString(exp);
   } else if constexpr (std::is_same_v<T, IntExpression>) {
     return int2ColoredString(exp);
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    return log2ColoredString(exp);
+  } else if constexpr (std::is_same_v<T, StringExpression>) {
+    return str2ColoredString(exp);
   } else {
     messageError("Unknown Expression in exp2ColoredString");
   }
@@ -111,7 +127,7 @@ bool isConstantTrue(const PropositionPtr &p);
 
 template <typename T> bool isUnary(const GenericPtr<T> &exp) {
   return isConstant(exp) || isVariable(exp) || isTypeCast(exp) ||
-         isNot(exp);
+         isFunction(exp) || isNot(exp);
 }
 //returns true if the expression does not contain any temporal operators other than next/delay and not
 bool isSimple(const TemporalExpressionPtr &exp);

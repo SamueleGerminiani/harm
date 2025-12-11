@@ -2,11 +2,116 @@
 
 #include "Atom.hh"
 #include "Int.hh"
+#include "Logic.hh"
+#include "String.hh"
 
 #include <climits>
 #include <string>
 
 namespace expression {
+
+/// @brief This class represents a Logic variable.
+class LogicVariable : public Atom<Logic> {
+public:
+  /// @brief Constructor for Logic.
+  /// @param v A pointer to the variable's values.
+  /// @param size The size of the int value.
+  /// @param name the name of the variable.
+  /// @param max_time the largest simulation time that can be provided to
+  /// the method evaluate.
+  LogicVariable(ULogic *v[3], const std::string &name, ExpType type,
+                size_t size, size_t max_time);
+
+  LogicVariable(const LogicVariable &other);
+
+  LogicVariable &operator=(const LogicVariable &other) = delete;
+
+  ~LogicVariable() override = default;
+
+  /// @brief Sets the value of the variable in a given simulation time.
+  /// @param time The simulation time.
+  /// @param value The value set for the variable.
+  void assign(size_t time, Logic value);
+
+  /// @brief Accepts a visitor to visit the current object.
+  /// @param vis The visitor.
+  void acceptVisitor(ExpVisitor &vis) override;
+
+  std::string getName() { return _name; }
+  // declare friend class to allow it access private variables
+  friend class TraceChangerVisitor;
+
+private:
+  /// @brief Initialize the evaluation function, this method must me called in the constructor.
+  void initEvaluate() override;
+
+  // A pointer to variable's values
+  // This pointer must not be deallocated as values are stored in a Trace!
+  // There are three lanes int, x, z
+  ULogic *_v[3];
+
+  /// name of the variable
+  std::string _name;
+
+  /// mask to get a Logic value from a ULogic value.
+  ULogic _mask;
+
+  /// number of values stored in ULogic.
+  size_t _valuesInside;
+
+  /// number of bits in ULogic
+  const size_t _val4Logic = sizeOfLogic() * CHAR_BIT;
+
+  using Atom<Logic>::directEvaluate;
+  using Atom<Logic>::disableCache;
+};
+
+/// @brief This class represents a String variable.
+class StringVariable : public Atom<String> {
+public:
+  /// @brief Constructor for String.
+  /// @param v A pointer to the variable's values.
+  /// @param size The size of the int value.
+  /// @param name the name of the variable.
+  /// @param max_time the largest simulation time that can be provided to
+  /// the method evaluate.
+  StringVariable(String *v, const std::string &name, ExpType type,
+                 size_t size, size_t max_time);
+
+  StringVariable(const StringVariable &other);
+
+  StringVariable &operator=(const StringVariable &other) = delete;
+
+  ~StringVariable() override = default;
+
+  /// @brief Initialize the evaluation function, this method must me called in the constructor.
+  void initEvaluate() override;
+
+  /// @brief Sets the value of the variable in a given simulation time.
+  /// @param time The simulation time.
+  /// @param value The value set for the variable.
+  void assign(size_t time, String value);
+
+  /// @brief Accepts a visitor to visit the current object.
+  /// @param vis The visitor.
+  void acceptVisitor(ExpVisitor &vis) override;
+
+  std::string getName() { return _name; }
+
+  // declare friend class to allow it access private variables
+  friend class TraceChangerVisitor;
+
+private:
+  // A pointer to variable's values
+  // This pointer must not be deallocated as values are stored in a Trace!
+  String *_v;
+
+  /// @brief name of the variable
+  std::string _name;
+
+  using Atom<String>::directEvaluate;
+  using Atom<String>::disableCache;
+};
 
 /// @brief This class represents a Int variable.
 class IntVariable : public Atom<UInt> {
@@ -157,6 +262,8 @@ private:
 };
 
 //smart pointer alias
+using LogicVariablePtr = std::shared_ptr<LogicVariable>;
+using StringVariablePtr = std::shared_ptr<StringVariable>;
 using IntVariablePtr = std::shared_ptr<IntVariable>;
 using FloatVariablePtr = std::shared_ptr<FloatVariable>;
 using BooleanVariablePtr = std::shared_ptr<BooleanVariable>;
@@ -168,6 +275,10 @@ template <typename T> bool isVariable(const GenericPtr<T> &exp) {
     return std::dynamic_pointer_cast<FloatVariable>(exp) != nullptr;
   } else if constexpr (std::is_same_v<T, IntExpression>) {
     return std::dynamic_pointer_cast<IntVariable>(exp) != nullptr;
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    return std::dynamic_pointer_cast<LogicVariable>(exp) != nullptr;
+  } else if constexpr (std::is_same_v<T, StringExpression>) {
+    return std::dynamic_pointer_cast<StringVariable>(exp) != nullptr;
   } else {
     return false;
   }

@@ -13,6 +13,9 @@ void BooleanLayerDTPlaceholder::acceptVisitor(ExpVisitor &vis) {
 void BooleanLayerInst::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
+void BooleanLayerFunction::acceptVisitor(ExpVisitor &vis) {
+  vis.visit(*this);
+}
 
 void BooleanLayerNot::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);

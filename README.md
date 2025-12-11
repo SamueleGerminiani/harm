@@ -139,7 +139,7 @@ int var1, bool var2, float var3, logic [3:0] var4
 
 Harm supports the following C and SV (SystemVerilog) variable types: bool, char, short, int, long int, unsigned char, unsigned short, unsigned int, unsigned long int, size\_t, int64\_t, int32\_t, uint64\_t, uint32\_t, float, double, shortint, longint, byte, bit, shortint unsigned, int unsigned, longint unsigned, byte unsigned, bit signed, reg, logic, integer, wire, time, reg signed, logic signed, integer unsigned, wire signed, time signed, shortreal, real, realtime.
 
-When using csv traces, HARM will interpret the input values as: 
+When reading traces, HARM will interpret the input values as: 
 * base 10 integers for C integer types and SV 2-value integers; 
 * base 2 binaries for SV 4-value bit-vectors (such as wire, reg, logic and int);
 For both C and SVA types, if the type is signed, then the input value will be treated as a 2-complement integer.
@@ -147,7 +147,7 @@ For base 2 values, it is not mandatory to add leading zeros (on the left side) i
 However, if the value is to be treaded as a signed negative, harm expects to receive the entire binary representation.
 For example, for variable declared as "logic signed [7:0] v1", value "100" will be treaded as "00000100" (8-bit), equal to 4 in base 10.
 Instead, to specify a negative value, such as -3, harm wants to see the entire binary representation, that is, "11111101" (8-bit).
-Harm will print all base 2 constants as integers.
+Harm will print all base 2 values without the leading zeros.
 
 
 	
@@ -183,6 +183,9 @@ For csv:
 		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" />
 		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" /> 
 		
+    <edit rewrite="G({@(..##..,f) ##@(N,n1) @(P,s)}|->{##@(N,n2) @(P,t)})" to="G({@(f)}|->{##@(n1+n2) @(t)})" constraint='(s=="true" || s=="1") && n1!=2' />
+    <edit remove="G({@(P,a)}|->{@(P,b)})" constraint="a==b" />
+
 		<filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
 		<sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
 		<sort name="frequency" exp="atct/traceLength"/>
@@ -194,7 +197,7 @@ For csv:
 
 Propositions and metrics can be written using all boolean, relational, arithmetic, bitwise and string operators of the C/C++ language.
 All integer variables (defined using C/C++ types) are represented internally as C integers (signed or unsigned, max 64 bits).
-All logic variables (defined with Verilog & SV types such as reg, wire or logic) are automatically converted to integers (x,z are converted to 0s, max 64 bit)
+All logic variables (defined with Verilog & SV types such as reg, wire or logic) are represented internally as 4-value (0,1,x,z) bit vectors (signed or unsigned, max 511 bits). All operators available for integer types are also available for logic types.
 All float types are represented internally as C doubles.
 
 For the full grammar of propositions and metrics, check "src/antl4/propositionParser/grammar/proposition.g4".
@@ -211,6 +214,7 @@ The user can specify a set of numerics to automatically generate propositions (u
 * The "clustering" attribute allows to customize the generation of propositions. It contains a comma-separated list of clustering options (all the options can be defined in any order).
   The available options are:
  	* K : use the Kmeans algorithm
+ 	* C : use an algorithm to generate all the contiguous subsequences of integer/logic data
  	* \<number\>E : exclude \<number\> from the values used to perform the clustering (this option can be specified multiple times with different values). WARNING: \<number\> must be a base-10 integer or float (even if the numeric expression is of logic type).
  	* \<N\>Max : keep only the top N (using support) generated propositions
  	* \<Float\>WCSS : when using Kmeans, stop the elbow method when the reduction of variance is below the specified percentage (a number between 0 and 1)
@@ -218,6 +222,7 @@ The user can specify a set of numerics to automatically generate propositions (u
  	* \>= : generate propositions of the form \<numeric-exp\> \>= c
  	* \<= : generate propositions of the form \<numeric-exp\> \<= c
  	* \>\< : generate propositions of the form lr \<= \<numeric-exp\> \<= cr	 	 
+  	* WARNING: to improve readability when using the C option, propositions will be constructed using the SetMembership operator instead of \>= and \<=.
  
 
 See the paper below to know more about how the procedure is carried out in harm.
@@ -225,28 +230,40 @@ See the paper below to know more about how the procedure is carried out in harm.
 S. Germiniani and G. Pravadelli, "Exploiting clustering and decision-tree algorithms to mine LTL assertions containing non-boolean expressions," 2022 IFIP/IEEE 30th International Conference on Very Large Scale Integration (VLSI-SoC), Patras, Greece, 2022, pp. 1-6, doi: 10.1109/VLSI-SoC54400.2022.9939640.
 ```
 
-#### Locations
+#### Domains
 
-HARM allows the definition of "locations" to restrict the propositions to be inserted in each placeholder.
-Propositions (and numerics) are assigned to a location using the 'loc' attribute of 'prop' and 'numeric'.
-Each proposition (numeric) can be assigned to multiple locations.
+HARM allows the definition of "domains" to restrict the propositions to be inserted in each placeholder.
+Propositions (and numerics) are assigned to a domain using the 'loc' attribute of 'prop' and 'numeric'.
+Each proposition (numeric) can be assigned to multiple domains.
 
-There are 4 "global" locations a, c, ac, dt.
+There are 4 "global" domains a, c, ac, dt.
 * "a" propositions will be used only to fill all the antecedent's placeholders (not the decision tree operator)
 * "c" propositions will be used only to fill all consequent placeholders 
 * "ac" propositions will be used only in all placeholders appearing in both the antecedent and the consequent.
 * "dt" propositions will be used only to fill decision tree operators 
-Do not use the 'loc' attribute if you want the proposition to be used in all global locations.
+Do not use the 'loc' attribute if you want the proposition to be used in all global domains.
 
+Furthermore, HARM lets you define "local" enumerated domains by adding the id of the domain to the 'loc' attribute.
+The id must be an unsigned integer.
+
+By default, all numerics are used to generate propositions using the clustering algorithm on the entire trace.
+If a numeric is used by a decision-tree operator (see Templates), the user has the option of letting the decision-tree algorithm decide which parts of the
+trace to use in order to generate the propositions from the numeric (see the cited paper for more info on this).
+To enable this option, the user shall add squared brackets to the defined domain ID.
+For example, \[1\] specifies that the numeric will be used in all decision-tree operators containing domain id '1'.
 Furthermore, \[dt\] specifies that the numeric will be used in all decision-tree operators.
-On the contrary, specifying 'dt' (without the squared brackets) forces HARM to directly generate the proposition using the entire trace instead of delegating the process to the decision-tree algorithm (see the paper above to get more info on this).
+On the contrary, specifying ids '1' and 'dt' (without the squared brackets) forces HARM to directly generate the proposition using the entire trace instead of delegating the process to the decision-tree algorithm (see the paper above to get more info on this).
+
+The defined IDs can be reused in the template to narrow the domain of each placeholder.
+
+
 
 
 
 #### Template
 
 
-Templates can be written using most LTL/SVA operators. HARM supports templates in PSL, spotLTL, and mixed cases. Templates must follow the form "G(antecedent -> consequent)"; all variables (inside the template) of the form P\<N\> are considered placeholders. For instance, template "G(P0 && P1 -> P2 W P3)" has 4 placeholders.
+Templates can be written using most LTL/SVA operators. HARM supports templates in PSL, spotLTL, and mixed cases. Templates must follow the form "G(antecedent -> consequent)"; all variables (inside the template) of the form P\<N\> are considered placeholders. For instance, template "G(P0 && P1 -> P2 W P3)" has 4 placeholders. Placeholders may specify a propositional domain of the form P\<N\>(id1,id2, ..., idk) to restrict the propositions (and numerics) to be used in each placeholder (see the Domains section).
 For the full grammar of templates, check "src/antlr4/temporalParser/grammarTemporal/temporal.g4".
  
  There are three special placeholders: ..&&.., ..##\<N>.. and ..#\<N>&..; when employed, the miner will try to replace them with a corresponding expression using a decision tree (DT) algorithm.
@@ -256,6 +273,7 @@ For the full grammar of templates, check "src/antlr4/temporalParser/grammarTempo
  * ..#1&.. will be replaced with an expressions of type (..&&..)_1 ##1 (..&&..)_2 ##1 .. ##1 (..&&..)_n
 
  These placeholders can only be used once in the antecedent.
+ DT operators allow the use of domains, such as ..&&..(id1,id2, ..., idk).
  
  
  A template using a Decision Tree Operator (DTO) is associated with a configuration (defined in the 'dtLimits' attribute of 'template') involving several adjustable parameters:
@@ -273,6 +291,25 @@ For the full grammar of templates, check "src/antlr4/temporalParser/grammarTempo
 * DRN: (Dont Reuse Numerics) prevent the DT algorithm from reusing decision-tree numerics multiple times on the same decision path
 * DR: DRP + DRN
   
+#### SystemVerilog features
+
+##### Set membership
+Harm allows the use of the SVA set membership operator:
+```
+<exp> inside { <numeric_range>, <numeric>, ... }
+```
+where <numeric_range> is of the form \[\<numeric\>:\<numeric\>\] and where \<numeric\> is an integer/logic expression.
+Ranges also support the \$ token to specify max or min ranges (see the SV manual).
+The expression evaluates to true if \<exp\> is contained in the set defined with \{...\}
+
+
+##### Functions
+
+Harm allows the use of SVA functions \$stable(\<exp\>), \$rose(\<exp\>), \$fell(\<exp\>) and \$past(\<exp\>,\<uint\>) for both the propositional (in propositions and numerics) and the temporal layer (in templates).
+In the temporal layer, the only acceptable \<exp\> is a single placeholder P\<N\> or any boolean expression (proposition).
+For the propositional layer, \<exp\> can be any boolean or logic expression. Additionally, the \$past function also supports an \<exp\> of float type.
+
+
 #### Metric
 A metric is a numeric formula measuring the impact of an assertion's feature in the assertion ranking. 
 The more prominent the feature, the higher its impact on the final ranking of the assertion. The elements of the contingency table are examples of features of an assertion. Metrics can be used either to filter or sort the assertions.
@@ -298,6 +335,30 @@ Currently available assertion features (more will be added):
 * nfCovered : number of faults covered by the assertion
 * nFaults : number of faulty traces given as input
 
+#### Edits
+The user is allowed to define editing rules using the 'edit' tag.
+The 'remove' attribute allows the definition of a remove rule; all assertions matching the remove rule are directly discarded.
+The 'rewrite' attribute allows the definition of a rewrite rule; all assertions matching the rewrite rule are rewritten according to the rule defined in the 'to' attribute.
+
+Each rule is allowed to match specific types of expressions such as propositions, numbers and more complex expressions, such as those produced by the DT operator ..##..; this is done by using the @(\<type\>) operator where \<type\> can be equal to P (for propositions), N (for unsigned integers) and..##.. for expressions of the form p1 ##1 p2 ##1 .. ##1 pn.
+All propositions must be matched using the @ operator.
+The @ operator includes an additional overload @(\<type\>,\<var\>) that allows to store the matched string in variable \<var\>.
+These variables can be used in the 'to' rule to rewrite the assertions through the same operator @(\<var\>). 
+The rule does not consider spaces to match assertions.
+
+Ex. \<edit rewrite="G({@(..##..,f) ##@(N,n1) @(P,s)}|-\>{##@(N,n2) @(P,t)})" to="G({@(f)}|-\>{##@(n1+n2) @(t)})" constraint='(s=="true" || s=="1") && n1!=2' /\>
+
+In the example above, the proposition stored in variable 't' is used to rewrite the assertion in the 'to' rule.
+Numeric variables (of type N) can be used to construct arithmetic expressions (using + - * /) in the 'to' rules, for example, @(n1+n2) will generate a string equivalent to the sum of the numeric representations of n1 and n2 matched in the 'rewrite' rule.
+
+Both the 'remove' and the 'rewrite' rules allow the definition of constraints (using the constraint tag) that must be satisfied in order to remove or rewrite an assertion.
+
+A constraint is a boolean expression (same syntax and semantics of propositions).
+In the example above, the rule can match only if var 's' is equal to 'true' or equal to '1', and if n1 is not equal to '2'.
+Note that Harm allows the use of string expressions (see the grammar) such as <var> == "<stringConstant>" (equality), <string> + <string> (concatenation) or <string>.substr(index,length) (same syntax and semantics of C/C++ substr)
+Additionally, note that, in the constraint, all variables stored with type "N" are considered as unsigned integers (to allow arithmetic operations), and variables stored with all other types (P and ..##..) a considered of String type. 
+
+
 #  How to check an assertion
 The template expression has an additional parameter "check", if it is set to "1" then the miner analyses the corresponding assertion on the given trace, if the assertion does not hold on the input traces, it reports the cause of failure. Example:
 ```
@@ -315,10 +376,12 @@ Note that the template must be fully instantiated (no placeholders).
 * \-\-wsilent : disable all warnings
 
 ### Trace
+* \-\-reset \<String\> : propositional expression pr to define a reset in a trace; harm will not mine assertions whose temporal behaviour starts before the activation of the reset (pr evaluates to true) and ends after the reset has become inactive (pr evaluates to false).
 * \-\-vcd-ss \<string\> : specify a scope of signals in the .vcd traces. The format of the scope path is root\_scope::sub\_scope::sub\_sub\_\_scope::...::signal
 * \-\-vcd-r=\<uint\> : recursively add signals for sub-scopes, default recursion depth is \<max depth of vcd\>, WARNING: signals in subscopes (with respect to the root scope) will require a scope prefix (same format of scope path) in the configuration file (and in the clock siglan specified with --clk option, if applicable). If --vcd-ss is used, the root scope becomes the one specified with that option.
 * \-\-vcd-unroll=\<uint\> : create a context for each scope when generating the config file (mutually exclusive with vcd-r, default recursion depth is \<max depth\>)
 * \-\-split-logic : generate a config file where all bivectors are split into single bit variables (must be used with --generate-config)
+* \-\-force-int : force all logic variables types to be treated as integers (x and z will be treated as 0)
 
 ### Assertions \& Ranking
 * \-\-max-ass \<uint\> : the maximum number of assertions to keep after the ranking
@@ -332,11 +395,13 @@ Note that the template must be fully instantiated (no placeholders).
 * \-\-dont-normalize : print the assertions with their ranking metrics not normalized
 * \-\-sample-by-con : if the number of mined assertions exceeds the value provided by --max-ass, assertions are selected favouring consequent diversity
 * \-\-interactive : enable interactive assertion ranking
+* \-\-print-logic-as-int : logic constants will be printed in integer format instead of binary (x and z bits will be treated as 0) 
 
 ### Dumping
 * \-\-dump-to \<DIRECTORY\> or \<FILE\> : dump assertions to file. If the path points to a directory, each context will be dumped to a separate file in \<DIRECTORY\>; otherwise, all assertions will be dumped to \<FILE\>
 * \-\-dump-stat : dump mining statistics to file
 * \-\-dump-vac-ass \<FILE\> : dump vacuous assertions to file
+* \-\-ddd \<DIRECTORY\> : dump debug data useful to understand how harm generates the output
 * \-\-check-dump-eval \<DIRECTORY\> : for each 'check' assertion, dump the evaluation on the input traces of antecedent, consequent, shift (each assertion is dumped to a different file)
 
 ### Fault analysis
@@ -352,6 +417,9 @@ Harm produces three main types of textual outputs:
 * INFO: the message reports information on the execution of harm (black, the execution continues)
 * WARNING: the message reports a potential error during the execution of harm (yellow, the execution continues)
 * ERROR: the message reports an error during the execution of harm (red, the execution halts)
+Warnings and Errors are dumped (appended) in JSON format to the 'warning.log' and 'error.log' files, respectively.
+WARNING: 'warning.log' and 'error.log' should not be manually edited.
+
 
 # Docker
 

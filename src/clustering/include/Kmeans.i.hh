@@ -70,7 +70,9 @@ kmeansElbow(const std::vector<T> &elements, size_t max,
 
   std::vector<std::tuple<T, T, size_t>> ranges;
   //set the initial variance to the maximum possible value
-  T prevV = std::numeric_limits<T>::max() / pumpT;
+  T prevV = (std::is_same<T, expression::SLogic>::value)
+                ? boost_swap_impl::numeric_limits<T>::max() / pumpT
+                : std::numeric_limits<T>::max() / pumpT;
 
   for (size_t clsSize = 1;
        clsSize <= max && clsSize <= elements.size(); clsSize++) {
@@ -97,7 +99,11 @@ kmeansElbow(const std::vector<T> &elements, size_t max,
         //need to pump the values to avoid truncating the decimals when T is integer
         T dist = (mean - v);
         //FIXME: this is not the traditional way to compute the variance but it should yield the same results if we take the absolute value
-        currV += std::abs(dist);
+        if constexpr (std::is_same<T, expression::SLogic>::value) {
+          currV += boost::multiprecision::abs(dist);
+        } else {
+          currV += std::abs(dist);
+        }
       }
       totV += currV;
     }

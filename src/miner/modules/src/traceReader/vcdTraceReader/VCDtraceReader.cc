@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "Logic.hh"
 #include "Trace.hh"
 #include "VCDFile.hpp"
 #include "VCDFileParser.hpp"
@@ -36,10 +37,6 @@ VCDtraceReader::VCDtraceReader(const std::string &file,
                                const std::string &clk)
     : TraceReader(std::vector<std::string>({file})) {
   _clk = clk;
-}
-
-bool isInt(VCDVarType vcdType) {
-  return vcdType == VCDVarType::VCD_VAR_INTEGER;
 }
 
 static bool isScopeUniqueChild(VCDScope *scope) {
@@ -214,9 +211,9 @@ char vcdBitToChar(VCDBit bit) {
   case VCDBit::VCD_1:
     return '1';
   case VCDBit::VCD_X:
-    return '0';
+    return clc::forceInt ? '0' : 'x';
   case VCDBit::VCD_Z:
-    return '0';
+    return clc::forceInt ? '0' : 'z';
   }
   messageError("Unknown VCD bit value");
   return '0';
@@ -226,11 +223,18 @@ void handleSplittedSignal(
     const TracePtr &trace, VCDSignalValues *clkV,
     const std::pair<std::string, std::vector<VCDSignalValues *>>
         &n_vv,
-    std::vector<VCDSignal *> &signal) {
+    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec) {
 
   GenericPtr<void> l = nullptr;
 
-  l = trace->getIntVariable(n_vv.first);
+  if (isInt(var_dec.getType())) {
+    l = trace->getIntVariable(n_vv.first);
+  } else if (isLogic(var_dec.getType())) {
+    l = trace->getLogicVariable(n_vv.first);
+  } else {
+    messageError("Unsupported variable type for signal '" +
+                 n_vv.first + "' in 'handleSplittedSignal'");
+  }
 
   auto sigsV = n_vv.second;
   for (auto sigV : sigsV) {
@@ -270,12 +274,25 @@ void handleSplittedSignal(
         }
       }
 
-      // truncating
-      if (val.size() > 64) {
-        val.erase(0, val.size() - 64);
+      if (isInt(var_dec.getType())) {
+        // truncating
+        if (val.size() > 64) {
+          val.erase(0, val.size() - 64);
+        }
+        std::static_pointer_cast<IntVariable>(l)->assign(
+            time, safeStoull(val, 2));
+      } else if (isLogic(var_dec.getType())) {
+        // truncating
+        if (val.size() > 511) {
+          val.erase(0, val.size() - 511);
+        }
+        std::static_pointer_cast<LogicVariable>(l)->assign(
+            time, Logic(val));
+      } else {
+        messageError("Unsupported variable type in "
+                     "'handleSplittedSignal' for signal '" +
+                     n_vv.first + "'");
       }
-      std::static_pointer_cast<IntVariable>(l)->assign(
-          time, safeStoull(val, 2));
       time++;
     }
   }
@@ -293,14 +310,15 @@ void handleWholeSignal(
   //pointer to the variable
   GenericPtr<void> l = nullptr;
 
-  auto isSigned = var_dec.getType() == ExpType::SInt;
-
-  size_t base = (signal[0]->size > 1) ? var_dec.getBase() : 2;
-
-  if (signal[0]->size > 1) {
-    l = trace->getIntVariable(n_vv.first);
-  } else {
+  if (isBool(var_dec.getType())) {
     l = trace->getBooleanVariable(n_vv.first);
+  } else if (isInt(var_dec.getType())) {
+    l = trace->getIntVariable(n_vv.first);
+  } else if (isLogic(var_dec.getType())) {
+    l = trace->getLogicVariable(n_vv.first);
+  } else {
+    messageError("Unsupported variable type for signal '" +
+                 n_vv.first + "'");
   }
 
   VCDSignalValues *sigV = n_vv.second[0];
@@ -332,17 +350,32 @@ void handleWholeSignal(
                        "Unexpected size of boolean signal");
       }
 
-      // truncating
-      if (val.size() > 64) {
-        val.erase(0, val.size() - 64);
-      }
-      if (signal[0]->size > 1) {
+      if (isInt(var_dec.getType())) {
+        // truncating
+        if (val.size() > 64) {
+          val.erase(0, val.size() - 64);
+        }
         std::static_pointer_cast<IntVariable>(l)->assign(
+            time, isSigned(var_dec.getType())
+                      ? safeStoll(val, var_dec.getInputBase())
+                      : safeStoull(val, var_dec.getInputBase()));
+      } else if (isLogic(var_dec.getType())) {
+        // truncating
+        if (val.size() > 511) {
+          val.erase(0, val.size() - 511);
+        }
+        std::static_pointer_cast<LogicVariable>(l)->assign(
             time,
-            isSigned ? safeStoll(val, base) : safeStoull(val, base));
-      } else {
+            Logic(val, std::static_pointer_cast<LogicVariable>(l)
+                           ->getType()
+                           .second));
+      } else if (isBool(var_dec.getType())) {
         std::static_pointer_cast<BooleanVariable>(l)->assign(
             time, val == "1");
+      } else {
+        messageError("Unsupported variable type in "
+                     "'handleWholeSignal' for signal '" +
+                     n_vv.first + "'");
       }
       time++;
     }
@@ -524,7 +557,7 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
         vfloats.insert(n_ss.first);
         vars.push_back(toVarDeclaration(n_ss.first, type, 64));
       } else {
-        if (isInt(s->type)) {
+        if (s->type == VCDVarType::VCD_VAR_INTEGER) {
           type = "integer";
         } else {
           type = "logic";
@@ -580,18 +613,17 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
       // float
       handleFloatSignal(trace, clkV, n_vv, signal);
     } else {
+      //get var declaration
+      VarDeclaration &var_dec = std::find_if(
+          vars.begin(), vars.end(), [&n_vv](const VarDeclaration &v) {
+            return v.getName() == n_vv.first;
+          })[0];
       // logic and bool
       if (n_vv.second.size() > 1) {
         //signal is splitted
-        handleSplittedSignal(trace, clkV, n_vv, signal);
+        handleSplittedSignal(trace, clkV, n_vv, signal, var_dec);
       } else {
         //signal is whole
-        //get var declaration
-        VarDeclaration &var_dec =
-            std::find_if(vars.begin(), vars.end(),
-                         [&n_vv](const VarDeclaration &v) {
-                           return v.getName() == n_vv.first;
-                         })[0];
         handleWholeSignal(trace, clkV, n_vv, signal, var_dec);
       }
     }

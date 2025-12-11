@@ -10,6 +10,8 @@
 #include "expUtils/ExpType.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Atom.hh"
+#include "formula/expression/TypeCast.hh"
+#include "message.hh"
 #include "propositionBaseListener.h"
 #include "propositionParser.h"
 
@@ -28,15 +30,22 @@ class PropositionParserHandler : public propositionBaseListener {
 
 public:
   //------NumericPack---------------------------
-  enum class NumericType { NumericInt, NumericFloat, NumericUnknown };
+  enum class NumericType {
+    NumericInt,
+    NumericLogic,
+    NumericFloat,
+    NumericUnknown
+  };
 
   /// \brief NumericPack is a wrapper for a generic numeric expression.
   struct NumericPack {
     NumericPack();
+    NumericPack(const expression::LogicExpressionPtr &logExp);
     NumericPack(const expression::IntExpressionPtr &intExp);
     NumericPack(const expression::FloatExpressionPtr &floatExp);
 
     expression::IntExpressionPtr _intExp;
+    expression::LogicExpressionPtr _logExp;
     expression::FloatExpressionPtr _floatExp;
 
     std::pair<expression::ExpType, size_t> getType();
@@ -59,15 +68,18 @@ public:
 
     // Push the given expression to the stack.
     void push(expression::IntExpressionPtr exp);
+    void push(expression::LogicExpressionPtr exp);
     void push(expression::FloatExpressionPtr exp);
 
     void pop();
 
     expression::FloatExpressionPtr topFloat();
     expression::IntExpressionPtr topInt();
+    expression::LogicExpressionPtr topLogic();
 
     bool isTopFloat();
     bool isTopInt();
+    bool isTopLogic();
 
     NumericPack top();
 
@@ -90,6 +102,8 @@ public:
 
   expression::PropositionPtr getProposition();
   expression::IntExpressionPtr getIntExpression();
+  expression::LogicExpressionPtr getLogicExpression();
+  expression::StringExpressionPtr getStringExpression();
   expression::FloatExpressionPtr getFloatExpression();
   void addErrorMessage(const std::string &msg);
 
@@ -99,15 +113,30 @@ private:
   void exitBoolean(propositionParser::BooleanContext *ctx) override;
   virtual void
   exitNumeric(propositionParser::NumericContext *ctx) override;
+  virtual void
+  exitString(propositionParser::StringContext *ctx) override;
 
   void exitBooleanAtom(
       propositionParser::BooleanAtomContext *ctx) override;
   virtual void
   exitIntAtom(propositionParser::IntAtomContext *ctx) override;
+  virtual void
+  exitLogicAtom(propositionParser::LogicAtomContext *ctx) override;
+  void exitLogic_constant(
+      propositionParser::Logic_constantContext *ctx) override;
+  virtual void
+  exitStringAtom(propositionParser::StringAtomContext *ctx) override;
   void exitInt_constant(
       propositionParser::Int_constantContext *ctx) override;
   virtual void
   exitFloatAtom(propositionParser::FloatAtomContext *ctx) override;
+  virtual void exitNonTemporalFunction(
+      propositionParser::NonTemporalFunctionContext *ctx) override;
+  virtual void
+  exitSm_range(propositionParser::Sm_rangeContext *ctx) override;
+
+  virtual void exitSm_constant(
+      propositionParser::Sm_constantContext *ctx) override;
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override;
 
   virtual void enterStartBoolean(
@@ -118,11 +147,16 @@ private:
 
   virtual void
   enterStartFloat(propositionParser::StartFloatContext *ctx) override;
+  virtual void enterStartString(
+      propositionParser::StartStringContext *ctx) override;
+  virtual void
+  enterStartLogic(propositionParser::StartLogicContext *ctx) override;
 
   void clear();
 
   std::stack<expression::PropositionPtr> _proposition;
   NumericStack _numericExpressions;
+  std::stack<expression::StringExpressionPtr> _string;
 
   //SetMembership stacks----------------------
   std::stack<std::pair<NumericPack, NumericPack>> _sm_ranges;

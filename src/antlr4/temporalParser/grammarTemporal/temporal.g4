@@ -57,15 +57,15 @@ sere : FIRST_MATCH LROUND sere RROUND
 	 | <assoc=right> sere LSQUARED PLUS RSQUARED
 	 | <assoc=right> booleanLayer LSQUARED ASS UINTEGER? (DOTS | COL)? (UINTEGER | DOLLAR)? RSQUARED
 	 | <assoc=right> booleanLayer LSQUARED IMPLO UINTEGER? (DOTS | COL)? (UINTEGER | DOLLAR)? RSQUARED
-     | dt_ncreps 
+     | dt_ncreps (LROUND placeholder_domain RROUND)?
 	 | sere BAND sere
 	 | sere (TAND|INTERSECT|AND) sere
-     | DT_AND
+     | DT_AND (LROUND placeholder_domain RROUND)?
 	 | sere (TOR|OR|BOR) sere
 	 | sere DELAY LSQUARED? UINTEGER? (DOTS | COL)? (UINTEGER | DOLLAR)? RSQUARED? sere
 	 | DELAY LSQUARED? UINTEGER? (DOTS | COL)? (UINTEGER | DOLLAR)? RSQUARED? sere
-     | dt_next 
-     | dt_next_and 
+     | dt_next (LROUND placeholder_domain RROUND)?
+     | dt_next_and (LROUND placeholder_domain RROUND)?
 	 | sere COL sere
 	 | sere SCOL sere
      | booleanLayer
@@ -73,7 +73,8 @@ sere : FIRST_MATCH LROUND sere RROUND
 
 booleanLayer: LROUND booleanLayer RROUND
             | boolean 
-            | NOT? PLACEHOLDER 
+            | NOT? PLACEHOLDER (LROUND placeholder_domain RROUND)?
+            | temporalFunction
             ;
 
 
@@ -85,12 +86,18 @@ tformula: LROUND tformula RROUND
     	| <assoc=right> tformula (UNTIL|RELEASE) tformula
      	| tformula (TAND|AND) tformula 
     	| tformula (TOR|OR|BOR) tformula 
-        | DT_AND
+        | DT_AND (LROUND placeholder_domain RROUND)?
         | booleanLayer
     	;
 
+temporalFunction: LROUND temporalFunction RROUND 
+    | FUNCTION LROUND tfunc_arg (',' tfunc_arg)* RROUND;
+
+tfunc_arg: PLACEHOLDER (LROUND placeholder_domain RROUND)? | UINTEGER;
+
 PLACEHOLDER: 'P' UINTEGER;
 
+placeholder_domain: UINTEGER (',' (UINTEGER))*;
 
 DT_AND
     : '..&&..'

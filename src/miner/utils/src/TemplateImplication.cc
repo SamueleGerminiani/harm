@@ -23,6 +23,7 @@
 #include "formula/atom/Constant.hh"
 #include "formula/atom/NumericExpression.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/function/Function.hh"
 #include "fort.h"
 #include "fort.hpp"
 #include "globals.hh"
@@ -54,6 +55,9 @@ TemplateImplication::TemplateImplication(
 
   ////rebuild the template
   build();
+
+  ///ddd: copy the original id
+  _original_id = original._original_id;
 
   ////copy the domains
   _phToIdsDomain = original._phToIdsDomain;
@@ -356,6 +360,14 @@ void TemplateImplication::build() {
           std::dynamic_pointer_cast<BooleanLayerInst>(current);
       _iToProp[i->getToken()] = i->getProposition();
       return true;
+    } else if (isBooleanLayerFunction(current)) {
+      BooleanLayerFunctionPtr f =
+          std::dynamic_pointer_cast<BooleanLayerFunction>(current);
+      _tokenToFun[f->getToken()] = f->getFunction();
+      _aphToPP[f->getFunction()->getPlaceholderToken()] =
+          f->getFunction()->getPlaceholderPointer();
+      _phToPropDomain[f->getFunction()->getPlaceholderToken()];
+      return true;
     }
     //visit the subexpressions
     return false;
@@ -384,6 +396,21 @@ void TemplateImplication::build() {
       BooleanLayerInstPtr i =
           std::dynamic_pointer_cast<BooleanLayerInst>(current);
       _iToProp[i->getToken()] = i->getProposition();
+      return true;
+    } else if (isBooleanLayerFunction(current)) {
+      BooleanLayerFunctionPtr f =
+          std::dynamic_pointer_cast<BooleanLayerFunction>(current);
+      _tokenToFun[f->getToken()] = f->getFunction();
+      if (_aphToPP.count(f->getFunction()->getPlaceholderToken())) {
+        // if a placeholder is found in both the antecedent and consequent than it is of type 'ac'
+        _aphToPP.erase(f->getFunction()->getPlaceholderToken());
+        _acphToPP[f->getFunction()->getPlaceholderToken()] =
+            f->getFunction()->getPlaceholderPointer();
+      } else {
+        _cphToPP[f->getFunction()->getPlaceholderToken()] =
+            f->getFunction()->getPlaceholderPointer();
+      }
+      _phToPropDomain[f->getFunction()->getPlaceholderToken()];
       return true;
     }
     //visit the subexpressions
@@ -424,6 +451,9 @@ void TemplateImplication::build() {
   //retrieve the depth of the formulas
   _antDepth = getTemporalDepth(fant);
   _conDepth = getTemporalDepth(fcon);
+
+  //for ddd
+  _original_id = this;
 }
 
 void TemplateImplication::genPermutations(
@@ -826,6 +856,12 @@ TemplateImplication::getLoadedPropositionsAnt() {
       assert(i->getProposition() != nullptr);
       ret.push_back(i->getProposition());
       return true;
+    } else if (isBooleanLayerFunction(current)) {
+      BooleanLayerFunctionPtr f =
+          std::dynamic_pointer_cast<BooleanLayerFunction>(current);
+      assert(f->getFunction() != nullptr);
+      ret.push_back(*f->getFunction()->getPlaceholderPointer());
+      return true;
     }
     return false;
   });
@@ -854,6 +890,12 @@ TemplateImplication::getLoadedPropositionsCon() {
           std::dynamic_pointer_cast<BooleanLayerInst>(current);
       assert(i->getProposition() != nullptr);
       ret.push_back(i->getProposition());
+      return true;
+    } else if (isBooleanLayerFunction(current)) {
+      BooleanLayerFunctionPtr f =
+          std::dynamic_pointer_cast<BooleanLayerFunction>(current);
+      assert(f->getFunction() != nullptr);
+      ret.push_back(*f->getFunction()->getPlaceholderPointer());
       return true;
     }
     return false;
@@ -1133,6 +1175,8 @@ std::pair<size_t, size_t> TemplateImplication::getCT_CF() {
 
   return std::make_pair(CT, CF);
 }
+
+void *TemplateImplication::getOriginalId() { return _original_id; }
 
 size_t TemplateImplication::getCurrentPermIndex() {
   return _permIndex;

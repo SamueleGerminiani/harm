@@ -11,6 +11,8 @@
 
 #include "Float.hh"
 #include "Int.hh"
+#include "Logic.hh"
+#include "String.hh"
 #include "VarDeclaration.hh"
 #include "formula/atom/Variable.hh"
 
@@ -50,6 +52,11 @@ public:
   expression::IntVariablePtr
   getIntVariable(const std::string &name) const;
 
+  /// @brief Returns the logic variable given its name.
+  /// @param name The name of the logic variable
+  expression::LogicVariablePtr
+  getLogicVariable(const std::string &name) const;
+
   /// @brief Returns the float variable given its name.
   /// @param name The name of the float variable
   expression::FloatVariablePtr
@@ -63,9 +70,22 @@ public:
   expression::UInt *
   getIntVariableValues(const std::string &name) const;
 
+  /// @brief Returns the int sub-trace containing the values of a logic variable
+  expression::ULogic **
+  getLogicVariableValues(const std::string &name) const;
+
+  /// @brief Returns the int sub-trace containing the values of a int variable
+  expression::String *
+  getStringVariableValues(const std::string &name) const;
+
   /// @brief Returns the float sub-trace containing the values of a float variable
   expression::Float *
   getFloatVariableValues(const std::string &name) const;
+
+  /// @brief Returns the string variable given its name.
+  /// @param name The name of the string variable
+  expression::StringVariablePtr
+  getStringVariable(const std::string &name) const;
 
   ///@bfried returns a copy of the declarations of the variables in the trace
   std::vector<VarDeclaration> getDeclarations();
@@ -102,6 +122,13 @@ private:
   /// @brief The int sub-trace containing the values of each Int variable
   expression::UInt *_intTrace = nullptr;
 
+  /// @brief The logic sub-trace containing the values of each Logic, there are 3 lanes: int, x, z
+  /// variable
+  expression::ULogic **_logicTrace = nullptr;
+
+  /// @brief The string sub-trace containing the values of each String
+  /// variable
+  expression::String *_stringTrace = nullptr;
   /// @brief The length of the trace (number of simulation instants).
   size_t _length;
 
@@ -112,6 +139,9 @@ private:
 
   /// @brief The mapping between variable's name and values
   std::map<std::string, uintptr_t> _varName2varValues;
+  /// @brief The mapping between logic variable's name and values
+  std::map<std::string, expression::ULogic **>
+      _logicVarName2varValues;
   /// @brief The mapping between logic variable's name and their type
   std::map<std::string, expression::ExpType> _varName2Type;
 
@@ -125,13 +155,13 @@ private:
 
   static_assert(CHAR_BIT == 8, "A byte does not contain 8 bits!");
   const size_t _val4Int = sizeof(expression::UInt) * CHAR_BIT;
+  const size_t _val4Logic = expression::sizeOfLogic() * CHAR_BIT;
 };
 
 //smart pointer
 using TracePtr = std::shared_ptr<Trace>;
 
 /// @brief Dumps the trace in a CSV file
-void dumpTraceAsCSV(const harm::TracePtr &trace,
-                    const std::string &filename);
+void dumpTraceAsCSV(const harm::TracePtr &trace, const std::string &filename);
 
 } // namespace harm

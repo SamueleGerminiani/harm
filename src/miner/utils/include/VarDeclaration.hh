@@ -42,10 +42,10 @@ public:
   size_t getSize() const;
 
   /// @brief Sets the base of the integer/logic variable
-  void setBase(size_t base);
+  void setInputBase(size_t base);
 
   /// @brief Returns the base of the integer/logic variable
-  size_t getBase() const;
+  size_t getInputBase() const;
 
 private:
   /// @brief Stores the name of the variable.
@@ -57,8 +57,8 @@ private:
   /// @brief Stores the size of the variable.
   size_t _size;
 
-  /// @brief Stores the base of the variable (only for int/logic types)
-  size_t _base;
+  /// @brief Specifies how the values of the corresponding series should be interpreted (2 or 10 int/logic types, 0 for the others)
+  size_t _input_base = 0;
 };
 
 } // namespace harm

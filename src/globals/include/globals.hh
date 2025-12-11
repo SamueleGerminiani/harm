@@ -70,6 +70,10 @@ extern bool findMinSubset;
 extern bool intMode;
 ///--split-logic
 extern bool splitLogic;
+///--force-int
+extern bool forceInt;
+///--force-int
+extern bool printLogicAsInt;
 ///--dont-print-ass
 extern bool dontPrintAss;
 ///--vcd-r
@@ -92,6 +96,9 @@ extern bool dumpStat;
 extern bool dontNormalize;
 ///--sample-by-con
 extern bool sampleByCon;
+///--ddd
+extern bool dumpDebugData;
+extern std::string debugDataPath;
 } // namespace clc
 
 // harm stat

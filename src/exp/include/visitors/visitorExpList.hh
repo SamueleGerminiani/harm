@@ -12,6 +12,10 @@
   VIRTUAL void visit(PropositionEq &o) OVVERIDE;                     \
   VIRTUAL void visit(PropositionNeq &o) OVVERIDE;                    \
   VIRTUAL void visit(PropositionNot &o) OVVERIDE;                    \
+  VIRTUAL void visit(PropositionStable &o) OVVERIDE;                 \
+  VIRTUAL void visit(PropositionRose &o) OVVERIDE;                   \
+  VIRTUAL void visit(PropositionFell &o) OVVERIDE;                   \
+  VIRTUAL void visit(PropositionPast &o) OVVERIDE;                   \
   VIRTUAL void visit(FloatConstant &o) OVVERIDE;                     \
   VIRTUAL void visit(FloatVariable &o) OVVERIDE;                     \
   VIRTUAL void visit(FloatSum &o) OVVERIDE;                          \
@@ -26,6 +30,10 @@
   VIRTUAL void visit(FloatLessEq &o) OVVERIDE;                       \
   VIRTUAL void visit(FloatToBool &o) OVVERIDE;                       \
   VIRTUAL void visit(FloatToInt &o) OVVERIDE;                        \
+  VIRTUAL void visit(FloatToLogic &o) OVVERIDE;                      \
+  VIRTUAL void visit(FloatSetMembership &o) OVVERIDE;                \
+  VIRTUAL void visit(FloatStable &o) OVVERIDE;                       \
+  VIRTUAL void visit(FloatPast &o) OVVERIDE;                         \
   VIRTUAL void visit(IntConstant &o) OVVERIDE;                       \
   VIRTUAL void visit(IntVariable &o) OVVERIDE;                       \
   VIRTUAL void visit(IntSum &o) OVVERIDE;                            \
@@ -45,13 +53,57 @@
   VIRTUAL void visit(IntBitSelector &o) OVVERIDE;                    \
   VIRTUAL void visit(IntToBool &o) OVVERIDE;                         \
   VIRTUAL void visit(IntToFloat &o) OVVERIDE;                        \
+  VIRTUAL void visit(IntToLogic &o) OVVERIDE;                        \
   VIRTUAL void visit(IntLShift &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRShift &o) OVVERIDE;                         \
+  VIRTUAL void visit(IntSetMembership &o) OVVERIDE;                  \
+  VIRTUAL void visit(IntStable &o) OVVERIDE;                         \
+  VIRTUAL void visit(IntRose &o) OVVERIDE;                           \
+  VIRTUAL void visit(IntFell &o) OVVERIDE;                           \
+  VIRTUAL void visit(IntPast &o) OVVERIDE;                           \
+  VIRTUAL void visit(LogicConstant &o) OVVERIDE;                     \
+  VIRTUAL void visit(LogicVariable &o) OVVERIDE;                     \
+  VIRTUAL void visit(LogicSum &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicSub &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicMul &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicDiv &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicBAnd &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicBOr &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicBXor &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicNot &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicEq &o) OVVERIDE;                           \
+  VIRTUAL void visit(LogicNeq &o) OVVERIDE;                          \
+  VIRTUAL void visit(LogicGreater &o) OVVERIDE;                      \
+  VIRTUAL void visit(LogicGreaterEq &o) OVVERIDE;                    \
+  VIRTUAL void visit(LogicLess &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicLessEq &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicBitSelector &o) OVVERIDE;                  \
+  VIRTUAL void visit(LogicToBool &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicToFloat &o) OVVERIDE;                      \
+  VIRTUAL void visit(LogicToInt &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicLShift &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicRShift &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicSetMembership &o) OVVERIDE;                \
+  VIRTUAL void visit(LogicStable &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicRose &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicFell &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicPast &o) OVVERIDE;                         \
+  VIRTUAL void visit(StringVariable &o) OVVERIDE;                    \
+  VIRTUAL void visit(StringConstant &o) OVVERIDE;                    \
+  VIRTUAL void visit(StringEq &o) OVVERIDE;                          \
+  VIRTUAL void visit(StringNeq &o) OVVERIDE;                         \
+  VIRTUAL void visit(StringGreater &o) OVVERIDE;                     \
+  VIRTUAL void visit(StringGreaterEq &o) OVVERIDE;                   \
+  VIRTUAL void visit(StringLess &o) OVVERIDE;                        \
+  VIRTUAL void visit(StringLessEq &o) OVVERIDE;                      \
+  VIRTUAL void visit(StringConcat &o) OVVERIDE;                      \
+  VIRTUAL void visit(Substring &o) OVVERIDE;                         \
   VIRTUAL void visit(BooleanLayerPermutationPlaceholder &o)          \
       OVVERIDE;                                                      \
   VIRTUAL void visit(BooleanLayerNot &o) OVVERIDE;                   \
   VIRTUAL void visit(BooleanLayerDTPlaceholder &o) OVVERIDE;         \
   VIRTUAL void visit(BooleanLayerInst &o) OVVERIDE;                  \
+  VIRTUAL void visit(BooleanLayerFunction &o) OVVERIDE;              \
   VIRTUAL void visit(PropertyAlways &o) OVVERIDE;                    \
   VIRTUAL void visit(PropertyNext &o) OVVERIDE;                      \
   VIRTUAL void visit(PropertyEventually &o) OVVERIDE;                \

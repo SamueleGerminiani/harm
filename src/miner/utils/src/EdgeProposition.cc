@@ -1,5 +1,6 @@
 #include "EdgeProposition.hh"
 #include "expUtils/expUtils.hh"
+#include "formula/function/Function.hh"
 
 namespace harm {
 
@@ -101,6 +102,14 @@ std::string EdgePlaceholder::toString() {
   }
   return prop2String(*_toProp);
 }
+
+EdgeFunction::EdgeFunction(
+    const expression::FunctionPropositionPtr &toFunc)
+    : EdgeProposition(), _toFunc(toFunc) {}
+bool EdgeFunction::evaluate(size_t time) {
+  return _toFunc->evaluate(time);
+}
+std::string EdgeFunction::toString() { return _toFunc->toString(0); }
 
 EdgeInst::EdgeInst(const expression::PropositionPtr &toInst,
                    const std::string &phName)

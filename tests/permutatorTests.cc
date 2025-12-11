@@ -1,6 +1,5 @@
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
-#include <math.h>
 #include <string>
 #include <vector>
 
@@ -163,5 +162,42 @@ TEST(PermutatorTest, genPermutations) {
   ASSERT_EQ(
       getPermutations("G(P0 |-> P0 ##1 P1)", domaIdToNumberOfProps),
       std::pow(nProps, 2));
+
+  //Function-mul------------------------------------------------
+  ASSERT_EQ(getPermutations(
+                "G(1 |-> $stable(P0) ##1 $fell(P1) ##1 $rose(P2))",
+                domaIdToNumberOfProps),
+            std::pow(nProps, 3));
+  ASSERT_EQ(getPermutations("G(1 |-> $stable(P0) and P1)",
+                            domaIdToNumberOfProps),
+            std::pow(nProps, 2));
+  //Function-bin------------------------------------------------
+  ASSERT_EQ(getPermutations("G(1 |-> ($fell(P0) and $fell(P1)))",
+                            domaIdToNumberOfProps),
+            binomialCoefficient(nProps, 2));
+  ASSERT_EQ(getPermutations(
+                "G(1 |-> ($fell(P0) and $fell(P1) and $fell(P2)))",
+                domaIdToNumberOfProps),
+            binomialCoefficient(nProps, 3));
+  ASSERT_EQ(getPermutations("G(1 |-> $stable(P0) and $fell(P1))",
+                            domaIdToNumberOfProps),
+            std::pow(nProps, 2));
+
+  //Domains
+  int domain111 = 3;
+  domaIdToNumberOfProps[111] = domain111;
+  ASSERT_EQ(getPermutations("G(1 -> (P111(111) && P0))",
+                            domaIdToNumberOfProps),
+            domain111 * nProps);
+  int domain112 = 6;
+  domaIdToNumberOfProps[112] = domain112;
+  ASSERT_EQ(getPermutations("G(1 -> (P111(111) && P112(112)))",
+                            domaIdToNumberOfProps),
+            domain111 * domain112);
+  domaIdToNumberOfProps[112] = domain111;
+  //equal domains
+  ASSERT_EQ(getPermutations("G(1 -> (P111(111) && P112(112)))",
+                            domaIdToNumberOfProps),
+            binomialCoefficient(domain111, 2));
 }
 

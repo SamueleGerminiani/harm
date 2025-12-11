@@ -7,16 +7,19 @@
 #include "Float.hh"
 #include "Int.hh"
 #include "Limits.hh"
+#include "Logic.hh"
 #include "PointerUtils.hh"
 #include "PropositionParserHandler.hh"
 #include "Token.h"
 #include "Trace.hh"
-#include "exp.hh"
 #include "expUtils/implicitConversion.hh"
 #include "formula/atom/Constant.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/expression/SetMembership.hh"
+#include "formula/expression/Substring.hh"
+#include "formula/function/SVAfunction.hh"
 #include "misc.hh"
 #include "tree/ErrorNode.h"
 #include "tree/ParseTree.h"
@@ -37,6 +40,10 @@ void PropositionParserHandler::clear() {
   while (!_numericExpressions.empty()) {
     _numericExpressions.pop();
   }
+
+  while (!_string.empty()) {
+    _string.pop();
+  }
 }
 
 void PropositionParserHandler::enterStartBoolean(
@@ -50,6 +57,16 @@ void PropositionParserHandler::enterStartInt(
 
 void PropositionParserHandler::enterStartFloat(
     propositionParser::StartFloatContext *ctx) {
+  clear();
+}
+
+void PropositionParserHandler::enterStartLogic(
+    propositionParser::StartLogicContext *ctx) {
+  clear();
+}
+
+void PropositionParserHandler::enterStartString(
+    propositionParser::StartStringContext *ctx) {
   clear();
 }
 
@@ -68,6 +85,128 @@ std::string getVariableName(const std::string &input,
 
   return input.substr(startDelimiterPos + 2,
                       typePos - (startDelimiterPos + 2));
+}
+void PropositionParserHandler::exitLogic_constant(
+    propositionParser::Logic_constantContext *ctx) {
+
+  if (ctx->VERILOG_BINARY()) {
+    //get the size of the logic constant: in the prefix of the binary or form the length of the binary
+    size_t size = ctx->UINTEGER()
+                      ? safeStoull(ctx->UINTEGER()->getText())
+                      : ctx->VERILOG_BINARY()->getText().size() - 2;
+
+    std::string binary_str =
+        ctx->VERILOG_BINARY()->getText().substr(2);
+
+    LogicConstantPtr logConstant = generatePtr<LogicConstant>(
+        Logic(binary_str, size), ExpType::ULogic, size,
+        _trace->getLength());
+    _numericExpressions.push(logConstant);
+    return;
+  } else {
+    messageError("Invalid logic constant");
+  }
+}
+
+void PropositionParserHandler::exitSm_range(
+    propositionParser::Sm_rangeContext *ctx) {
+  NumericPack right;
+  NumericPack left;
+
+  //remove left and right constants from the stack
+  if (!ctx->max_dollar()) {
+    right = _numericExpressions.top();
+    _numericExpressions.pop();
+  }
+  if (!ctx->min_dollar()) {
+    left = _numericExpressions.top();
+    _numericExpressions.pop();
+  }
+
+  //type of the operand of set membership
+  auto type = _numericExpressions.isTopInt()
+                  ? _numericExpressions.topInt()->getType().first
+                  : _numericExpressions.topLogic()->getType().first;
+
+  if (!ctx->max_dollar()) {
+    //implicit conversions
+    if ((isInt(type) && !isInt(right.getType().first)) ||
+        (isLogic(type) && !isLogic(right.getType().first))) {
+      if (isInt(type)) {
+        right = NumericPack(generatePtr<LogicToInt>(right._logExp));
+      } else {
+        right = NumericPack(generatePtr<IntToLogic>(right._intExp));
+      }
+    }
+  }
+
+  if (!ctx->min_dollar()) {
+    //implicit conversions
+    if ((isInt(type) && !isInt(left.getType().first)) ||
+        (isLogic(type) && !isLogic(left.getType().first))) {
+      if (isInt(type)) {
+        left = NumericPack(generatePtr<LogicToInt>(left._logExp));
+      } else {
+        left = NumericPack(generatePtr<IntToLogic>(left._intExp));
+      }
+    }
+  }
+
+  if (ctx->max_dollar()) {
+    if (isInt(type)) {
+      right._intExp = makeMaxConstant<IntExpression>(
+          _numericExpressions.topInt()->getType(),
+          _trace->getLength());
+    } else if (isLogic(type)) {
+      right._logExp = makeMaxConstant<LogicExpression>(
+          _numericExpressions.topLogic()->getType(),
+          _trace->getLength());
+    } else {
+      messageError("Invalid type for max dollar");
+    }
+  }
+
+  if (ctx->min_dollar()) {
+    if (isInt(type)) {
+      left._intExp = makeMinConstant<IntExpression>(
+          _numericExpressions.topInt()->getType(),
+          _trace->getLength());
+    } else if (isLogic(type)) {
+      left._logExp = makeMinConstant<LogicExpression>(
+          _numericExpressions.topLogic()->getType(),
+          _trace->getLength());
+    } else {
+      messageError("Invalid type for min dollar");
+    }
+  }
+
+  _sm_ranges.emplace(left, right);
+}
+
+void PropositionParserHandler::exitSm_constant(
+    propositionParser::Sm_constantContext *ctx) {
+  auto c = _numericExpressions.top();
+  _numericExpressions.pop();
+
+  //type of the operand of set membership
+  auto type = _numericExpressions.isTopInt()
+                  ? _numericExpressions.topInt()->getType().first
+                  : _numericExpressions.topLogic()->getType().first;
+
+  //implicit conversions
+  if ((isInt(type) && !isInt(c.getType().first)) ||
+      (isLogic(type) && !isLogic(c.getType().first))) {
+    if (isInt(type)) {
+      _sm_constants.push(
+          NumericPack(generatePtr<LogicToInt>(c._logExp)));
+    } else {
+      _sm_constants.push(
+          NumericPack(generatePtr<IntToLogic>(c._intExp)));
+    }
+    return;
+  }
+
+  _sm_constants.push(c);
 }
 
 void PropositionParserHandler::exitInt_constant(
@@ -126,22 +265,6 @@ void PropositionParserHandler::exitInt_constant(
       }
     }
     return;
-  } else if (ctx->VERILOG_BINARY()) {
-    //get the size of the logic constant: in the prefix of the binary or form the length of the binary
-    size_t size = ctx->UINTEGER()
-                      ? safeStoull(ctx->UINTEGER()->getText())
-                      : ctx->VERILOG_BINARY()->getText().size() - 2;
-
-    std::string binary_str =
-        ctx->VERILOG_BINARY()->getText().substr(2);
-
-    UInt value = safeStoull(binary_str, 2);
-    IntConstantPtr c = generatePtr<IntConstant>(
-        value, ExpType::UInt, binary_str.size(), _trace->getLength());
-    _numericExpressions.push(c);
-    return;
-  } else {
-    messageError("Invalid logic constant");
   }
   messageError("Unknown int constant!" + printErrorMessage());
 }
@@ -185,7 +308,21 @@ void PropositionParserHandler::exitIntAtom(
     messageError("Unknown int atom!" + printErrorMessage());
   }
 }
+void PropositionParserHandler::exitLogicAtom(
+    propositionParser::LogicAtomContext *ctx) {
+  std::string exp = std::string(ctx->getText());
+  if (ctx->LOGIC_VARIABLE() != nullptr) {
+    auto name = getVariableName(exp, "logic");
+    _numericExpressions.push(_trace->getLogicVariable(name));
 
+  } else if (ctx->int_constant() != nullptr) {
+    //already handled in exitIntConstant
+  } else if (ctx->logic_constant() != nullptr) {
+    //already handled in exitLogicConstant
+  } else {
+    messageError("Unknown logic atom!" + printErrorMessage());
+  }
+}
 void PropositionParserHandler::exitFloatAtom(
     propositionParser::FloatAtomContext *ctx) {
 
@@ -205,6 +342,226 @@ void PropositionParserHandler::exitFloatAtom(
     messageError("Unknown float atom!" + printErrorMessage());
   }
 }
+void PropositionParserHandler::exitStringAtom(
+    propositionParser::StringAtomContext *ctx) {
+
+  std::string exp = std::string(ctx->getText());
+
+  if (ctx->STRING_VARIABLE() != nullptr) {
+    auto name = getVariableName(exp, "string");
+    _string.push(_trace->getStringVariable(name));
+  } else if (ctx->STRING_CONSTANT() != nullptr) {
+    exp = exp.substr(1, exp.size() - 2);
+    StringConstantPtr c = generatePtr<StringConstant>(
+        exp, ExpType::String, exp.size(), _trace->getLength());
+    _string.push(c);
+  } else {
+    messageError("Unknown string atom!" + printErrorMessage());
+  }
+}
+void PropositionParserHandler::exitNonTemporalFunction(
+    propositionParser::NonTemporalFunctionContext *ctx) {
+
+  messageErrorIf(ctx->pfunc_arg().empty(),
+                 "Function '" + ctx->getText() +
+                     "' does not have any argument\n" +
+                     printErrorMessage());
+
+  messageErrorIf((ctx->FUNCTION()->getText() == "$stable" ||
+                  ctx->FUNCTION()->getText() == "$rose" ||
+                  ctx->FUNCTION()->getText() == "$fell") &&
+                     ctx->pfunc_arg().size() != 1,
+                 "Function '" + ctx->getText() +
+                     "' requires exactly one argument\n" +
+                     printErrorMessage());
+
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->pfunc_arg().size() > 2,
+                 "Function '" + ctx->getText() +
+                     "' requires at most two arguments\n" +
+                     printErrorMessage());
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->pfunc_arg().size() < 1,
+                 "Function '" + ctx->getText() +
+                     "' requires at least one argument\n" +
+                     printErrorMessage());
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->pfunc_arg().size() == 1 &&
+                     (!ctx->pfunc_arg()[0]->boolean() &&
+                      !ctx->pfunc_arg()[0]->numeric() &&
+                      !ctx->pfunc_arg()[0]->numeric()),
+                 "Function '" + ctx->getText() +
+                     "' requires a bool, float or int\n" +
+                     printErrorMessage());
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->pfunc_arg().size() == 2 &&
+                     ((!ctx->pfunc_arg()[0]->boolean() &&
+                       !ctx->pfunc_arg()[0]->numeric()) ||
+                      !ctx->pfunc_arg()[1]->numeric()),
+                 "Function '" + ctx->getText() + "' illegal input\n" +
+                     printErrorMessage());
+
+  if (ctx->FUNCTION()->getText() == "$stable") {
+    if (ctx->pfunc_arg()[0]->boolean() != nullptr) {
+
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      _proposition.push(generatePtr<PropositionStable>(
+          p, ExpType::Bool, 1, _trace->getLength()));
+    } else if (_numericExpressions.isTopInt()) {
+      IntExpressionPtr le = _numericExpressions.topInt();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<IntStable>(le, ExpType::Bool, 1,
+                                               _trace->getLength()));
+    } else if (_numericExpressions.isTopLogic()) {
+      LogicExpressionPtr le = _numericExpressions.topLogic();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<LogicStable>(
+          le, ExpType::Bool, 1, _trace->getLength()));
+    } else if (_numericExpressions.isTopFloat()) {
+      FloatExpressionPtr ne = _numericExpressions.topFloat();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<FloatStable>(
+          ne, ExpType::Bool, 1, _trace->getLength()));
+    } else {
+      messageError("Function '" + ctx->getText() +
+                   "' does not support this type of argument\n" +
+                   printErrorMessage());
+    }
+    return;
+  } else if (ctx->FUNCTION()->getText() == "$rose") {
+    if (ctx->pfunc_arg()[0]->boolean() != nullptr) {
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      _proposition.push(generatePtr<PropositionRose>(
+          p, ExpType::Bool, 1, _trace->getLength()));
+    } else if (_numericExpressions.isTopInt()) {
+      IntExpressionPtr le = _numericExpressions.topInt();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<IntRose>(le, ExpType::Bool, 1,
+                                             _trace->getLength()));
+    } else if (_numericExpressions.isTopLogic()) {
+      LogicExpressionPtr le = _numericExpressions.topLogic();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<LogicRose>(le, ExpType::Bool, 1,
+                                               _trace->getLength()));
+    } else if (_numericExpressions.isTopFloat()) {
+      messageError("Function '" + ctx->getText() +
+                   "' does not support float arguments\n" +
+                   printErrorMessage());
+    } else {
+      messageError("Function '" + ctx->getText() +
+                   "' does not support this type of argument\n" +
+                   printErrorMessage());
+    }
+    return;
+  } else if (ctx->FUNCTION()->getText() == "$fell") {
+    if (ctx->pfunc_arg()[0]->boolean() != nullptr) {
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      _proposition.push(generatePtr<PropositionFell>(
+          p, ExpType::Bool, 1, _trace->getLength()));
+    } else if (_numericExpressions.isTopInt()) {
+      IntExpressionPtr le = _numericExpressions.topInt();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<IntFell>(le, ExpType::Bool, 1,
+                                             _trace->getLength()));
+    } else if (_numericExpressions.isTopLogic()) {
+      LogicExpressionPtr le = _numericExpressions.topLogic();
+      _numericExpressions.pop();
+      _proposition.push(generatePtr<LogicFell>(le, ExpType::Bool, 1,
+                                               _trace->getLength()));
+    } else if (_numericExpressions.isTopFloat()) {
+      messageError("Function '" + ctx->getText() +
+                   "' does not support numeric arguments\n" +
+                   printErrorMessage());
+    }
+    return;
+  } else if (ctx->FUNCTION()->getText() == "$past") {
+    size_t shift = 1;
+    if (ctx->pfunc_arg().size() == 2) {
+      messageErrorIf(_numericExpressions.isTopFloat(),
+                     "Function '" + ctx->getText() +
+                         "' does not support float arguments\n" +
+                         printErrorMessage());
+      IntExpressionPtr s = _numericExpressions.topInt();
+      _numericExpressions.pop();
+      std::string shiftStr = int2String(s);
+      removeSpacesInPlace(shiftStr);
+      messageErrorIf(!isInteger(shiftStr) || shiftStr[0] == '-',
+                     "Function '" + ctx->getText() +
+                         "' requires a constant unsigned integer as "
+                         "argument, '" +
+                         shiftStr + "' given\n" +
+                         printErrorMessage());
+
+      shift = ctx->pfunc_arg().size() == 2 ? safeStoull(shiftStr) : 1;
+    }
+
+    if (ctx->pfunc_arg()[0]->boolean() != nullptr) {
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      _proposition.push(generatePtr<PropositionPast>(
+          p, shift, ExpType::Bool, 1, _trace->getLength()));
+    } else if (_numericExpressions.isTopInt()) {
+      IntExpressionPtr le = _numericExpressions.topInt();
+      auto type = le->getType();
+      _numericExpressions.pop();
+
+      if (dynamic_cast<propositionParser::BooleanContext *>(
+              ctx->parent) == nullptr) {
+        _numericExpressions.push(generatePtr<IntPast>(
+            le, shift, type.first, type.second, _trace->getLength()));
+
+      } else {
+        _proposition.push(generatePtr<IntToBool>(
+            generatePtr<IntPast>(le, shift, type.first, type.second,
+                                 _trace->getLength())));
+      }
+
+    } else if (_numericExpressions.isTopLogic()) {
+      LogicExpressionPtr le = _numericExpressions.topLogic();
+      auto type = le->getType();
+      _numericExpressions.pop();
+
+      if (dynamic_cast<propositionParser::BooleanContext *>(
+              ctx->parent) == nullptr) {
+        _numericExpressions.push(generatePtr<LogicPast>(
+            le, shift, type.first, type.second, _trace->getLength()));
+
+      } else {
+        _proposition.push(generatePtr<LogicToBool>(
+            generatePtr<LogicPast>(le, shift, type.first, type.second,
+                                   _trace->getLength())));
+      }
+
+    } else if (_numericExpressions.isTopFloat()) {
+      FloatExpressionPtr ne = _numericExpressions.topFloat();
+      auto type = ne->getType();
+      _numericExpressions.pop();
+
+      if (dynamic_cast<propositionParser::BooleanContext *>(
+              ctx->parent) == nullptr) {
+        _numericExpressions.push(generatePtr<FloatPast>(
+            ne, shift, type.first, type.second, _trace->getLength()));
+
+      } else {
+        _proposition.push(generatePtr<FloatToBool>(
+            generatePtr<FloatPast>(ne, shift, type.first, type.second,
+                                   _trace->getLength())));
+      }
+
+    } else {
+      messageError("Function '" + ctx->FUNCTION()->getText() +
+                   "' does not support this type of argument\n" +
+                   printErrorMessage());
+    }
+    return;
+  } else {
+    messageError("Function '" + ctx->FUNCTION()->getText() +
+                 "' is not supported\n" + printErrorMessage());
+  }
+}
 
 #define Int
 #define Float
@@ -217,6 +574,9 @@ void PropositionParserHandler::exitFloatAtom(
   } else if (isFloat(op1.getType().first)) {                         \
     stackTarget.push(makeGenericExpression<Float##expSuffix>(        \
         op1._floatExp, op2._floatExp));                              \
+  } else if (isLogic(op1.getType().first)) {                         \
+    stackTarget.push(makeGenericExpression<Logic##expSuffix>(        \
+        op1._logExp, op2._logExp));                                  \
   } else {                                                           \
     messageError("Unknown type of expression\n" +                    \
                  printErrorMessage());                               \
@@ -229,6 +589,11 @@ void PropositionParserHandler::exitFloatAtom(
                                                      op2._intExp);   \
     res->setType(conversionResult.first, conversionResult.second);   \
     stackTarget.push(res);                                           \
+  } else if (isLogic(op1.getType().first)) {                         \
+    auto res = makeGenericExpression<Logic##expSuffix>(op1._logExp,  \
+                                                       op2._logExp); \
+    res->setType(conversionResult.first, conversionResult.second);   \
+    stackTarget.push(res);                                           \
   } else {                                                           \
     messageError("Unknown type of expression\n" +                    \
                  printErrorMessage());                               \
@@ -239,6 +604,11 @@ void PropositionParserHandler::exitFloatAtom(
   if (isInt(op1.getType().first)) {                                  \
     auto res = makeGenericExpression<Int##expSuffix>(op1._intExp,    \
                                                      op2._intExp);   \
+    res->setType(conversionResult.first, conversionResult.second);   \
+    stackTarget.push(res);                                           \
+  } else if (isLogic(op1.getType().first)) {                         \
+    auto res = makeGenericExpression<Logic##expSuffix>(op1._logExp,  \
+                                                       op2._logExp); \
     res->setType(conversionResult.first, conversionResult.second);   \
     stackTarget.push(res);                                           \
   } else if (isFloat(op1.getType().first)) {                         \
@@ -326,6 +696,57 @@ void PropositionParserHandler::exitBoolean(
                  printErrorMessage());
   }
 
+  if (ctx->INSIDE() != nullptr) {
+    NumericPack op(_numericExpressions.top());
+    _numericExpressions.pop();
+
+    //gather the constants
+    std::vector<NumericPack> constants;
+    for (size_t i = 0; i < ctx->sm_constant().size(); i++) {
+      constants.push_back(_sm_constants.top());
+      _sm_constants.pop();
+    }
+
+    //gather the ranges
+    std::vector<std::pair<NumericPack, NumericPack>> ranges;
+    for (size_t i = 0; i < ctx->sm_range().size(); i++) {
+      ranges.push_back(_sm_ranges.top());
+      _sm_ranges.pop();
+    }
+
+    if (isInt(op.getType().first)) {
+      std::vector<IntExpressionPtr> setInt;
+      std::vector<std::pair<IntExpressionPtr, IntExpressionPtr>>
+          rangesInt;
+      for (auto &c : constants) {
+        setInt.push_back(c._intExp);
+      }
+      for (auto &[l, r] : ranges) {
+        rangesInt.push_back(std::make_pair(l._intExp, r._intExp));
+      }
+      _proposition.push(generatePtr<expression::IntSetMembership>(
+          op._intExp, setInt, rangesInt));
+    } else if (isLogic(op.getType().first)) {
+      std::vector<LogicExpressionPtr> setLogic;
+      std::vector<std::pair<LogicExpressionPtr, LogicExpressionPtr>>
+          rangesLogic;
+      for (auto &c : constants) {
+        setLogic.push_back(c._logExp);
+      }
+      for (auto &[l, r] : ranges) {
+        rangesLogic.push_back(std::make_pair(l._logExp, r._logExp));
+      }
+      _proposition.push(generatePtr<expression::LogicSetMembership>(
+          op._logExp, setLogic, rangesLogic));
+
+    } else {
+      messageError("Unknown type to check set membership!" +
+                   printErrorMessage());
+    }
+
+    return;
+  }
+
   if (ctx->numeric().size() == 1) {
     //implitic conversion to bool
     if (_numericExpressions.isTopFloat()) {
@@ -334,6 +755,9 @@ void PropositionParserHandler::exitBoolean(
     } else if (_numericExpressions.isTopInt()) {
       _proposition.push(
           generatePtr<IntToBool>(_numericExpressions.topInt()));
+    } else if (_numericExpressions.isTopLogic()) {
+      _proposition.push(
+          generatePtr<LogicToBool>(_numericExpressions.topLogic()));
     } else {
       messageError("Unknown type to convert to bool!" +
                    printErrorMessage());
@@ -392,12 +816,66 @@ void PropositionParserHandler::exitBoolean(
     messageError("Unknown binary bool operator between numerics!" +
                  printErrorMessage());
   }
+
+  messageErrorIf(ctx->string().size() == 1,
+                 "No unary string operator available" +
+                     printErrorMessage());
+
+  if (ctx->string().size() == 2) {
+
+    StringExpressionPtr exp2 = _string.top();
+    _string.pop();
+
+    StringExpressionPtr exp1 = _string.top();
+    _string.pop();
+
+    propositionParser::RelopContext *relop = ctx->relop();
+
+    if (relop != nullptr) {
+      if (relop->LT() != nullptr) {
+        _proposition.push(
+            makeGenericExpression<StringLess>(exp1, exp2));
+        return;
+      }
+
+      if (relop->LE() != nullptr) {
+
+        _proposition.push(
+            makeGenericExpression<StringLessEq>(exp1, exp2));
+        return;
+      }
+      if (relop->GT() != nullptr) {
+        _proposition.push(
+            makeGenericExpression<StringGreater>(exp1, exp2));
+        return;
+      }
+      if (relop->GE() != nullptr) {
+        _proposition.push(
+            makeGenericExpression<StringGreaterEq>(exp1, exp2));
+        return;
+      }
+      messageError("Unknown relational operator!" +
+                   printErrorMessage());
+    }
+
+    if (ctx->EQ() != nullptr) {
+      _proposition.push(makeGenericExpression<StringEq>(exp1, exp2));
+      return;
+    }
+    if (ctx->NEQ() != nullptr) {
+      _proposition.push(makeGenericExpression<StringNeq>(exp1, exp2));
+      return;
+    }
+    messageError("Unknown binary boolean operator between strings!" +
+                 printErrorMessage());
+
+  } //==2
 }
 
 void PropositionParserHandler::exitNumeric(
     propositionParser::NumericContext *ctx) {
 
-  if (ctx->floatAtom() || ctx->intAtom()) {
+  if (ctx->floatAtom() || ctx->intAtom() || ctx->logicAtom()) {
     //handled elsewhere
     return;
   }
@@ -421,6 +899,15 @@ void PropositionParserHandler::exitNumeric(
             _numericExpressions.topInt());
         le_r->setType(_numericExpressions.topInt()->getType().first,
                       _numericExpressions.topInt()->getType().second);
+        _numericExpressions.pop();
+        _numericExpressions.push(le_r);
+        return;
+      } else if (_numericExpressions.isTopLogic()) {
+        LogicNotPtr le_r = makeGenericExpression<LogicNot>(
+            _numericExpressions.topLogic());
+        le_r->setType(
+            _numericExpressions.topLogic()->getType().first,
+            _numericExpressions.topLogic()->getType().second);
         _numericExpressions.pop();
         _numericExpressions.push(le_r);
         return;
@@ -456,6 +943,13 @@ void PropositionParserHandler::exitNumeric(
         IntExpressionPtr le_r = nullptr;
         le_r = generatePtr<IntBitSelector>(
             _numericExpressions.topInt(), lower_bound, upper_bound);
+        _numericExpressions.pop();
+        _numericExpressions.push(le_r);
+        return;
+      } else if (_numericExpressions.isTopLogic()) {
+        LogicExpressionPtr le_r = nullptr;
+        le_r = generatePtr<LogicBitSelector>(
+            _numericExpressions.topLogic(), lower_bound, upper_bound);
         _numericExpressions.pop();
         _numericExpressions.push(le_r);
         return;
@@ -571,7 +1065,59 @@ void PropositionParserHandler::exitNumeric(
                    "expression!" +
                    printErrorMessage());
     } //artop != nullptr
-  }   //numericExp == 2
+  } //numericExp == 2
+}
+
+void PropositionParserHandler::exitString(
+    propositionParser::StringContext *ctx) {
+
+  if (ctx->stringAtom()) {
+    //handled elsewhere
+    return;
+  }
+
+  if (ctx->string().size() == 1) {
+    if (ctx->SUBSTR()) {
+      size_t nChars = (size_t)-1;
+      size_t startIndex = 0;
+      if (ctx->UINTEGER().size() > 0) {
+        startIndex = safeStoull(ctx->UINTEGER()[0]->getText());
+      }
+      if (ctx->UINTEGER().size() > 1) {
+        nChars = safeStoull(ctx->UINTEGER()[1]->getText());
+      }
+
+      StringExpressionPtr se =
+          generatePtr<Substring>(_string.top(), startIndex, nChars);
+      _string.pop();
+      _string.push(se);
+      return;
+    }
+
+    messageError("Unknown unary string operator!" +
+                 printErrorMessage());
+  }
+
+  if (ctx->LROUND() && ctx->RROUND()) {
+    return;
+  }
+
+  if (ctx->string().size() == 2) {
+    if (ctx->PLUS()) {
+      StringExpressionPtr se2 = _string.top();
+      _string.pop();
+      StringExpressionPtr se1 = _string.top();
+      _string.pop();
+      auto se = makeGenericExpression<StringConcat>(se1, se2);
+      se->setType(ExpType::String, 0);
+      _string.push(se);
+      return;
+    }
+
+    messageError("Unknown binary operator in string "
+                 "expression!" +
+                 printErrorMessage());
+  }
 }
 
 PropositionPtr PropositionParserHandler::getProposition() {
@@ -580,6 +1126,8 @@ PropositionPtr PropositionParserHandler::getProposition() {
   messageErrorIf(!_numericExpressions.empty(),
                  "Stray numeric expressions in stack" +
                      printErrorMessage());
+  messageErrorIf(!_string.empty(),
+                 "Stray string in stack" + printErrorMessage());
 
   PropositionPtr ret = _proposition.top();
   _proposition.pop();
@@ -590,6 +1138,8 @@ PropositionPtr PropositionParserHandler::getProposition() {
 IntExpressionPtr PropositionParserHandler::getIntExpression() {
   messageErrorIf(!_proposition.empty(),
                  "Stray propositions in stack" + printErrorMessage());
+  messageErrorIf(!_string.empty(),
+                 "Stray string in stack" + printErrorMessage());
   messageErrorIf(_numericExpressions.empty(),
                  "No numeric to return" + printErrorMessage());
 
@@ -597,8 +1147,36 @@ IntExpressionPtr PropositionParserHandler::getIntExpression() {
 
   if (_numericExpressions.isTopInt()) {
     ret = _numericExpressions.topInt();
+  } else if (_numericExpressions.isTopLogic()) {
+    //implicit conversion
+    ret = generatePtr<LogicToInt>(_numericExpressions.topLogic());
   } else {
     ret = generatePtr<FloatToInt>(_numericExpressions.topFloat());
+  }
+  _numericExpressions.pop();
+
+  messageErrorIf(!_numericExpressions.empty(),
+                 "Stray numeric expression in stack" +
+                     printErrorMessage());
+  return ret;
+}
+
+LogicExpressionPtr PropositionParserHandler::getLogicExpression() {
+  messageErrorIf(!_proposition.empty(),
+                 "Stray propositions in stack" + printErrorMessage());
+  messageErrorIf(!_string.empty(),
+                 "Stray string in stack" + printErrorMessage());
+  messageErrorIf(_numericExpressions.empty(),
+                 "Numeric stack is empty" + printErrorMessage());
+
+  LogicExpressionPtr ret = nullptr;
+  if (_numericExpressions.isTopLogic()) {
+    ret = _numericExpressions.topLogic();
+  } else if (_numericExpressions.isTopLogic()) {
+    //implicit conversion
+    ret = generatePtr<FloatToLogic>(_numericExpressions.topFloat());
+  } else {
+    ret = generatePtr<IntToLogic>(_numericExpressions.topInt());
   }
   _numericExpressions.pop();
 
@@ -611,12 +1189,17 @@ IntExpressionPtr PropositionParserHandler::getIntExpression() {
 FloatExpressionPtr PropositionParserHandler::getFloatExpression() {
   messageErrorIf(!_proposition.empty(),
                  "Stray propositions in stack" + printErrorMessage());
+  messageErrorIf(!_string.empty(),
+                 "Stray string in stack" + printErrorMessage());
   messageErrorIf(_numericExpressions.empty(),
                  "Numeric stack is empty" + printErrorMessage());
 
   FloatExpressionPtr ret = nullptr;
   if (_numericExpressions.isTopFloat()) {
     ret = _numericExpressions.topFloat();
+  } else if (_numericExpressions.isTopLogic()) {
+    //implicit conversion
+    ret = generatePtr<LogicToFloat>(_numericExpressions.topLogic());
   } else {
     ret = generatePtr<IntToFloat>(_numericExpressions.topInt());
   }
@@ -626,6 +1209,23 @@ FloatExpressionPtr PropositionParserHandler::getFloatExpression() {
                  "Stray numeric expression in stack" +
                      printErrorMessage());
 
+  return ret;
+}
+
+StringExpressionPtr PropositionParserHandler::getStringExpression() {
+  messageErrorIf(!_numericExpressions.empty(),
+                 "Stray numeric in stack" + printErrorMessage());
+  messageErrorIf(!_proposition.empty(),
+                 "Stray proposition in stack" + printErrorMessage());
+  messageErrorIf(_string.empty(),
+                 "No string to return" + printErrorMessage());
+
+  StringExpressionPtr ret = _string.top();
+  _string.pop();
+
+  messageErrorIf(!_string.empty(),
+                 "Stray string expression in stack" +
+                     printErrorMessage());
   return ret;
 }
 
@@ -658,6 +1258,14 @@ void PropositionParserHandler::convert(
       exp2.convert(NumericType::NumericInt);
     }
   }
+  if (isLogic(conversionResult.first)) {
+    if (!isLogic(exp1.getType().first)) {
+      exp1.convert(NumericType::NumericLogic);
+    }
+    if (!isLogic(exp2.getType().first)) {
+      exp2.convert(NumericType::NumericLogic);
+    }
+  }
   if (isFloat(conversionResult.first)) {
     if (!isFloat(exp1.getType().first)) {
       exp1.convert(NumericType::NumericFloat);
@@ -671,20 +1279,26 @@ void PropositionParserHandler::convert(
 //-----------------------------NumericPack--------------------------------------
 
 PropositionParserHandler::NumericPack::NumericPack()
-    : _intExp(nullptr), _floatExp(nullptr) {}
+    : _intExp(nullptr), _logExp(nullptr), _floatExp(nullptr) {}
+
+PropositionParserHandler::NumericPack::NumericPack(
+    const expression::LogicExpressionPtr &logExp)
+    : _intExp(nullptr), _logExp(logExp), _floatExp(nullptr) {}
 
 PropositionParserHandler::NumericPack::NumericPack(
     const expression::IntExpressionPtr &intExp)
-    : _intExp(intExp), _floatExp(nullptr) {}
+    : _intExp(intExp), _logExp(nullptr), _floatExp(nullptr) {}
 
 PropositionParserHandler::NumericPack::NumericPack(
     const expression::FloatExpressionPtr &floatExp)
-    : _intExp(nullptr), _floatExp(floatExp) {}
+    : _intExp(nullptr), _logExp(nullptr), _floatExp(floatExp) {}
 
 std::pair<expression::ExpType, size_t>
 PropositionParserHandler::NumericPack::getType() {
   if (_intExp != nullptr) {
     return _intExp->getType();
+  } else if (_logExp != nullptr) {
+    return _logExp->getType();
   } else if (_floatExp != nullptr) {
     return _floatExp->getType();
   }
@@ -700,6 +1314,9 @@ void PropositionParserHandler::NumericPack::convert(
     switch (toType) {
     case NumericType::NumericInt:
       break;
+    case NumericType::NumericLogic:
+      _logExp = generatePtr<expression::IntToLogic>(_intExp);
+      break;
     case NumericType::NumericFloat:
       _floatExp = generatePtr<expression::IntToFloat>(_intExp);
       break;
@@ -708,10 +1325,28 @@ void PropositionParserHandler::NumericPack::convert(
     }
     _intExp = nullptr;
     return;
+  } else if (_logExp) {
+    switch (toType) {
+    case NumericType::NumericInt:
+      _intExp = generatePtr<expression::LogicToInt>(_logExp);
+      break;
+    case NumericType::NumericLogic:
+      break;
+    case NumericType::NumericFloat:
+      _floatExp = generatePtr<expression::LogicToFloat>(_logExp);
+      break;
+    default:
+      messageError("Unknown NumericType");
+    }
+    _logExp = nullptr;
+    return;
   } else if (_floatExp) {
     switch (toType) {
     case NumericType::NumericInt:
       _intExp = generatePtr<expression::FloatToInt>(_floatExp);
+      break;
+    case NumericType::NumericLogic:
+      _logExp = generatePtr<expression::FloatToLogic>(_floatExp);
       break;
     case NumericType::NumericFloat:
       break;
@@ -729,6 +1364,10 @@ void PropositionParserHandler::NumericPack::convert(
 
 void PropositionParserHandler::NumericStack::push(
     expression::IntExpressionPtr exp) {
+  _expressions.emplace(exp);
+}
+void PropositionParserHandler::NumericStack::push(
+    expression::LogicExpressionPtr exp) {
   _expressions.emplace(exp);
 }
 void PropositionParserHandler::NumericStack::push(
@@ -752,6 +1391,12 @@ PropositionParserHandler::NumericStack::topInt() {
                  "Top of stack is not a int expression");
   return _expressions.top()._intExp;
 }
+expression::LogicExpressionPtr
+PropositionParserHandler::NumericStack::topLogic() {
+  messageErrorIf(_expressions.top()._logExp == nullptr,
+                 "Top of stack is not a log expression");
+  return _expressions.top()._logExp;
+}
 PropositionParserHandler::NumericPack
 PropositionParserHandler::NumericStack::top() {
   messageErrorIf(_expressions.empty(),
@@ -766,6 +1411,9 @@ bool PropositionParserHandler::NumericStack::isTopFloat() {
 }
 bool PropositionParserHandler::NumericStack::isTopInt() {
   return _expressions.top()._intExp != nullptr;
+}
+bool PropositionParserHandler::NumericStack::isTopLogic() {
+  return _expressions.top()._logExp != nullptr;
 }
 size_t PropositionParserHandler::NumericStack::size() {
   return _expressions.size();
@@ -792,6 +1440,7 @@ std::string PropositionParserHandler::NumericStack::printStack() {
 }
 
 bool PropositionParserHandler::isEmpty(const NumericPack &p) {
-  return p._floatExp == nullptr && p._intExp == nullptr;
+  return p._floatExp == nullptr && p._intExp == nullptr &&
+         p._logExp == nullptr;
 }
 } // namespace hparser

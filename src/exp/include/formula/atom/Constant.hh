@@ -7,7 +7,9 @@
 #include "Float.hh"
 #include "Int.hh"
 #include "Limits.hh"
+#include "Logic.hh"
 #include "PointerUtils.hh"
+#include "String.hh"
 
 namespace expression {
 class ExpVisitor;
@@ -51,11 +53,15 @@ private:
 using FloatConstant = Constant<Float>;
 using IntConstant = Constant<UInt>;
 using BooleanConstant = Constant<bool>;
+using LogicConstant = Constant<Logic>;
+using StringConstant = Constant<String>;
 
 //smart pointer alias
 using FloatConstantPtr = std::shared_ptr<FloatConstant>;
 using IntConstantPtr = std::shared_ptr<IntConstant>;
 using BooleanConstantPtr = std::shared_ptr<BooleanConstant>;
+using LogicConstantPtr = std::shared_ptr<LogicConstant>;
+using StringConstantPtr = std::shared_ptr<StringConstant>;
 
 /// @brief Returns true if the given expression is a constant.
 template <typename T> bool isConstant(const GenericPtr<T> &exp) {
@@ -65,6 +71,10 @@ template <typename T> bool isConstant(const GenericPtr<T> &exp) {
     return std::dynamic_pointer_cast<FloatConstant>(exp) != nullptr;
   } else if constexpr (std::is_same_v<T, IntExpression>) {
     return std::dynamic_pointer_cast<IntConstant>(exp) != nullptr;
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    return std::dynamic_pointer_cast<LogicConstant>(exp) != nullptr;
+  } else if constexpr (std::is_same_v<T, StringExpression>) {
+    return std::dynamic_pointer_cast<StringConstant>(exp) != nullptr;
   }
   return false;
 }
@@ -84,6 +94,18 @@ GenericPtr<T> makeMaxConstant(const std::pair<ExpType, size_t> &type,
     } else {
       return generatePtr<IntConstant>(
           max<UInt>(type.second), type.first, type.second, max_time);
+    }
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    if (isSigned(type.first)) {
+      auto maxLogicValue = Logic(
+          type.second, true, (ULogic)max<SLogic>(type.second), 0, 0);
+      return generatePtr<LogicConstant>(maxLogicValue, type.first,
+                                        type.second, max_time);
+    } else {
+      auto maxLogicValue = Logic(
+          type.second, false, (ULogic)max<ULogic>(type.second), 0, 0);
+      return generatePtr<LogicConstant>(maxLogicValue, type.first,
+                                        type.second, max_time);
     }
   } else if constexpr (std::is_same_v<T, Proposition>) {
     return generatePtr<BooleanConstant>(
@@ -108,6 +130,18 @@ GenericPtr<T> makeMinConstant(const std::pair<ExpType, size_t> &type,
     } else {
       return generatePtr<IntConstant>(
           min<UInt>(type.second), type.first, type.second, max_time);
+    }
+  } else if constexpr (std::is_same_v<T, LogicExpression>) {
+    if (isSigned(type.first)) {
+      auto minLogicValue = Logic(
+          type.second, true, (ULogic)min<SLogic>(type.second), 0, 0);
+      return generatePtr<LogicConstant>(minLogicValue, type.first,
+                                        type.second, max_time);
+    } else {
+      auto minLogicValue = Logic(
+          type.second, false, (ULogic)min<ULogic>(type.second), 0, 0);
+      return generatePtr<LogicConstant>(minLogicValue, type.first,
+                                        type.second, max_time);
     }
   } else if constexpr (std::is_same_v<T, Proposition>) {
     return generatePtr<BooleanConstant>(

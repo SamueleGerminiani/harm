@@ -1,5 +1,6 @@
 #include "Context.hh"
 #include "Assertion.hh"
+#include "Edit.hh"
 #include "Metric.hh"
 #include "TemplateImplication.hh"
 #include "formula/atom/NumericExpression.hh"

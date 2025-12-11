@@ -1,5 +1,6 @@
 #include "formula/atom/NumericExpression.hh"
 #include "../../clustering/include/ClusteringConfig.hh"
+#include "Logic.hh"
 #include "formula/atom/Atom.hh"
 
 namespace expression {
@@ -29,6 +30,18 @@ NumericExpression::NumericExpression(const IntExpressionPtr &inte,
   }
 }
 
+NumericExpression::NumericExpression(const LogicExpressionPtr &loge,
+                                     bool useCache)
+    : _loge(loge), _useCache(useCache) {
+
+  if (_useCache) {
+    _cachedl = new Logic[loge->getMaxTime()];
+    for (size_t i = 0; i < loge->getMaxTime(); i++) {
+      _cachedl[i] = loge->evaluate(i);
+    }
+  }
+}
+
 NumericExpression::~NumericExpression() {
   if (_floe != nullptr) {
     if (_useCache) {
@@ -38,9 +51,14 @@ NumericExpression::~NumericExpression() {
     if (_useCache) {
       delete[] _cachedi;
     }
+  } else if (_loge != nullptr) {
+    if (_useCache) {
+      delete[] _cachedl;
+    }
   } else {
-    messageError("NumericExpression::~NumericExpression(): _floe and "
-                 "_int are all nullptr");
+    messageError(
+        "NumericExpression::~NumericExpression(): _floe, _inte and "
+        "_loge are all nullptr");
   }
 }
 
@@ -55,15 +73,26 @@ template <> SInt NumericExpression::evaluate(size_t time) {
   return _useCache ? (SInt)_cachedi[time]
                    : (SInt)_inte->evaluate(time);
 }
+template <> ULogic NumericExpression::evaluate(size_t time) {
+  return _useCache ? (ULogic)_cachedl[time].getUnsignedValue()
+                   : (ULogic)_loge->evaluate(time).getUnsignedValue();
+}
+template <> SLogic NumericExpression::evaluate(size_t time) {
+  return _useCache ? (SLogic)_cachedl[time].getSignedValue()
+                   : (SLogic)_loge->evaluate(time).getSignedValue();
+}
 
 void NumericExpression::acceptVisitor(ExpVisitor &vis) {
   if (_floe != nullptr) {
     _floe->acceptVisitor(vis);
   } else if (_inte != nullptr) {
     _inte->acceptVisitor(vis);
+  } else if (_loge != nullptr) {
+    _loge->acceptVisitor(vis);
   } else {
-    messageError("NumericExpression::acceptVisitor(): _floe and "
-                 "_inte are all nullptr");
+    messageError(
+        "NumericExpression::acceptVisitor(): _floe, _inte and "
+        "_loge are all nullptr");
   }
 }
 
@@ -72,9 +101,11 @@ size_t NumericExpression::getMaxTime() {
     return _floe->getMaxTime();
   } else if (_inte != nullptr) {
     return _inte->getMaxTime();
+  } else if (_loge != nullptr) {
+    return _loge->getMaxTime();
   } else {
-    messageError("NumericExpression::getMaxTime(): _floe and _inte "
-                 "are all nullptr");
+    messageError("NumericExpression::getMaxTime(): _floe, _inte and "
+                 "_loge are all nullptr");
   }
   return 0;
 }
@@ -84,9 +115,11 @@ std::pair<ExpType, size_t> NumericExpression::getType() {
     return _floe->getType();
   } else if (_inte != nullptr) {
     return _inte->getType();
+  } else if (_loge != nullptr) {
+    return _loge->getType();
   } else {
-    messageError("NumericExpression::getType(): _floe and _inte are "
-                 "all nullptr");
+    messageError("NumericExpression::getType(): _floe, _inte and "
+                 "_loge are all nullptr");
   }
   return std::pair<ExpType, size_t>();
 }
@@ -96,6 +129,16 @@ template <> FloatExpressionPtr NumericExpression::get() {
 }
 template <> IntExpressionPtr NumericExpression::get() {
   return _inte;
+}
+template <> LogicExpressionPtr NumericExpression::get() {
+  return _loge;
+}
+
+bool NumericExpression::containsXZ(size_t time) {
+  if (_loge != nullptr) {
+    return _cachedl[time].containsXZ();
+  }
+  return false;
 }
 
 } // namespace expression

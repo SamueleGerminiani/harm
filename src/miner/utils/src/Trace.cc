@@ -20,6 +20,9 @@ Trace::Trace(std::vector<VarDeclaration> &variables, size_t length)
     _varName2Type[dt.getName()] = dt.getType();
   }
 
+  //allocate the three lanes of a logic sub-trace
+  _logicTrace = new ULogic *[3]{nullptr, nullptr, nullptr};
+
   allocateTrace(variables);
   allocatePointers(variables);
 }
@@ -36,6 +39,15 @@ Trace::~Trace() {
   }
   if (_intTrace != nullptr) {
     delete[] _intTrace;
+  }
+  if (_logicTrace != nullptr) {
+    delete[] _logicTrace[0];
+    delete[] _logicTrace[1];
+    delete[] _logicTrace[2];
+    delete _logicTrace;
+  }
+  if (_stringTrace != nullptr) {
+    delete[] _stringTrace;
   }
 }
 
@@ -75,6 +87,18 @@ std::string Trace::printTrace(size_t start, size_t n) {
         ss << (SInt)v->evaluate(i) << " ";
       }
       ss << "\n";
+    } else if (isLogic(t)) {
+      LogicVariablePtr v = getLogicVariable(vn);
+      for (size_t i = start; i < start + n && i < _length; i++) {
+        ss << (v->evaluate(i)).toString() << " ";
+      }
+      ss << "\n";
+    } else if (t == ExpType::String) {
+      auto v = getFloatVariable(vn);
+      for (size_t i = start; i < start + n && i < _length; i++) {
+        ss << v->evaluate(i) << " ";
+      }
+      ss << "\n";
     }
   }
   return ss.str();
@@ -84,6 +108,8 @@ size_t Trace::getLength() const { return _length; }
 
 void Trace::allocateTrace(std::vector<VarDeclaration> &variables) {
   size_t floatVarCounter = 0;
+  size_t strVarCounter = 0;
+  size_t logVarCounter = 0;
   size_t bolVarCounter = 0;
   size_t intVarCounter = 0;
 
@@ -99,6 +125,12 @@ void Trace::allocateTrace(std::vector<VarDeclaration> &variables) {
       // the values of this variable
       size_t tmpSize = (_length + valuesInside - 1) / valuesInside;
       intVarCounter += tmpSize;
+    } else if (isLogic(var.getType())) {
+      size_t valuesInside = _val4Logic / var.getSize();
+      size_t tmpSize = (_length + valuesInside - 1) / valuesInside;
+      logVarCounter += tmpSize;
+    } else if (var.getType() == ExpType::String) {
+      ++strVarCounter;
     } else {
       messageError("Unknown var type");
     }
@@ -106,6 +138,14 @@ void Trace::allocateTrace(std::vector<VarDeclaration> &variables) {
 
   if (floatVarCounter > 0) {
     _floatTrace = new double[_length * floatVarCounter]{0};
+  }
+  if (strVarCounter > 0) {
+    _stringTrace = new String[_length * strVarCounter]{""};
+  }
+  if (logVarCounter > 0) {
+    _logicTrace[0] = new ULogic[logVarCounter]{0};
+    _logicTrace[1] = new ULogic[logVarCounter]{0};
+    _logicTrace[2] = new ULogic[logVarCounter]{0};
   }
   if (bolVarCounter > 0) {
     _booleanTrace =
@@ -118,6 +158,8 @@ void Trace::allocateTrace(std::vector<VarDeclaration> &variables) {
 
 void Trace::allocatePointers(std::vector<VarDeclaration> &variables) {
   size_t floatVarCounter = 0;
+  size_t strVarCounter = 0;
+  size_t logVarAccur = 0;
   size_t bolVarCounter = 0;
   size_t intVarAccur = 0;
 
@@ -140,6 +182,23 @@ void Trace::allocatePointers(std::vector<VarDeclaration> &variables) {
       // the values of this variable
       size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
       intVarAccur += tmpSize;
+    } else if (isLogic(var.getType())) {
+      if (!_logicVarName2varValues.count(var.getName())) {
+        _logicVarName2varValues[var.getName()] = new ULogic *[3];
+      }
+      _logicVarName2varValues[var.getName()][0] =
+          &_logicTrace[0][logVarAccur];
+      _logicVarName2varValues[var.getName()][1] =
+          &_logicTrace[1][logVarAccur];
+      _logicVarName2varValues[var.getName()][2] =
+          &_logicTrace[2][logVarAccur];
+      size_t _valuesInside = _val4Logic / var.getSize();
+      size_t tmpSize = (_length + _valuesInside - 1) / _valuesInside;
+      logVarAccur += tmpSize;
+    } else if (var.getType() == ExpType::String) {
+      _varName2varValues[var.getName()] = reinterpret_cast<uintptr_t>(
+          &_stringTrace[_length * strVarCounter]);
+      ++strVarCounter;
     } else {
       messageError("Unknown var type");
     }
@@ -175,6 +234,25 @@ Float *Trace::getFloatVariableValues(const std::string &name) const {
   return reinterpret_cast<Float *>(_varName2varValues.at(name));
 }
 
+ULogic **
+Trace::getLogicVariableValues(const std::string &name) const {
+  messageErrorIf(_logicVarName2varValues.count(name) == 0 ||
+                     (!isLogic(_varName2Type.at(name))),
+                 "Can't find logic variable with name: " + name);
+
+  return _logicVarName2varValues.at(name);
+}
+
+String *
+Trace::getStringVariableValues(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::String),
+      "Can't find string variable with name: " + name);
+
+  return reinterpret_cast<String *>(_varName2varValues.at(name));
+}
+
 expression::BooleanVariablePtr
 Trace::getBooleanVariable(const std::string &name) const {
   messageErrorIf(
@@ -201,6 +279,18 @@ Trace::getIntVariable(const std::string &name) const {
       _varName2Type.at(name), size, _length);
 }
 
+expression::LogicVariablePtr
+Trace::getLogicVariable(const std::string &name) const {
+  messageErrorIf(_logicVarName2varValues.count(name) == 0 ||
+                     (!isLogic(_varName2Type.at(name))),
+                 "Can't find logic variable with name: " + name);
+
+  size_t size = _varName2size.at(name);
+  return generatePtr<expression::LogicVariable>(
+      _logicVarName2varValues.at(name), name, _varName2Type.at(name),
+      size, _length);
+}
+
 expression::FloatVariablePtr
 Trace::getFloatVariable(const std::string &name) const {
   messageErrorIf(
@@ -211,6 +301,19 @@ Trace::getFloatVariable(const std::string &name) const {
   size_t size = _varName2size.at(name);
   return generatePtr<expression::FloatVariable>(
       reinterpret_cast<Float *>(_varName2varValues.at(name)), name,
+      _varName2Type.at(name), size, _length);
+}
+
+expression::StringVariablePtr
+Trace::getStringVariable(const std::string &name) const {
+  messageErrorIf(
+      _varName2varValues.count(name) == 0 ||
+          (_varName2Type.at(name) != expression::ExpType::String),
+      "Can't find string variable with name: " + name);
+
+  size_t size = _varName2size.at(name);
+  return generatePtr<expression::StringVariable>(
+      reinterpret_cast<String *>(_varName2varValues.at(name)), name,
       _varName2Type.at(name), size, _length);
 }
 
@@ -260,8 +363,7 @@ void dumpTraceAsCSV(const TracePtr &trace,
   std::sort(vars.begin(), vars.end(),
             [](const VarDeclaration &a, const VarDeclaration &b) {
               return a.getName() < b.getName();
-            }
-  );
+            });
 
   for (auto &v : vars) {
     //skip the clock
@@ -298,6 +400,12 @@ void dumpTraceAsCSV(const TracePtr &trace,
       } else if (t == ExpType::SInt) {
         auto v = trace->getIntVariable(vn);
         ss << (SInt)v->evaluate(i) << ", ";
+      } else if (isLogic(t)) {
+        LogicVariablePtr v = trace->getLogicVariable(vn);
+        ss << (v->evaluate(i)).toString() << ", ";
+      } else if (isString(t)) {
+        StringVariablePtr v = trace->getStringVariable(vn);
+        ss << v->evaluate(i) << ", ";
       } else {
         messageError("Unsupported type");
       }

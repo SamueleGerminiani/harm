@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <string>
 
+#include "Logic.hh"
 #include "PointerUtils.hh"
 #include "Trace.hh"
 #include "TraceReader.hh"
@@ -38,7 +39,8 @@ TracePtr TraceReader::readTrace() {
       traces.push_back(trace);
     }
   }
-  messageErrorIf(traces.empty(), "All traces are empty or could not be processed");
+  messageErrorIf(traces.empty(),
+                 "All traces are empty or could not be processed");
 
   if (traces.size() > 1) {
     //merge multiple traces into one
@@ -59,6 +61,11 @@ TracePtr TraceReader::readTrace() {
                 std::to_string(_trace->getLength()));
   }
 
+  //add cuts according to the reset
+  if (clc::reset != "") {
+    addCutsWithReset(_trace);
+  }
+
   //  debug
   //for (auto i : _trace->getCuts()) {
   //  std::cout << i << " ";
@@ -66,6 +73,43 @@ TracePtr TraceReader::readTrace() {
   //std::cout << "\n";
 
   return _trace;
+}
+void TraceReader::addCutsWithReset(const TracePtr &trace) {
+  std::vector<size_t> cuts = trace->getCuts();
+
+  PropositionPtr reset = hparser::parseProposition(clc::reset, trace);
+
+  for (size_t i = 0; i < trace->getLength(); i++) {
+    if (reset->evaluate(i)) {
+      //need to cut
+
+      size_t j = i;
+      //find contiguous true evaluations of reset
+      while (j < trace->getLength() && reset->evaluate(j)) {
+        j++;
+      }
+      //insert cut if not already present
+      if (std::find(cuts.begin(), cuts.end(), j - 1) == cuts.end()) {
+        //insert in the right position
+        auto it = std::upper_bound(cuts.begin(), cuts.end(), j - 1);
+        cuts.insert(it, j - 1);
+      }
+
+      i = j;
+    }
+  }
+
+  //check that cut_i+1 - cut_i > 1
+  for (size_t i = 0; i < cuts.size() - 1; i++) {
+    messageWarningIf(
+        cuts[i + 1] - cuts[i] <= 1,
+        "Reset '" + clc::reset +
+            "' is not effective: there is a subtrace of size " +
+            std::to_string(cuts[i + 1] - cuts[i]) + " at time " +
+            std::to_string(cuts[i]));
+  }
+
+  trace->setCuts(cuts);
 }
 
 TracePtr
@@ -116,6 +160,8 @@ TraceReader::mergeTrace(const std::vector<TracePtr> &traces) {
   std::vector<BooleanVariablePtr> boolVars;
   std::vector<FloatVariablePtr> numVars;
   std::vector<IntVariablePtr> intVars;
+  std::vector<LogicVariablePtr> logVars;
+  std::vector<StringVariablePtr> strVars;
 
   for (auto &var : varsCopy) {
     if (var.getType() == ExpType::Bool) {
@@ -123,8 +169,13 @@ TraceReader::mergeTrace(const std::vector<TracePtr> &traces) {
           mergedTrace->getBooleanVariable(var.getName()));
     } else if (var.getType() == ExpType::Float) {
       numVars.push_back(mergedTrace->getFloatVariable(var.getName()));
+    } else if (isLogic(var.getType())) {
+      logVars.push_back(mergedTrace->getLogicVariable(var.getName()));
     } else if (isInt(var.getType())) {
       intVars.push_back(mergedTrace->getIntVariable(var.getName()));
+    } else if (isString(var.getType())) {
+      strVars.push_back(
+          mergedTrace->getStringVariable(var.getName()));
     } else {
       messageError("Unsupported variable type");
     }
@@ -146,6 +197,14 @@ TraceReader::mergeTrace(const std::vector<TracePtr> &traces) {
       for (auto lv : intVars) {
         auto currTraceiv = t->getIntVariable(lv->getName());
         lv->assign(time + i, currTraceiv->evaluate(i));
+      }
+      for (auto lv : logVars) {
+        auto currTracelv = t->getLogicVariable(lv->getName());
+        lv->assign(time + i, currTracelv->evaluate(i));
+      }
+      for (auto sv : strVars) {
+        auto currTracesv = t->getStringVariable(sv->getName());
+        sv->assign(time + i, currTracesv->evaluate(i));
       }
     }
     time += t->getLength();

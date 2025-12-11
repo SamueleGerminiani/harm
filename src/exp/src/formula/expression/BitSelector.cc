@@ -2,6 +2,7 @@
 #include <utility>
 
 #include "Int.hh"
+#include "Logic.hh"
 #include "formula/atom/Atom.hh"
 #include "formula/expression/BitSelector.hh"
 #include "misc.hh"
@@ -21,6 +22,22 @@ void BitSelector<IntExpression, IntExpression>::initEvaluate() {
   directEvaluate = [this](int time) {
     return extractBits(_e->evaluate(time), _lower_bound,
                        _upper_bound);
+  };
+  disableCache();
+}
+
+//Logic
+
+template <>
+void BitSelector<LogicExpression, LogicExpression>::acceptVisitor(
+    ExpVisitor &vis) {
+  vis.visit(*this);
+}
+
+template <>
+void BitSelector<LogicExpression, LogicExpression>::initEvaluate() {
+  directEvaluate = [this](int time) {
+    return _e->evaluate(time).select(_lower_bound, _upper_bound);
   };
   disableCache();
 }

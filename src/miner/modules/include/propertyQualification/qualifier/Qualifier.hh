@@ -14,6 +14,8 @@ namespace harm {
 class Assertion;
 using AssertionPtr = std::shared_ptr<Assertion>;
 class Context;
+class Edit;
+using EditPtr = std::shared_ptr<Edit>;
 class Metric;
 using MetricPtr = std::shared_ptr<Metric>;
 class Trace;
@@ -102,6 +104,19 @@ private:
   void filterAssertionsWithMetrics(
       std::vector<harm::AssertionPtr> &assertions,
       std::vector<std::pair<MetricPtr, double>> &metrics);
+
+  /** \brief filter the input assertions using 'edit-remove'
+   */
+  void filterUsingEdits(std::vector<harm::AssertionPtr> &assertions,
+                        std::vector<EditPtr> &remove,
+                        const harm::TracePtr &trace);
+
+  /** \brief rewrite assertions using 'edit-rewrite-to'
+   */
+  size_t
+  rewriteUsingEdits(const std::vector<harm::AssertionPtr> &assertions,
+                    std::vector<EditPtr> &rewrite,
+                    const harm::TracePtr &trace);
 
   /** \brief sort the input assertions according to their finalScore
    */

@@ -42,6 +42,15 @@ public:
   virtual void enterTformula(temporalParser::TformulaContext * /*ctx*/) override { }
   virtual void exitTformula(temporalParser::TformulaContext * /*ctx*/) override { }
 
+  virtual void enterTemporalFunction(temporalParser::TemporalFunctionContext * /*ctx*/) override { }
+  virtual void exitTemporalFunction(temporalParser::TemporalFunctionContext * /*ctx*/) override { }
+
+  virtual void enterTfunc_arg(temporalParser::Tfunc_argContext * /*ctx*/) override { }
+  virtual void exitTfunc_arg(temporalParser::Tfunc_argContext * /*ctx*/) override { }
+
+  virtual void enterPlaceholder_domain(temporalParser::Placeholder_domainContext * /*ctx*/) override { }
+  virtual void exitPlaceholder_domain(temporalParser::Placeholder_domainContext * /*ctx*/) override { }
+
   virtual void enterDt_next(temporalParser::Dt_nextContext * /*ctx*/) override { }
   virtual void exitDt_next(temporalParser::Dt_nextContext * /*ctx*/) override { }
 
@@ -57,8 +66,14 @@ public:
   virtual void enterStartInt(temporalParser::StartIntContext * /*ctx*/) override { }
   virtual void exitStartInt(temporalParser::StartIntContext * /*ctx*/) override { }
 
+  virtual void enterStartLogic(temporalParser::StartLogicContext * /*ctx*/) override { }
+  virtual void exitStartLogic(temporalParser::StartLogicContext * /*ctx*/) override { }
+
   virtual void enterStartFloat(temporalParser::StartFloatContext * /*ctx*/) override { }
   virtual void exitStartFloat(temporalParser::StartFloatContext * /*ctx*/) override { }
+
+  virtual void enterStartString(temporalParser::StartStringContext * /*ctx*/) override { }
+  virtual void exitStartString(temporalParser::StartStringContext * /*ctx*/) override { }
 
   virtual void enterBoolean(temporalParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(temporalParser::BooleanContext * /*ctx*/) override { }
@@ -72,14 +87,44 @@ public:
   virtual void enterRange(temporalParser::RangeContext * /*ctx*/) override { }
   virtual void exitRange(temporalParser::RangeContext * /*ctx*/) override { }
 
+  virtual void enterSm_range(temporalParser::Sm_rangeContext * /*ctx*/) override { }
+  virtual void exitSm_range(temporalParser::Sm_rangeContext * /*ctx*/) override { }
+
+  virtual void enterMin_dollar(temporalParser::Min_dollarContext * /*ctx*/) override { }
+  virtual void exitMin_dollar(temporalParser::Min_dollarContext * /*ctx*/) override { }
+
+  virtual void enterMax_dollar(temporalParser::Max_dollarContext * /*ctx*/) override { }
+  virtual void exitMax_dollar(temporalParser::Max_dollarContext * /*ctx*/) override { }
+
+  virtual void enterSm_constant(temporalParser::Sm_constantContext * /*ctx*/) override { }
+  virtual void exitSm_constant(temporalParser::Sm_constantContext * /*ctx*/) override { }
+
   virtual void enterIntAtom(temporalParser::IntAtomContext * /*ctx*/) override { }
   virtual void exitIntAtom(temporalParser::IntAtomContext * /*ctx*/) override { }
 
   virtual void enterInt_constant(temporalParser::Int_constantContext * /*ctx*/) override { }
   virtual void exitInt_constant(temporalParser::Int_constantContext * /*ctx*/) override { }
 
+  virtual void enterLogicAtom(temporalParser::LogicAtomContext * /*ctx*/) override { }
+  virtual void exitLogicAtom(temporalParser::LogicAtomContext * /*ctx*/) override { }
+
+  virtual void enterLogic_constant(temporalParser::Logic_constantContext * /*ctx*/) override { }
+  virtual void exitLogic_constant(temporalParser::Logic_constantContext * /*ctx*/) override { }
+
   virtual void enterFloatAtom(temporalParser::FloatAtomContext * /*ctx*/) override { }
   virtual void exitFloatAtom(temporalParser::FloatAtomContext * /*ctx*/) override { }
+
+  virtual void enterString(temporalParser::StringContext * /*ctx*/) override { }
+  virtual void exitString(temporalParser::StringContext * /*ctx*/) override { }
+
+  virtual void enterStringAtom(temporalParser::StringAtomContext * /*ctx*/) override { }
+  virtual void exitStringAtom(temporalParser::StringAtomContext * /*ctx*/) override { }
+
+  virtual void enterNonTemporalFunction(temporalParser::NonTemporalFunctionContext * /*ctx*/) override { }
+  virtual void exitNonTemporalFunction(temporalParser::NonTemporalFunctionContext * /*ctx*/) override { }
+
+  virtual void enterPfunc_arg(temporalParser::Pfunc_argContext * /*ctx*/) override { }
+  virtual void exitPfunc_arg(temporalParser::Pfunc_argContext * /*ctx*/) override { }
 
   virtual void enterRelop(temporalParser::RelopContext * /*ctx*/) override { }
   virtual void exitRelop(temporalParser::RelopContext * /*ctx*/) override { }

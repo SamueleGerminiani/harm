@@ -116,6 +116,40 @@ parseIntExpression(std::string formula, const harm::TracePtr &trace) {
   return listener.getIntExpression();
 }
 
+expression::LogicExpressionPtr
+parseLogicExpression(std::string formula,
+                     const harm::TracePtr &trace) {
+
+  auto decls = trace->getDeclarations();
+  addTypeToExp(formula, decls);
+
+  // parse typed propositions
+  hparser::PropositionParserHandler listener(trace);
+  listener.addErrorMessage("\t\t\tIn formula: " + formula);
+  antlr4::ANTLRInputStream input(formula);
+  propositionLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  propositionParser parser(&tokens);
+  //print tokens
+  /*
+    std::map<size_t, std::string> indexToToken;
+    for (auto [token,index] : parser.getTokenTypeMap()) {
+        indexToToken[index] = token;
+    }
+    for (auto &i : lexer.getAllTokens()) {
+        std::cout << i->toString() <<" "<<indexToToken.at(i->getType())<<"\n";
+    }
+    */
+  antlr4::tree::ParseTree *treeFragAnt = parser.startLogic();
+  antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
+  /*
+  DEBUG
+  exit(0);
+  std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
+  */
+  return listener.getLogicExpression();
+}
+
 expression::FloatExpressionPtr
 parseFloatExpression(std::string formula,
                      const harm::TracePtr &trace) {
@@ -151,6 +185,41 @@ parseFloatExpression(std::string formula,
 
   antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
   return listener.getFloatExpression();
+}
+
+expression::StringExpressionPtr
+parseStringExpression(std::string formula,
+                      const harm::TracePtr &trace) {
+
+  auto decls = trace->getDeclarations();
+  addTypeToExp(formula, decls);
+
+  // parse typed propositions
+  hparser::PropositionParserHandler listener(trace);
+  listener.addErrorMessage("\t\t\tIn formula: " + formula);
+  antlr4::ANTLRInputStream input(formula);
+  propositionLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  propositionParser parser(&tokens);
+  //print tokens
+  /*
+    std::map<size_t, std::string> indexToToken;
+    for (auto [token,index] : parser.getTokenTypeMap()) {
+        indexToToken[index] = token;
+    }
+    for (auto &i : lexer.getAllTokens()) {
+        std::cout << i->toString() <<" "<<indexToToken.at(i->getType())<<"\n";
+    }
+    */
+  antlr4::tree::ParseTree *treeFragAnt = parser.startString();
+  /*
+  DEBUG
+  exit(0);
+  std::cout << treeFragAnt->toStringTree(&parser) << "\n\n\n";
+  */
+
+  antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, treeFragAnt);
+  return listener.getStringExpression();
 }
 
 expression::PropositionPtr
@@ -218,8 +287,17 @@ void addTypeToExp(std::string &formula,
     case ExpType::SInt:
       nameType = startVar + varDec.getName() + ",int" + endVar;
       break;
+    case ExpType::ULogic:
+      nameType = startVar + varDec.getName() + ",logic" + endVar;
+      break;
+    case ExpType::SLogic:
+      nameType = startVar + varDec.getName() + ",logic" + endVar;
+      break;
     case ExpType::Float:
       nameType = startVar + varDec.getName() + ",float" + endVar;
+      break;
+    case ExpType::String:
+      nameType = startVar + varDec.getName() + ",string" + endVar;
       break;
     default:
       messageError("Variable is of \'Uknown type\'");

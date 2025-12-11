@@ -62,6 +62,7 @@ public:
 
   void check() {
 
+    clc::reset = "";
     _tr = new CSVtraceReader("../tests/input/RandomTrace.csv");
     _trace = _tr->readTrace();
 

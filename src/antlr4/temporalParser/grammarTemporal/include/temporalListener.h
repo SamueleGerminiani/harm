@@ -40,6 +40,15 @@ public:
   virtual void enterTformula(temporalParser::TformulaContext *ctx) = 0;
   virtual void exitTformula(temporalParser::TformulaContext *ctx) = 0;
 
+  virtual void enterTemporalFunction(temporalParser::TemporalFunctionContext *ctx) = 0;
+  virtual void exitTemporalFunction(temporalParser::TemporalFunctionContext *ctx) = 0;
+
+  virtual void enterTfunc_arg(temporalParser::Tfunc_argContext *ctx) = 0;
+  virtual void exitTfunc_arg(temporalParser::Tfunc_argContext *ctx) = 0;
+
+  virtual void enterPlaceholder_domain(temporalParser::Placeholder_domainContext *ctx) = 0;
+  virtual void exitPlaceholder_domain(temporalParser::Placeholder_domainContext *ctx) = 0;
+
   virtual void enterDt_next(temporalParser::Dt_nextContext *ctx) = 0;
   virtual void exitDt_next(temporalParser::Dt_nextContext *ctx) = 0;
 
@@ -55,8 +64,14 @@ public:
   virtual void enterStartInt(temporalParser::StartIntContext *ctx) = 0;
   virtual void exitStartInt(temporalParser::StartIntContext *ctx) = 0;
 
+  virtual void enterStartLogic(temporalParser::StartLogicContext *ctx) = 0;
+  virtual void exitStartLogic(temporalParser::StartLogicContext *ctx) = 0;
+
   virtual void enterStartFloat(temporalParser::StartFloatContext *ctx) = 0;
   virtual void exitStartFloat(temporalParser::StartFloatContext *ctx) = 0;
+
+  virtual void enterStartString(temporalParser::StartStringContext *ctx) = 0;
+  virtual void exitStartString(temporalParser::StartStringContext *ctx) = 0;
 
   virtual void enterBoolean(temporalParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(temporalParser::BooleanContext *ctx) = 0;
@@ -70,14 +85,44 @@ public:
   virtual void enterRange(temporalParser::RangeContext *ctx) = 0;
   virtual void exitRange(temporalParser::RangeContext *ctx) = 0;
 
+  virtual void enterSm_range(temporalParser::Sm_rangeContext *ctx) = 0;
+  virtual void exitSm_range(temporalParser::Sm_rangeContext *ctx) = 0;
+
+  virtual void enterMin_dollar(temporalParser::Min_dollarContext *ctx) = 0;
+  virtual void exitMin_dollar(temporalParser::Min_dollarContext *ctx) = 0;
+
+  virtual void enterMax_dollar(temporalParser::Max_dollarContext *ctx) = 0;
+  virtual void exitMax_dollar(temporalParser::Max_dollarContext *ctx) = 0;
+
+  virtual void enterSm_constant(temporalParser::Sm_constantContext *ctx) = 0;
+  virtual void exitSm_constant(temporalParser::Sm_constantContext *ctx) = 0;
+
   virtual void enterIntAtom(temporalParser::IntAtomContext *ctx) = 0;
   virtual void exitIntAtom(temporalParser::IntAtomContext *ctx) = 0;
 
   virtual void enterInt_constant(temporalParser::Int_constantContext *ctx) = 0;
   virtual void exitInt_constant(temporalParser::Int_constantContext *ctx) = 0;
 
+  virtual void enterLogicAtom(temporalParser::LogicAtomContext *ctx) = 0;
+  virtual void exitLogicAtom(temporalParser::LogicAtomContext *ctx) = 0;
+
+  virtual void enterLogic_constant(temporalParser::Logic_constantContext *ctx) = 0;
+  virtual void exitLogic_constant(temporalParser::Logic_constantContext *ctx) = 0;
+
   virtual void enterFloatAtom(temporalParser::FloatAtomContext *ctx) = 0;
   virtual void exitFloatAtom(temporalParser::FloatAtomContext *ctx) = 0;
+
+  virtual void enterString(temporalParser::StringContext *ctx) = 0;
+  virtual void exitString(temporalParser::StringContext *ctx) = 0;
+
+  virtual void enterStringAtom(temporalParser::StringAtomContext *ctx) = 0;
+  virtual void exitStringAtom(temporalParser::StringAtomContext *ctx) = 0;
+
+  virtual void enterNonTemporalFunction(temporalParser::NonTemporalFunctionContext *ctx) = 0;
+  virtual void exitNonTemporalFunction(temporalParser::NonTemporalFunctionContext *ctx) = 0;
+
+  virtual void enterPfunc_arg(temporalParser::Pfunc_argContext *ctx) = 0;
+  virtual void exitPfunc_arg(temporalParser::Pfunc_argContext *ctx) = 0;
 
   virtual void enterRelop(temporalParser::RelopContext *ctx) = 0;
   virtual void exitRelop(temporalParser::RelopContext *ctx) = 0;

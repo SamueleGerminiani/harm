@@ -2,14 +2,21 @@ grammar proposition;
 
 startBoolean : boolean EOF;
 startInt : numeric EOF;
+startLogic : numeric EOF;
 startFloat : numeric EOF;
+startString : string EOF;
 
 // ------------------------------------------ BOOLEAN
 boolean
     : NOT boolean
+    | nonTemporalFunction
+    | numeric INSIDE LCURLY ((sm_constant | sm_range) ',')* (sm_constant | sm_range) RCURLY
     | numeric relop numeric
     | numeric EQ numeric
     | numeric NEQ numeric
+    | string relop string
+    | string EQ string
+    | string NEQ string
     | boolean EQ boolean
     | boolean NEQ boolean
     | boolean booleanop=AND boolean
@@ -38,6 +45,7 @@ BOOLEAN_VARIABLE
 // ------------------------------------------ NUMERIC
 numeric
     : NEG numeric 
+    | nonTemporalFunction
     | numeric range 
     | numeric artop=(TIMES|DIV) numeric
     | numeric artop=(PLUS|MINUS) numeric
@@ -47,11 +55,18 @@ numeric
     | numeric logop=BXOR numeric
     | numeric logop=BOR numeric
     | intAtom
+    | logicAtom
     | floatAtom
     | LROUND numeric RROUND
     ;
 
 range: LSQUARED (SINTEGER | UINTEGER) (COL (SINTEGER | UINTEGER))? RSQUARED;
+
+sm_range: LSQUARED (numeric | min_dollar) COL (numeric | max_dollar) RSQUARED;
+min_dollar: DOLLAR;
+max_dollar: DOLLAR;
+
+sm_constant: numeric; 
 
 intAtom
     : int_constant
@@ -62,7 +77,6 @@ int_constant
     : GCC_BINARY
     | SINTEGER CONST_SUFFIX?
     | UINTEGER CONST_SUFFIX?
-    | UINTEGER? VERILOG_BINARY
     | HEX
     ;
 
@@ -73,6 +87,22 @@ INT_VARIABLE
 CONST_SUFFIX
     : 'll'
     | 'ull'
+    ;
+
+logicAtom
+    : logic_constant
+    | int_constant
+    | LOGIC_VARIABLE
+    ;
+
+
+logic_constant
+    : UINTEGER? VERILOG_BINARY
+    ;
+
+
+LOGIC_VARIABLE
+    : START_VAR VARIABLE ',logic' END_VAR
     ;
 
 floatAtom
@@ -87,6 +117,32 @@ FLOAT_CONSTANT
 FLOAT_VARIABLE
     : START_VAR VARIABLE ',float' END_VAR 
     ;
+
+
+string :
+      string PLUS string
+    | string SUBSTR LROUND (UINTEGER ',' UINTEGER | UINTEGER)? RROUND
+    | stringAtom
+    | LROUND string RROUND
+    ;
+
+
+stringAtom
+    : STRING_CONSTANT
+    | STRING_VARIABLE
+    ;
+
+SUBSTR: '.substr';
+
+//match any character inside double quotes
+STRING_CONSTANT
+    :  '"' ~('"')* '"'
+    ;
+
+STRING_VARIABLE
+    : START_VAR VARIABLE ',string' END_VAR 
+    ;
+
 
 LCURLY
     : '{'
@@ -110,6 +166,21 @@ LROUND
 RROUND
     : ')'
     ;
+
+INSIDE
+    : 'inside'
+    ;
+
+
+FUNCTION
+: '$stable'
+| '$past'
+| '$rose'
+| '$fell'
+;
+
+nonTemporalFunction: FUNCTION LROUND pfunc_arg (',' pfunc_arg)* RROUND;
+pfunc_arg: numeric |  boolean;
 
 //==== Token VARIABLE ==========================================================
 fragment VARIABLE

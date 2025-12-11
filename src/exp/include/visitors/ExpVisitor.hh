@@ -4,10 +4,13 @@
 #include "formula/atom/Variable.hh"          // IWYU pragma: keep
 #include "formula/expression/BitSelector.hh" // IWYU pragma: keep
 #include "formula/expression/GenericExpression.hh" // IWYU pragma: keep
-#include "formula/expression/TypeCast.hh"   // IWYU pragma: keep
-#include "formula/temporal/BooleanLayer.hh" // IWYU pragma: keep
-#include "formula/temporal/Property.hh"     // IWYU pragma: keep
-#include "formula/temporal/Sere.hh"         // IWYU pragma: keep
+#include "formula/expression/SetMembership.hh" // IWYU pragma: keep
+#include "formula/expression/Substring.hh"     // IWYU pragma: keep
+#include "formula/expression/TypeCast.hh"      // IWYU pragma: keep
+#include "formula/function/SVAfunction.hh"     // IWYU pragma: keep
+#include "formula/temporal/BooleanLayer.hh"    // IWYU pragma: keep
+#include "formula/temporal/Property.hh"        // IWYU pragma: keep
+#include "formula/temporal/Sere.hh"            // IWYU pragma: keep
 
 #include "visitorExpList.hh"
 

@@ -11,14 +11,17 @@
 
 namespace expression {
 class ExpVisitor;
+class Logic;
 enum class ExpType;
 
 template <typename ET>
-using GetNumericExpType =
-    std::conditional_t<std::is_same_v<ET, Float>, FloatExpression,
-                       IntExpression>;
+using GetNumericExpType = std::conditional_t<
+    std::is_same_v<ET, Float>, FloatExpression,
+    std::conditional_t<std::is_same_v<ET, UInt> ||
+                           std::is_same_v<ET, SInt>,
+                       IntExpression, LogicExpression>>;
 
-/// \brief NumericExpression is a wrapper class for FloatExpression or IntExpression
+/// \brief NumericExpression is a wrapper class for FloatExpression or IntExpression or LogicExpression
 class NumericExpression {
 
 public:
@@ -27,6 +30,9 @@ public:
                     bool useCache = true);
   /// \brief constructor for IntExpression
   NumericExpression(const IntExpressionPtr &inte,
+                    bool useCache = true);
+  /// \brief constructor for LogicExpression
+  NumericExpression(const LogicExpressionPtr &loge,
                     bool useCache = true);
 
   ~NumericExpression();
@@ -39,17 +45,21 @@ public:
   /// \brief Returns the underlying expression of type ET
   template <typename ET> GenericPtr<ET> get();
 
+  bool containsXZ(size_t time);
+
 private:
   //only one of the following is not nullptr
 
   FloatExpressionPtr _floe = nullptr;
   IntExpressionPtr _inte = nullptr;
+  LogicExpressionPtr _loge = nullptr;
 
   bool _useCache;
 
   // used only if _useCache is true
   double *_cachedd = nullptr;
   UInt *_cachedi = nullptr;
+  Logic *_cachedl = nullptr;
 
 public:
   //FIXME: this should not be here

@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <type_traits>
@@ -11,6 +10,8 @@
 
 #include "Float.hh"
 #include "Int.hh"
+#include "Logic.hh"
+#include "String.hh"
 #include "expUtils/ExpType.hh"
 #include "expUtils/ope.hh"
 
@@ -79,13 +80,17 @@ protected:
 
 using FloatExpression = Atom<Float>;
 using IntExpression = Atom<UInt>;
+using LogicExpression = Atom<Logic>;
 using Proposition = Atom<bool>;
+using StringExpression = Atom<String>;
 
 //smart pointer aliases
 using PropositionPtr = std::shared_ptr<Proposition>;
 using PropositionPtrPtr = std::shared_ptr<PropositionPtr>;
 using FloatExpressionPtr = std::shared_ptr<FloatExpression>;
 using IntExpressionPtr = std::shared_ptr<IntExpression>;
+using LogicExpressionPtr = std::shared_ptr<LogicExpression>;
+using StringExpressionPtr = std::shared_ptr<StringExpression>;
 template <typename T> using GenericPtr = std::shared_ptr<T>;
 template <typename T>
 using GenericPtrPtr = std::shared_ptr<GenericPtr<T>>;

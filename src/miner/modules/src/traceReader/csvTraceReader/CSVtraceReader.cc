@@ -7,6 +7,7 @@
 #include <utility>
 
 // clang-format off
+#include "Logic.hh"
 // clang-format on
 #include "ANTLRInputStream.h"
 #include "CSVtraceReader.hh"
@@ -94,6 +95,8 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
   std::vector<BooleanVariablePtr> boolVars;
   std::vector<FloatVariablePtr> numVars;
   std::vector<IntVariablePtr> intVars;
+  std::vector<LogicVariablePtr> logVars;
+  std::vector<StringVariablePtr> strVars;
   std::unordered_set<std::string> varNames;
 
   messageInfo("Parsing " + file);
@@ -142,6 +145,10 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
       numVars.push_back(trace->getFloatVariable(var.getName()));
     } else if (isInt(var.getType())) {
       intVars.push_back(trace->getIntVariable(var.getName()));
+    } else if (isLogic(var.getType())) {
+      logVars.push_back(trace->getLogicVariable(var.getName()));
+    } else if (isString(var.getType())) {
+      strVars.push_back(trace->getStringVariable(var.getName()));
     } else {
       messageError("Variable " + var.getName() +
                    " not found in trace!");
@@ -153,7 +160,9 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
   for (CSVRow &row : reader) {
     size_t bfieldIndex = 0;
     size_t ffieldIndex = 0;
+    size_t lfieldIndex = 0;
     size_t ifieldIndex = 0;
+    size_t sfieldIndex = 0;
     size_t fieldIndex = 0;
     //for each field of the row
     for (CSVField &field : row) {
@@ -171,22 +180,26 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
         //float type is no longer supported
         numVars[ffieldIndex++]->assign(time, safeStod(field.get()));
       } else if (isInt(vars_dt[fieldIndex].getType())) {
-        size_t base = vars_dt[fieldIndex].getBase();
+        size_t base = vars_dt[fieldIndex].getInputBase();
+        auto val = field.get();
         if (base == 2) {
           messageErrorIf(!isBase2(val),
                          "val '" + val +
                              "' is not a valid binary number");
-          //substitute 'x' and 'z' from the string with 0
           if (val.size() > 64) {
             //if the number is too big, truncate it
             val.erase(0, val.size() - 64);
           }
-          std::replace_if(
-              val.begin(), val.end(),
-              [](char c) {
-                return c == 'x' || c == 'z' || c == 'X' || c == 'Z';
-              },
-              '0');
+
+          //this my be a logic that was forced to int so we need to replace x and z with 0
+          if (clc::forceInt) {
+            std::replace_if(
+                val.begin(), val.end(),
+                [](char c) {
+                  return c == 'x' || c == 'z' || c == 'X' || c == 'Z';
+                },
+                '0');
+          }
         }
         if (intVars[ifieldIndex]->getType().first == ExpType::SInt) {
           intVars[ifieldIndex]->assign(time, safeStoll(val, base));
@@ -194,6 +207,24 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
           intVars[ifieldIndex]->assign(time, safeStoull(val, base));
         }
         ifieldIndex++;
+      } else if (isLogic(vars_dt[fieldIndex].getType())) {
+        messageErrorIf(!isBase2(field.get()),
+                       "val '" + field.get() +
+                           "' is not a valid binary number");
+        if (logVars[lfieldIndex]->getType().first ==
+            ExpType::SLogic) {
+          logVars[lfieldIndex]->assign(
+              time, Logic(field.get(),
+                          logVars[lfieldIndex]->getType().second, 1));
+        } else {
+          logVars[lfieldIndex]->assign(
+              time, Logic(field.get(),
+                          logVars[lfieldIndex]->getType().second, 0));
+        }
+        lfieldIndex++;
+      } else if (isString(vars_dt[fieldIndex].getType())) {
+        strVars[sfieldIndex]->assign(time, field.get());
+        sfieldIndex++;
       } else {
         messageError("Unknown var type in trace file: '" + file +
                      "'");

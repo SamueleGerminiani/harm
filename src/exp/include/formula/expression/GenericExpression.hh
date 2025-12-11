@@ -6,11 +6,13 @@
 
 #include "Float.hh"
 #include "Int.hh"
+#include "String.hh"
 #include "expUtils/ope.hh"
 #include "formula/atom/Atom.hh"
 
 namespace expression {
 class ExpVisitor;
+class Logic;
 
 /// @brief CstyleExpression declaration.
 /// This class represents a generic float, int or boolean expression.
@@ -21,7 +23,11 @@ class GenericExpression : public ET {
       std::is_same<ET, FloatExpression>::value, Float,
       typename std::conditional<
           std::is_same<ET, IntExpression>::value, UInt,
-          bool>::type>::type;
+          typename std::conditional<
+              std::is_same<ET, LogicExpression>::value, Logic,
+              typename std::conditional<
+                  std::is_same<ET, StringExpression>::value, String,
+                  bool>::type>::type>::type>::type;
 
 public:
   /// @brief Constructor.
@@ -159,6 +165,62 @@ using IntLShift = GenericExpression<ope::ope::IntLShift,
 using IntRShift = GenericExpression<ope::ope::IntRShift,
                                     IntExpression, IntExpression>;
 
+// logic
+using LogicSum = GenericExpression<ope::ope::LogicSum,
+                                   LogicExpression, LogicExpression>;
+using LogicSub = GenericExpression<ope::ope::LogicSub,
+                                   LogicExpression, LogicExpression>;
+using LogicMul = GenericExpression<ope::ope::LogicMul,
+                                   LogicExpression, LogicExpression>;
+using LogicDiv = GenericExpression<ope::ope::LogicDiv,
+                                   LogicExpression, LogicExpression>;
+using LogicBAnd = GenericExpression<ope::ope::LogicBAnd,
+                                    LogicExpression, LogicExpression>;
+using LogicBOr = GenericExpression<ope::ope::LogicBOr,
+                                   LogicExpression, LogicExpression>;
+using LogicBXor = GenericExpression<ope::ope::LogicBXor,
+                                    LogicExpression, LogicExpression>;
+using LogicEq = GenericExpression<ope::ope::LogicEq, LogicExpression,
+                                  Proposition>;
+using LogicNeq = GenericExpression<ope::ope::LogicNeq,
+                                   LogicExpression, Proposition>;
+using LogicGreater = GenericExpression<ope::ope::LogicGreater,
+                                       LogicExpression, Proposition>;
+using LogicGreaterEq =
+    GenericExpression<ope::ope::LogicGreaterEq, LogicExpression,
+                      Proposition>;
+using LogicLess = GenericExpression<ope::ope::LogicLess,
+                                    LogicExpression, Proposition>;
+using LogicLessEq = GenericExpression<ope::ope::LogicLessEq,
+                                      LogicExpression, Proposition>;
+using LogicNot = GenericExpression<ope::ope::LogicNot,
+                                   LogicExpression, LogicExpression>;
+using LogicLShift =
+    GenericExpression<ope::ope::LogicLShift, LogicExpression,
+                      LogicExpression>;
+using LogicRShift =
+    GenericExpression<ope::ope::LogicRShift, LogicExpression,
+                      LogicExpression>;
+
+//string
+using StringConcat =
+    GenericExpression<ope::ope::StringConcat, StringExpression,
+                      StringExpression>;
+using StringEq = GenericExpression<ope::ope::StringEq,
+                                   StringExpression, Proposition>;
+using StringNeq = GenericExpression<ope::ope::StringNeq,
+                                    StringExpression, Proposition>;
+using StringGreater =
+    GenericExpression<ope::ope::StringGreater, StringExpression,
+                      Proposition>;
+using StringGreaterEq =
+    GenericExpression<ope::ope::StringGreaterEq, StringExpression,
+                      Proposition>;
+using StringLess = GenericExpression<ope::ope::StringLess,
+                                     StringExpression, Proposition>;
+using StringLessEq = GenericExpression<ope::ope::StringLessEq,
+                                       StringExpression, Proposition>;
+
 //smart pointer alias
 
 using PropositionAndPtr = std::shared_ptr<PropositionAnd>;
@@ -193,6 +255,29 @@ using IntLessEqPtr = std::shared_ptr<IntLessEq>;
 using IntNotPtr = std::shared_ptr<IntNot>;
 using IntLShiftPtr = std::shared_ptr<IntLShift>;
 using IntRShiftPtr = std::shared_ptr<IntRShift>;
+using LogicSumPtr = std::shared_ptr<LogicSum>;
+using LogicSubPtr = std::shared_ptr<LogicSub>;
+using LogicMulPtr = std::shared_ptr<LogicMul>;
+using LogicDivPtr = std::shared_ptr<LogicDiv>;
+using LogicBAndPtr = std::shared_ptr<LogicBAnd>;
+using LogicBOrPtr = std::shared_ptr<LogicBOr>;
+using LogicBXorPtr = std::shared_ptr<LogicBXor>;
+using LogicEqPtr = std::shared_ptr<LogicEq>;
+using LogicNeqPtr = std::shared_ptr<LogicNeq>;
+using LogicGreaterPtr = std::shared_ptr<LogicGreater>;
+using LogicGreaterEqPtr = std::shared_ptr<LogicGreaterEq>;
+using LogicLessPtr = std::shared_ptr<LogicLess>;
+using LogicLessEqPtr = std::shared_ptr<LogicLessEq>;
+using LogicNotPtr = std::shared_ptr<LogicNot>;
+using LogicLShiftPtr = std::shared_ptr<LogicLShift>;
+using LogicRShiftPtr = std::shared_ptr<LogicRShift>;
+using StringConcatPtr = std::shared_ptr<StringConcat>;
+using StringEqPtr = std::shared_ptr<StringEq>;
+using StringNeqPtr = std::shared_ptr<StringNeq>;
+using StringGreaterPtr = std::shared_ptr<StringGreater>;
+using StringGreaterEqPtr = std::shared_ptr<StringGreaterEq>;
+using StringLessPtr = std::shared_ptr<StringLess>;
+using StringLessEqPtr = std::shared_ptr<StringLessEq>;
 
 inline bool isPropositionNot(const PropositionPtr &e) {
   return std::dynamic_pointer_cast<PropositionNot>(e) != nullptr;
@@ -200,8 +285,11 @@ inline bool isPropositionNot(const PropositionPtr &e) {
 inline bool isIntNot(const PropositionPtr &e) {
   return std::dynamic_pointer_cast<IntNot>(e) != nullptr;
 }
+inline bool isLogicNot(const PropositionPtr &e) {
+  return std::dynamic_pointer_cast<LogicNot>(e) != nullptr;
+}
 inline bool isNot(const PropositionPtr &e) {
-  return isPropositionNot(e) || isIntNot(e);
+  return isPropositionNot(e) || isIntNot(e) || isLogicNot(e);
 }
 inline bool isPropositionAnd(const PropositionPtr &e) {
   return std::dynamic_pointer_cast<PropositionAnd>(e) != nullptr;

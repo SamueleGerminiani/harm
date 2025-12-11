@@ -23,6 +23,7 @@ SET(MINER_UTILS_SRC
     src/Context.cc
     src/Assertion.cc
     src/DTUtils.cc
+    src/Edit.cc
     )
 
 SET(METRIC_SRC
@@ -37,5 +38,5 @@ target_link_libraries(metric propositionParser)
 
 add_library(${NAME} ${MINER_UTILS_SRC})
 target_include_directories(${NAME} PUBLIC include/ ${SPOTLTLCPP_INCLUDE_DIRS})
-target_link_libraries(${NAME} ${SPOTLTL_LIB} fort clustering temporalParser metric)
+target_link_libraries(${NAME} ${SPOTLTL_LIB} fort clustering temporalParser metric Boost::regex)
 

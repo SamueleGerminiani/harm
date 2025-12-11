@@ -12,6 +12,7 @@
 #include "expUtils/expUtils.hh"
 #include "expUtils/ope.hh"
 #include "formula/atom/Atom.hh"
+#include "formula/function/Function.hh"
 #include "formula/temporal/temporal.hh"
 #include "globals.hh"
 #include "message.hh"
@@ -249,13 +250,18 @@ Permutator::PermUnit *Permutator::generatePermUnit(
       ret->_dim._col += i->_dim._col;
     }
 
-  } else if (isPermutationPlaceholder(templ)) {
+  } else if (isPermutationPlaceholder(templ) ||
+             isBooleanLayerFunction(templ)) {
     //placeholder
     std::string phName =
         isPermutationPlaceholder(templ)
             ? std::dynamic_pointer_cast<
                   BooleanLayerPermutationPlaceholder>(templ)
                   ->getToken()
+        : isBooleanLayerFunction(templ)
+            ? std::dynamic_pointer_cast<BooleanLayerFunction>(templ)
+                  ->getFunction()
+                  ->getPlaceholderToken()
             : "";
 
     messageErrorIf(phName == "", "Unknown placeholder ");
@@ -399,24 +405,54 @@ bool Permutator::areEquivalent(const TemporalExpressionPtr &f1,
     return false;
   }
 
+  if (isBooleanLayerFunction(f1) &&
+      (_phToFrequency.at(
+           std::dynamic_pointer_cast<BooleanLayerFunction>(f1)
+               ->getFunction()
+               ->getPlaceholderToken()) > 1)) {
+    return false;
+  }
+  if (isBooleanLayerFunction(f2) &&
+      (_phToFrequency.at(
+           std::dynamic_pointer_cast<BooleanLayerFunction>(f2)
+               ->getFunction()
+               ->getPlaceholderToken()) > 1)) {
+    return false;
+  }
   //------------------------------------------------------
 
+  //same function
+  if (isBooleanLayerFunction(f1) && isBooleanLayerFunction(f2)) {
+    if (std::dynamic_pointer_cast<BooleanLayerFunction>(f1)
+            ->getFunction()
+            ->getFunctionName() !=
+        std::dynamic_pointer_cast<BooleanLayerFunction>(f2)
+            ->getFunction()
+            ->getFunctionName()) {
+      return false;
+    }
+  }
+
   //check placeholders domains
-  if ((isPermutationPlaceholder(f1)) &&
-      (isPermutationPlaceholder(f2))) {
+  if ((isPermutationPlaceholder(f1) || isBooleanLayerFunction(f1)) &&
+      (isPermutationPlaceholder(f2) || isBooleanLayerFunction(f2))) {
     std::string ph1 =
         isPermutationPlaceholder(f1)
             ? std::dynamic_pointer_cast<
                   BooleanLayerPermutationPlaceholder>(f1)
                   ->getToken()
-            : "";
+            : std::dynamic_pointer_cast<BooleanLayerFunction>(f1)
+                  ->getFunction()
+                  ->getPlaceholderToken();
 
     std::string ph2 =
         isPermutationPlaceholder(f2)
             ? std::dynamic_pointer_cast<
                   BooleanLayerPermutationPlaceholder>(f2)
                   ->getToken()
-            : "";
+            : std::dynamic_pointer_cast<BooleanLayerFunction>(f2)
+                  ->getFunction()
+                  ->getPlaceholderToken();
 
     if (_phToDomainStr.at(ph1) != _phToDomainStr.at(ph2)) {
       return false;
@@ -453,13 +489,18 @@ void Permutator::genPermutations(
   // assign an index to each placeholders
   size_t phIndex = 0;
   traverse(templateFormula, [&](const TemporalExpressionPtr &templ) {
-    if (isPermutationPlaceholder(templ)) {
+    if (isPermutationPlaceholder(templ) ||
+        isBooleanLayerFunction(templ)) {
       //extract the placeholder name
       std::string phName =
           isPermutationPlaceholder(templ)
               ? std::dynamic_pointer_cast<
                     BooleanLayerPermutationPlaceholder>(templ)
                     ->getToken()
+          : isBooleanLayerFunction(templ)
+              ? std::dynamic_pointer_cast<BooleanLayerFunction>(templ)
+                    ->getFunction()
+                    ->getPlaceholderToken()
               : "";
       messageErrorIf(
           phName == "",

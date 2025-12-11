@@ -6,6 +6,12 @@
 
 #include "formula/atom/Atom.hh"
 
+namespace expression {
+template <typename OT, typename ET> class Function;
+using FunctionPropositionPtr =
+    std::shared_ptr<Function<Proposition, Proposition>>;
+} // namespace expression
+
 namespace harm {
 
 /*! \class EdgeProposition
@@ -72,6 +78,14 @@ public:
   std::string toString();
   expression::PropositionPtrPtr _toProp;
   std::string _phName = "";
+};
+
+class EdgeFunction : public EdgeProposition {
+public:
+  EdgeFunction(const expression::FunctionPropositionPtr &toFunc);
+  bool evaluate(size_t time);
+  std::string toString();
+  expression::FunctionPropositionPtr _toFunc = nullptr;
 };
 
 class EdgeInst : public EdgeProposition {

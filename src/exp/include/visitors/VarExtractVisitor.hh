@@ -23,6 +23,8 @@ public:
   void visit(BooleanVariable &o) override;
   void visit(FloatVariable &o) override;
   void visit(IntVariable &o) override;
+  void visit(LogicVariable &o) override;
+  void visit(StringVariable &o) override;
 
 protected:
   /// @brief list of extracted variables

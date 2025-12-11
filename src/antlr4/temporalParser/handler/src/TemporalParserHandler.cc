@@ -13,6 +13,7 @@
 
 #include "formula/atom/Constant.hh"
 #include "formula/expression/GenericExpression.hh"
+#include "formula/function/SVAfunction.hh"
 #include "formula/temporal/temporal.hh"
 #include "globals.hh"
 #include "message.hh"
@@ -57,6 +58,117 @@ TemporalParserHandler::handleNewInst(const std::string &prop) {
   return inst;
 }
 
+std::string TemporalParserHandler::handleNewFunc(
+    temporalParser::TemporalFunctionContext *ctx) {
+  std::string funStr = ctx->getText();
+  if (_funStrToFunID.count(funStr))
+    return _funStrToFunID.at(funStr);
+
+  messageErrorIf(ctx->tfunc_arg().empty(),
+                 "Function '" + ctx->getText() +
+                     "' does not have any argument\n" +
+                     printErrorMessage());
+
+  messageErrorIf((ctx->FUNCTION()->getText() == "$stable" ||
+                  ctx->FUNCTION()->getText() == "$rose" ||
+                  ctx->FUNCTION()->getText() == "$fell") &&
+                     ctx->tfunc_arg().size() != 1,
+                 "Function '" + ctx->getText() +
+                     "' requires exactly one argument\n" +
+                     printErrorMessage());
+  messageErrorIf((ctx->FUNCTION()->getText() == "$stable" ||
+                  ctx->FUNCTION()->getText() == "$rose" ||
+                  ctx->FUNCTION()->getText() == "$fell") &&
+                     ctx->tfunc_arg()[0]->PLACEHOLDER() == nullptr,
+                 "Function '" + ctx->getText() +
+                     "' requires a placeholder as argument\n" +
+                     printErrorMessage());
+
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->tfunc_arg().size() > 2,
+                 "Function '" + ctx->getText() +
+                     "' requires at most two arguments\n" +
+                     printErrorMessage());
+  messageErrorIf(
+      ctx->FUNCTION()->getText() == "$past" &&
+          ctx->tfunc_arg().size() < 1,
+      "Function '" + ctx->getText() +
+          "' requires at least a placeholder as argument\n" +
+          printErrorMessage());
+  messageErrorIf(ctx->FUNCTION()->getText() == "$past" &&
+                     ctx->tfunc_arg().size() == 2 &&
+                     (!ctx->tfunc_arg()[0]->PLACEHOLDER() ||
+                      !ctx->tfunc_arg()[1]->UINTEGER()),
+                 "Function '" + ctx->getText() + "illegal input \n" +
+                     printErrorMessage());
+
+  if (ctx->FUNCTION()->getText() == "$stable" ||
+      ctx->FUNCTION()->getText() == "$rose" ||
+      ctx->FUNCTION()->getText() == "$fell") {
+    std::string funID = "_fun" + std::to_string(funCount++);
+    _funStrToFunID[funStr] = funID;
+    std::string ph =
+        handleNewPP(ctx->tfunc_arg()[0]->PLACEHOLDER()->getText());
+    handlePlaceholderDomain(ctx->tfunc_arg()[0]->placeholder_domain(),
+                            ph);
+    PropositionPtrPtr ppNew = _phToPP.at(ph);
+
+    if (ctx->FUNCTION()->getText() == "$stable") {
+      _funIDtoTemporalFunction[funID] =
+          (generatePtr<PropositionStable>(
+              ppNew, ctx->tfunc_arg()[0]->PLACEHOLDER()->getText(),
+              ExpType::Bool, 1, _trace->getLength()));
+    } else if (ctx->FUNCTION()->getText() == "$rose") {
+      _funIDtoTemporalFunction[funID] = (generatePtr<PropositionRose>(
+          ppNew, ctx->tfunc_arg()[0]->PLACEHOLDER()->getText(),
+          ExpType::Bool, 1, _trace->getLength()));
+    } else if (ctx->FUNCTION()->getText() == "$fell") {
+      _funIDtoTemporalFunction[funID] = (generatePtr<PropositionFell>(
+          ppNew, ctx->tfunc_arg()[0]->PLACEHOLDER()->getText(),
+          ExpType::Bool, 1, _trace->getLength()));
+    } else {
+      messageError("Function '" + ctx->FUNCTION()->getText() +
+                   "' is not supported\n" + printErrorMessage());
+    }
+
+    return funID;
+  } else if (ctx->FUNCTION()->getText() == "$past") {
+    std::string funID = "_fun" + std::to_string(funCount++);
+    _funStrToFunID[funStr] = funID;
+    std::string ph =
+        handleNewPP(ctx->tfunc_arg()[0]->PLACEHOLDER()->getText());
+    handlePlaceholderDomain(ctx->tfunc_arg()[0]->placeholder_domain(),
+                            ph);
+    PropositionPtrPtr ppNew = _phToPP.at(ph);
+    size_t shift =
+        ctx->tfunc_arg().size() == 2
+            ? safeStoull(ctx->tfunc_arg()[1]->UINTEGER()->getText())
+            : 1;
+    _funIDtoTemporalFunction[funID] = (generatePtr<PropositionPast>(
+        ppNew, shift, ctx->tfunc_arg()[0]->PLACEHOLDER()->getText(),
+        ExpType::Bool, 1, _trace->getLength()));
+    return funID;
+  }
+
+  messageError("Function '" + ctx->FUNCTION()->getText() +
+               "' is not supported\n" + printErrorMessage());
+  return "";
+}
+
+void TemporalParserHandler::enterTemporalFunction(
+    temporalParser::TemporalFunctionContext *ctx) {
+
+  if (ctx->FUNCTION() != nullptr) {
+    std::string funID = handleNewFunc(ctx);
+
+    TemporalExpressionPtr fun = generatePtr<BooleanLayerFunction>(
+        _funIDtoTemporalFunction.at(funID), funID);
+
+    _tsubFormulas.push(fun);
+    return;
+  }
+}
+
 void TemporalParserHandler::exitFormula(
     temporalParser::FormulaContext *ctx) {
   auto tformula = _tsubFormulas.top();
@@ -83,7 +195,8 @@ void TemporalParserHandler::exitImplication(
                       PrintMode::ShowOnlyPermuationPlaceholders) +
           "' is not a SERE.\n"
           "The semantics of the generated assertions might change "
-          "once they are printed, leading to hard-to-understand errors. Do not ignore this.\n" +
+          "once they are printed, leading to hard-to-understand "
+          "errors. Do not ignore this.\n" +
           printErrorMessage());
 
   messageWarningIf(
@@ -92,7 +205,8 @@ void TemporalParserHandler::exitImplication(
       "SystemVerilog output language detected, SystemVerilog "
       "implications requires to use |-> or |=>\n"
       "The semantics of the generated assertions might change once "
-      "they are printed, leading to hard-to-understand errors. Do not ignore this.\n" +
+      "they are printed, leading to hard-to-understand errors. Do "
+      "not ignore this.\n" +
           printErrorMessage());
 
   bool isOverlapping =
@@ -114,6 +228,7 @@ void TemporalParserHandler::exitTformula(
                    "More than one dt operator defined\n" +
                        printErrorMessage());
     std::string ph = "_dtAnd" + std::to_string(dtCount++);
+    handlePlaceholderDomain(ctx->placeholder_domain(), "DT");
     _dto_param._type = harm::DTO_Type::And;
     _tsubFormulas.push(generatePtr<BooleanLayerDTPlaceholder>(
         harm::DTO_Type::And,
@@ -121,7 +236,6 @@ void TemporalParserHandler::exitTformula(
             makeGenericExpression<PropositionAnd>(
                 _trace->getLength())),
         ph, 0));
-    _phToIdsDomain["DT"];
     return;
   }
 
@@ -192,12 +306,26 @@ void TemporalParserHandler::exitTformula(
   }
 }
 
+void TemporalParserHandler::handlePlaceholderDomain(
+    temporalParser::Placeholder_domainContext *ctx,
+    const std::string &ph) {
+
+  //initialize the domain of the placeholder
+  _phToIdsDomain[ph];
+
+  if (ctx && !ctx->UINTEGER().empty()) {
+    for (auto &id : ctx->UINTEGER()) {
+      _phToIdsDomain[ph].insert(safeStoull(id->getText()));
+    }
+  }
+}
+
 void TemporalParserHandler::enterBooleanLayer(
     temporalParser::BooleanLayerContext *ctx) {
 
   if (ctx->PLACEHOLDER() != nullptr) {
     std::string ph = handleNewPP(ctx->PLACEHOLDER()->getText());
-    _phToIdsDomain[ph];
+    handlePlaceholderDomain(ctx->placeholder_domain(), ph);
     TemporalExpressionPtr bl_ph =
         generatePtr<BooleanLayerPermutationPlaceholder>(
             _phToPP.at(ph), ph);
@@ -235,12 +363,12 @@ void TemporalParserHandler::exitSere(
         safeStoull(ctx->dt_next()->UINTEGER()->getText());
     _dto_param._type = harm::DTO_Type::Next;
 
+    handlePlaceholderDomain(ctx->placeholder_domain(), "DT");
     _tsubFormulas.push(generatePtr<BooleanLayerDTPlaceholder>(
         harm::DTO_Type::Next,
         generatePtr<PropositionPtr>(generatePtr<BooleanConstant>(
             true, ExpType::Bool, 1, _trace->getLength())),
         ph, 0));
-    _phToIdsDomain["DT"];
 
     return;
   }
@@ -267,12 +395,12 @@ void TemporalParserHandler::exitSere(
       messageError("Unknown NCReps type");
     }
 
+    handlePlaceholderDomain(ctx->placeholder_domain(), "DT");
     _tsubFormulas.push(generatePtr<BooleanLayerDTPlaceholder>(
         _dto_param._type,
         generatePtr<PropositionPtr>(generatePtr<BooleanConstant>(
             true, ExpType::Bool, 1, _trace->getLength())),
         ph, 0));
-    _phToIdsDomain["DT"];
     return;
   }
 
@@ -284,13 +412,13 @@ void TemporalParserHandler::exitSere(
     _dto_param._step =
         safeStoull(ctx->dt_next_and()->UINTEGER()->getText());
     _dto_param._type = harm::DTO_Type::NextAnd;
+    handlePlaceholderDomain(ctx->placeholder_domain(), "DT");
     _tsubFormulas.push(generatePtr<BooleanLayerDTPlaceholder>(
         harm::DTO_Type::NextAnd,
         generatePtr<PropositionPtr>(
             makeGenericExpression<PropositionAnd>(
                 _trace->getLength())),
         ph, 0));
-    _phToIdsDomain["DT"];
     return;
   }
 
@@ -299,6 +427,7 @@ void TemporalParserHandler::exitSere(
                    "More than one dt operator defined\n" +
                        printErrorMessage());
     std::string ph = "_dtAnd" + std::to_string(dtCount++);
+    handlePlaceholderDomain(ctx->placeholder_domain(), "DT");
     _dto_param._type = harm::DTO_Type::And;
     _tsubFormulas.push(generatePtr<BooleanLayerDTPlaceholder>(
         harm::DTO_Type::And,
@@ -306,7 +435,6 @@ void TemporalParserHandler::exitSere(
             makeGenericExpression<PropositionAnd>(
                 _trace->getLength())),
         ph, 0));
-    _phToIdsDomain["DT"];
     return;
   }
 

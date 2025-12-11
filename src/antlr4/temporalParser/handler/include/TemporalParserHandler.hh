@@ -18,6 +18,9 @@ class ErrorNode;
 } // namespace tree
 } // namespace antlr4
 namespace expression {
+template <typename OT, typename ET> class Function;
+using FunctionPropositionPtr =
+    std::shared_ptr<expression::Function<Proposition, Proposition>>;
 
 class TemporalExpression;
 using TemporalExpressionPtr = std::shared_ptr<TemporalExpression>;
@@ -59,8 +62,17 @@ private:
   virtual void enterBooleanLayer(
       temporalParser::BooleanLayerContext *ctx) override;
 
+  virtual void enterTemporalFunction(
+      temporalParser::TemporalFunctionContext *ctx) override;
+
+  void handlePlaceholderDomain(
+      temporalParser::Placeholder_domainContext *ctx,
+      const std::string &ph);
+
   std::string handleNewPP(const std::string &ph);
   std::string handleNewInst(const std::string &prop);
+  std::string
+  handleNewFunc(temporalParser::TemporalFunctionContext *ctx);
 
   std::stack<expression::TemporalExpressionPtr> _tsubFormulas;
 
@@ -77,13 +89,19 @@ private:
   std::unordered_map<std::string, expression::PropositionPtr>
       _instToPP;
 
+  std::unordered_map<std::string, expression::FunctionPropositionPtr>
+      _funIDtoTemporalFunction;
   /// map from the string representation of a instance proposition to the temporal name
   std::unordered_map<std::string, std::string> _propStrToInst;
+  /// map from the string representation of a function to its ID
+  std::unordered_map<std::string, std::string> _funStrToFunID;
 
   ///keeps track of the number of DT operators
   size_t dtCount = 0;
   ///keeps track of the number of instance propositions
   size_t instCount = 0;
+  ///keeps track of the number of functions
+  size_t funCount = 0;
 
   harm::DTOParam _dto_param;
 

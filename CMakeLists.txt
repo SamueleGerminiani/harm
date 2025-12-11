@@ -127,6 +127,8 @@ add_subdirectory(src/googletest EXCLUDE_FROM_ALL)
 
 #boost
 find_package(BOOST1_83)
+#sqlite3
+add_subdirectory(src/SQLiteCpp)
 
 #spotLTL
 find_package(SPOTLTL REQUIRED)
@@ -161,6 +163,10 @@ link_libraries(progresscpp)
 #Exp
 add_subdirectory(src/exp)
 link_libraries(exp)
+
+#ddd
+add_subdirectory(src/ddd)
+link_libraries(ddd)
 
 
 ### MAIN EXECUTABLE ###############################################

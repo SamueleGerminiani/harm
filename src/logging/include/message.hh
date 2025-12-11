@@ -46,4 +46,7 @@ void _harm_internal_messageError(const std::string &file,
   if (condition)                                                     \
   hlog::_harm_internal_messageError(__FILE__, __LINE__, (message))
 
+void dumpErrorToFile(std::string message, int custom_errno = -1,
+                     int custom_signal = -1,
+                     bool withException = false);
 } // namespace hlog

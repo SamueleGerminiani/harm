@@ -24,6 +24,10 @@ public:
   IntExpressionPtr getInt();
   /// @brief Returns the generated copy of the visited float expression
   FloatExpressionPtr getFloat();
+  /// @brief Returns the generated copy of the visited logic expression
+  LogicExpressionPtr getLogic();
+  /// @brief Returns the generated copy of the visited string expression
+  StringExpressionPtr getString();
   /// @brief Returns the generated copy of the visited numeric expression
   NumericExpressionPtr getNum();
   /// @brief Returns the generated copy of the visited temporal expression
@@ -37,6 +41,8 @@ private:
   PropositionPtr _proposition = nullptr;
   FloatExpressionPtr _float = nullptr;
   IntExpressionPtr _int = nullptr;
+  LogicExpressionPtr _logic = nullptr;
+  StringExpressionPtr _string = nullptr;
   TemporalExpressionPtr _temporal = nullptr;
 
   /// @brief keeps track of booleal layer expression, to avoid creating redundant expressions
