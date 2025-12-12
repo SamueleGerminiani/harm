@@ -77,7 +77,7 @@ TEST(DTOTest, dtAndPrintEval) {
 
   dto->addItem(v2, -1);
   ASSERT_EQ(imp->getAssertionStr(Language::SpotLTL),
-            "G({(v1 && v2);v4} |-> con)");
+            "G({v1 && v2;v4} |-> con)");
   ASSERT_EQ(imp->evaluate_ant(0), Trinary::F);
   ASSERT_EQ(imp->evaluate_ant(1), Trinary::T);
   ASSERT_EQ(imp->evaluate_ant(2), Trinary::F);
@@ -97,6 +97,29 @@ TEST(DTOTest, dtAndPrintEval) {
   ASSERT_EQ(imp->evaluate_ant(0), Trinary::F);
   ASSERT_EQ(imp->evaluate_ant(1), Trinary::T);
   ASSERT_EQ(imp->evaluate_ant(2), Trinary::F);
+}
+
+TEST(DTOTest, dtAndBracketPrintEval) {
+  clc::outputLang = Language::SpotLTL;
+  std::vector<VarDeclaration> vars;
+  vars.emplace_back("v1", ExpType::Bool, 1);
+  vars.emplace_back("v2", ExpType::Bool, 1);
+  vars.emplace_back("v3", ExpType::Bool, 1);
+  vars.emplace_back("v4", ExpType::Bool, 1);
+  vars.emplace_back("con", ExpType::Bool, 1);
+  const TracePtr &trace = generatePtr<Trace>(vars, 10);
+  DTLimits limits;
+  limits._maxDepth = -1;
+  limits._maxAll = 5;
+  limits._maxWidth = 5;
+
+  TemplateImplicationPtr imp = hparser::parseTemplateImplication(
+      "G({..&&.. && v4} |-> con)", trace, limits);
+  DTOperatorPtr dto = imp->getDT();
+  PropositionPtr p1 = hparser::parseProposition("v1 || v2", trace);
+  dto->addItem(p1, -1);
+  ASSERT_EQ(imp->getAssertionStr(Language::SpotLTL),
+            "G({(v1 || v2) && v4} |-> con)");
 }
 
 TEST(DTOTest, dtAndReductionNoChange) {
@@ -121,7 +144,7 @@ TEST(DTOTest, dtAndReductionNoChange) {
   dto->addItem(v2, 2);
   TemporalExpressionPtr rf = dto->getReducedFormula(1);
   ASSERT_EQ(temp2String(rf, Language::SpotLTL, PrintMode::ShowAll),
-            "G({(v1 && v2)} |-> !con)");
+            "G({v1 && v2} |-> !con)");
 }
 
 TEST(DTOTest, dtAndMinimize) {
@@ -151,7 +174,7 @@ TEST(DTOTest, dtAndMinimize) {
   dto->addItem(v2, 1);
 
   DTSolution dtSol = dto->getMinimizedSolution(false);
-  ASSERT_EQ("G({(v1 && v1 && v2)} |-> con)", t->getAssertionStr());
+  ASSERT_EQ("G({v1 && v1 && v2} |-> con)", t->getAssertionStr());
   dto->removeItems();
 
   for (auto prop : dtSol.getUnidimensionalSolution()) {
@@ -428,7 +451,7 @@ TEST(DTOTest, dtNextAndPrintEval) {
   dto->addItem(v1, 0);
   dto->addItem(v1, 0);
   ASSERT_EQ(imp->getAssertionStr(Language::SpotLTL),
-            "G({(v1 && v1);v4} |-> con)");
+            "G({v1 && v1;v4} |-> con)");
   ASSERT_EQ(imp->evaluate_ant(0), Trinary::F);
   ASSERT_EQ(imp->evaluate_ant(1), Trinary::T);
   ASSERT_EQ(imp->evaluate_ant(2), Trinary::F);
@@ -436,14 +459,14 @@ TEST(DTOTest, dtNextAndPrintEval) {
   dto->addItem(v2, 1);
   dto->addItem(v2, 1);
   ASSERT_EQ(imp->getAssertionStr(Language::SpotLTL),
-            "G({(v2 && v2) ##1 (v1 && v1);v4} |-> con)");
+            "G({v2 && v2 ##1 v1 && v1;v4} |-> con)");
   ASSERT_EQ(imp->evaluate_ant(0), Trinary::T);
   ASSERT_EQ(imp->evaluate_ant(1), Trinary::F);
   ASSERT_EQ(imp->evaluate_ant(2), Trinary::F);
 
   dto->popItem(1);
   ASSERT_EQ(imp->getAssertionStr(Language::SpotLTL),
-            "G({v2 ##1 (v1 && v1);v4} |-> con)");
+            "G({v2 ##1 v1 && v1;v4} |-> con)");
 
   dto->popItem(1);
   dto->popItem(0);
@@ -523,7 +546,7 @@ TEST(DTOTest, dtNextAndReductionMM) {
   TemporalExpressionPtr rf = dto->getReducedFormula(1);
   //std::cout << temp2ColoredString(rf, Language::SpotLTL, 1) << "\n";
   ASSERT_EQ(temp2String(rf, Language::SpotLTL, PrintMode::ShowAll),
-            "G({(v4 && v4) ##6 (v2 && v2) ##4 (v1 && v1) ##2 "
+            "G({v4 && v4 ##6 v2 && v2 ##4 v1 && v1 ##2 "
             "true;v4} |-> !con)");
 
   dto->removeItems();
@@ -560,7 +583,7 @@ TEST(DTOTest, dtNextAndReduction) {
   //  std::cout << "=====================" << "\n";
   //std::cout << temp2ColoredString(rf, Language::SpotLTL, 1) << "\n";
   ASSERT_EQ(temp2String(rf, Language::SpotLTL, PrintMode::ShowAll),
-            "G({##3 (v4 && v4) ##2 (v1 && v1)} -> !con)");
+            "G({##3 v4 && v4 ##2 v1 && v1} -> !con)");
 }
 
 TEST(DTOTest, dtNextAndReductionNoChange) {
@@ -586,9 +609,9 @@ TEST(DTOTest, dtNextAndReductionNoChange) {
   dto->addItem(v2, 2);
   dto->addItem(v2, 2);
   TemporalExpressionPtr rf = dto->getReducedFormula(0);
-  //std::cout << temp2ColoredString(rf, Language::SpotLTL, 1) << "\n";
+
   ASSERT_EQ(temp2String(rf, Language::SpotLTL, PrintMode::ShowAll),
-            "G({(v2 && v2) ##1 (v1 && v1) ##1 true} |-> con)");
+            "G({v2 && v2 ##1 v1 && v1 ##1 true} |-> con)");
 
   dto->removeItems();
   dto->addItem(v1, 0);
@@ -633,7 +656,7 @@ TEST(DTOTest, dtNextAndMinimize) {
   dto->addItem(v2, 1);
 
   DTSolution dtSol = dto->getMinimizedSolution(false);
-  ASSERT_EQ("G({(v2 && v2) ##1 (v1 && v1)} |-> con)",
+  ASSERT_EQ("G({v2 && v2 ##1 v1 && v1} |-> con)",
             t->getAssertionStr());
   dto->removeItems();
 

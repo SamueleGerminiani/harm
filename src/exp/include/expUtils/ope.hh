@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DTLimits.hh"
 #include "Language.hh"
 #include "globals.hh"
 #include "message.hh"
@@ -614,6 +615,26 @@ inline int opeToPrecedenceClass(ope o) {
   messageError("Unknown ope type");
 
   return 12;
+}
+
+//return true if o1 has a higher precedence than o2
+inline bool hasHigherPrecedence(const ope &o1,
+                                const temporalOpe &o2) {
+  if (o1 == PropositionAnd &&
+      (o2 == PropertyAnd || o2 == SereAnd || o2 == SereIntersect)) {
+    return false;
+  } else if (o1 == PropositionOr &&
+             (o2 == PropertyOr || o2 == SereOr)) {
+    return false;
+  } else if (o1 == LogicBAnd && (o2 == PropertyAnd || o2 == SereAnd ||
+                                 o2 == SereIntersect)) {
+    return false;
+  } else if (o1 == LogicBOr && (o2 == PropertyOr || o2 == SereOr)) {
+    return false;
+  } else if (o1 == LogicBXor && (o2 == PropertyOr || o2 == SereOr)) {
+    return false;
+  }
+  return true;
 }
 
 //return true if o1 has a higher precedence than o2

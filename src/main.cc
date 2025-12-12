@@ -56,22 +56,32 @@ int main(int arg, char *argv[]) {
 
   // trace reader
   if (clc::parserType == "vcd") {
+    VCDTraceReaderConfig vcdConfig = {
+        clc::clk,          clc::selectedScope, clc::vcdUnroll,
+        clc::vcdRecursive, clc::forceInt,
+    };
     config.traceReader =
-        generatePtr<VCDtraceReader>(clc::traceFiles, clc::clk);
+        generatePtr<VCDtraceReader>(clc::traceFiles, vcdConfig);
   } else if (clc::parserType == "csv") {
-    config.traceReader = generatePtr<CSVtraceReader>(clc::traceFiles);
+    config.traceReader =
+        generatePtr<CSVtraceReader>(clc::traceFiles, clc::forceInt);
   }
 
-  // automatic generation of the configuration file
-  if (clc::genConfig) {
-    genConfigFile(clc::configFile, config.traceReader);
-    messageInfo("Configuration file generated at " + clc::configFile);
-    return 0;
-  }
+  if (clc::dumpTraceAsCSV != "" || clc::genConfig) {
 
-  if (clc::dumpTraceAsCSV != "") {
-    const TracePtr &trace = config.traceReader->readTrace();
-    dumpTraceAsCSV(trace, clc::dumpTraceAsCSV);
+    if (clc::dumpTraceAsCSV != "") {
+      messageInfo("Dumping trace as CSV...");
+      const TracePtr &trace = config.traceReader->readTrace();
+      dumpTraceAsCSV(trace, clc::dumpTraceAsCSV, clc::clk);
+    }
+
+    // automatic generation of the configuration file
+    if (clc::genConfig) {
+      messageInfo("Generating configuration file...");
+      genConfigFile(clc::configFile, config.traceReader);
+      messageInfo("Configuration file generated at " +
+                  clc::configFile);
+    }
 
     return 0;
   }
@@ -91,11 +101,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   //parse the cmd using an external library
   auto result = parseHARM(argc, args);
 
-  //check for errors and build the environment
-  messageErrorIf(((result.count("vcd") || result.count("vcd-dir")) &&
-                  (result.count("csv") || result.count("csv-dir"))),
-                 "Mixing vcd with csv traces");
-
   if (result.count("name")) {
     hs::name = result["name"].as<std::string>();
   }
@@ -112,14 +117,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("vcd-r")) {
     clc::vcdRecursive = safeStoull(result["vcd-r"].as<std::string>());
   }
-
-  messageErrorIf(result.count("vcd-unroll") &&
-                     (result.count("vcd-r")),
-                 "Can not use 'vcd-unroll' with 'vcd-r'");
-
-  messageErrorIf(
-      result.count("vcd-unroll") && !result.count("generate-config"),
-      "Can not use 'vcd-unroll' without 'generate-config'");
 
   if (result.count("vcd-unroll")) {
     clc::vcdUnroll =
@@ -190,8 +187,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
 
   if (result.count("sva-assert")) {
-    messageErrorIf(result.count("spotltl") || result.count("psl"),
-                   "sva-assert available only with --sva");
+    messageErrorIf(
+        result.count("spotltl") || result.count("psl"),
+        "sva-assert can't be used with spotltl/psl options");
     clc::svaAssert = true;
     clc::outputLang = Language::SVA;
   }
@@ -211,10 +209,13 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
 
   clc::genConfig = result.count("generate-config");
-  clc::configFile = result["conf"].as<std::string>();
-  messageErrorIf(
-      !clc::genConfig && !std::filesystem::exists(clc::configFile),
-      "Can not find config file '" + clc::configFile + "'");
+  if (result.count("conf")) {
+    clc::configFile = result["conf"].as<std::string>();
+    messageErrorIf(
+        !clc::genConfig && !std::filesystem::exists(clc::configFile),
+        "Can not find config file '" + clc::configFile + "'");
+  }
+
   if (result.count("max-ass")) {
     clc::maxAss = result["max-ass"].as<size_t>();
   }
@@ -400,8 +401,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("split-logic")) {
     clc::splitLogic = true;
   }
-  messageErrorIf(clc::splitLogic && !clc::genConfig,
-                 "--split-logic must be used with --generate-config");
 
   if (result.count("force-int")) {
     clc::forceInt = true;
@@ -430,7 +429,6 @@ void parseCommandLineArguments(int argc, char *args[]) {
 }
 void genConfigFile(std::string &configFile,
                    const TraceReaderPtr &tr) {
-  messageInfo("Generating default config file");
   messageErrorIf(tr == nullptr,
                  "Trace reader module has not been set!");
   const TracePtr &trace = tr->readTrace();
@@ -458,6 +456,9 @@ void genConfigFile(std::string &configFile,
       ofs << "\t<context name=\"" + scopeName + "\">" << "\n\n";
 
       for (auto &name : sfn) {
+        if (name == clc::clk) {
+          continue;
+        }
         const auto &type = mapDec.at(name).first;
         const auto &size = mapDec.at(name).second;
         if (clc::splitLogic && isLogic(type)) {
@@ -500,6 +501,9 @@ void genConfigFile(std::string &configFile,
 
     for (auto &dec : trace->getDeclarations()) {
       const auto &name = dec.getName();
+      if (name == clc::clk) {
+        continue;
+      }
       const auto &size = dec.getSize();
       const auto &type = dec.getType();
 

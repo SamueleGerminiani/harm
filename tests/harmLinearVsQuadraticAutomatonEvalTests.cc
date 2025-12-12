@@ -63,7 +63,8 @@ public:
   void check() {
 
     clc::reset = "";
-    _tr = new CSVtraceReader("../tests/input/RandomTrace.csv");
+    _tr = new CSVtraceReader("../tests/input/RandomTrace.csv",
+                             clc::forceInt);
     _trace = _tr->readTrace();
 
     std::string imp =

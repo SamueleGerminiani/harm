@@ -38,8 +38,8 @@ using namespace expression;
 
 TEST(mmaTest, DTNextMMA) {
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/MMA_Trace.csv");
+  TraceReader *tr = new CSVtraceReader("../tests/input/MMA_Trace.csv",
+                                       clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -87,8 +87,8 @@ TEST(mmaTest, DTNextMMA) {
 
 TEST(mmaTest, DTNextAndMMA) {
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/MMA_Trace.csv");
+  TraceReader *tr = new CSVtraceReader("../tests/input/MMA_Trace.csv",
+                                       clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -139,8 +139,8 @@ TEST(mmaTest, DTNextAndMMA) {
 
 TEST(mmaTest, DTNCRepsMMA) {
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/MMA_Trace.csv");
+  TraceReader *tr = new CSVtraceReader("../tests/input/MMA_Trace.csv",
+                                       clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(

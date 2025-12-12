@@ -28,15 +28,13 @@ namespace harm {
 using namespace expression;
 
 VCDtraceReader::VCDtraceReader(const std::vector<std::string> &files,
-                               const std::string &clk)
-    : TraceReader(files) {
-  _clk = clk;
-}
+                               const VCDTraceReaderConfig &config)
+    : TraceReader(files), _config(config) {}
 
 VCDtraceReader::VCDtraceReader(const std::string &file,
-                               const std::string &clk)
-    : TraceReader(std::vector<std::string>({file})) {
-  _clk = clk;
+                               const VCDTraceReaderConfig &config)
+    : TraceReader(std::vector<std::string>({file})), _config(config) {
+
 }
 
 static bool isScopeUniqueChild(VCDScope *scope) {
@@ -136,11 +134,12 @@ static std::unordered_map<std::string, std::vector<VCDSignal *>>
 getSignalsInScope(
     VCDScope *rootScope,
     std::unordered_map<std::string, std::unordered_set<std::string>>
-        &scopeFullName_to_SignalsFullName) {
+        &scopeFullName_to_SignalsFullName,
+    const VCDTraceReaderConfig _config) {
   std::unordered_map<std::string, std::vector<VCDSignal *>>
       _nameToSignal;
   size_t maxDepth =
-      clc::vcdUnroll ? clc::vcdUnroll : clc::vcdRecursive;
+      _config._vcdUnroll ? _config._vcdUnroll : _config._vcdRecursive;
 
   std::deque<VCDScope *> scopes;
   std::vector<std::string> scopeName;
@@ -166,7 +165,7 @@ getSignalsInScope(
                        "Multiple definitions of signal '" +
                            signalFullName + "' in trace!");
       _nameToSignal[signalFullName].push_back(signal);
-      if (clc::vcdUnroll) {
+      if (_config._vcdUnroll) {
         scopeFullName_to_SignalsFullName[scopeNameStr].insert(
             signalFullName);
       }
@@ -204,16 +203,16 @@ VCDBit getSingleBitValue(VCDTimedValue *tv) {
   }
 }
 
-char vcdBitToChar(VCDBit bit) {
+char vcdBitToChar(VCDBit bit, bool forceInt) {
   switch (bit) {
   case VCDBit::VCD_0:
     return '0';
   case VCDBit::VCD_1:
     return '1';
   case VCDBit::VCD_X:
-    return clc::forceInt ? '0' : 'x';
+    return forceInt ? '0' : 'x';
   case VCDBit::VCD_Z:
-    return clc::forceInt ? '0' : 'z';
+    return forceInt ? '0' : 'z';
   }
   messageError("Unknown VCD bit value");
   return '0';
@@ -223,7 +222,8 @@ void handleSplittedSignal(
     const TracePtr &trace, VCDSignalValues *clkV,
     const std::pair<std::string, std::vector<VCDSignalValues *>>
         &n_vv,
-    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec) {
+    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec,
+    bool forceInt) {
 
   GenericPtr<void> l = nullptr;
 
@@ -267,8 +267,8 @@ void handleSplittedSignal(
       //build the bit vector, each splitted signal contributes a bit
       for (size_t i = 0; i < signal.size(); i++) {
         if (i >= (signal.size() - n_vv.second.size())) {
-          val +=
-              vcdBitToChar(getSingleBitValue((*sigsV[i])[index[i]]));
+          val += vcdBitToChar(
+              getSingleBitValue((*sigsV[i])[index[i]]), forceInt);
         } else {
           val += '0';
         }
@@ -302,7 +302,8 @@ void handleWholeSignal(
     const TracePtr &trace, VCDSignalValues *clkV,
     const std::pair<std::string, std::vector<VCDSignalValues *>>
         &n_vv,
-    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec) {
+    std::vector<VCDSignal *> &signal, const VarDeclaration &var_dec,
+    bool forceInt) {
   messageErrorIf(
       n_vv.second.size() > 1,
       "Internal error: whole signal has more than one value vector");
@@ -342,10 +343,11 @@ void handleWholeSignal(
       //build the bit vector
       if (signal[0]->size > 1) {
         for (auto &b : *(*sigV)[index]->value->get_value_vector()) {
-          val += vcdBitToChar(b);
+          val += vcdBitToChar(b, forceInt);
         }
       } else {
-        val = vcdBitToChar(getSingleBitValue((*sigV)[index]));
+        val =
+            vcdBitToChar(getSingleBitValue((*sigV)[index]), forceInt);
         messageErrorIf(val.size() > 1,
                        "Unexpected size of boolean signal");
       }
@@ -436,8 +438,8 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
   messageErrorIf(!vcd_trace, "VCD parser failed on trace " + file);
 
   std::pair<std::string, VCDScope *> rootScope;
-  if (clc::selectedScope != "") {
-    rootScope = findScope(vcd_trace, clc::selectedScope);
+  if (_config._selectedScope != "") {
+    rootScope = findScope(vcd_trace, _config._selectedScope);
     //debug
     //messageInfo("Found scope: " + rootScope.first);
   } else {
@@ -448,8 +450,10 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
   //retrieve the signals in the given scope
   //note that one signal 'name' might be related to multiple 'VCDSignal', this happens when there are split signals, for example: sig1 -> {sig1[0],sig1[1],sig2[3]}
   std::unordered_map<std::string, std::vector<VCDSignal *>>
-      _nameToSignal = getSignalsInScope(
-          rootScope.second, _scopeFullName_to_SignalsFullName);
+      _nameToSignal =
+          getSignalsInScope(rootScope.second,
+                            _scopeFullName_to_SignalsFullName,
+                            _config);
 
   //sort the split signals in ascending order of index
   for (auto &n_s : _nameToSignal) {
@@ -528,17 +532,17 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
   std::unordered_set<std::string> vfloats;
 
   //check clock signal
-  if (_nameToValues.count(_clk) == 0) {
+  if (_nameToValues.count(_config._clk) == 0) {
     std::stringstream ss;
     ss << "Available signals:\n";
     for (auto &n_s : _nameToSignal) {
       ss << "\t\t\t" << n_s.first << "\n";
     }
-    messageError("Can not find clock signal '" + _clk + "'\n" +
-                 ss.str());
+    messageError("Can not find clock signal '" + _config._clk +
+                 "'\n" + ss.str());
   }
 
-  VCDSignalValues *clkV = _nameToValues.at(_clk)[0];
+  VCDSignalValues *clkV = _nameToValues.at(_config._clk)[0];
 
   //gather the variables as VarDeclaration
   for (auto &n_ss : _nameToSignal) {
@@ -555,7 +559,8 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
         // double
         type = "double";
         vfloats.insert(n_ss.first);
-        vars.push_back(toVarDeclaration(n_ss.first, type, 64));
+        vars.push_back(toVarDeclaration(n_ss.first, type, 64,
+                                        _config._forceInt));
       } else {
         if (s->type == VCDVarType::VCD_VAR_INTEGER) {
           type = "integer";
@@ -566,15 +571,18 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
         // logic & bool
         if (s->size > 1) {
           // intact bit vector
-          vars.push_back(toVarDeclaration(n_ss.first, type, s->size));
+          vars.push_back(toVarDeclaration(n_ss.first, type, s->size,
+                                          _config._forceInt));
         } else if (n_ss.second.size() > 1) {
           // splitted bit vector
-          vars.push_back(
-              toVarDeclaration(n_ss.first, type, n_ss.second.size()));
+          vars.push_back(toVarDeclaration(n_ss.first, type,
+                                          n_ss.second.size(),
+                                          _config._forceInt));
           break;
         } else {
           // boolean: logic of size 1
-          vars.push_back(toVarDeclaration(n_ss.first, type, 1));
+          vars.push_back(toVarDeclaration(n_ss.first, type, 1,
+                                          _config._forceInt));
         }
       }
     }
@@ -621,10 +629,12 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
       // logic and bool
       if (n_vv.second.size() > 1) {
         //signal is splitted
-        handleSplittedSignal(trace, clkV, n_vv, signal, var_dec);
+        handleSplittedSignal(trace, clkV, n_vv, signal, var_dec,
+                             _config._forceInt);
       } else {
         //signal is whole
-        handleWholeSignal(trace, clkV, n_vv, signal, var_dec);
+        handleWholeSignal(trace, clkV, n_vv, signal, var_dec,
+                          _config._forceInt);
       }
     }
   }

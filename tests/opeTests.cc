@@ -132,8 +132,8 @@ TEST(OpeTest, substring) {
 }
 
 TEST(OpeTest, setMembershipVsRange) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTraceSparse.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTraceSparse.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -252,8 +252,8 @@ TEST(OpeTest, pastParsePrint) {
 }
 
 TEST(OpeTest, pastSemantics) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -282,8 +282,8 @@ TEST(OpeTest, pastPropVsTemporal) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -329,8 +329,8 @@ TEST(OpeTest, pastNonBool) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -360,8 +360,8 @@ TEST(OpeTest, stableParsePrint) {
 }
 
 TEST(OpeTest, stableSemantics) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -380,8 +380,8 @@ TEST(OpeTest, stablePropsVsTemporal) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -414,8 +414,8 @@ TEST(OpeTest, stableNonBool) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -442,8 +442,8 @@ TEST(OpeTest, roseParsePrint) {
 }
 
 TEST(OpeTest, roseSemantics) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -464,8 +464,8 @@ TEST(OpeTest, rosePropsVsTemporal) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -498,8 +498,8 @@ TEST(OpeTest, roseNonBool) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -522,8 +522,8 @@ TEST(OpeTest, fellParsePrint) {
 }
 
 TEST(OpeTest, fellSemantics) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -544,8 +544,8 @@ TEST(OpeTest, fellPropsVsTemporal) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   std::vector<ContextPtr> contexts;
@@ -578,8 +578,8 @@ TEST(OpeTest, fellNonBool) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   PropositionPtr p1 = hparser::parseProposition("$fell(v6)", trace);
@@ -593,8 +593,8 @@ TEST(OpeTest, fellNonBool) {
 }
 
 TEST(OpeTest, isFunction) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto v1 = trace->getBooleanVariable("v1");
@@ -608,8 +608,8 @@ TEST(OpeTest, isFunction) {
 }
 
 TEST(OpeTest, isMultipleMatch) {
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   auto t1 = hparser::parseTemplateImplication(
@@ -644,8 +644,8 @@ TEST(OpeTest, convertedLogicSum) {
 
   clc::psilent = 1;
 
-  TraceReader *traceReader =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *traceReader = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = traceReader->readTrace();
 
   LogicExpressionPtr p1 =

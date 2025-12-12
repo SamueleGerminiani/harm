@@ -253,12 +253,12 @@ std::string dumpClusteringValues(std::vector<size_t> &ivs,
 
 ///var declaration to cpp class
 VarDeclaration toVarDeclaration(std::string name, std::string type,
-                                size_t size) {
+                                size_t size, bool forceInt) {
 
   VarDeclaration ret;
   auto [t, s] = variableTypeFromString(type, size);
 
-  if ((clc::forceInt || isInt(t)) && s > 64) {
+  if ((forceInt || isInt(t)) && s > 64) {
     messageWarning("Truncating '" + name + "' to 64 bits");
     s = 64;
   }
@@ -269,7 +269,7 @@ VarDeclaration toVarDeclaration(std::string name, std::string type,
   }
 
   //convert logic to int
-  if (clc::forceInt && isLogic(t)) {
+  if (forceInt && isLogic(t)) {
     t = isSigned(t) ? ExpType::SInt : ExpType::UInt;
   }
 

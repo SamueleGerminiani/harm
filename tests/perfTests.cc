@@ -39,8 +39,8 @@ using namespace expression;
 
 TEST(perfTest, propCacheTest) {
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
   std::string pStr = "v9 * v10 + v10 / (v9+1.f) && v1";
 

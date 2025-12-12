@@ -38,8 +38,8 @@ using namespace expression;
 TEST(TemporalDepthTest, checkDepth) {
   clc::outputLang = Language::SpotLTL;
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
   TemporalExpressionPtr t1 = hparser::parseTemporalExpression(
       "G{((v1 ##2 v2)[*3] ##1 v3) && (v1[*100])}|->v3", trace);

@@ -162,6 +162,8 @@ private:
 using TracePtr = std::shared_ptr<Trace>;
 
 /// @brief Dumps the trace in a CSV file
-void dumpTraceAsCSV(const harm::TracePtr &trace, const std::string &filename);
+void dumpTraceAsCSV(const harm::TracePtr &trace,
+                    const std::string &filename,
+                    const std::string &clk);
 
 } // namespace harm

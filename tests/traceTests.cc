@@ -32,7 +32,8 @@ public:
 
 ///test single csv trace
 TEST_F(TraceTest, BasicTypesCSV) {
-  tr = new CSVtraceReader("../tests/input/BasicTypes.csv");
+  tr = new CSVtraceReader("../tests/input/BasicTypes.csv",
+                          clc::forceInt);
   const TracePtr &trace = tr->readTrace();
   PropositionPtr v1 = trace->getBooleanVariable("v1");
   IntExpressionPtr v2 = trace->getIntVariable("v2");
@@ -74,7 +75,13 @@ TEST_F(TraceTest, BasicTypesCSV) {
 ///test single vcd trace
 TEST_F(TraceTest, BasicTypesVCD) {
   clc::selectedScope = "tb::DUT";
-  tr = new VCDtraceReader("../tests/input/BasicTypes.vcd", "clk");
+  clc::clk = "clk";
+  VCDTraceReaderConfig vcdConfig = {
+      clc::clk,          clc::selectedScope, clc::vcdUnroll,
+      clc::vcdRecursive, clc::forceInt,
+  };
+
+  tr = new VCDtraceReader("../tests/input/BasicTypes.vcd", vcdConfig);
   const TracePtr &trace = tr->readTrace();
   LogicExpressionPtr o1 = trace->getLogicVariable("o1");
   LogicExpressionPtr o2 = trace->getLogicVariable("o2");
@@ -102,7 +109,7 @@ TEST_F(TraceTest, MergedCSV) {
   std::vector<std::string> traces;
   traces.push_back("../tests/input/BasicTypes.csv");
   traces.push_back("../tests/input/BasicTypes.csv");
-  tr = new CSVtraceReader(traces);
+  tr = new CSVtraceReader(traces, clc::forceInt);
   const TracePtr &trace = tr->readTrace();
   PropositionPtr v1 = trace->getBooleanVariable("v1");
   IntExpressionPtr v2 = trace->getIntVariable("v2");
@@ -167,7 +174,12 @@ TEST_F(TraceTest, MergedVCD) {
   traces.push_back("../tests/input/BasicTypes.vcd");
   traces.push_back("../tests/input/BasicTypes.vcd");
   clc::selectedScope = "tb::DUT";
-  tr = new VCDtraceReader(traces, "clk");
+  clc::clk = "clk";
+  VCDTraceReaderConfig vcdConfig = {
+      clc::clk,          clc::selectedScope, clc::vcdUnroll,
+      clc::vcdRecursive, clc::forceInt,
+  };
+  tr = new VCDtraceReader(traces, vcdConfig);
   const TracePtr &trace = tr->readTrace();
   LogicVariablePtr o1 = trace->getLogicVariable("o1");
   LogicVariablePtr o2 = trace->getLogicVariable("o2");
@@ -204,7 +216,7 @@ TEST_F(TraceTest, Logic) {
   clc::reset = "";
   std::vector<std::string> traces;
   traces.push_back("../tests/input/LogicTrace.csv");
-  TraceReader *tr = new CSVtraceReader(traces);
+  TraceReader *tr = new CSVtraceReader(traces, clc::forceInt);
   const TracePtr &trace = tr->readTrace();
 
   LogicVariablePtr v1 = trace->getLogicVariable("v1");
@@ -228,7 +240,13 @@ TEST_F(TraceTest, SignedLogic) {
   clc::reset = "";
   std::vector<std::string> traces;
   clc::selectedScope = "SignedTypes::dut";
-  tr = new VCDtraceReader("../tests/input/SignedTypes.vcd", "clk");
+  clc::clk = "clk";
+  VCDTraceReaderConfig vcdConfig = {
+      clc::clk,          clc::selectedScope, clc::vcdUnroll,
+      clc::vcdRecursive, clc::forceInt,
+  };
+  tr =
+      new VCDtraceReader("../tests/input/SignedTypes.vcd", vcdConfig);
   const TracePtr &trace = tr->readTrace();
 
   IntVariablePtr c_0 = trace->getIntVariable("c_0");
@@ -243,7 +261,7 @@ TEST_F(TraceTest, ResetMultiTrace) {
   clc::reset = "reset";
   traces.push_back("../tests/input/multitraceWithReset/t1.csv");
   traces.push_back("../tests/input/multitraceWithReset/t2.csv");
-  TraceReader *tr = new CSVtraceReader(traces);
+  TraceReader *tr = new CSVtraceReader(traces, clc::forceInt);
   const TracePtr &trace = tr->readTrace();
   TemplateImplicationPtr t = hparser::parseTemplateImplication(
       "G({v1 ##1 v2} |-> {##1 v3})", trace);

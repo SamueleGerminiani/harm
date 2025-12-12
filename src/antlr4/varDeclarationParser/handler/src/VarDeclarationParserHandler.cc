@@ -5,6 +5,7 @@
 #include <utility>
 
 // clang-format off
+#include "globals.hh"
 #include "minerUtils.hh"
 // clang-format on
 #include "VarDeclaration.hh"
@@ -53,7 +54,8 @@ void VarDeclarationParserHandler::enterVarDec(
   std::string name = ctx->Name()->getText();
   //remove « and »
   name = name.substr(2, name.size() - 4);
-  _varDecl = harm::toVarDeclaration(name, type.first, type.second);
+  _varDecl = harm::toVarDeclaration(name, type.first, type.second,
+                                    clc::forceInt);
 }
 
 std::string VarDeclarationParserHandler::printErrorMessage() {

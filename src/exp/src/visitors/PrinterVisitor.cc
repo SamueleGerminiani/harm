@@ -578,6 +578,9 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
     }
 
     bool needsBrackets = !isUnary(*o.getPlaceholderPointer());
+    auto parent_op = _temporal_ope_stack.top();
+    needsBrackets &= !hasHigherPrecedence(
+        (*o.getPlaceholderPointer())->getOperator(), parent_op);
 
     needsBrackets &=
         !isPropositionAnd(*o.getPlaceholderPointer()) ||
@@ -602,6 +605,9 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
 }
 void PrinterVisitor::visit(BooleanLayerInst &o) {
   bool needsBrackets = !isUnary(o.getProposition());
+  auto parent_op = _temporal_ope_stack.top();
+  needsBrackets &= !hasHigherPrecedence(
+      o.getProposition()->getOperator(), parent_op);
   needsBrackets &= !isPropositionAnd(o.getProposition()) ||
                    getPropositionAndSize(o.getProposition()) > 1;
 

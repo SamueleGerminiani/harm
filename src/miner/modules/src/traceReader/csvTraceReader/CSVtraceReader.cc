@@ -39,11 +39,13 @@ namespace harm {
 using namespace csv;
 using namespace expression;
 
-CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files)
-    : TraceReader(files) {}
+CSVtraceReader::CSVtraceReader(const std::vector<std::string> &files,
+                               bool forceInt)
+    : TraceReader(files), _forceInt(forceInt) {}
 
-CSVtraceReader::CSVtraceReader(const std::string &file)
-    : TraceReader(std::vector<std::string>({file})) {}
+CSVtraceReader::CSVtraceReader(const std::string &file, bool forceInt)
+    : TraceReader(std::vector<std::string>({file})),
+      _forceInt(forceInt) {}
 
 /// @brief parse a variable declaration
 static VarDeclaration parseVariableDec(std::string varDecl);
@@ -185,14 +187,16 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
         if (base == 2) {
           messageErrorIf(!isBase2(val),
                          "val '" + val +
-                             "' is not a valid binary number");
+                             "' is not a valid binary number for int "
+                             "variable '" +
+                             vars_dt[fieldIndex].getName() + "'");
           if (val.size() > 64) {
             //if the number is too big, truncate it
             val.erase(0, val.size() - 64);
           }
 
           //this my be a logic that was forced to int so we need to replace x and z with 0
-          if (clc::forceInt) {
+          if (_forceInt) {
             std::replace_if(
                 val.begin(), val.end(),
                 [](char c) {
@@ -210,7 +214,9 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
       } else if (isLogic(vars_dt[fieldIndex].getType())) {
         messageErrorIf(!isBase2(field.get()),
                        "val '" + field.get() +
-                           "' is not a valid binary number");
+                           "' is not a valid binary number for logic "
+                           "variable '" +
+                           vars_dt[fieldIndex].getName() + "'");
         if (logVars[lfieldIndex]->getType().first ==
             ExpType::SLogic) {
           logVars[lfieldIndex]->assign(
@@ -227,6 +233,7 @@ TracePtr CSVtraceReader::readTrace(const std::string file) {
         sfieldIndex++;
       } else {
         messageError("Unknown var type in trace file: '" + file +
+                     "' for var '" + vars_dt[fieldIndex].getName() +
                      "'");
       }
       fieldIndex++;

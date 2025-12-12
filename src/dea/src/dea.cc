@@ -80,9 +80,13 @@ TracePtr parseTrace(std::string path) {
 
   TraceReader *traceReader = nullptr;
   if (clc::parserType == "vcd") {
-    traceReader = new VCDtraceReader(path, clc::clk);
+    VCDTraceReaderConfig vcdConfig = {
+        clc::clk,          clc::selectedScope, clc::vcdUnroll,
+        clc::vcdRecursive, clc::forceInt,
+    };
+    traceReader = new VCDtraceReader(path, vcdConfig);
   } else if (clc::parserType == "csv") {
-    traceReader = new CSVtraceReader(path);
+    traceReader = new CSVtraceReader(path, clc::forceInt);
   } else {
     messageError("Unknown parser type");
   }

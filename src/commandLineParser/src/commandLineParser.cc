@@ -1,3 +1,4 @@
+#include "message.hh"
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -67,11 +68,37 @@ options.add_options()
       std::cout << options.help({"", "Group"}) << std::endl;
       exit(0);
     }
+    //errors
+    messageErrorIf(result.count("vcd-unroll") &&
+                       (result.count("vcd-r")),
+                   "Can not use 'vcd-unroll' with 'vcd-r'");
+    messageErrorIf(
+        result.count("vcd-unroll") &&
+            !result.count("generate-config"),
+        "Can not use 'vcd-unroll' without 'generate-config'");
+
+    messageErrorIf(!result.count("dump-trace-as-csv") &&
+                       !result.count("conf"),
+                   "Config file path must be provided unless "
+                   "--dump-trace-as-csv is used");
+    messageErrorIf(
+        ((result.count("vcd") || result.count("vcd-dir")) &&
+         (result.count("csv") || result.count("csv-dir"))),
+        "Mixing vcd with csv traces");
+
+    messageErrorIf(
+        result.count("split-logic") &&
+            !result.count("generate-config"),
+        "--split-logic must be used with --generate-config");
+
+    //usage
     if (((result.count("vcd") == 1 || result.count("vcd-dir") == 1) &&
          result.count("clk") == 0) ||
         (result.count("vcd") == 0 && result.count("vcd-dir") == 0 &&
          result.count("csv") == 0 && result.count("csv-dir") == 0) ||
-        result.count("conf") == 0) {
+        (result.count("conf") == 0 &&
+         result.count("dump-trace-as-csv") == 0)) {
+
       std::cout << "Usage:\n";
       std::cout << "vcd input --> harm [--vcd <vcdFile> | --vcd-dir "
                    "<dirPath>] --clk "

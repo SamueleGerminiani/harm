@@ -12,13 +12,16 @@ class Trace;
 class CSVtraceReader : public TraceReader {
 public:
   /// @brief Constructor for multiple files trace
-  CSVtraceReader(const std::vector<std::string> &files);
+  CSVtraceReader(const std::vector<std::string> &files,
+                 bool forceInt = false);
   /// @brief Constructor for single file trace
-  CSVtraceReader(const std::string &file);
+  CSVtraceReader(const std::string &file, bool forceInt = false);
 
 private:
   /// @brief implementation of the actual trace reading
   virtual TracePtr readTrace(const std::string file) override;
+
+  bool _forceInt = false;
 };
 
 using CSVtraceReaderPtr = std::shared_ptr<CSVtraceReader>;

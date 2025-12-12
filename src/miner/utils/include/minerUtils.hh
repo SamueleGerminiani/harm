@@ -58,7 +58,7 @@ bool isBase2InputIntepretation(const std::string &type);
 
 /// @brief converts a variable declaration into VarDeclaration
 VarDeclaration toVarDeclaration(std::string name, std::string type,
-                                size_t size);
+                                size_t size, bool forceInt);
 
 ///Pack of placeholders
 struct PlaceholderPack {

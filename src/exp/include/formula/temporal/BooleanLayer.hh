@@ -63,7 +63,7 @@ public:
    * @param token The token for the boolean layer instance.
    */
   BooleanLayerInst(const PropositionPtr &p, const std::string &token)
-      : BooleanLayer(token), _p(p){};
+      : BooleanLayer(token), _p(p) {};
 
   ~BooleanLayerInst() override {}
 
@@ -92,7 +92,7 @@ public:
 
   ~BooleanLayerPlaceholder() override {}
 
-  void acceptVisitor(ExpVisitor &vis) override{};
+  void acceptVisitor(ExpVisitor &vis) override {};
 
   /**
    * @brief Get the placeholder pointer.
@@ -108,7 +108,7 @@ protected:
    */
   explicit BooleanLayerPlaceholder(const PropositionPtrPtr &pp,
                                    const std::string &token)
-      : BooleanLayer(token), _pp(pp){};
+      : BooleanLayer(token), _pp(pp) {};
 
 private:
   /// The placeholder pointer.
@@ -132,7 +132,7 @@ public:
    */
   explicit BooleanLayerPermutationPlaceholder(
       const PropositionPtrPtr &pp, const std::string &token)
-      : BooleanLayerPlaceholder(pp, token){};
+      : BooleanLayerPlaceholder(pp, token) {};
 
   ~BooleanLayerPermutationPlaceholder() override {}
 
@@ -160,7 +160,7 @@ public:
                                      const std::string &token,
                                      int dtID)
       : BooleanLayerPlaceholder(pp, token), _dtType(dtType),
-        _dtID(dtID){};
+        _dtID(dtID) {};
 
   ~BooleanLayerDTPlaceholder() override {}
 
@@ -194,7 +194,7 @@ public:
    */
   BooleanLayerFunction(const FunctionPropositionPtr &f,
                        const std::string &token)
-      : BooleanLayer(token), _f(f){};
+      : BooleanLayer(token), _f(f) {};
 
   ~BooleanLayerFunction() override {}
 

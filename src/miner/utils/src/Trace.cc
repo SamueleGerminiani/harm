@@ -354,7 +354,8 @@ expression::ExpType Trace::getExpType(const std::string &name) {
 }
 
 void dumpTraceAsCSV(const TracePtr &trace,
-                    const std::string &filename) {
+                    const std::string &filename,
+                    const std::string &clk) {
 
   auto vars = trace->getDeclarations();
   std::ofstream file(filename);
@@ -367,7 +368,7 @@ void dumpTraceAsCSV(const TracePtr &trace,
 
   for (auto &v : vars) {
     //skip the clock
-    if (v.getName() == clc::clk) {
+    if (v.getName() == clk) {
       continue;
     }
     ss << varTypeToString(v.getType(), v.getSize()) << " "
@@ -382,7 +383,7 @@ void dumpTraceAsCSV(const TracePtr &trace,
   for (size_t i = 0; i < trace->getLength(); i++) {
     for (auto &v : vars) {
       //skip the clock
-      if (v.getName() == clc::clk) {
+      if (v.getName() == clk) {
         continue;
       }
       auto vn = v.getName();
@@ -390,22 +391,22 @@ void dumpTraceAsCSV(const TracePtr &trace,
 
       if (t == ExpType::Bool) {
         auto v = trace->getBooleanVariable(vn);
-        ss << v->evaluate(i) << ", ";
+        ss << v->evaluate(i) << ",";
       } else if (t == ExpType::Float) {
         auto v = trace->getFloatVariable(vn);
-        ss << v->evaluate(i) << ", ";
+        ss << v->evaluate(i) << ",";
       } else if (t == ExpType::UInt) {
         auto v = trace->getIntVariable(vn);
-        ss << (UInt)v->evaluate(i) << ", ";
+        ss << (UInt)v->evaluate(i) << ",";
       } else if (t == ExpType::SInt) {
         auto v = trace->getIntVariable(vn);
-        ss << (SInt)v->evaluate(i) << ", ";
+        ss << (SInt)v->evaluate(i) << ",";
       } else if (isLogic(t)) {
         LogicVariablePtr v = trace->getLogicVariable(vn);
-        ss << (v->evaluate(i)).toString() << ", ";
+        ss << (v->evaluate(i)).toString() << ",";
       } else if (isString(t)) {
         StringVariablePtr v = trace->getStringVariable(vn);
-        ss << v->evaluate(i) << ", ";
+        ss << v->evaluate(i) << ",";
       } else {
         messageError("Unsupported type");
       }

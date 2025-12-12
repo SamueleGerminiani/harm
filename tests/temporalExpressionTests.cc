@@ -39,11 +39,11 @@ using namespace expression;
 TEST(TemporalExpressionTest, checkVisitors) {
   clc::outputLang = Language::SpotLTL;
 
-  TraceReader *tr =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace = tr->readTrace();
-  TraceReader *tr2 =
-      new CSVtraceReader("../tests/input/RandomTrace.csv");
+  TraceReader *tr2 = new CSVtraceReader(
+      "../tests/input/RandomTrace.csv", clc::forceInt);
   const TracePtr &trace_new = tr2->readTrace();
   std::ifstream in("../tests/input/fuzzedTemporalFormulas.txt");
 #if 0

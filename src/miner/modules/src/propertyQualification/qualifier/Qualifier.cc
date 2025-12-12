@@ -136,6 +136,8 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     }
   }
 
+  pb.changeMessage(0, "Filtering redundant assertions... " +
+                          std::to_string(discarded) + " discarded");
   pb.done(0);
 
   return outAssertions;
@@ -358,14 +360,19 @@ TracePtr Qualifier::parseFaultyTrace(const std::string &ftStr) {
   if (clc::parserType == "vcd") {
     messageErrorIf(!std::filesystem::exists(ftStr),
                    "Can not find '" + ftStr + "'");
-    tr = new VCDtraceReader(ftStr, clc::clk);
+    VCDTraceReaderConfig vcdConfig = {
+        clc::clk,          clc::selectedScope, clc::vcdUnroll,
+        clc::vcdRecursive, clc::forceInt,
+    };
+
+    tr = new VCDtraceReader(ftStr, vcdConfig);
     TracePtr t = tr->readTrace();
     delete tr;
     return t;
   } else if (clc::parserType == "csv") {
     messageErrorIf(!std::filesystem::exists(ftStr),
                    "Can not find '" + ftStr + "'");
-    tr = new CSVtraceReader(ftStr);
+    tr = new CSVtraceReader(ftStr, clc::forceInt);
     TracePtr t = tr->readTrace();
     delete tr;
     return t;
