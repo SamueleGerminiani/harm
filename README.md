@@ -42,7 +42,7 @@ HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (L
 
 # Quick start
 
-For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clang (c++17) and cmake 3.14+.
+For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clang (c++17) and cmake 3.30+.
 
 ## Dependencies
 * [spotLTL](https://spot.lrde.epita.fr/install.html)
@@ -349,19 +349,25 @@ Templates using DTOs must specify a `dtLimits` attribute to configure the algori
 | **DRN** | **Don't Reuse Numerics:** Prevent reusing the same numeric multiple times in a path. |
 | **DR** | **Don't Reuse:** Enables both `DRP` and `DRN`. |
   
-#### SystemVerilog features
+### SystemVerilog features
 
-##### Set membership
-Harm allows the use of the SVA set membership operator:
-```
+#### Set Membership
+Harm supports the standard SystemVerilog (SVA) set membership operator:
+
+```systemverilog
 <exp> inside { <numeric_range>, <numeric>, ... }
 ```
-where <numeric_range> is of the form \[\<numeric\>:\<numeric\>\] and where \<numeric\> is an integer/logic expression.
-Ranges also support the \$ token to specify max or min ranges (see the SV manual).
-The expression evaluates to true if \<exp\> is contained in the set defined with \{...\}
+
+**Syntax:**
+* **Ranges:** Defined using square brackets `[<min>:<max>]`.
+* **Operands:** `<numeric>` can be any integer or logic expression.
 
 
-##### Functions
+* **Open Ranges:** The `$` token can be used to specify the minimum or maximum limit of the variable type (e.g., `[0:$]` represents 0 to max).
+* **Behavior:** The expression evaluates to `true` if `<exp>` is contained within the set defined by `{...}`.
+
+
+#### Functions
 Harm supports the use of standard SystemVerilog Assertion (SVA) system functions in both the **propositional layer** (inside propositions and numerics) and the **temporal layer** (inside templates).
 
 | Function | Description |
@@ -411,29 +417,90 @@ These variables represent the number of time units where specific conditions hol
 * **`nfCovered`**: Alias for `faultCoverage`.
 * **`nFaults`**: Total number of faulty traces provided as input.
 
-#### Edits
-The user is allowed to define editing rules using the 'edit' tag.
-The 'remove' attribute allows the definition of a remove rule; all assertions matching the remove rule are directly discarded.
-The 'rewrite' attribute allows the definition of a rewrite rule; all assertions matching the rewrite rule are rewritten according to the rule defined in the 'to' attribute.
+## Editing Rules Configuration
 
-Each rule is allowed to match specific types of expressions such as propositions, numbers and more complex expressions, such as those produced by the DT operator ..##..; this is done by using the @(\<type\>) operator where \<type\> can be equal to P (for propositions), N (for unsigned integers) and..##.. for expressions of the form p1 ##1 p2 ##1 .. ##1 pn.
-All propositions must be matched using the @ operator.
-The @ operator includes an additional overload @(\<type\>,\<var\>) that allows to store the matched string in variable \<var\>.
-These variables can be used in the 'to' rule to rewrite the assertions through the same operator @(\<var\>). 
-The rule does not consider spaces to match assertions.
+Users can define assertion editing rules using the `<edit>` tag. These rules allow for the automated removal or rewriting of mined assertions based on pattern matching.
 
-Ex. \<edit rewrite="G({@(..##..,f) ##@(N,n1) @(P,s)}|-\>{##@(N,n2) @(P,t)})" to="G({@(f)}|-\>{##@(n1+n2) @(t)})" constraint='(s=="true" || s=="1") && n1!=2' /\>
+### Rule Attributes
+The `<edit>` tag supports two primary attributes:
 
-In the example above, the proposition stored in variable 't' is used to rewrite the assertion in the 'to' rule.
-Numeric variables (of type N) can be used to construct arithmetic expressions (using + - * /) in the 'to' rules, for example, @(n1+n2) will generate a string equivalent to the sum of the numeric representations of n1 and n2 matched in the 'rewrite' rule.
+* **`remove`**: Defines a pattern to identify assertions that should be directly discarded.
+* **`rewrite`**: Defines a pattern to identify assertions to be modified. This must be paired with the `to` attribute, which defines the new structure of the assertion.
 
-Both the 'remove' and the 'rewrite' rules allow the definition of constraints (using the constraint tag) that must be satisfied in order to remove or rewrite an assertion.
+### Pattern Matching Syntax
+The matching logic relies on the `@` operator. This operator ignores spaces when matching assertions.
 
-A constraint is a boolean expression (same syntax and semantics of propositions).
-In the example above, the rule can match only if var 's' is equal to 'true' or equal to '1', and if n1 is not equal to '2'.
-Note that Harm allows the use of string expressions (see the grammar) such as <var> == "<stringConstant>" (equality), <string> + <string> (concatenation) or <string>.substr(index,length) (same syntax and semantics of C/C++ substr)
-Additionally, note that, in the constraint, all variables stored with type "N" are considered as unsigned integers (to allow arithmetic operations), and variables stored with all other types (P and ..##..) a considered of String type. 
+#### 1. The `@` Operator
+All propositions within a rule must be matched using this operator. It is used in two forms:
+* **Match only:** `@(<type>)` matches a specific expression type.
+* **Match and Capture:** `@(<type>, <var>)` matches the type and stores the resulting string in a variable named `<var>`.
 
+#### 2. Supported Expression Types
+You can match specific expression categories using the following type codes:
+
+| Type Code | Description | Example Context |
+| :--- | :--- | :--- |
+| **P** | Propositions | `@(P)` matches a boolean proposition. |
+| **N** | Unsigned Integers | `@(N)` matches a numeric value. |
+| **..##..** | DT Operator Expressions | `@(..##..)` Matches expressions of the form p_1 \#\#1 p_2 ... \#\#1 p_n. |
+
+---
+
+### Rewriting and Constraints
+
+When using the `rewrite` attribute, captured variables can be manipulated to generate a new valid assertion.
+
+#### Variable Usage in `to` Rules
+* **Standard Rewrite:** Variables captured in the `rewrite` rule are inserted into the `to` string using `@(<var>)`.
+* **Arithmetic Operations:** Variables captured as type **N** (Numeric) can be used in arithmetic expressions.
+    * Supported operators: $+$, $-$, $*$, $/$.
+    * *Example:* If `n1` and `n2` are numeric variables, `@(n1+n2)` will generate a string representing the sum of their values.
+
+#### Defining Constraints
+Both `remove` and `rewrite` rules accept an optional `constraint` attribute. This is a boolean expression that must evaluate to **true** for the rule to apply.
+
+**Data Types in Constraints:**
+* **Type N:** Treated as **Unsigned Integers** (allows arithmetic).
+* **Type P or ..##..:** Treated as **Strings**.
+
+**String Operations:**
+* **Equality:** `<var> == "<stringConstant>"`
+* **Concatenation:** `<string> + <string>`
+* **Substring:** `<string>.substr(index, length)` (follows C/C++ semantics).
+
+---
+
+### Example
+
+The following example demonstrates a rule that rewrites an assertion based on specific conditions.
+
+**The Rule:**
+```xml
+<edit 
+    rewrite="G({@(..##.., f) ##@(N, n1) @(P, s)} |-> {##@(N, n2) @(P, t)})" 
+    to="G({@(f)} |-> {##@(n1+n2) @(t)})" 
+    constraint='(s == "true" || s == "1") && n1 != 2' 
+/>
+```
+
+**Breakdown:**
+
+1. **Capture:**
+* `f` captures a DT expression.
+* `n1` and `n2` capture integers.
+* `s` and `t` capture propositions.
+
+
+2. **Constraint Check:**
+* The rule only applies if the string `s` is "true" OR "1".
+* AND if the integer `n1` is not equal to 2.
+
+
+3. **Output Generation (`to`):**
+* It reconstructs the assertion using `f` and `t`.
+* It calculates the sum of  and inserts the result into the new temporal operator.
+
+- If the above rewrite rule is applied to assertion G({p1 ##1 p2 ##1 true} |-> {##3 p3}), the resulting assertion becomes G({p1 ##1 p2} |-> {##4 p3}).
 
 #  How to check an assertion
 The template expression has an additional parameter "check", if it is set to "1" then the miner analyses the corresponding assertion on the given trace, if the assertion does not hold on the input traces, it reports the cause of failure. Example:
@@ -442,59 +509,121 @@ The template expression has an additional parameter "check", if it is set to "1"
 ``` 
 Note that the template must be fully instantiated (no placeholders).
  
-# Optional arguments
+# Optional Arguments
 
-### Logging
-* \-\-help : show options
-* \-\-isilent : disable all info
-* \-\-psilent : disable all progress bars
-* \-\-silent : disable all outputs
-* \-\-wsilent : disable all warnings
+### Logging Flags
+| Flag | Description |
+| :--- | :--- |
+| `--help` | Show options. |
+| `--isilent` | Disable all **info** messages. |
+| `--psilent` | Disable all **progress bars**. |
+| `--silent` | Disable **all** outputs. |
+| `--wsilent` | Disable all **warnings**. |
 
-### Trace
-* \-\-reset \<String\> : propositional expression pr to define a reset in a trace; harm will not mine assertions whose temporal behaviour starts before the activation of the reset (pr evaluates to true) and ends after the reset has become inactive (pr evaluates to false).
-* \-\-vcd-ss \<string\> : specify a scope of signals in the .vcd traces. The format of the scope path is root\_scope::sub\_scope::sub\_sub\_\_scope::...::signal
-* \-\-vcd-r=\<uint\> : recursively add signals for sub-scopes, default recursion depth is \<max depth of vcd\>, WARNING: signals in subscopes (with respect to the root scope) will require a scope prefix (same format of scope path) in the configuration file (and in the clock siglan specified with --clk option, if applicable). If --vcd-ss is used, the root scope becomes the one specified with that option.
-* \-\-vcd-unroll=\<uint\> : create a context for each scope when generating the config file (mutually exclusive with vcd-r, default recursion depth is \<max depth\>)
-* \-\-split-logic : generate a config file where all bivectors are split into single bit variables (must be used with --generate-config)
-* \-\-force-int : force all logic variables types to be treated as integers (x and z will be treated as 0)
+#### Logging Details
+Harm produces three main types of textual outputs:
+* **INFO:** Reports execution information (Black color; execution continues).
+* **WARNING:** Reports potential errors (Yellow color; execution continues).
+* **ERROR:** Reports critical errors (Red color; execution halts).
 
-### Assertions \& Ranking
-* \-\-max-ass \<uint\> : the maximum number of assertions to keep after the ranking
-* \-\-min-frank \<float\> (between 0 and 1) minimum final ranking score (all assertions below this level are discarded)
-* \-\-keep-vac-ass \<FILE\> : do not discard vacuous assertions
-* \-\-include-ass \<FILE\> : create a new context 'external' with the assertions contained in the provided FILE (one assertion per line), if a context named 'external' is present in the config file, then the assertions will be added to that context
-* \-\-sva : output assertions in SystemVerilog Assertion format
-* \-\-sva-assert : output simulable sva assertions in the format 'assert property( (posedge \<input\_clk\>) \<assertion\> )'. 
-* \-\-psl : output assertions in PSL format
-* \-\-spotltl : output assertions in spot ltl format
-* \-\-dont-normalize : print the assertions with their ranking metrics not normalized
-* \-\-sample-by-con : if the number of mined assertions exceeds the value provided by --max-ass, assertions are selected favouring consequent diversity
-* \-\-interactive : enable interactive assertion ranking
-* \-\-print-logic-as-int : logic constants will be printed in integer format instead of binary (x and z bits will be treated as 0) 
+> **Note:** Warnings and Errors are automatically appended in JSON format to `warning.log` and `error.log`. Do not manually edit these files.
+
+---
+
+### Trace Configuration
+* **`--reset <String>`**
+    Defines a propositional expression `pr` to represent a reset in a trace. Harm will not mine assertions where the behavior starts before the reset activates (`pr` is true) or ends after the reset becomes inactive (`pr` is false).
+
+* **`--vcd-ss <string>`**
+    Specify a scope of signals in the `.vcd` traces.
+    * *Format:* `root_scope::sub_scope::sub_sub_scope::...::signal`
+
+* **`--vcd-r=<uint>`**
+    Recursively add signals for sub-scopes.
+    * *Default:* Max depth of VCD.
+    * **WARNING:** Signals in sub-scopes (relative to the root) require a scope prefix in the configuration file (and in the clock signal specified with `--clk`). If `--vcd-ss` is used, that scope becomes the root.
+
+* **`--vcd-unroll=<uint>`**
+    Create a context for each scope when generating the config file.
+    * *Default:* Max depth.
+    * *Constraint:* Mutually exclusive with `vcd-r`.
+
+* **`--split-logic`**
+    Generate a config file where all bivectors are split into single-bit variables. Must be used with `--generate-config`.
+
+* **`--force-int`**
+    Force all logic variable types to be treated as integers (`x` and `z` values will be treated as 0).
+
+---
+
+### Assertions & Ranking
+* **`--max-ass <uint>`**
+    The maximum number of assertions to keep after ranking.
+
+* **`--min-frank <float>`**
+    Minimum final ranking score (0.0 to 1.0). All assertions below this level are discarded.
+
+* **`--keep-vac-ass <FILE>`**
+    Do not discard vacuous assertions.
+
+* **`--include-ass <FILE>`**
+    Create a new context named `external` populated with assertions from the provided FILE (one per line). If an `external` context already exists in the config, assertions are appended to it.
+
+* **`--sample-by-con`**
+    If the number of mined assertions exceeds `--max-ass`, select assertions by favoring consequent diversity.
+
+* **`--interactive`**
+    Enable interactive assertion ranking.
+
+* **`--print-logic-as-int`**
+    Logic constants are printed in integer format rather than binary (`x` and `z` bits treated as 0).
+
+* **`--dont-normalize`**
+    Print assertions with non-normalized ranking metrics.
+
+#### Output Formats
+* **`--sva`**: SystemVerilog Assertion format.
+* **`--sva-assert`**: Simulable SVA format: `assert property( (posedge <input_clk>) <assertion> )`.
+* **`--psl`**: PSL format.
+* **`--spotltl`**: Spot LTL format.
+
+---
 
 ### Dumping
-* \-\-dump-to \<DIRECTORY\> or \<FILE\> : dump assertions to file. If the path points to a directory, each context will be dumped to a separate file in \<DIRECTORY\>; otherwise, all assertions will be dumped to \<FILE\>
-* \-\-dump-stat : dump mining statistics to file
-* \-\-dump-vac-ass \<FILE\> : dump vacuous assertions to file
-* \-\-ddd \<DIRECTORY\> : dump debug data useful to understand how harm generates the output
-* \-\-check-dump-eval \<DIRECTORY\> : for each 'check' assertion, dump the evaluation on the input traces of antecedent, consequent, shift (each assertion is dumped to a different file)
+* **`--dump-to <PATH>`**
+    Dump assertions to a file or directory.
+    * If `<PATH>` is a **Directory**: Each context is dumped to a separate file within it.
+    * If `<PATH>` is a **File**: All assertions are dumped to this single file.
 
-### Fault analysis
-* \-\-fd \<DIRECTORY\> : path to the directory containing the faulty traces (for fault coverage)
-* \-\-find-min-subset : find the minimum number of assertions covering all faults (must be used with --fd)
+* **`--dump-stat`**
+    Dump mining statistics to file.
+
+* **`--dump-vac-ass <FILE>`**
+    Dump vacuous assertions to file.
+
+* **`--ddd <DIRECTORY>`**
+    Dump debug data (useful for understanding internal generation).
+
+* **`--check-dump-eval <DIRECTORY>`**
+    For each `check` assertion, dump the evaluation of the antecedent, consequent, and shift on input traces (each assertion gets a unique file).
+
+---
+
+### Fault Analysis
+* **`--fd <DIRECTORY>`**
+    Path to the directory containing faulty traces (for fault coverage).
+
+* **`--find-min-subset`**
+    Find the minimum number of assertions covering all faults (must be used with `--fd`).
+
+---
 
 ### Miscellaneous
-* \-\-max-threads \<uint\> : max number of threads that HARM is allowed to spawn
-* \-\-name \<String\> : name of this execution (used when dumping statistics);
+* **`--max-threads <uint>`**
+    Max number of threads HARM is allowed to spawn.
 
-# Logging
-Harm produces three main types of textual outputs:
-* INFO: the message reports information on the execution of harm (black, the execution continues)
-* WARNING: the message reports a potential error during the execution of harm (yellow, the execution continues)
-* ERROR: the message reports an error during the execution of harm (red, the execution halts)
-Warnings and Errors are dumped (appended) in JSON format to the 'warning.log' and 'error.log' files, respectively.
-WARNING: 'warning.log' and 'error.log' should not be manually edited.
+* **`--name <String>`**
+    Name of this execution (used when dumping statistics).
 
 
 # Docker
