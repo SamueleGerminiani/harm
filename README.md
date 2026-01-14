@@ -7,31 +7,35 @@ The official repo of the Hint-Based AsseRtion Miner
 
 ## Table of contents
 
-[Project info](#project-info)
-
-[Quick start](#quick-start)
-1. [Install dependencies](#dependencies)
-2. [Build the project](#build-the-project)
-3. [Run default tests](#run-default-tests)
-
-[How to use the miner](#how-to-use-the-miner)
-* [Run with vcd trace](#run-with-a-vcd-trace)
-* [Run with csv trace](#run-with-a-csv-trace)
-* [Automatically generating a configuration file](#automatically-generating-a-configuration-file)
-
-[The configuration file](#the-configuration-file)
-
-[How to check an assertion](#how-to-check-an-assertion)
-
-
-
-[Optional arguments](#optional-arguments)
-
-[Logging](#logging)
-
-[Docker](#docker)
-
-[Citations](#citations)
+- [Project info](#project-info)
+- [Quick start](#quick-start)
+  - [Dependencies](#dependencies)
+  - [Build the project](#build-the-project)
+  - [Run default tests](#run-default-tests)
+- [How to use the miner](#how-to-use-the-miner)
+  - [Run with a vcd trace](#run-with-a-vcd-trace)
+  - [Run with a csv trace](#run-with-a-csv-trace)
+  - [Notes on input interpretation](#notes-on-input-interpretation)
+  - [Automatically generating a configuration file](#automatically-generating-a-configuration-file)
+- [The configuration file](#the-configuration-file)
+  - [1. Proposition (`<prop>`)](#1-proposition-prop)
+  - [2. Numerics (`<numeric>`)](#2-numerics-numeric)
+  - [3. Domains](#3-domains)
+  - [4. Template (`<template>`)](#4-template-template)
+    - [Decision Tree Operators](#decision-tree-operators-dtos)
+    - [SystemVerilog features](#systemverilog-features)
+    - [Metric](#metric)
+  - [Editing Rules Configuration](#editing-rules-configuration)
+- [How to check an assertion](#how-to-check-an-assertion)
+- [Optional Arguments](#optional-arguments)
+  - [Logging Flags](#logging-flags)
+  - [Trace Configuration](#trace-configuration)
+  - [Assertions & Ranking](#assertions--ranking)
+  - [Dumping](#dumping)
+  - [Fault Analysis](#fault-analysis)
+  - [Miscellaneous](#miscellaneous)
+- [Docker](#docker)
+- [Citations](#citations)
 
 ## Project info
 
