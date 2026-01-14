@@ -135,19 +135,38 @@ int var1, bool var2, float var3, logic [3:0] var4
 34, 0, 99.912, 0101
 ```
 
+
 ## Notes on input interpretation
 
-Harm supports the following C and SV (SystemVerilog) variable types: bool, char, short, int, long int, unsigned char, unsigned short, unsigned int, unsigned long int, size\_t, int64\_t, int32\_t, uint64\_t, uint32\_t, float, double, shortint, longint, byte, bit, shortint unsigned, int unsigned, longint unsigned, byte unsigned, bit signed, reg, logic, integer, wire, time, reg signed, logic signed, integer unsigned, wire signed, time signed, shortreal, real, realtime.
+### Supported Variable Types
+Harm supports a comprehensive list of **C** and **SystemVerilog (SV)** variable types:
 
-When reading traces, HARM will interpret the input values as: 
-* base 10 integers for C integer types and SV 2-value integers; 
-* base 2 binaries for SV 4-value bit-vectors (such as wire, reg, logic and int);
-For both C and SVA types, if the type is signed, then the input value will be treated as a 2-complement integer.
-For base 2 values, it is not mandatory to add leading zeros (on the left side) if the value should be intepreted as unsigned or positive signed.
-However, if the value is to be treaded as a signed negative, harm expects to receive the entire binary representation.
-For example, for variable declared as "logic signed [7:0] v1", value "100" will be treaded as "00000100" (8-bit), equal to 4 in base 10.
-Instead, to specify a negative value, such as -3, harm wants to see the entire binary representation, that is, "11111101" (8-bit).
-Harm will print all base 2 values without the leading zeros.
+* **C Integers:** `bool`, `char`, `short`, `int`, `long int`
+* **C Fixed-Width & Unsigned:** `int32_t`, `int64_t`, `uint32_t`, `uint64_t`, `size_t`, `unsigned {char|short|int|long int}`
+* **Floating Point:** `float`, `double`, `shortreal`, `real`, `realtime`
+* **SystemVerilog Integers:** `byte`, `shortint`, `int`, `longint`, `integer`, `time` (including `signed`/`unsigned` variants)
+* **SystemVerilog Logic/Net:** `bit`, `reg`, `logic`, `wire` (including `signed` variants)
+
+### Value Interpretation Rules
+When reading traces, Harm interprets input values based on the variable type:
+
+* **Base 10:** Used for all C integer types and SV 2-value integers.
+* **Base 2:** Used for SV 4-value bit-vectors (e.g., `wire`, `reg`, `logic`, `int`).
+
+> **Note:** For both C and SV types, if a type is explicitly **signed**, the input value is treated as a 2's complement integer.
+
+### Formatting Binary Inputs (Base 2)
+When providing binary inputs, leading zeros (left-padding) are **optional** for unsigned values or positive signed values. However, they are **mandatory** for negative signed values.
+
+**Example:**
+For a variable declared as: `logic signed [7:0] v1`
+
+| Desired Value | Input Format | Interpretation |
+| :--- | :--- | :--- |
+| **4** (Positive) | `100` | Pads to `00000100` (Decimal 4) |
+| **-3** (Negative) | `11111101` | **Must provide full binary representation.** Treated as 2's complement. |
+
+Harm will always output base 2 values without leading zeros.
 
 
 	
@@ -166,130 +185,169 @@ For csv:
  HARM will create the configuration file on the path given as an argument.
 
 # The configuration file
- It is recommended to always start from an automatically generated configuration file (using the --generate-config option).
- Hints are organised in contexts, each context contains three main types of expressions: propositions, templates and metrics (see the configuration file below).  
- ```xml
-<harm>
-	<context name="c1">
-		<prop exp="var1 && var2" loc="dt"/>
-		<prop exp="var3 + var4 > 100" loc="dt"/>
-		<prop exp="!var5 || !var6" loc="c"/>
-		<prop exp="var10" loc="c"/>
-		<prop exp="var11" loc="c"/>
-		<numeric clustering="K,10Max,0.01WCSS,><,==,>=,<=" exp="var12" loc="c"/>
-		<numeric clustering="K,10Max,0.01WCSS,==" exp="var13" loc="[dt]"/>
-		<numeric clustering="K,10Max,0.01WCSS,><,==,>=,<=" exp="var7 + var8" loc="a"/>
-		
-		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" />
-		<template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" /> 
-		
-    <edit rewrite="G({@(..##..,f) ##@(N,n1) @(P,s)}|->{##@(N,n2) @(P,t)})" to="G({@(f)}|->{##@(n1+n2) @(t)})" constraint='(s=="true" || s=="1") && n1!=2' />
-    <edit remove="G({@(P,a)}|->{@(P,b)})" constraint="a==b" />
 
-		<filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
-		<sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
-		<sort name="frequency" exp="atct/traceLength"/>
-	</context>
+> **Recommendation:** Always start from an automatically generated configuration file using the `--generate-config` option.
+
+The configuration file is organized into **contexts**. Each context groups related hints, which primarily consist of propositions, templates, and metrics.
+
+### XML Structure Example
+```xml
+<harm>
+    <context name="c1">
+        <prop exp="var1 && var2" loc="dt"/>
+        <prop exp="var3 + var4 > 100" loc="dt"/>
+        <prop exp="!var5 || !var6" loc="c"/>
+        <prop exp="var10" loc="c"/>
+        <prop exp="var11" loc="c"/>
+        
+        <numeric clustering="K,10Max,0.01WCSS,><,==,>=,<=" exp="var12" loc="c"/>
+        <numeric clustering="K,10Max,0.01WCSS,==" exp="var13" loc="[dt]"/>
+        <numeric clustering="K,10Max,0.01WCSS,><,==,>=,<=" exp="var7 + var8" loc="a"/>
+        
+        <template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" />
+        <template dtLimits="4A,3D,2D,-0.1E,U,O" exp="G({..#1&..}|-> X(P0))" />
+        
+        <edit rewrite="G({@(..##..,f) ##@(N,n1) @(P,s)}|->{##@(N,n2) @(P,t)})" 
+              to="G({@(f)}|->{##@(n1+n2) @(t)})" 
+              constraint='(s=="true" || s=="1") && n1!=2' />
+        <edit remove="G({@(P,a)}|->{@(P,b)})" constraint="a==b" />
+
+        <filter name="causality" exp="1-afct/traceLength" threshold="0.45"/>
+        <sort name="pRepetitions" exp="1/(pRepetitions*2+1)" />
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
 </harm>
 ```
-#### Proposition
- Propositions are non-temporal boolean expressions used to fill the empty spots (placeholders) of the templates; metrics are used to perform the final ranking of assertions.
+## 1. Proposition (`<prop>`)
+Propositions are non-temporal boolean expressions defined in the `exp` attribute. They are used to fill placeholders in templates, while metrics are used to perform the final ranking of assertions.
 
-Propositions and metrics can be written using all boolean, relational, arithmetic, bitwise and string operators of the C/C++ language.
-All integer variables (defined using C/C++ types) are represented internally as C integers (signed or unsigned, max 64 bits).
-All logic variables (defined with Verilog & SV types such as reg, wire or logic) are represented internally as 4-value (0,1,x,z) bit vectors (signed or unsigned, max 511 bits). All operators available for integer types are also available for logic types.
-All float types are represented internally as C doubles.
+### Data Types & Internal Representation
+Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise, string).
 
-For the full grammar of propositions and metrics, check "src/antl4/propositionParser/grammar/proposition.g4".
-	
-A proposition is defined inside the "exp" attribute
-* WARNING: if you are using a vcd trace, the variables must include the hierarchical path as a prefix, ex. "test1::modn::a" is the variable "a" in module "modn" instantiated in module "test1". Check the vcd file to retrieve the path.
+* **Integers:** C/C++ integer types are represented as **64-bit C integers** (signed or unsigned).
+* **Logic/Net:** Verilog types (e.g., `reg`, `wire`, `logic`) are represented as **4-value bit vectors** (0, 1, x, z) with a max width of **511 bits**.
+* **Floats:** All float types are internally represented as **C doubles**.
 
-* WARNING: if you construct expressions between variables of different types (for example, char and int, or, size\_t and logic), then the usual C/Verilog implicit type conversion rules apply (including the rules for overflows and underflows); see [c-conversion-rules](https://en.cppreference.com/w/c/language/conversion) for more info on this.
+> **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antl4/propositionParser/grammar/proposition.g4`.
 
+### ⚠️ Important Warnings
 
-#### Numerics
-The user can specify a set of numerics to automatically generate propositions (using a clustering algorithm) predicating over arithmetic expressions, like c==ne, c>= ne, c<= ne, c\_l<= ne <= c\_r, with c, c\_l, c\_r representing constants of numeric type, and ne indicating numerical expressions involving the trace variables.
-* The "exp" attribute specifies numeric expression (int, logic or double)
-* The "clustering" attribute allows to customize the generation of propositions. It contains a comma-separated list of clustering options (all the options can be defined in any order).
-  The available options are:
- 	* K : use the Kmeans algorithm
- 	* C : use an algorithm to generate all the contiguous subsequences of integer/logic data
- 	* \<number\>E : exclude \<number\> from the values used to perform the clustering (this option can be specified multiple times with different values). WARNING: \<number\> must be a base-10 integer or float (even if the numeric expression is of logic type).
- 	* \<N\>Max : keep only the top N (using support) generated propositions
- 	* \<Float\>WCSS : when using Kmeans, stop the elbow method when the reduction of variance is below the specified percentage (a number between 0 and 1)
-  	* == : generate propositions of the form \<numeric-exp\> == c
- 	* \>= : generate propositions of the form \<numeric-exp\> \>= c
- 	* \<= : generate propositions of the form \<numeric-exp\> \<= c
- 	* \>\< : generate propositions of the form lr \<= \<numeric-exp\> \<= cr	 	 
-  	* WARNING: to improve readability when using the C option, propositions will be constructed using the SetMembership operator instead of \>= and \<=.
- 
+> **VCD Traces & Hierarchies**
+> If you are using a VCD trace, variables must include their full hierarchical path prefix.
+> * *Example:* `test1::modn::a` refers to variable `a` inside module `modn`, instantiated in `test1`.
+> * Check your VCD file to retrieve the exact path.
 
-See the paper below to know more about how the procedure is carried out in harm.
-```
-S. Germiniani and G. Pravadelli, "Exploiting clustering and decision-tree algorithms to mine LTL assertions containing non-boolean expressions," 2022 IFIP/IEEE 30th International Conference on Very Large Scale Integration (VLSI-SoC), Patras, Greece, 2022, pp. 1-6, doi: 10.1109/VLSI-SoC54400.2022.9939640.
-```
+> **Type Conversions**
+> When constructing expressions with mixed types (e.g., `char` and `int`, or `size_t` and `logic`), standard **C/Verilog implicit type conversion rules** apply (including overflow/underflow behavior).
+> * See [C implicit conversion rules](https://en.cppreference.com/w/c/language/conversion) for details.
 
-#### Domains
+---
 
-HARM allows the definition of "domains" to restrict the propositions to be inserted in each placeholder.
-Propositions (and numerics) are assigned to a domain using the 'loc' attribute of 'prop' and 'numeric'.
-Each proposition (numeric) can be assigned to multiple domains.
+## 2. Numerics (`<numeric>`)
+The `<numeric>` element allows you to automatically generate propositions using clustering algorithms. Harm can generate predicates over arithmetic expressions (e.g., `c == expression`, `c_min <= expression <= c_max`).
 
-There are 4 "global" domains a, c, ac, dt.
-* "a" propositions will be used only to fill all the antecedent's placeholders (not the decision tree operator)
-* "c" propositions will be used only to fill all consequent placeholders 
-* "ac" propositions will be used only in all placeholders appearing in both the antecedent and the consequent.
-* "dt" propositions will be used only to fill decision tree operators 
-Do not use the 'loc' attribute if you want the proposition to be used in all global domains.
+### Configuration Attributes
+* `exp`: Specifies the numeric expression to analyze (supports `int`, `logic`, or `double`).
+* `clustering`: A comma-separated list of options to customize the generation process.
 
-Furthermore, HARM lets you define "local" enumerated domains by adding the id of the domain to the 'loc' attribute.
-The id must be an unsigned integer.
+### Clustering Options
+| Option | Description |
+| :--- | :--- |
+| **K** | Use the **K-means** algorithm. |
+| **C** | Use an algorithm to generate all **contiguous subsequences** of integer/logic data. |
+| **\<N\>E** | **Exclude** the value `<N>` from clustering. Can be used multiple times.<br>_Note: `<N>` must be a base-10 integer or float._ |
+| **\<N\>Max** | Keep only the **top N** generated propositions (ranked by support). |
+| **\<F\>WCSS** | **Elbow Method:** Stop K-means when variance reduction drops below `<F>` (float between 0-1). |
+| **==** | Generate propositions of the form: `<numeric-exp> == c` |
+| **>=** | Generate propositions of the form: `<numeric-exp> >= c` |
+| **<=** | Generate propositions of the form: `<numeric-exp> <= c` |
+| **><** | Generate propositions of the form: `min <= <numeric-exp> <= max` |
 
-By default, all numerics are used to generate propositions using the clustering algorithm on the entire trace.
-If a numeric is used by a decision-tree operator (see Templates), the user has the option of letting the decision-tree algorithm decide which parts of the
-trace to use in order to generate the propositions from the numeric (see the cited paper for more info on this).
-To enable this option, the user shall add squared brackets to the defined domain ID.
-For example, \[1\] specifies that the numeric will be used in all decision-tree operators containing domain id '1'.
-Furthermore, \[dt\] specifies that the numeric will be used in all decision-tree operators.
-On the contrary, specifying ids '1' and 'dt' (without the squared brackets) forces HARM to directly generate the proposition using the entire trace instead of delegating the process to the decision-tree algorithm (see the paper above to get more info on this).
+> **Note:** When using the **C** (contiguous) option, propositions use the `SetMembership` operator instead of `>=` and `<=` to improve readability.
 
-The defined IDs can be reused in the template to narrow the domain of each placeholder.
+### Reference
+For a detailed explanation of the clustering procedure in Harm, please refer to:
+> S. Germiniani and G. Pravadelli, **"Exploiting clustering and decision-tree algorithms to mine LTL assertions containing non-boolean expressions,"** *2022 IFIP/IEEE 30th International Conference on Very Large Scale Integration (VLSI-SoC)*, Patras, Greece, 2022. [DOI: 10.1109/VLSI-SoC54400.2022.9939640](https://doi.org/10.1109/VLSI-SoC54400.2022.9939640)
 
+## 3. Domains
+HARM allows the definition of **"domains"** to restrict which propositions (or numerics) can be inserted into specific placeholders.
+* **Assignment:** Use the `loc` attribute in `<prop>` or `<numeric>` tags.
+* **Multiple Domains:** A single proposition can belong to multiple domains.
+* **Default Behavior:** If the `loc` attribute is omitted, the proposition is available in **all** global domains.
 
+### Global Domains
+There are 4 reserved global domains:
 
+| Domain | Description |
+| :--- | :--- |
+| **`a`** | Used only to fill placeholders in the **antecedent** (excluding decision tree operators). |
+| **`c`** | Used only to fill placeholders in the **consequent**. |
+| **`ac`** | Used in placeholders appearing in **both** the antecedent and the consequent. |
+| **`dt`** | Used only to fill **Decision Tree (DT) operators**. |
 
+### Local Domains
+You can define custom "local" domains using **unsigned integers** as IDs in the `loc` attribute (e.g., `loc="1"`, `loc="1,2"`). These IDs can be referenced in template placeholders to narrow the search space.
 
-#### Template
+### Advanced: Numerics in Decision Trees
+By default, numerics are processed using a clustering algorithm on the **entire trace**. However, when using Decision Tree (DT) operators, you can delegate the generation process to the DT algorithm (which selects specific parts of the trace). This behavior is controlled by square brackets `[]`.
 
+| Syntax | Behavior |
+| :--- | :--- |
+| `loc="1"` | **Pre-generation:** Harm generates propositions using the *entire trace*. The results are assigned to domain `1`. |
+| `loc="[1]"` | **Delegation:** The numeric is passed raw to the Decision Tree algorithm. It is used only in DT operators containing domain `1`. |
+| `loc="[dt]"` | **Global Delegation:** The numeric is used in **all** DT operators. |
 
-Templates can be written using most LTL/SVA operators. HARM supports templates in PSL, spotLTL, and mixed cases. Templates must follow the form "G(antecedent -> consequent)"; all variables (inside the template) of the form P\<N\> are considered placeholders. For instance, template "G(P0 && P1 -> P2 W P3)" has 4 placeholders. Placeholders may specify a propositional domain of the form P\<N\>(id1,id2, ..., idk) to restrict the propositions (and numerics) to be used in each placeholder (see the Domains section).
-For the full grammar of templates, check "src/antlr4/temporalParser/grammarTemporal/temporal.g4".
- 
- There are three special placeholders: ..&&.., ..##\<N>.. and ..#\<N>&..; when employed, the miner will try to replace them with a corresponding expression using a decision tree (DT) algorithm.
- 
- * ..&&.. will be replaced with an expression of type v1 && v2 && .. && vn
- * ..##1.. will be replaced with an expression of type v1 ##1 v2 ##1 .. ##1 vn
- * ..#1&.. will be replaced with an expressions of type (..&&..)_1 ##1 (..&&..)_2 ##1 .. ##1 (..&&..)_n
+---
 
- These placeholders can only be used once in the antecedent.
- DT operators allow the use of domains, such as ..&&..(id1,id2, ..., idk).
- 
- 
- A template using a Decision Tree Operator (DTO) is associated with a configuration (defined in the 'dtLimits' attribute of 'template') involving several adjustable parameters:
- * \<uint\>A : the maximum number of operands to be added to the DT operator.
- * \<uint\>D : the maximum number of temporal operands to be added to the DT operator. Adding a temporal operand increases the temporal depth of the DT operator.
- * \<uint\>W : the maximum number of propositions to be added at a certain depth in the dt operator
-* S, U: this parameter states if a DT operator with a temporal dimension must construct expressions following a sequential (S) or an unordered (U) approach. To understand this, consider a DTO ..##2.. with parameter 3D, the resulting expression must follow the implicit template o_1 ##2 o_2 ##2 o_3; however, the order in which o_1, o_2, o_3 are substituted greatly changes the outcome of the DT algorithm. A sequential DTO adds the operands in order from o_1 to o_3 while an unordered DTO can add operands in any order. The first one can only generate the expressions "o_1", "o_1 ##2 o_2", "o_1 ##2 o_2 ##2 o_3" while the latter can generate expressions such as "o_1 ##4 o_3" or "##4 o_3".
-* <float>E is used to adjust the computational effort of the DT algorithm, in practice, it is used to decide the number of candidates selected by the DT algorithm to split the search space. If E<0 then the algorithm will put in the least possible effort to mine assertions (use only the best to split the search space at each decision point); If E==0, then use all the bests (with the same score) at each decision point; If 0 < E <= 1, use the top per cent bests at each decision point; If E > 1 and E = N, then use the top N bests at each decision point.
-* COV : the decision tree will use a coverage-based heuristic to split the dataset
-* ENT : the decision tree will use an entropy-based heuristic to split the dataset
-* O: this parameter states that the DT algorithm must return the assertions belonging to the offset; such assertions are obtained by negating the consequent of an implication that is false each time the antecedent is true (G(ant -> !con)), making the implication always T on the trace.
-* !N: prevent the DT algorithm from generating decision-tree propositions by negating the input propositions (enabled by default)
-* PF: (Perfect Fit) make the DT algorithm choose only the propositions that completely cover the consequent forcing ATCF == 0 in every DT split (disabled by default, this constraint should reduce the number of generated assertions while increasing their quality) 
-* DRP: (Dont Reuse Propositions) prevent the DT algorithm from reusing decision-tree propositions multiple times on the same decision path
-* DRN: (Dont Reuse Numerics) prevent the DT algorithm from reusing decision-tree numerics multiple times on the same decision path
-* DR: DRP + DRN
+## 4. Template (`<template>`)
+Templates define the structural patterns for mining assertions. They follow the form `G(antecedent -> consequent)` and support most LTL/SVA operators (PSL, SpotLTL, and mixed cases).
+
+* **Placeholders:** Variables in the form `P<N>` (e.g., `P0`, `P1`).
+* **Domain Restriction:** Placeholders can specify allowed domains using `P<N>(id1, ...)` to restrict which propositions fill them.
+    * *Example:* `G(P0 && P1 -> P2 W P3)` has 4 placeholders.
+    * *Example:* `P0(1, c)` accepts propositions from local domain `1` or global domain `c`.
+
+> **Grammar Reference:** For the full grammar, check `src/antlr4/temporalParser/grammarTemporal/temporal.g4`.
+
+### Decision Tree Operators (DTOs)
+There are three special placeholders that invoke a Decision Tree (DT) algorithm to synthesize complex expressions. These can only be used **once** in the antecedent.
+
+| Operator | Function | Example Expansion |
+| :--- | :--- | :--- |
+| `..&&..` | Synthesizes a conjunction. | `v1 && v2 && ... && vn` |
+| `..##1..` | Synthesizes a sequence with delay 1. | `v1 ##1 v2 ... ##1 vn` |
+| `..#1&..` | Synthesizes a sequence of conjunctions. | `(A && B) ##1 (C && D)` |
+
+> **Note:** DTOs also support domain restrictions, e.g., `..&&..(id1, id2)`.
+
+### DTO Configuration (`dtLimits`)
+Templates using DTOs must specify a `dtLimits` attribute to configure the algorithm. The parameters are comma-separated (e.g., `dtLimits="4A,3D,U"`).
+
+#### Structural Limits
+| Param | Description |
+| :--- | :--- |
+| **`<N>`A** | **Max Operands:** The maximum number of atomic propositions to add. |
+| **`<N>`D** | **Max Temporal Depth:** The maximum number of temporal operands (delays) to add. |
+| **`<N>`W** | **Max Width:** The maximum number of propositions to add at a specific depth level. |
+
+#### Search Strategy & Heuristics
+| Param | Description |
+| :--- | :--- |
+| **S** | **Sequential:** Constructs expressions in strict order (e.g. `i3 ##1 i2 ##1 i1` → `o1`). |
+| **U** | **Unordered:** Can add operands in any order. |
+| **COV** | **Coverage:** Use a coverage-based heuristic to split the dataset. |
+| **ENT** | **Entropy:** Use an entropy-based heuristic to split the dataset. |
+
+#### Effort & Constraints
+| Param | Description |
+| :--- | :--- |
+| **`<F>`E** | **Computational Effort:** Controls how many candidates are selected to split the search space.<br>• **E < 0:** Minimal effort (greedy approach).<br>• **E = 0:** Use all best candidates (tied score).<br>• **0 < E <= 1:** Use top `E` percent of candidates.<br>• **E > 1:** Use top `N` candidates. |
+| **O** | **Offset:** Returns assertions obtained by negating the consequent of a generic implication that is false whenever the antecedent is true. |
+| **!N** | **No Negation:** Prevent the DT from generating negated propositions (Default: Enabled). |
+| **PF** | **Perfect Fit:** Force `ATCF == 0` in every split. Reduces quantity but increases quality (Default: Disabled). |
+| **DRP** | **Don't Reuse Props:** Prevent reusing the same proposition multiple times in a path. |
+| **DRN** | **Don't Reuse Numerics:** Prevent reusing the same numeric multiple times in a path. |
+| **DR** | **Don't Reuse:** Enables both `DRP` and `DRN`. |
   
 #### SystemVerilog features
 
@@ -304,36 +362,54 @@ The expression evaluates to true if \<exp\> is contained in the set defined with
 
 
 ##### Functions
+Harm supports the use of standard SystemVerilog Assertion (SVA) system functions in both the **propositional layer** (inside propositions and numerics) and the **temporal layer** (inside templates).
 
-Harm allows the use of SVA functions \$stable(\<exp\>), \$rose(\<exp\>), \$fell(\<exp\>) and \$past(\<exp\>,\<uint\>) for both the propositional (in propositions and numerics) and the temporal layer (in templates).
-In the temporal layer, the only acceptable \<exp\> is a single placeholder P\<N\> or any boolean expression (proposition).
-For the propositional layer, \<exp\> can be any boolean or logic expression. Additionally, the \$past function also supports an \<exp\> of float type.
+| Function | Description |
+| :--- | :--- |
+| `$stable(<exp>)` | Returns true if the expression has not changed from the previous cycle. |
+| `$rose(<exp>)` | Returns true if the expression changed from 0 to 1 (rising edge). |
+| `$fell(<exp>)` | Returns true if the expression changed from 1 to 0 (falling edge). |
+| `$past(<exp>, <uint>)` | Returns the value of the expression `<uint>` cycles ago. |
 
+**Layer Constraints:**
+* **Temporal Layer:** The `<exp>` must be a single placeholder (e.g., `P0`) or a complete boolean proposition.
+* **Propositional Layer:** The `<exp>` can be any boolean or logic expression.
+    * *Note:* The `$past` function also supports float types in this layer.
 
 #### Metric
-A metric is a numeric formula measuring the impact of an assertion's feature in the assertion ranking. 
-The more prominent the feature, the higher its impact on the final ranking of the assertion. The elements of the contingency table are examples of features of an assertion. Metrics can be used either to filter or sort the assertions.
-* Filtering metrics are associated with a threshold; assertions with a score below the threshold of any filtering metric are directly discarded. 
-* Sorting metrics are used to perform the ranking. The ranking is computed according to an overall score.
+A metric is a numeric formula that measures the impact of specific assertion features. Metrics determine the final ranking of assertions and can be used in two ways:
 
-Currently available assertion features (more will be added):
+1.  **Filtering:** Associated with a `threshold`. Assertions scoring below this threshold are strictly discarded.
+2.  **Sorting:** Used to calculate an overall score to rank the remaining assertions.
 
-* atct : number of time units in which antecedent true implies consequent true
-* afct :               antecedent false and consequent true
-* auct :               antecedent unknown and consequent true
-* atcf 
-* afcf
-* aucf
-* atcu
-* afcu
-* aucu
-* ct : number of time units in which the consequent is true
-* traceLength : length of the trace (the sum of lengths in case of multiple input traces)
-* complexity : number of variables in the assertion
-* pRepetition : number of repeated propositions in the assertion
-* faultCoverage : number of faults covered by the assertion
-* nfCovered : number of faults covered by the assertion
-* nFaults : number of faulty traces given as input
+**Available Assertion Features**
+The following variables can be used to construct metric formulas.
+
+**1. Contingency Table Metrics**
+These variables represent the number of time units where specific conditions hold regarding the Antecedent (A) and Consequent (C).
+
+| Variable | Condition (Antecedent $\rightarrow$ Consequent) |
+| :--- | :--- |
+| **atct** | Antecedent **True** $\rightarrow$ Consequent **True** |
+| **afct** | Antecedent **False** $\rightarrow$ Consequent **True** |
+| **auct** | Antecedent **Unknown** $\rightarrow$ Consequent **True** |
+| **atcf** | Antecedent **True** $\rightarrow$ Consequent **False** |
+| **afcf** | Antecedent **False** $\rightarrow$ Consequent **False** |
+| **aucf** | Antecedent **Unknown** $\rightarrow$ Consequent **False** |
+| **atcu** | Antecedent **True** $\rightarrow$ Consequent **Unknown** |
+| **afcu** | Antecedent **False** $\rightarrow$ Consequent **Unknown** |
+| **aucu** | Antecedent **Unknown** $\rightarrow$ Consequent **Unknown** |
+| **ct** | Total time units where Consequent is **True** |
+
+**2. Trace & Complexity Metrics**
+* **`traceLength`**: Total length of the trace (sum of lengths if multiple input traces are used).
+* **`complexity`**: The number of variables used in the assertion.
+* **`pRepetition`**: The number of repeated propositions in the assertion.
+
+**3. Fault Analysis Metrics**
+* **`faultCoverage`**: Number of faults covered by the assertion.
+* **`nfCovered`**: Alias for `faultCoverage`.
+* **`nFaults`**: Total number of faulty traces provided as input.
 
 #### Edits
 The user is allowed to define editing rules using the 'edit' tag.
