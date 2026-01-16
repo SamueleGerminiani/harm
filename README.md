@@ -293,7 +293,7 @@ There are 4 reserved global domains:
 You can define custom "local" domains using **unsigned integers** as IDs in the `loc` attribute (e.g., `loc="1"`, `loc="1,2"`). These IDs can be referenced in template placeholders to narrow the search space.
 
 ### Advanced: Numerics in Decision Trees
-By default, numerics are processed using a clustering algorithm on the **entire trace**. However, when using Decision Tree (DT) operators, you can delegate the generation process to the DT algorithm (which selects specific parts of the trace). This behavior is controlled by square brackets `[]`.
+By default, numerics are processed using a clustering algorithm on the **entire trace**. However, when using DT operators, you can delegate the generation process to the DT algorithm (which selects specific parts of the trace). This behavior is controlled by square brackets `[]`.
 
 | Syntax | Behavior |
 | :--- | :--- |
@@ -314,7 +314,7 @@ Templates define the structural patterns for mining assertions. They follow the 
 > **Grammar Reference:** For the full grammar, check `src/antlr4/temporalParser/grammarTemporal/temporal.g4`.
 
 ### Decision Tree Operators (DTOs)
-There are three special placeholders that invoke a Decision Tree (DT) algorithm to synthesize complex expressions. These can only be used **once** in the antecedent.
+There are three special placeholders that invoke a DT algorithm to synthesize complex expressions. These can only be used **once** in the antecedent.
 
 | Operator | Function | Example Expansion |
 | :--- | :--- | :--- |
@@ -325,7 +325,7 @@ There are three special placeholders that invoke a Decision Tree (DT) algorithm 
 > **Note:** DTOs also support domain restrictions, e.g., `..&&..(id1, id2)`.
 
 ### DTO Configuration (`dtLimits`)
-Templates using DTOs must specify a `dtLimits` attribute to configure the algorithm. The parameters are comma-separated (e.g., `dtLimits="4A,3D,U"`).
+Templates using DTOs may specify a `dtLimits` attribute to configure the decision-tree algorithm. The parameters are comma-separated (e.g., `dtLimits="4A,3D,U"`).
 
 #### Structural Limits
 | Param | Description |
@@ -345,7 +345,7 @@ Templates using DTOs must specify a `dtLimits` attribute to configure the algori
 #### Effort & Constraints
 | Param | Description |
 | :--- | :--- |
-| **`<F>`E** | **Computational Effort:** Controls how many candidates are selected to split the search space.<br>• **E < 0:** Minimal effort (greedy approach).<br>• **E = 0:** Use all best candidates (tied score).<br>• **0 < E <= 1:** Use top `E` percent of candidates.<br>• **E > 1:** Use top `N` candidates. |
+| **`<F>`E** | **Computational Effort:** Controls how many candidates are selected to split the search space.<br>• **E < 0:** Minimal effort, keeps only the best candidate.<br>• **E = 0:** Use all best candidates (tied score).<br>• **0 < E <= 1:** Use top `E` percent of candidates.<br>• **E > 1:** Use top `N` candidates. |
 | **O** | **Offset:** Returns assertions obtained by negating the consequent of a generic implication that is false whenever the antecedent is true. |
 | **!N** | **No Negation:** Prevent the DT from generating negated propositions (Default: Enabled). |
 | **PF** | **Perfect Fit:** Force `ATCF == 0` in every split. Reduces quantity but increases quality (Default: Disabled). |
@@ -372,7 +372,7 @@ Harm supports the standard SystemVerilog (SVA) set membership operator:
 
 
 #### Functions
-Harm supports the use of standard SystemVerilog Assertion (SVA) system functions in both the **propositional layer** (inside propositions and numerics) and the **temporal layer** (inside templates).
+Harm supports the use of standard SystemVerilog Assertion system functions in both the **propositional layer** (inside propositions and numerics) and the **temporal layer** (inside templates).
 
 | Function | Description |
 | :--- | :--- |
