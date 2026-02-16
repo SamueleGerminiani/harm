@@ -172,7 +172,7 @@ void parseCommandLineArguments(int argc, char *args[]) {
     }
     messageErrorIf(clc::traceFiles.empty(),
                    "No csv trace found in: " +
-                       result["csv_dir"].as<std::string>());
+                       result["csv-dir"].as<std::string>());
   }
 
   if (result.count("reset")) {
@@ -453,7 +453,8 @@ void genConfigFile(std::string &configFile,
     auto mapDec = trace->getDeclarationsAsMap();
 
     for (auto &[scopeName, sfn] : sfn_to_sfn) {
-      ofs << "\t<context name=\"" + scopeName + "\">" << "\n\n";
+      ofs << "\t<context name=\"" + scopeName + "\">"
+          << "\n\n";
 
       for (auto &name : sfn) {
         if (name == clc::clk) {
