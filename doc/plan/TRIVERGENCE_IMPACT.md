@@ -20,9 +20,13 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | HARM milestone | Commit / branch | Pushed? | Trivergence pins today |
 |---|---|---|---|
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
-| H0 | `ms/H0-baseline`, `c82693b` | **no**, awaiting review | — |
+| H0 | `ms/H0-baseline` (`8c13f94`) | yes; not yet merged into `dev`, awaiting review | — |
 
-**Rule:** pin only commits that are pushed and merged to HARM `main`. Update `HARM_VERSION` and both `HARM_COMMIT` arguments together, and re-run `make e2e`.
+**Branches:**
+- HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
+- New work lands on HARM **`dev`**, one merge per reviewed milestone.
+
+**Rule:** pin only commits that are on HARM `dev` (or `main`), never a milestone branch. Update `HARM_VERSION` and both `HARM_COMMIT` arguments together, and re-run `make e2e`. The Dockerfile's `git clone` + `git checkout <commit>` works for `dev` commits as is.
 
 ---
 

@@ -31,8 +31,13 @@ HARM itself stays **source-agnostic**: the RTL is parsed by a separate generator
 7. **Versioned contracts:** the `coi.json` schema (H4), the new XML elements and attributes, the new CLI options and the implication dump format. Any change needs a DECISIONS entry.
 8. Trivergence is **not modified from this machine**. The changes it needs (code and plan) are kept up to date in `doc/plan/TRIVERGENCE_IMPACT.md`, the hand-off for the Linux machine. §4 below is the original summary.
 
-### 0.3 Status values
-`todo` → `planned` → `in-progress` → `awaiting-review` → `done`; also `blocked(<reason>)` and `deferred`.
+### 0.3 Branches
+- **`main`** is the stable HARM used by other people. Nothing from this plan reaches it until the whole plan is done (after H11). Then `dev` is merged into `main` in one reviewed step, with a release tag.
+- **`dev`** is the integration branch. Each milestone branch `ms/<ID>-<slug>` starts from `dev` and is merged back into `dev` (no fast-forward) after its review is approved.
+- Branches are pushed to `origin`. Fixes needed on `main` meanwhile (bugs reported by users) go to `main` and are then merged into `dev`, never the other way.
+
+### 0.4 Status values
+`todo` → `planned` → `in-progress` → `awaiting-review` → `done` (merged into `dev`); also `blocked(<reason>)` and `deferred`.
 
 ---
 
