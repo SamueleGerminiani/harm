@@ -24,11 +24,12 @@ HARM itself stays **source-agnostic**: the RTL is parsed by a separate generator
    - `ctest` is green on Linux and macOS (arm64);
    - the regression baseline is green, or its change is documented;
    - a `doc/plan/VALIDATION.md` entry exists;
+   - `doc/plan/TRIVERGENCE_IMPACT.md` is updated if the milestone changes anything trivergence uses or could use;
    - the work is committed on `ms/<ID>-<slug>`.
 
    Then stop for review.
 7. **Versioned contracts:** the `coi.json` schema (H4), the new XML elements and attributes, the new CLI options and the implication dump format. Any change needs a DECISIONS entry.
-8. Trivergence is **not modified from this machine**. The changes it needs are listed in §4 as hand-off notes for the Linux machine.
+8. Trivergence is **not modified from this machine**. The changes it needs (code and plan) are kept up to date in `doc/plan/TRIVERGENCE_IMPACT.md`, the hand-off for the Linux machine. §4 below is the original summary.
 
 ### 0.3 Status values
 `todo` → `planned` → `in-progress` → `awaiting-review` → `done`; also `blocked(<reason>)` and `deferred`.
@@ -247,6 +248,8 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | D-009 | Z3 as a hard or optional dependency | optional (`HARM_WITH_Z3`, default ON) |
 
 ## 4. Hand-off notes for trivergence (do on the Linux machine)
+*Superseded by `doc/plan/TRIVERGENCE_IMPACT.md`, which is maintained per milestone.*
+
 - **After H1:**
   - bump `HARM_VERSION`;
   - remove `to_harm_expr` constant rewriting, the `'0` workaround and the compatibility filter, or keep the filter only as a safety net;
