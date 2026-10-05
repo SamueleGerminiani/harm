@@ -133,3 +133,14 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
   - a global `--trace-end strong` option, where pending means failed. It would make every `G(a -> X b)` fail when `a` holds on the last cycle;
   - exact infinite-word evaluation of mined assertions, with atom-level monitors. It would cost one automaton per candidate instead of one per template, and would only change verdicts in the last cycles for contradictory or valid leaf combinations.
 - **To fix (H1c):** HARM prints `F` as `s_eventually` (D-002), which is strong, but evaluates a pending `F` as holding. A liveness assertion HARM accepts could therefore fail in a simulator at the end of the simulation. Liveness operators get the strong end-of-trace semantics instead.
+
+## D-016: end-of-trace strength (2026-10-05, H1c, approved)
+- **`--trace-end harm` (default): HARM's current behaviour, unchanged.** A consequent instance still pending at the end of a trace holds. This is the *weak view* of the truncated-path semantics (Eisner et al., 2003), under which every operator is treated as weak at the end.
+- **`--trace-end sva`: the *neutral view*,** which is what IEEE 1800 says for the end of a simulation:
+  - weak operators pending at the end hold: `nexttime`, `until`, `always`, weak sequences;
+  - strong ones fail: `s_eventually`, and the strong operators that negation produces, i.e. `not nexttime p` = `s_nexttime not p` and `not (p until q)`.
+  - Only verdicts that are *pending* in HARM's evaluation can change, and only from unknown to failed. Instances that HARM decides inside the trace keep their verdict.
+- **Why an option, not the default:**
+  - It changes other users' results: 106 of the 138 lines of the `process` baseline use a strong operator.
+  - Trivergence discards mined liveness anyway (H1c F2).
+- **`--reduce implies`** follows the selected semantics in its finite-trace check (D-004 as amended).

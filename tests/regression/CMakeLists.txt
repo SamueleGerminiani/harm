@@ -119,3 +119,11 @@ if(PYTHON3_FOUND)
                 --conf ${CMAKE_SOURCE_DIR}/tests/input/h3/reduce.xml)
     set_tests_properties(h3_dump_implications PROPERTIES LABELS regression)
 endif()
+
+# ---- H1c: end-of-trace semantics, independent oracle (IEEE 1800 Annex F) ---------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h1c_annex_f_oracle
+        COMMAND bash -c "H1C_DUMP=h1c_annex_f_dump.txt $<TARGET_FILE:EndOfTraceTest> --gtest_filter=*dumpForOracle* > /dev/null && ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/sva_finite_semantics.py check h1c_annex_f_dump.txt"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+    set_tests_properties(h1c_annex_f_oracle PROPERTIES LABELS regression)
+endif()

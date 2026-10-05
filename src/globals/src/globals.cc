@@ -41,6 +41,7 @@ bool skipInvalidProps = false;
 std::string reduce = "syntactic";
 std::string keep = "stronger";
 std::string dumpImplications = "";
+std::string traceEnd = "harm";
 std::string dumpAssertionInfo = "";
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();

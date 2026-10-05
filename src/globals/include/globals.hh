@@ -69,6 +69,8 @@ extern std::string reduce;
 extern std::string keep;
 ///--dump-implications
 extern std::string dumpImplications;
+///--trace-end: "harm" (pending instances hold) or "sva" (pending strong obligations fail, D-016)
+extern std::string traceEnd;
 ///--dump-assertion-info
 extern std::string dumpAssertionInfo;
 ///--dump-vac-ass

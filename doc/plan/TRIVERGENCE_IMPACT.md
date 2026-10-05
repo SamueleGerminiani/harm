@@ -113,8 +113,15 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - Implications between atoms (`x > 5 ⇒ x > 3`) are not used (H3b).
 - **[recommended] Prefer `--keep stronger`** (the default) for suite selection. `ranked` keeps the better-scored side, which can be the weaker assertion.
 - **Semantics (D-015):** HARM judges mined assertions as a simulator does: weak at the end of the trace. Its reduction requires the implication both on finite traces and over infinite words.
-  - **Known gap until H1c:** a mined `F` is printed as `s_eventually`, which is strong. A simulator can report it as failed at the end of a simulation even though HARM accepted it. Until H1c, treat mined liveness assertions as candidates to recheck, not as trace-validated.
+  - **Corrected in H1c:** an earlier version of this note said to recheck mined liveness assertions. That was overstated: trivergence's adapter already discards every mined line with `eventually`, `s_eventually`, `until` or `nexttime` (`_UNSUPPORTED` in `triad_mining/harm.py`), so they never reach its simulator or oracles.
 - **[optional]** The `kept` list lets trivergence show, for each dropped candidate, which kept assertion covers it: useful in triage reports.
+
+### H1c: end-of-trace semantics and SVA brackets (implemented on `ms/H1c-liveness`, awaiting review)
+- **SVA printing fix (affects every user of `--sva`):** HARM now brackets SVA output by SVA's operator precedence. Before, `(b W c) && X X F d` was printed `b until c and nexttime nexttime s_eventually d`, which SystemVerilog reads differently. HARM's existing baselines are unchanged, because the bug needs `and`/`or` combined with `until` or `s_eventually`.
+  - **[optional]** Trivergence's adapter rejects `until` and `s_eventually` anyway, so it is not affected today. If it ever accepts them, it needs this fix.
+- **`--trace-end sva`:** mined assertions are judged at the end of each trace as a SystemVerilog simulator judges them. Pending `s_eventually`, `not nexttime` and `not (… until …)` fail; weak operators hold. The default (`harm`) is unchanged.
+  - **[optional]** Pass `--trace-end sva` if the adapter starts accepting liveness or `not nexttime` lines. It costs nothing for the safety assertions trivergence uses today.
+- **`--dump-assertion-info`** has a new top-level field, `"traceEnd": "harm"|"sva"`. It is additive; existing readers are unaffected.
 
 ### H4: COI contract (on `dev`)
 - **Contract:** `doc/schemas/coi.v1.json`, plus the rules in `tests/coi/check_coi.py`.

@@ -228,3 +228,39 @@ They were written first and committed failing in `60be5aa`.
 
 ### Still pending
 - Cross-check with USM-T's `semantic_equivalence`: needs Linux.
+
+## H1c: end-of-trace semantics, `--trace-end sva` (2026-10-05, macOS arm64, g++-13)
+
+### Acceptance tests
+They were written first and committed failing in `e11f05c`. The SVA printer fix that A2 needed is in `2427893`.
+
+| Test | Result |
+|---|---|
+| A1 hand-derived verdicts: 33 cases × 2 modes (`F`, `X`, `!X`, `W`, `!(W)`, nesting, `\|=>`, sequences) | pass. Before the implementation, every `harm`-mode verdict already matched, and exactly the 11 expected `sva` cases failed |
+| A2 **independent oracle** (`tests/oracle/sva_finite_semantics.py`): written from IEEE 1800 Annex F / the truncated-path semantics, it parses HARM's printed SVA with the standard's precedence. 297 generated assertions × 4,680 traces (3 atoms, lengths 1–4) × 2 modes | pass, **0 disagreements** in both modes. 3 of the 300 generated formulas cannot be evaluated by HARM at all (see the open finding below) |
+| A3 `process` with `--trace-end sva`: expected output = the baseline filtered by the oracle (not by HARM), 138 → 76 assertions | pass, identical. Two of the 62 drops were checked by hand on the CSV traces: `case9` ends with `Assess_Loan_Risk`, so `not nexttime …` and `s_eventually Assess_Eligibility` fail there |
+| A4 H3 oracles with `--trace-end sva`, both sets | pass, 0 unsound (239 and 152 claims) |
+| A4, added after its first run: 150 strong/weak twin pairs (`!X p` vs `X !p`, `!(p W q)` vs its weak form) in both modes, plus 4 hand labels | pass, 0 unsound in both modes (96 claims in `sva` mode). **Why added:** in the original sets, the only strong operator was `F`, which D-004 skips, so the claims were identical in both modes and didn't test the new model. **One hand label corrected after the run:** `!(b W c)` is a strong until, not syntactic safety, so D-004 skips it in both modes (I had labelled it `A_IMPLIES_B` in `sva` mode). The `!X` labels were right: equivalent in `harm` mode, `A_IMPLIES_B` in `sva` mode |
+| A5 without the option: all baselines byte-identical | pass |
+
+### Findings while writing the tests
+- **F-a. SVA printer precedence bug, fixed.** HARM printed SVA with its own LTL precedence. So `(b W c) && X X F b` came out as `b until c and nexttime nexttime s_eventually b`, which SystemVerilog parses as `b until (c and …)`.
+  - The fix adds brackets only, and only in SVA output. Every existing baseline is unchanged.
+  - Regression test: `EndOfTraceTest.svaPrecedence`, 6 cases.
+  - H1's Verilator replay could not see it, because its templates never combine `and`/`or` with `until` or `s_eventually`.
+  - **One existing unit expectation was wrong and is corrected.** `svaParserPrinterTests.parse_print7`, written in H1 for D-002, expected `G(b_0 -> Fb_1 W b_2)` to print as `b_0 |-> s_eventually b_1 until b_2`. In SystemVerilog that means `s_eventually (b_1 until b_2)`, so it encoded the bug. It now expects `(s_eventually b_1) until b_2`.
+- **F-b.** Spot 2.9.7's `from_ltlf` reads `X` as **weak** (`X b` becomes `X(!alive | b)`). My earlier note, which assumed strong, was wrong. A first implementation built on it failed A1 on every `nexttime` case and was corrected.
+- **Open finding (predates H1c, not fixed):** HARM cannot evaluate some formulas that its grammar accepts.
+  - Spot gives a non-deterministic automaton for `F X X (a W c)`.
+  - Spot gives transition-based acceptance for some `W` nested in `W` (e.g. `(F a W b) W a`), and `buildAutomatonFromSpot` throws on it (`state_is_accepting()`).
+
+  None of HARM's shipped templates have these shapes. To be raised as a separate issue.
+
+### Not available here
+- A commercial simulator check (Questa/VCS) of `s_eventually` and `not nexttime` at the end of a simulation. Verilator 5.034 rejects `s_eventually` as unsupported, and Icarus has no concurrent assertions. A2 relies on the standard's semantics instead.
+
+### Suites
+- `ctest -j6 -LE slow`: 104 tests. 103 passed on the first run; the one failure was `parse_print7` (above), and it passes after the correction.
+
+### Performance
+`--trace-end sva` costs one linear pass over the instances still pending at the end of each trace. `process`: 0.09 s in both modes. `bl_master1k`: 14.84 s vs 14.90 s.

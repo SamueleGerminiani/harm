@@ -658,7 +658,17 @@ Harm produces three main types of textual outputs:
   - `true`/`false` are printed `1'b1`/`1'b0`;
   - hierarchical names use `.`;
   - `p |-> nexttime q` is printed `p |=> q`, and `nexttime[n]` as `##n`, when `q` is boolean;
-  - unbounded eventually is printed `s_eventually`.
+  - unbounded eventually is printed `s_eventually`;
+  - brackets follow SVA's operator precedence (IEEE 1800-2017 Table 16-3), which differs from HARM's: in SVA, `until` binds looser than `and`/`or`, and `s_eventually` looser than everything. So `(b W c) && F d` is printed `(b until c) and (s_eventually d)`.
+* **`--trace-end <harm|sva>`**: how an assertion instance still pending at the end of a trace is judged.
+  * `harm` (default): it holds. Every operator is treated as weak at the end of the trace, as HARM always has.
+  * `sva`: as in a SystemVerilog simulator at the end of a simulation (IEEE 1800). A pending instance holds if its pending obligation is weak (`nexttime`, `until`, `always`, sequences), and fails if it is strong:
+    * `s_eventually p`, i.e. `F p`;
+    * `not nexttime p`, i.e. `!X p` = `s_nexttime !p`;
+    * `not (p until q)`.
+
+    For example, `G(a -> F b)` fails on a trace whose last `a` is never followed by `b`, and `G(a -> !X b)` fails when `a` holds on the last cycle.
+  * Use `sva` when the mined SVA will be checked by a simulator. Each input trace (`--csv-dir`, `--vcd-dir`) ends separately. `--reduce implies` follows the selected semantics. See D-016.
 
   `<edit>` rules still match the previous printing (`true`, `::`, `nexttime`, `eventually`), so existing rules keep working. See `doc/plan/DECISIONS.md` (D-002).
 * **`--psl`**: PSL format.

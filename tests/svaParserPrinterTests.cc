@@ -137,11 +137,12 @@ TEST(svaParserPrinterTests, parse_print7) {
       "G(b_0 -> Fb_1 W b_2)");
   clc::outputLang = Language::SVA;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "always (b_0 |-> s_eventually b_1 until b_2)"); // D-002
+            // H1c: '(F b_1) W b_2'; without brackets SVA reads s_eventually (b_1 until b_2)
+            "always (b_0 |-> (s_eventually b_1) until b_2)"); // D-002
   clc::svaAssert = 1;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "assert property (@(posedge clk) (b_0 |-> s_eventually b_1 "
-            "until b_2))"); // D-002
+            "assert property (@(posedge clk) (b_0 |-> (s_eventually b_1) "
+            "until b_2))"); // D-002, H1c
   clc::svaAssert = 0;
   assertion = hparser::parseTemporalExpression(
       "assert property (@(posedge clk) (b_0 |-> eventually b_1 until "
