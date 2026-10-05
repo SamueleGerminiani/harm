@@ -1,6 +1,6 @@
 # H4 plan: COI contract and RTL fixture corpus
 
-*Status: proposed 2026-10-05, awaiting approval. Branch: `ms/H4-coi-contract` (from `dev` @ H2). Effort: about 2 d.*
+*Status: approved 2026-10-05 (D-005, D-013), in progress. Branch: `ms/H4-coi-contract` (from `dev` @ H2). Effort: about 2 d.*
 
 ## Goal
 Fix the contract between the RTL side and HARM before either is built:
