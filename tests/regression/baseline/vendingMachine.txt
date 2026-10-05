@@ -1,0 +1,4 @@
+# mode: set
+### default_ass.txt
+G({nickel && !quarter && !dime ##1 dime && !quarter && !nickel ##1 nickel && !quarter && !dime ##1 dime && !quarter && !nickel} |-> diet && give_diet)
+G({nickel && !quarter && !dime ##1 nickel && !quarter && !dime ##1 nickel && !quarter && !dime ##1 quarter && !nickel && !dime} |-> diet && give_diet)

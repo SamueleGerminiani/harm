@@ -28,3 +28,5 @@ addTest("DTOTest" ./dtoTests.cc )
 addTest("TempExpSyntaxTreeTests" ./tempExpSyntaxTreeTests.cc )
 addTest("svaParserPrinterTests" ./svaParserPrinterTests.cc )
 
+
+add_subdirectory(regression)

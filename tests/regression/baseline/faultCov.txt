@@ -1,0 +1,5 @@
+# mode: set
+### default_ass.txt
+G({v1} |=> v2)
+### default_faultCov.txt
+G({v1} |=> v2)
