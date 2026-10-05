@@ -202,3 +202,20 @@ TEST(PropositionLanguageTest, substitutionRespectsIdentifierBoundaries) {
   EXPECT_EQ(propAt("b1 == 8'hb1", tr), "1");
   EXPECT_EQ(propAt("h == 1'h1 && a == 4'd10", tr), "1");
 }
+
+// F10 (found in H1): copying a bit selection swapped its bounds, so mined assertions printed
+// r[4:7] for r[7:4]
+TEST(PropositionLanguageTest, bitSelectionSurvivesCopy) {
+  TracePtr tr = makeTrace({{"r", 8, {"10110001", "01000001"}}});
+  std::string error;
+  PropositionPtr p =
+      hparser::tryParseProposition("r[7:4] == 4'b1011", tr, error);
+  ASSERT_NE(p, nullptr) << error;
+  PropositionPtr c = copy(p);
+  EXPECT_EQ(prop2String(c), prop2String(p));
+  EXPECT_NE(prop2String(c).find("r[7:4]"), std::string::npos)
+      << prop2String(c);
+  for (size_t t = 0; t < 2; t++) {
+    EXPECT_EQ(c->evaluate(t), p->evaluate(t));
+  }
+}

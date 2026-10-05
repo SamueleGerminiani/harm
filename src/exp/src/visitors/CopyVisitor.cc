@@ -218,8 +218,9 @@ UNARY_FUNCTION(IntRose, _proposition)
 
 void CopyVisitor::visit(IntBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _int = generatePtr<IntBitSelector>(_int, o.getUpperBound(),
-                                     o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  _int = generatePtr<IntBitSelector>(_int, o.getLowerBound(),
+                                     o.getUpperBound());
 }
 
 void CopyVisitor::visit(IntSetMembership &o) {
@@ -256,8 +257,9 @@ UNARY_FUNCTION(LogicRose, _proposition)
 
 void CopyVisitor::visit(LogicBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _logic = generatePtr<LogicBitSelector>(_logic, o.getUpperBound(),
-                                         o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  _logic = generatePtr<LogicBitSelector>(_logic, o.getLowerBound(),
+                                         o.getUpperBound());
 }
 
 void CopyVisitor::visit(LogicSetMembership &o) {

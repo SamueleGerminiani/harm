@@ -20,6 +20,7 @@
   - a variable `a` inside `0xa` today, and inside `4'ha` after H1.
 
   Fix in H1 (scope item 3b): a declared name matches only when it is not preceded by `[A-Za-z0-9_$']` and not followed by `[A-Za-z0-9_]`.
+- **F10. Copying a bit selection swaps its bounds** (found while implementing H1). `CopyVisitor` passes (upper, lower) to a constructor that takes (lower, upper). Every mined assertion is built from a copied template, so `r[7:4]` is printed `r[4:7]`, which is not valid for an `[7:0]` signal in SV. Fixed in H1 because it breaks H1's "SVA output is valid" goal. Test: `bitSelectionSurvivesCopy`.
 - **F8. Tools on this Mac:** `iverilog` is installed; it evaluates 4-valued expressions but not concurrent assertions. **Verilator is not installed.**
 
 ## Scope
