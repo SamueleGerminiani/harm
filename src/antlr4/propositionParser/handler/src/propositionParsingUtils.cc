@@ -261,7 +261,7 @@ tryParseProposition(std::string formula, const harm::TracePtr &trace,
 
 static std::vector<std::string> reservedKeywords = {
     "inside",      "true",   "false",      "substr",   "and",
-    "or",          "not",    "eventually", "nexttime", "next",
+    "or",          "not",    "eventually", "s_eventually", "nexttime", "next",
     "X",           "until",  "W",          "always",   "G",
     "first_match", ".substr"};
 void checkReservedKeywords(const std::string &formula) {

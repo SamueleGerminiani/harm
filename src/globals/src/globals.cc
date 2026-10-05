@@ -29,6 +29,7 @@ std::string evaluatorType = "AutomataBased";
 
 Language outputLang = Language::SpotLTL;
 bool svaAssert = false;
+bool legacySvaPrinting = false;
 bool genConfig = false;
 std::string dumpTraceAsCSV = "";
 size_t maxThreads = std::thread::hardware_concurrency();

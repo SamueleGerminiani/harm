@@ -132,7 +132,8 @@ inline std::string opeToString(temporalOpe o,
     case Language::PSL:
       return "eventually";
     case Language::SVA:
-      return "eventually";
+      // unbounded (strong) eventually; 'eventually' without a range is not SystemVerilog
+      return clc::legacySvaPrinting ? "eventually" : "s_eventually";
     default:
       messageError("Unset language");
     }

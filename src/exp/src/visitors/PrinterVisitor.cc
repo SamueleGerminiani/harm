@@ -48,9 +48,14 @@ std::string PrinterVisitor::get() {
 
 //Atom------------------------------------------------------------------------------
 #define selCol(bw, col) (_colored ? col : bw)
+//in SystemVerilog, hierarchical names use '.' (a::b is a package scope)
 #define VARIABLE(LEAF)                                               \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << selCol(o.getName(), VAR(o.getName()));                    \
+    std::string name = o.getName();                                  \
+    if (_lang == Language::SVA && !clc::legacySvaPrinting) {         \
+      replace("::", ".", name);                                      \
+    }                                                                \
+    _ss << selCol(name, VAR(name));                                  \
   }
 
 #define INT_CONSTANT(LEAF)                                           \
@@ -92,12 +97,13 @@ std::string PrinterVisitor::get() {
     }                                                                \
   }
 
+//'true' and 'false' are not SystemVerilog
 #define BOOLEAN_CONSTANT(LEAF)                                       \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << (o.evaluate(0) ? selCol(std::string("true"),              \
-                                   BOOL(std::string("true")))        \
-                          : selCol(std::string("false"),             \
-                                   BOOL(std::string("false"))));     \
+    bool sv = _lang == Language::SVA && !clc::legacySvaPrinting;     \
+    std::string t = sv ? "1'b1" : "true";                            \
+    std::string f = sv ? "1'b0" : "false";                           \
+    _ss << (o.evaluate(0) ? selCol(t, BOOL(t)) : selCol(f, BOOL(f))); \
   }
 
 #define STRING_CONSTANT(LEAF)                                        \
@@ -626,7 +632,10 @@ void PrinterVisitor::visit(BooleanLayerPermutationPlaceholder &o) {
 void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
   if (_printMode == PrintMode::ShowAll) {
     if (isEmptyPropositionAnd(*o.getPlaceholderPointer())) {
-      _ss << selCol("true", BOOL("true"));
+      std::string t = _lang == Language::SVA && !clc::legacySvaPrinting
+                          ? "1'b1"
+                          : "true";
+      _ss << selCol(t, BOOL(t));
       return;
     }
 
@@ -736,10 +745,40 @@ void PrinterVisitor::visit(PropertyImplication &o) {
   // an invariant G(true -> p) is printed as G(p)
   if (!o.isMMImplication() && o.isOverlapping() &&
       isTrueAntecedent(o.getItems()[0])) {
+    // printed exactly as the consequent of an implication
+    _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
     o.getItems()[1]->acceptVisitor(*this);
+    _temporal_ope_stack.pop();
     return;
   }
   _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
+
+  // SystemVerilog: 'p |-> nexttime q' is printed 'p |=> q', and more nexttimes as '##n', when q
+  // is boolean (equivalent: a sequence used as a property is weak by default, like nexttime);
+  // nexttime is valid SystemVerilog but not accepted by common tools (Verilator, EBMC)
+  if (_lang == Language::SVA && !clc::legacySvaPrinting) {
+    TemporalExpressionPtr consequent = o.getItems()[1];
+    size_t shift = o.isOverlapping() ? 0 : 1;
+    size_t nexts = 0;
+    while (auto next =
+               std::dynamic_pointer_cast<PropertyNext>(consequent)) {
+      shift += next->getDelay();
+      nexts++;
+      consequent = next->getItems()[0];
+    }
+    if (nexts > 0 && isBooleanLayer(consequent)) {
+      o.getItems()[0]->acceptVisitor(*this);
+      if (shift == 1) {
+        _ss << selCol(" |=> ", TIMPL(" |=> "));
+      } else {
+        std::string delay = " |-> ##" + std::to_string(shift) + " ";
+        _ss << selCol(delay, TIMPL(delay));
+      }
+      consequent->acceptVisitor(*this);
+      _temporal_ope_stack.pop();
+      return;
+    }
+  }
 
   auto [open, close] = getSereBrackets();
 

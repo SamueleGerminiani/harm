@@ -123,7 +123,7 @@ dt_ncreps
     : '..[' (IMPLO | ASS) UINTEGER ']@' (COL | SCOL) '..';
 
 EVENTUALLY
-    : 'F' | 'eventually'
+    : 'F' | 'eventually' | 's_eventually'
     ;
 
 ALWAYS

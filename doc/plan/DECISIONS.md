@@ -66,3 +66,8 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - (c) make SV semantics the default. This changes mining results on traces with x/z.
 
   Proposed: (b), as a new milestone after H1. The oracle fixture already contains the SV column needed to validate it.
+- **Additions found during implementation (H1):**
+  - **Unbounded `F` is printed as `s_eventually` in SVA.** `eventually` without a range is not SystemVerilog, and `F` is the strong, unbounded form. The parser accepts `s_eventually` as input.
+  - **Edit rules keep matching the pre-D-002 printing.** `<edit>` rules are matched against the printed SVA text, with spaces removed. With `1'b1`, a rule such as `##@(N,b) @(P,c)` with `c=="true"` would silently stop matching: `##2 1'b1` becomes `##21'b1`. While edit rules are matched and applied, HARM prints SVA as before (`clc::legacySvaPrinting`), so existing users' edit rules keep working. The output still follows D-002.
+  - **Updated test expectations:** `svaParserPrinterTests` (parse_print3, parse_print7, parse_print8) now expect `|=>`, `##9` and `s_eventually`.
+  - **Regression:** the `process` baseline was re-captured. Its new output equals the old one with the D-002 rewrites applied mechanically (checked as sets; same count, 141 assertions). `edit` is unchanged.

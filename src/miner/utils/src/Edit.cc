@@ -1,3 +1,4 @@
+#include "globals.hh"
 
 
 #include <algorithm>
@@ -32,9 +33,22 @@
 namespace harm {
 using namespace expression;
 
+namespace {
+/// edit rules are written against HARM's SystemVerilog printing before D-002 (true, ::,
+/// nexttime): keep matching them against that printing
+struct LegacySvaPrinting {
+  bool _previous;
+  LegacySvaPrinting() : _previous(clc::legacySvaPrinting) {
+    clc::legacySvaPrinting = true;
+  }
+  ~LegacySvaPrinting() { clc::legacySvaPrinting = _previous; }
+};
+} // namespace
+
 bool toBeRemoved(const std::string assertionStr,
                  const std::vector<EditPtr> &remove,
                  const TracePtr &trace) {
+  LegacySvaPrinting legacy;
 
   //t is the original template of the assertion being matched
   TemplateImplicationPtr t =
@@ -57,6 +71,7 @@ bool toBeRemoved(const std::string assertionStr,
 bool rewriteAssertion(const AssertionPtr &ass,
                       const std::vector<EditPtr> &rewrite,
                       const TracePtr &trace) {
+  LegacySvaPrinting legacy;
 
   //t is the original template of the assertion being matched
   TemplateImplicationPtr t =
