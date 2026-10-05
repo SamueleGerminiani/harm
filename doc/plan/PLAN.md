@@ -75,6 +75,15 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
   - evaluation of the new operators is checked against Verilator simulation on a small fuzzed set (random expressions × random 4-valued vectors);
   - the SVA printing change updates the baseline (D-002).
 
+### H1b: SystemVerilog x/z semantics as an option (D-011)
+- **Depends on:** H1 · **Effort:** 2–3 d
+- **Scope:**
+  - An option (e.g. `--sv-xsemantics`) under which propositions follow SystemVerilog: comparisons give 0/1/x, and `!`, `&&`, `||` use Kleene logic.
+  - A proposition holds only where its value is 1.
+  - The default stays HARM's current semantics.
+- **Acceptance:** the H1 iverilog oracle's **SV column** matches on all 1,000 expressions with the option on. The model column still matches with it off.
+- **Validation:** the existing iverilog fixture is the independent oracle. A Verilator replay on a trace with x values is not possible, because Verilator is 2-state; so a 4-state check by iverilog simulation of the proposition layer is used instead.
+
 ### H2: Z3 back end and proposition canonicalisation
 - **Depends on:** H0 (H1 recommended first, so that the new operators are covered) · **Effort:** 3–4 d
 - **Scope:**
@@ -278,7 +287,8 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | ID | Title | Status |
 |---|---|---|
 | H0 | Baseline and safety net | done |
-| H1 | Proposition and SVA language fixes | awaiting-review |
+| H1 | Proposition and SVA language fixes | done |
+| H1b | SystemVerilog x/z semantics as an option (D-011) | todo |
 | H2 | Z3 back end and canonicalisation | todo |
 | H3 | Semantic redundancy reduction | todo |
 | H3b | Atom-implication premises | todo (optional) |
