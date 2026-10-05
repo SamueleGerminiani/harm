@@ -48,6 +48,8 @@ protected:
   /// @brief The xml node containing the configuration
   /// parameters for the module.
   rapidxml::XmlNode *_configuration;
+  /// path of the configuration file (files it names are relative to it)
+  std::string _configFile;
   rapidxml::file<> *_xmlFile;
 
   rapidxml::xml_document<> *_doc;

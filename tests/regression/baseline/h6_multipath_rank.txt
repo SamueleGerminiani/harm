@@ -1,7 +1,7 @@
 # mode: ordered
 ### default_ass.txt
-G(a -> Xr1)
 G(a -> XXr2)
+G(a -> Xr1)
 G(b -> Xrb)
 G(b -> Xz)
 G(r1 -> Xr2)

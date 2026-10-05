@@ -1,3 +1,5 @@
+#include <fstream>
+#include <mutex>
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -9,6 +11,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "CoiInfo.hh"
 #include "PropositionCanonicalizer.hh"
 #include <unordered_set>
 #include <utility>
@@ -223,6 +226,101 @@ void Qualifier::init() {
   _originalAssertions.clear();
 }
 
+namespace {
+/// COI rank metrics (H6, D-014) of every assertion, if the context has a <coi>
+void fillCoiMetrics(const std::vector<AssertionPtr> &assertions,
+                    const Context &context) {
+  if (context._coi == nullptr) {
+    return;
+  }
+  for (const auto &a : assertions) {
+    CoiMetrics m = computeCoiMetrics(a->_formula, *context._coi);
+    a->_hasCoi = true;
+    a->_coiFrac = m.frac;
+    a->_coiDepthFit = m.depthFit;
+    a->_coiUnknown = m.unknown;
+  }
+}
+
+std::string jsonString(const std::string &s) {
+  std::string out = "\"";
+  for (char c : s) {
+    switch (c) {
+    case '"':
+      out += "\\\"";
+      break;
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    default:
+      out += c;
+    }
+  }
+  return out + "\"";
+}
+
+/// --dump-assertion-info: one JSON record per kept assertion, all contexts in one file
+void dumpAssertionInfo(const Context &context,
+                       const std::vector<AssertionPtr> &assertions) {
+  static std::vector<std::string> records;
+  static std::mutex guard;
+  std::lock_guard<std::mutex> lock(guard);
+  const char *ct[3] = {"t", "f", "u"};
+  for (const auto &a : assertions) {
+    std::string r = "    {\"context\": " + jsonString(context._name) +
+                    ", \"text\": " + jsonString(a->toString()) +
+                    ", \"metrics\": {";
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        r += std::string(i || j ? ", " : "") + "\"a" + ct[i] + "c" + ct[j] +
+             "\": " + std::to_string(a->_ct[i][j]);
+      }
+    }
+    r += ", \"ct\": " + std::to_string(a->_CT) +
+         ", \"traceLength\": " + std::to_string(a->_maxLength) +
+         ", \"complexity\": " + std::to_string(a->_complexity) +
+         ", \"finalScore\": " + std::to_string(a->_finalScore);
+    if (a->_hasCoi) {
+      r += ", \"coiFrac\": " + std::to_string(a->_coiFrac) +
+           ", \"coiDepthFit\": " + std::to_string(a->_coiDepthFit) +
+           ", \"coiUnknown\": " + std::to_string(a->_coiUnknown);
+    }
+    r += "}, \"leaves\": [";
+    bool first = true;
+    for (const auto &l : leafOffsets(a->_formula)) {
+      std::string text = prop2String(l.prop);
+      std::string vars;
+      for (const auto &[name, type] : getVars(l.prop)) {
+        vars += (vars.empty() ? "" : ", ") + jsonString(name);
+      }
+      auto o = context._origin.find(text);
+      r += std::string(first ? "" : ", ") + "{\"text\": " + jsonString(text) +
+           ", \"antecedent\": " + (l.inAntecedent ? "true" : "false") +
+           ", \"offset\": " +
+           (l.offset ? std::to_string(*l.offset) : std::string("null")) +
+           ", \"variables\": [" + vars + "], \"origin\": " +
+           (o == context._origin.end() ? std::string("null")
+                                       : jsonString(o->second)) +
+           "}";
+      first = false;
+    }
+    r += "]}";
+    records.push_back(r);
+  }
+  std::ofstream out(clc::dumpAssertionInfo);
+  messageErrorIf(!out.good(),
+                 "Cannot write '" + clc::dumpAssertionInfo + "'");
+  out << "{\n  \"version\": \"1\",\n  \"assertions\": [\n";
+  for (size_t i = 0; i < records.size(); i++) {
+    out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
+  }
+  out << "  ]\n}\n";
+}
+} // namespace
+
 std::vector<AssertionPtr> Qualifier::qualify(Context &context,
                                              const TracePtr &trace) {
 
@@ -243,6 +341,7 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   assertions = patchDiscardAssertions(assertions, trace);
 
   filterRedundantAssertions(assertions);
+  fillCoiMetrics(assertions, context);
   if (requiresFaultCoverage(context._filter)) {
     fillAssertionsWithFaultCoverage(assertions, trace);
   }
@@ -251,6 +350,7 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   if (rewriteUsingEdits(assertions, context._rewrite, trace) > 0) {
     //rewriting might have introduced redundant assertions
     filterRedundantAssertions(assertions);
+    fillCoiMetrics(assertions, context);
   }
   filterUsingEdits(assertions, context._remove, trace);
 
@@ -277,6 +377,9 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   // dump to file
   if (clc::dumpAssToFile && !rankedAssertions.empty()) {
     dumpAssToFile(context, trace, rankedAssertions);
+  }
+  if (!clc::dumpAssertionInfo.empty()) {
+    dumpAssertionInfo(context, rankedAssertions);
   }
 
   return rankedAssertions;

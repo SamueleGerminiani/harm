@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include "CoiInfo.hh"
 #include "formula/atom/Atom.hh"
 
 namespace expression {
@@ -63,6 +64,11 @@ public:
   std::vector<EditPtr> _rewrite;
   ///remove assertions rules
   std::vector<EditPtr> _remove;
+
+  ///cone of influence (<coi>, H6); nullptr if the context has none
+  CoiInfoPtr _coi = nullptr;
+  ///origin="..." of propositions and numerics, by their text
+  std::unordered_map<std::string, std::string> _origin;
 };
 //using shared pointer for the context
 using ContextPtr = std::shared_ptr<Context>;
