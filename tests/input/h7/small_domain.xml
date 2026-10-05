@@ -1,0 +1,11 @@
+<harm>
+    <!-- H7 finding: a template with more antecedent placeholders than antecedent propositions
+         (P0 && P1 with only 'a') made HARM recurse forever in computeBinomialCoefficient. Now it has
+         no permutations. Hand-derived output on multipath (r1 <= a): G(a -> X r1) only. -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="r1" loc="c"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+    </context>
+</harm>

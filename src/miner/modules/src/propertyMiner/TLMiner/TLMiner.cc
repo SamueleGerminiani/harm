@@ -8,9 +8,12 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "AntecedentGenerator.hh"
+#include "CoiInfo.hh"
+#include "expUtils/expUtils.hh"
 #include "Assertion.hh"
 #include "Context.hh"
 #include "DTOperator.hh"
@@ -27,6 +30,63 @@ class NumericExpression;
 } // namespace expression
 
 namespace harm {
+
+// ---------------------------------------------------------------- COI filter mode (H7, D-017)
+namespace {
+std::mutex coiFilterStatsGuard;
+
+template <typename Vars> std::vector<std::string> variableNames(const Vars &vars) {
+  std::vector<std::string> names;
+  for (const auto &[name, type] : vars) {
+    names.push_back(name);
+  }
+  std::sort(names.begin(), names.end());
+  names.erase(std::unique(names.begin(), names.end()), names.end());
+  return names;
+}
+
+std::vector<std::string> variablesOf(const PropositionPtr &p) {
+  return variableNames(getVars(p));
+}
+
+std::vector<std::string> variablesOf(const NumericExpressionPtr &n) {
+  switch (n->getType().first) {
+  case ExpType::Float:
+    return variableNames(getVars(n->get<FloatExpression>()));
+  case ExpType::SInt:
+  case ExpType::UInt:
+    return variableNames(getVars(n->get<IntExpression>()));
+  default:
+    return variableNames(getVars(n->get<LogicExpression>()));
+  }
+}
+
+/// the variables of the consequent loaded in t
+std::vector<std::string> consequentVariables(const TemplateImplicationPtr &t) {
+  std::vector<std::string> vars;
+  for (const auto &p : t->getLoadedPropositionsCon()) {
+    auto v = variablesOf(p);
+    vars.insert(vars.end(), v.begin(), v.end());
+  }
+  return vars;
+}
+
+/// the loaded permutation of t has no antecedent proposition outside the cone; placeholders
+/// shared by antecedent and consequent are not filtered (D-017)
+bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi) {
+  std::vector<std::string> con = consequentVariables(t);
+  std::unordered_set<const Proposition *> shared;
+  for (const auto &[ph, pp] : t->get_acphToPP()) {
+    shared.insert(pp->get());
+  }
+  for (const auto &p : t->getLoadedPropositionsAnt()) {
+    if (!shared.count(p.get()) && !coi.inCone(variablesOf(p), con)) {
+      return false;
+    }
+  }
+  return true;
+}
+} // namespace
 class Edit;
 
 TLMiner::TLMiner() : PropertyMiner() {}
@@ -155,6 +215,19 @@ void TLMiner::l2Handler(
   {
     t->genPermutations(_context->_domainIdToProps,
                        _context->_domainIdToNumerics);
+    if (_context->_coi != nullptr && _context->_coiMode == "filter") {
+      size_t before = t->getNumberOfPermutations();
+      t->keepPermutations([&]() { return permutationInCone(t, *_context->_coi); });
+      size_t after = t->getNumberOfPermutations();
+      {
+        std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+        _context->_coiFilterStats.permutationsBefore += before;
+        _context->_coiFilterStats.permutationsAfter += after;
+      }
+      messageInfo("COI filter: " + t->getTemplateStr(Language::SpotLTL) +
+                  ": permutations " + std::to_string(before) + " -> " +
+                  std::to_string(after));
+    }
 
     _progressBar.addInstance(l3InstId, t->getColoredTemplateStr(),
                              t->getNumberOfPermutations(), 70);
@@ -268,14 +341,35 @@ void TLMiner::l1Handler(
 
     DecTreeVariables candidateVariables;
     auto propsDT = t->getDTPropositions();
-    for (size_t i = 0; i < t->getDTPropositions().size(); i++) {
+    auto numericsDT = t->getDTNumerics();
+    if (_context->_coi != nullptr && _context->_coiMode == "filter") {
+      // only candidates in the cone of the loaded consequent (D-017)
+      std::vector<std::string> con = consequentVariables(t);
+      size_t before = propsDT.size() + numericsDT.size();
+      propsDT.erase(std::remove_if(propsDT.begin(), propsDT.end(),
+                                   [&](const PropositionPtr &p) {
+                                     return !_context->_coi->inCone(
+                                         variablesOf(p), con);
+                                   }),
+                    propsDT.end());
+      numericsDT.erase(std::remove_if(numericsDT.begin(), numericsDT.end(),
+                                      [&](const NumericExpressionPtr &n) {
+                                        return !_context->_coi->inCone(
+                                            variablesOf(n), con);
+                                      }),
+                       numericsDT.end());
+      std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+      _context->_coiFilterStats.dtCandidatesBefore += before;
+      _context->_coiFilterStats.dtCandidatesAfter +=
+          propsDT.size() + numericsDT.size();
+    }
+    for (size_t i = 0; i < propsDT.size(); i++) {
       candidateVariables[i].first = propsDT[i];
       candidateVariables[i].second =
           makeGenericExpression<PropositionNot>(propsDT[i]);
     }
 
     NumericDecTreeExp numericCandidates;
-    auto numericsDT = t->getDTNumerics();
     for (size_t i = 0; i < numericsDT.size(); i++) {
       numericCandidates[i] = numericsDT[i];
     }

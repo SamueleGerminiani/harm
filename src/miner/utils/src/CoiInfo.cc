@@ -100,6 +100,27 @@ bool CoiInfo::knows(const std::string &signal) const {
   return _targets.count(signal) && !_unknown.count(signal);
 }
 
+bool CoiInfo::inCone(const std::vector<std::string> &propVars,
+                     const std::vector<std::string> &consequentVars) const {
+  for (const auto &v : propVars) {
+    if (!knows(v)) {
+      continue; // in the cone, but counted by computeCoiMetrics (D-014)
+    }
+    bool vInCone = false;
+    for (const auto &c : consequentVars) {
+      // the cone of an unknown consequent signal is unknown: it cannot exclude v
+      if (!knows(c) || source(c, v) != nullptr) {
+        vInCone = true;
+        break;
+      }
+    }
+    if (!vInCone) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const CoiInfo::Source *CoiInfo::source(const std::string &target,
                                        const std::string &source) const {
   auto t = _targets.find(target);
@@ -205,6 +226,10 @@ CoiMetrics computeCoiMetrics(const TemporalExpressionPtr &formula,
     }
   }
 
+  std::vector<std::string> consequentVars;
+  for (const auto &q : consequent) {
+    consequentVars.insert(consequentVars.end(), q.vars.begin(), q.vars.end());
+  }
   CoiMetrics m;
   size_t counted = 0, inCone = 0, fitting = 0;
   for (const auto &l : leaves) {
@@ -216,25 +241,26 @@ CoiMetrics computeCoiMetrics(const TemporalExpressionPtr &formula,
       continue; // e.g. the 'true' of 'a ##1 true'
     }
     counted++;
-    bool hasUnknown = false, leafInCone = true, leafFits = true;
+    // in the cone: the rule shared with filter mode (D-017)
+    bool leafInCone = coi.inCone(vars, consequentVars);
+    bool hasUnknown = false, leafFits = true;
     for (const auto &v : vars) {
       if (!coi.knows(v)) {
         hasUnknown = true; // in the cone and fitting, but counted (D-014)
         continue;
       }
-      bool vInCone = false, vFits = false;
+      bool vFits = false;
       for (const auto &q : consequent) {
         for (const auto &c : q.vars) {
           if (!coi.knows(c)) {
             // the cone of an unknown consequent signal is unknown: it cannot exclude v
-            vInCone = vFits = true;
+            vFits = true;
             continue;
           }
           const CoiInfo::Source *s = coi.source(c, v);
           if (s == nullptr) {
             continue;
           }
-          vInCone = true;
           if (!l.offset || !q.offset) {
             vFits = true;
             continue;
@@ -247,7 +273,6 @@ CoiMetrics computeCoiMetrics(const TemporalExpressionPtr &formula,
           }
         }
       }
-      leafInCone &= vInCone;
       leafFits &= vFits;
     }
     m.unknown += hasUnknown;

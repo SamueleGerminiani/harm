@@ -1,0 +1,37 @@
+[
+{
+"time" : "23:28:24",
+"message" : "Could not mine any assertions for context 'default'"}
+,
+{
+"time" : "23:40:43",
+"message" : "Could not mine any assertions for context 'default'"}
+,
+{
+"time" : "23:40:44",
+"message" : "Could not mine any assertions for context 'default'"}
+,
+{
+"time" : "23:40:45",
+"message" : "Could not mine any assertions for context 'default'"}
+,
+{
+"time" : "23:46:27",
+"message" : "COI filter mode assumes the RTL is correct: behaviour removed or added by an RTL bug cannot be mined (use mode=rank to look for bugs)"}
+,
+{
+"time" : "23:46:27",
+"message" : "COI filter mode assumes the RTL is correct: behaviour removed or added by an RTL bug cannot be mined (use mode=rank to look for bugs)"}
+,
+{
+"time" : "23:46:27",
+"message" : "COI filter mode assumes the RTL is correct: behaviour removed or added by an RTL bug cannot be mined (use mode=rank to look for bugs)"}
+,
+{
+"time" : "23:46:27",
+"message" : "COI filter mode assumes the RTL is correct: behaviour removed or added by an RTL bug cannot be mined (use mode=rank to look for bugs)"}
+,
+{
+"time" : "23:46:28",
+"message" : "COI filter mode assumes the RTL is correct: behaviour removed or added by an RTL bug cannot be mined (use mode=rank to look for bugs)"}
+]

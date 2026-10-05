@@ -53,3 +53,9 @@ harm_case(h3_reduce_implies ARGS --csv ${H3}/reduce.csv --conf ${H3}/reduce.xml 
 # A3: --trace-end sva on process; the expected output is the 'process' baseline filtered by the
 # independent Annex F oracle (tests/oracle/sva_finite_semantics.py filter), not by HARM
 harm_case(process_trace_end_sva ARGS --sva --csv-dir ${EX}/process/traces --conf ${EX}/process/processConfig.xml --trace-end sva)
+
+# ---- H7 ------------------------------------------------------------------------------------------
+# A5: determinism of filter mode (the expected set is checked by h7_filter_multipath)
+harm_case(h7_multipath_filter NO_BASELINE ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${CMAKE_SOURCE_DIR}/tests/input/h7/multipath.xml)
+# finding: more placeholders than propositions must terminate (expected output by hand)
+harm_case(h7_small_domain ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${CMAKE_SOURCE_DIR}/tests/input/h7/small_domain.xml)

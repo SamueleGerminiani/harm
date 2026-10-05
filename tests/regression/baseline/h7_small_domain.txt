@@ -1,0 +1,3 @@
+# mode: ordered
+### default_ass.txt
+G(a -> Xr1)

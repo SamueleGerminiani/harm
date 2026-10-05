@@ -1,0 +1,16 @@
+[
+{
+"time" : "23:25:45",
+"message" : "The keyword W is reserved (in variable declaration): W"
+}
+,
+{
+"time" : "23:25:49",
+"message" : "The keyword W is reserved (in variable declaration): W"
+}
+,
+{
+"time" : "23:28:24",
+"message" : "Not enough propositions for placeholder 'P0'"
+}
+]

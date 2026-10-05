@@ -92,7 +92,7 @@ endif()
 set(H6 ${CMAKE_SOURCE_DIR}/tests/input/h6)
 set(MP ${CMAKE_SOURCE_DIR}/tests/input/coi/multipath/trace.vcd)
 # A3: configuration errors
-foreach(case "no_coi;needs a <coi> element" "coi_filter;not supported before H7"
+foreach(case "no_coi;needs a <coi> element" "coi_mode;Unknown <coi> mode"
              "coi_missing;Cannot open coi file" "coi_version;unsupported coi.json version")
     list(GET case 0 name)
     list(GET case 1 message)
@@ -127,3 +127,20 @@ if(PYTHON3_FOUND)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     set_tests_properties(h1c_annex_f_oracle PROPERTIES LABELS regression)
 endif()
+
+# ---- H7: COI filter mode (A1-A3, A5 warning) ------------------------------------------------------
+if(PYTHON3_FOUND)
+    foreach(design counter arbiter fsm multipath structs)
+        set(R 0)
+        if(design STREQUAL "structs")
+            set(R 1)
+        endif()
+        add_test(NAME h7_filter_${design}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/check_filter.py $<TARGET_FILE:harm>
+                    ${CMAKE_SOURCE_DIR}/tests/input/h7/${design}.xml
+                    --vcd ${CMAKE_SOURCE_DIR}/tests/input/coi/${design}/trace.vcd --clk clk
+                    --vcd-ss tb::dut --vcd-r ${R})
+        set_tests_properties(h7_filter_${design} PROPERTIES LABELS "regression;coi")
+    endforeach()
+endif()
+set_tests_properties(regression_h7_small_domain PROPERTIES TIMEOUT 60)

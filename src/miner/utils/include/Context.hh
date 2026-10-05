@@ -67,6 +67,13 @@ public:
 
   ///cone of influence (<coi>, H6); nullptr if the context has none
   CoiInfoPtr _coi = nullptr;
+  ///<coi mode="...">: "rank" (H6) or "filter" (H7, D-017)
+  std::string _coiMode = "rank";
+  ///filter mode: the search space before and after pruning (H7), all templates of the context
+  struct CoiFilterStats {
+    size_t permutationsBefore = 0, permutationsAfter = 0;
+    size_t dtCandidatesBefore = 0, dtCandidatesAfter = 0;
+  } _coiFilterStats;
   ///origin="..." of propositions and numerics, by their text
   std::unordered_map<std::string, std::string> _origin;
 };

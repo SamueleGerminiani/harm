@@ -264,3 +264,45 @@ They were written first and committed failing in `e11f05c`. The SVA printer fix 
 
 ### Performance
 `--trace-end sva` costs one linear pass over the instances still pending at the end of each trace. `process`: 0.09 s in both modes. `bl_master1k`: 14.84 s vs 14.90 s.
+
+## H7: COI filter mode (2026-10-05, macOS arm64, g++-13)
+
+### Acceptance tests
+They were written first and committed failing in `2838651`, after the permutation fix `9678656` (see the findings below).
+
+| Test | Result |
+|---|---|
+| A1 per-consequent oracle (H7_PLAN F3) on 5 fixtures: the union of rank runs on configurations restricted by `tests/coi/restrict_config.py` (cones read from `coi.json` in Python) equals filter output | pass, exactly: counter 11 = 11, arbiter 45 = 45, fsm 46 = 46, multipath 28 = 28, structs 19 = 19 |
+| A2 no out-of-cone antecedent; `coiFrac` = 1 | pass, 0 violations |
+| A3 plain templates: filter = rank post-filtered with `coiFrac == 1` | pass on all 5, e.g. multipath 12 of 87 |
+| A4 `CoiInfo::inCone`, 12 hand cases | pass |
+| A5 determinism (`h7_multipath_filter`); the warning printed exactly once; baselines unchanged | pass |
+
+### Mutation test of the oracle (not in the plan, done to check that A1–A3 can fail)
+| Planted bug | Caught by |
+|---|---|
+| M1: decision-tree candidates not pruned | 4 of 5 fixtures, by A1 and A2 (`structs` doesn't separate it) |
+| M2: "any variable in the cone" instead of "every variable" | **at first, no fixture.** All configuration propositions had one variable, so the two rules agreed. After adding two multi-variable propositions per configuration: 4 of 5, by A1 and A2. A3 cannot catch it, because both of its sides use HARM's rule; A1's independent rule does |
+
+The multi-variable propositions were added to the test inputs after the first run, for this reason. Each configuration's comment says so.
+
+### Search-space reduction (A6)
+| Fixture | Permutations | Decision-tree candidates (summed over consequents) | Assertions, filter / rank | Mining time, filter / rank |
+|---|---|---|---|---|
+| counter | 259 → 84 | 98 → 40 | 11 / 61 | 0.007 s / 0.022 s |
+| arbiter | 368 → 192 | 128 → 64 | 45 / 74 | 0.017 s / 0.031 s |
+| fsm | 504 → 138 | 162 → 60 | 46 / 126 | 0.015 s / 0.043 s |
+| multipath | 504 → 50 | 162 → 24 | 28 / 129 | 0.005 s / 0.041 s |
+| structs | 504 → 53 | 162 → 20 | 19 / 82 | 0.005 s / 0.039 s |
+
+The fixtures are small, so the times only show the trend. There is no `coi.json` for larger designs until H5.
+
+### Findings
+- **F-a (bug that predates H7, fixed in `9678656`): HARM hung when a template had more placeholders of one kind than propositions in the domain**, e.g. `G(P0 && P1 -> X P2)` with one antecedent proposition.
+  - `computeBinomialCoefficient(n, k)` with `k > n` recursed in exponential time, and then an empty permutation list crashed `genPermutations`.
+  - Now such a template has no permutations. Regression case: `h7_small_domain`, with its output derived by hand.
+- **F-b (predates H7, not fixed):** HARM cannot load the `hier` fixture's trace, because it contains a signal named `W`, which is reserved (weak until). So `hier` is not in H7's tests. H4 and H6 only ever checked it in Python. To be raised with the other grammar issues.
+- **Test change (H6):** `h6_error_coi_filter` expected "not supported before H7". It became `h6_error_coi_mode` (an unknown mode is rejected).
+
+### Suites
+- `ctest -j6 -LE slow`: 113/113 on the final code.

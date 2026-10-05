@@ -1,0 +1,9 @@
+<harm>
+    <!-- H6, A3: invalid <coi> mode (until H7 this case was the then unsupported mode="filter") -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="y" loc="c"/>
+        <coi file="../coi/multipath/expected_coi.json" mode="sometimes"/>
+        <template exp="G(P0 -> P1)"/>
+    </context>
+</harm>

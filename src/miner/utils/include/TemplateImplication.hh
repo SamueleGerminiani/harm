@@ -7,6 +7,7 @@
 #include "Permutator.hh"
 #include "formula/atom/Atom.hh"
 #include "minerUtils.hh"
+#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -191,6 +192,10 @@ public:
 
   /** \brief get the number of permutations generated */
   size_t getNumberOfPermutations() const;
+
+  /// @brief keep only the permutations for which 'keep' returns true once the permutation is
+  /// loaded (H7, COI filter mode); call after genPermutations, before copying the template
+  void keepPermutations(const std::function<bool()> &keep);
 
   /** \brief returns true if the assertion holds on the input trace, false otherwise */
   bool assHoldsOnTrace(harm::Location update);

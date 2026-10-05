@@ -144,3 +144,12 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
   - It changes other users' results: 106 of the 138 lines of the `process` baseline use a strong operator.
   - Trivergence discards mined liveness anyway (H1c F2).
 - **`--reduce implies`** follows the selected semantics in its finite-trace check (D-004 as amended).
+
+## D-017: "in the cone" for COI filtering (2026-10-05, H7, approved)
+- **The same leaf rule as D-014,** so that filter and rank modes share one definition. An antecedent proposition is in the cone of a consequent if **every** variable of the proposition is a source of **some** variable of the consequent.
+- A signal marked unknown in `coi.json` counts as in the cone. A consequent with an unknown variable keeps every antecedent. Propositions without variables are kept.
+- A placeholder that appears in both the antecedent and the consequent is not filtered.
+
+## D-018: COI metrics in filter mode (2026-10-05, H7, approved)
+- Filter mode still computes `coiFrac`, `coiDepthFit` and `coiUnknown`, so the same `<sort>` works in both modes. After filtering, `coiFrac` is 1 for every assertion.
+- **Filter mode is not "rank mode minus out-of-cone assertions"** for decision-tree templates. Pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses (H7 F2). Its guarantee is the output of rank mode on a configuration restricted, by hand, to each consequent's cone.

@@ -825,6 +825,16 @@ TemplateImplication::getVars() {
   return vars;
 }
 
+void TemplateImplication::keepPermutations(const std::function<bool()> &keep) {
+  auto &m = *_permutator._permMatrix;
+  std::vector<bool> rows(m._nRows);
+  for (size_t i = 0; i < m._nRows; i++) {
+    loadPerm(i);
+    rows[i] = keep();
+  }
+  m.keepRows(rows);
+}
+
 std::vector<PropositionPtr>
 TemplateImplication::getLoadedPropositions() {
   std::vector<PropositionPtr> ret;

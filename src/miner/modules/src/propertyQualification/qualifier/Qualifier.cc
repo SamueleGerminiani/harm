@@ -270,8 +270,17 @@ std::string jsonString(const std::string &s) {
 void dumpAssertionInfo(const Context &context,
                        const std::vector<AssertionPtr> &assertions) {
   static std::vector<std::string> records;
+  static std::map<std::string, std::string> coiFilter; // by context (H7)
   static std::mutex guard;
   std::lock_guard<std::mutex> lock(guard);
+  if (context._coi != nullptr && context._coiMode == "filter") {
+    const auto &st = context._coiFilterStats;
+    coiFilter[context._name] =
+        "{\"permutationsBefore\": " + std::to_string(st.permutationsBefore) +
+        ", \"permutationsAfter\": " + std::to_string(st.permutationsAfter) +
+        ", \"dtCandidatesBefore\": " + std::to_string(st.dtCandidatesBefore) +
+        ", \"dtCandidatesAfter\": " + std::to_string(st.dtCandidatesAfter) + "}";
+  }
   const char *ct[3] = {"t", "f", "u"};
   for (const auto &a : assertions) {
     std::string r = "    {\"context\": " + jsonString(context._name) +
@@ -317,8 +326,17 @@ void dumpAssertionInfo(const Context &context,
   std::ofstream out(clc::dumpAssertionInfo);
   messageErrorIf(!out.good(),
                  "Cannot write '" + clc::dumpAssertionInfo + "'");
-  out << "{\n  \"version\": \"1\",\n  \"traceEnd\": \"" << clc::traceEnd
-      << "\",\n  \"assertions\": [\n";
+  out << "{\n  \"version\": \"1\",\n  \"traceEnd\": \"" << clc::traceEnd << "\",\n";
+  if (!coiFilter.empty()) {
+    out << "  \"coiFilter\": {";
+    bool first = true;
+    for (const auto &[name, stats] : coiFilter) {
+      out << (first ? "" : ", ") << jsonString(name) << ": " << stats;
+      first = false;
+    }
+    out << "},\n";
+  }
+  out << "  \"assertions\": [\n";
   for (size_t i = 0; i < records.size(); i++) {
     out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
   }
@@ -385,6 +403,16 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   }
 
   std::vector<AssertionPtr> assertions = context._assertions;
+
+  if (context._coi != nullptr && context._coiMode == "filter") {
+    const auto &st = context._coiFilterStats;
+    messageInfo("COI filter (context '" + context._name + "'): permutations " +
+                std::to_string(st.permutationsBefore) + " -> " +
+                std::to_string(st.permutationsAfter) +
+                ", decision-tree candidates (summed over consequents) " +
+                std::to_string(st.dtCandidatesBefore) + " -> " +
+                std::to_string(st.dtCandidatesAfter));
+  }
 
   messageInfo("Qualifying " + std::to_string(assertions.size()) +
               " assertions");
