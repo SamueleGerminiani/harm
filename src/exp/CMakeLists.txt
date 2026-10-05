@@ -24,9 +24,14 @@ SET(EXP_SRCS
     src/visitors/TraceChangerVisitor.cc
     #utils
     src/expUtils/expUtils.cc
+    src/expUtils/smtEquivalence.cc
     )
 
 
 add_library(exp ${EXP_SRCS})
 
 target_include_directories(exp PUBLIC include ../miner/utils/include/)
+if(HARM_WITH_Z3)
+    target_sources(exp PRIVATE src/visitors/ExpToZ3Visitor.cc)
+    target_link_libraries(exp PUBLIC z3::libz3)
+endif()

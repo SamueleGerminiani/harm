@@ -63,6 +63,8 @@ extern bool dumpAssSplitContexts;
 extern bool keepVacAss;
 ///--skip-invalid-props
 extern bool skipInvalidProps;
+///--reduce: "syntactic" or "equiv"
+extern std::string reduce;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass

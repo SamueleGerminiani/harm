@@ -31,3 +31,8 @@ harm_case(bl_master1k_cut10 NO_BASELINE ARGS --vcd ${EX}/bl_master/bl_master1k.v
 set(H1 ${CMAKE_SOURCE_DIR}/tests/input/h1)
 # A5: new operators and an invariant template, expected output written by hand
 harm_case(h1_newops ARGS --csv ${H1}/newops.csv --conf ${H1}/newops.xml)
+
+# ---- H2 ------------------------------------------------------------------------------------------
+# A5: the same predicate spelled twice; merged only with --reduce equiv (expected output by hand)
+harm_case(h2_reduce_syntactic ARGS --csv ${H1}/newops.csv --conf ${CMAKE_SOURCE_DIR}/tests/input/h2/reduce.xml)
+harm_case(h2_reduce_equiv ARGS --csv ${H1}/newops.csv --conf ${CMAKE_SOURCE_DIR}/tests/input/h2/reduce.xml --reduce equiv)

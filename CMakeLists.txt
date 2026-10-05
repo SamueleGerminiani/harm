@@ -134,12 +134,24 @@ add_subdirectory(src/SQLiteCpp)
 find_package(SPOTLTL REQUIRED)
 add_compile_definitions(SPOTLTL)
 
+#z3: proposition equivalence (H2), built in third_party with the same compiler as HARM
+option(HARM_WITH_Z3 "Use Z3 to decide proposition equivalence (--reduce equiv)" ON)
+if(HARM_WITH_Z3)
+    find_package(Z3 CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/z3 NO_DEFAULT_PATH)
+    message(STATUS "Z3 ${Z3_VERSION_STRING} found")
+    add_compile_definitions(HARM_WITH_Z3)
+endif()
+
 #third-party libraries must be built with the same compiler as HARM: mixing C++ runtimes
 #(e.g. two libstdc++ versions, or libstdc++ and libc++) makes HARM crash at start-up
 execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version
     OUTPUT_VARIABLE HARM_CXX_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 string(REGEX REPLACE "\n.*" "" HARM_CXX_VERSION "${HARM_CXX_VERSION}")
-foreach(dep spot antlr4 boost)
+set(HARM_DEPS spot antlr4 boost)
+if(HARM_WITH_Z3)
+    list(APPEND HARM_DEPS z3)
+endif()
+foreach(dep ${HARM_DEPS})
     set(marker ${CMAKE_SOURCE_DIR}/third_party/${dep}/.harm_toolchain)
     if(EXISTS ${marker})
         file(STRINGS ${marker} dep_cxx_version LIMIT_COUNT 1)

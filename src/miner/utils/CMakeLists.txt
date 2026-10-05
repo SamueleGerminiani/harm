@@ -24,6 +24,7 @@ SET(MINER_UTILS_SRC
     src/Assertion.cc
     src/DTUtils.cc
     src/Edit.cc
+    src/PropositionCanonicalizer.cc
     )
 
 SET(METRIC_SRC

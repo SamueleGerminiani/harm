@@ -76,3 +76,11 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
 - **Context:** H1 found bugs that also affect the stable `main` used by other people, notably F10 (bit selections evaluated and printed with swapped bounds) and F9 (variable names corrupting literals).
 - **Decision (user):** no hotfix on `main`. All fixes stay on `dev` and reach `main` with the final merge after H11.
 - **Consequence:** until then, `main` users keep these bugs. Trivergence must pin `dev` commits (TRIVERGENCE_IMPACT.md).
+
+## D-003: Z3 equivalence of propositions (2026-10-05, H2, approved; revised from PLAN.md §3)
+- **Context:** the original proposal ("never merge propositions with x/z constants or `===`; 2-valued otherwise") is unsound. Variables can hold x/z at run time, and under HARM's rule (D-011) `a == c` and `!(a != c)` then differ.
+- **Decision:**
+  - Encode HARM's evaluator exactly: each logic signal is a value bit-vector plus an x-mask and a z-mask, and each operator follows `Logic`'s implementation.
+  - Constructs not encoded exactly become opaque atoms, keyed by their text. This is sound but incomplete.
+  - A timeout or unknown result means "not equivalent".
+- **Z3:** built from source in `third_party/` with HARM's compiler (D-010), behind the CMake option `HARM_WITH_Z3` (default ON).

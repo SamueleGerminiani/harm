@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 and H1 merged into `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 and H1 on `dev`; H2 awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -22,6 +22,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
 | H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
 | H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
+| H2 | `ms/H2-z3` (head) | yes; not yet merged into `dev`, awaiting review | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -83,11 +84,20 @@ What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "
 
 **[optional]** `tests/oracle/verilator_replay.py` in HARM replays HARM's assertions in Verilator. Trivergence's trace view does the same thing with its own harness, so the two results can be cross-checked.
 
-### H2/H3: semantic redundancy reduction (planned)
-- New `--reduce equiv|implies` and `--dump-implications <json>`.
+### H2: proposition equivalence with Z3 (awaiting review, branch `ms/H2-z3`)
+What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--reduce equiv`.
+1. **[required] Docker image.**
+   - `install_all.sh` now also builds **Z3 4.13.4** from source (several minutes) into `third_party/z3`. CMake requires it unless `-DHARM_WITH_Z3=OFF`.
+   - The `harm-build` stage needs nothing new: Z3 is built with the stage's own compiler, and its CMake build needs only `build-essential` and Python. But the runtime stage must also copy `third_party/z3/lib` into `/opt/harm/lib`, next to Spot, ANTLR and Boost, or `harm` will not start.
+2. **[recommended] Use `--reduce equiv` in `HarmMiner.mine`.**
+   - It merges mined candidates that differ only in how a proposition is written. That matters once the LLM hints (`intent_to_hints`) and RTL-harvested predicates (H10) overlap.
+   - It is sound under HARM's x/z semantics, so it never merges `!=` with `!(==)`.
+   - It costs one Z3 call per pair of distinct propositions over the same variables.
+3. **[optional]** `expression::smt::checkEquivalence` can decide equivalence of two HARM propositions in C++ (exact 4-valued semantics). It isn't exposed on the command line; tell HARM if trivergence needs it as a tool, e.g. to deduplicate hints before mining.
+
+### H3: semantic redundancy reduction with Spot (planned)
+- New `--reduce implies` and `--dump-implications <json>`.
 - **[recommended]** Use them in trivergence stage 5 (suite selection) as a cheap, design-independent first pass before `FormalOracle.implies` (T8a). HARM's implication is *logical*, with no design and no reset, so it never needs a solver run on the RTL.
-- Note for B4/triage: dropped assertions are implied by kept ones, so a mined suite gets smaller without losing logical strength.
-- Z3 becomes a HARM dependency, built by `third_party`. The Docker image will need `install_z3.sh` or `libz3-dev`; details when H2 lands.
 
 ### H4–H9: COI hints (planned)
 - **Contract:** `coi.json` v1 (H4). It is produced by `harm-coi` (H5), a Python tool in the HARM repo that can run inside trivergence's image (pyslang or yosys-slang, both already in the image).

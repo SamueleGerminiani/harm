@@ -666,6 +666,10 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
   }
 }
 void PrinterVisitor::visit(BooleanLayerInst &o) {
+  if (_subst != nullptr && _subst->count(o.getProposition().get())) {
+    _ss << _subst->at(o.getProposition().get());
+    return;
+  }
   bool needsBrackets = !isUnary(o.getProposition());
   auto parent_op = _temporal_ope_stack.top();
   needsBrackets &= !hasHigherPrecedence(

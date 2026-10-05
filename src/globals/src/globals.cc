@@ -38,6 +38,7 @@ bool dumpAssToFile = false;
 bool dumpAssSplitContexts = false;
 bool keepVacAss = false;
 bool skipInvalidProps = false;
+std::string reduce = "syntactic";
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;

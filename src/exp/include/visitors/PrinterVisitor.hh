@@ -2,6 +2,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <unordered_map>
 
 #include "expUtils/ope.hh"
 #include "visitors/ExpVisitor.hh"
@@ -36,6 +37,13 @@ public:
 
   std::pair<std::string, std::string> getSereBrackets();
 
+  /// @brief print the propositions of boolean-layer instances found in 'subst' as the given
+  /// tokens (used to compare assertions up to equivalent propositions)
+  void setPropositionSubstitution(
+      const std::unordered_map<const Proposition *, std::string> *subst) {
+    _subst = subst;
+  }
+
   VISITOR_EXP_LIST(, visitor_override);
 
 protected:
@@ -51,6 +59,9 @@ protected:
   std::stack<ope::ope> _ope_stack;
   /// @brief Stack of temporal operators visited in the expression
   std::stack<ope::temporalOpe> _temporal_ope_stack;
+  /// @brief see setPropositionSubstitution
+  const std::unordered_map<const Proposition *, std::string> *_subst =
+      nullptr;
 };
 
 } // namespace expression

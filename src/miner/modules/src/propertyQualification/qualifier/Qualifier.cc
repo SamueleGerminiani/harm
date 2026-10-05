@@ -8,6 +8,8 @@
 #include <random>
 #include <string>
 #include <unordered_map>
+
+#include "PropositionCanonicalizer.hh"
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -84,6 +86,18 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
   std::vector<AssertionPtr> outAssertions;
   std::unordered_set<std::string> keys;
 
+  // --reduce equiv: compare assertions with equivalent propositions replaced by one token
+  bool equiv = clc::reduce == "equiv";
+  PropositionCanonicalizer canon;
+  if (equiv) {
+    canon.build(inAssertions);
+    messageInfo("Propositions in " + std::to_string(canon.numberOfClasses()) +
+                " equivalence classes (" +
+                std::to_string(canon.solverCalls()) + " solver calls)");
+  }
+  // with equiv, the kept assertion of a group is the one with the smallest text
+  std::unordered_map<std::string, size_t> keyToOut;
+
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Filtering redundant assertions... 0 discarded",
                  inAssertions.size(), 70);
@@ -114,7 +128,7 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
                        std::to_string(ass->_ct[2][1]) +
                        std::to_string(ass->_ct[2][2]);
 
-    std::string assS = ass->toString();
+    std::string assS = equiv ? canon.canonicalString(ass) : ass->toString();
     assS.erase(remove_if(assS.begin(), assS.end(),
                          [](const char &c) {
                            return c == '\t' || c == '\n' ||
@@ -127,11 +141,21 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     std::string key = cont + assS;
     if (!keys.count(key)) {
       //add only if the key is unique
+      keyToOut[key] = outAssertions.size();
       outAssertions.push_back(ass);
       keys.insert(key);
     } else {
+      AssertionPtr discardedAss = ass;
+      if (equiv) {
+        // keep the smallest text of the group (deterministic, independent of the input order)
+        AssertionPtr &kept = outAssertions[keyToOut.at(key)];
+        if (ass->toString() < kept->toString()) {
+          discardedAss = kept;
+          kept = ass;
+        }
+      }
       if (clc::dumpDebugData) {
-        ddd::appendNote(ass.get(), "Redundant");
+        ddd::appendNote(discardedAss.get(), "Redundant");
       }
       discarded++;
     }
