@@ -28,6 +28,13 @@ public:
 
   /// @brief true if coi.json describes this signal (a target, not in 'unknown')
   bool knows(const std::string &signal) const;
+
+  /// @brief D-017 (= D-014's leaf rule): a proposition with these variables is in the cone of a
+  /// consequent with these variables if every variable is a source of some consequent variable;
+  /// unknown signals count as in the cone, an unknown consequent signal keeps everything, and a
+  /// proposition without variables is kept
+  bool inCone(const std::vector<std::string> &propVars,
+              const std::vector<std::string> &consequentVars) const;
   /// @brief the source entry of 'source' in the cone of 'target', or nullptr
   const Source *source(const std::string &target,
                        const std::string &source) const;

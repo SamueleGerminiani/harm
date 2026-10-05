@@ -1,0 +1,21 @@
+<harm>
+    <!-- H7 (acceptance A1-A3, A5): COI filter mode on the H4 fixture "structs". Every proposition
+         can be antecedent, consequent or decision-tree candidate; one consequent placeholder per
+         template (needed by the per-consequent oracle, H7_PLAN F3). -->
+    <context name="default">
+        <prop exp="xv" loc="a, c, dt"/>
+        <prop exp="m == 2&apos;d0" loc="a, c, dt"/>
+        <prop exp="x == 3&apos;d0" loc="a, c, dt"/>
+        <prop exp="bus::valid" loc="a, c, dt"/>
+        <prop exp="bus::data == 3&apos;d0" loc="a, c, dt"/>
+        <prop exp="c::mode == 2&apos;d1" loc="a, c, dt"/>
+        <prop exp="c::val == 3&apos;d0" loc="a, c, dt"/>
+        <coi file="../coi/structs/expected_coi.json" mode="filter"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <template dtLimits="3A" exp="G({..&amp;&amp;..}|-&gt; X P0)"/>
+        <template dtLimits="3A" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

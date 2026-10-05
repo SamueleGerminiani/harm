@@ -100,6 +100,12 @@ bool CoiInfo::knows(const std::string &signal) const {
   return _targets.count(signal) && !_unknown.count(signal);
 }
 
+bool CoiInfo::inCone(const std::vector<std::string> &,
+                     const std::vector<std::string> &) const {
+  messageError("CoiInfo::inCone: not implemented yet (H7)");
+  return false;
+}
+
 const CoiInfo::Source *CoiInfo::source(const std::string &target,
                                        const std::string &source) const {
   auto t = _targets.find(target);
