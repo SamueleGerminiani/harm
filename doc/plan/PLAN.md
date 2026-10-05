@@ -297,7 +297,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H0 | Baseline and safety net | done |
 | H1 | Proposition and SVA language fixes | done |
 | H1b | SystemVerilog x/z semantics as an option (D-011) | todo |
-| H1c | End-of-trace strength (D-015, D-016) | review (implemented, awaiting approval) |
+| H1c | End-of-trace strength (D-015, D-016) | done |
 | H2 | Z3 back end and canonicalisation | done |
 | H3 | Semantic redundancy reduction | done |
 | H3b | Atom-implication premises | todo (optional) |

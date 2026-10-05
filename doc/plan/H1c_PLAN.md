@@ -1,6 +1,6 @@
 # H1c plan: end-of-trace strength (D-015)
 
-*Status: approved 2026-10-05 with D-016 (a), an option with the default unchanged; implemented, awaiting review. Branch: `ms/H1c-liveness` (from `dev` @ H3). Effort: 1–1.5 d.*
+*Status: approved 2026-10-05 with D-016 (a), an option with the default unchanged; done, approved 2026-10-05. Branch: `ms/H1c-liveness` (from `dev` @ H3). Effort: 1–1.5 d.*
 
 ## Goal
 When HARM prints an assertion in SVA, it should judge the end of the trace as a simulator judges what HARM prints: weak operators pending at the end hold, and strong ones fail.
