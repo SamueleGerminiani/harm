@@ -25,6 +25,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H2 | `dev` @ `19d7ed2e6ef8a708965d87ebf28810b8c15cb1cf` | yes | — |
 | H4 | `dev` @ `ce7628a5219c1509ad49e104bad570b856bcf3bc` | yes | — |
 | H6 | `dev` @ `1e3b6f6175409ae8d103ceb95a466f864cd0bc78` | yes | — |
+| H3 | `dev` @ `53a4d8fbaf45142eed529e427d061beb20dfa499` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -97,7 +98,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
    - It costs one Z3 call per pair of distinct propositions over the same variables.
 3. **[optional]** `expression::smt::checkEquivalence` can decide equivalence of two HARM propositions in C++ (exact 4-valued semantics). It isn't exposed on the command line; tell HARM if trivergence needs it as a tool, e.g. to deduplicate hints before mining.
 
-### H3: semantic redundancy reduction with Spot (implemented on `ms/H3-implies`, awaiting review)
+### H3: semantic redundancy reduction with Spot (on `dev`)
 - **New options:**
   - `--reduce implies`, which includes `equiv`;
   - `--keep stronger|weaker|ranked`;
@@ -111,6 +112,8 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - Assertions spanning more than 10 cycles are always kept.
   - Implications between atoms (`x > 5 ⇒ x > 3`) are not used (H3b).
 - **[recommended] Prefer `--keep stronger`** (the default) for suite selection. `ranked` keeps the better-scored side, which can be the weaker assertion.
+- **Semantics (D-015):** HARM judges mined assertions as a simulator does: weak at the end of the trace. Its reduction requires the implication both on finite traces and over infinite words.
+  - **Known gap until H1c:** a mined `F` is printed as `s_eventually`, which is strong. A simulator can report it as failed at the end of a simulation even though HARM accepted it. Until H1c, treat mined liveness assertions as candidates to recheck, not as trace-validated.
 - **[optional]** The `kept` list lets trivergence show, for each dropped candidate, which kept assertion covers it: useful in triage reports.
 
 ### H4: COI contract (on `dev`)
