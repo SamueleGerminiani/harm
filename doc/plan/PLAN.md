@@ -278,7 +278,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | ID | Title | Status |
 |---|---|---|
 | H0 | Baseline and safety net | done |
-| H1 | Proposition and SVA language fixes | planned (awaiting approval) |
+| H1 | Proposition and SVA language fixes | in-progress |
 | H2 | Z3 back end and canonicalisation | todo |
 | H3 | Semantic redundancy reduction | todo |
 | H3b | Atom-implication premises | todo (optional) |

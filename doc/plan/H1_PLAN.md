@@ -1,6 +1,6 @@
 # H1 plan: proposition and SVA language fixes
 
-*Status: proposed 2026-10-05, awaiting approval. Branch: `ms/H1-language` (from `dev` @ H0). Effort: **4–5 d**, revised up from 2–3 d in PLAN.md (see "Effort" below).*
+*Status: approved 2026-10-05 (D-002 as proposed; Verilator via Homebrew), in progress. Branch: `ms/H1-language` (from `dev` @ H0). Effort: **4–5 d**, revised up from 2–3 d in PLAN.md (see "Effort" below).*
 
 ## Findings from the investigation (2026-10-05)
 - **F1. Variables are not tokens in the grammar.** `addTypeToExp` (`propositionParsingUtils.cc`) replaces every declared variable name with `«name,type»` by string substitution, longest first, before ANTLR runs. Anything that is not a declared name, a keyword or a supported literal causes a lexer error, and the whole run aborts.

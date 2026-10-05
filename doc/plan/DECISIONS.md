@@ -40,3 +40,12 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - Output is identical across runs and thread counts on all 19 regression cases, including the `--max-ass 10` ones.
   - The ordered baseline is frozen after this change. Set changes against the pre-fix baseline are listed in `VALIDATION.md` (H0).
   - Fault ids in logs are now stable, but they differ from those of earlier HARM versions.
+
+## D-002: SVA printing (2026-10-05, H1, approved)
+- **Context:** HARM's `--sva` output contained `true` (not SystemVerilog), `::` (package scope, not a hierarchical reference), and `always`/`nexttime`. The last two are valid IEEE 1800-2009 but rejected by Verilator and EBMC. Trivergence rewrites all of these in an adapter (M0 #9).
+- **Decision (both `--sva` and `--sva-assert`):**
+  - `true`/`false` → `1'b1`/`1'b0`;
+  - `p |-> nexttime q` → `p |=> q` and `nexttime[n]` → `##n`, when `q` is boolean;
+  - `a::b` → `a.b`.
+- **The outer `always (…)`:** kept in `--sva` (valid, and backward compatible). Dropped in `--sva-assert`, which prints `assert property (@(posedge <clk>) …);`.
+- **Validation:** Verilator replay of printed assertions against HARM's own evaluation. Verilator is installed on the development Mac with Homebrew.
