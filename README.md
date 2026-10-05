@@ -71,6 +71,13 @@ cd third_party
 bash install_all.sh
 ```
 
+> **Use one compiler for everything.** The dependencies and HARM must be built with the same C++ compiler. Mixing C++ runtimes (e.g. two `libstdc++` versions, or `libstdc++` and `libc++`) makes HARM crash at start-up. The install scripts use `CC`/`CXX` (default `cc`/`c++`) and record the compiler in `third_party/<dep>/.harm_toolchain`. CMake warns if HARM is configured with a different one. Example:
+> ```
+> CC=gcc-13 CXX=g++-13 bash install_all.sh
+> cd ../build && CC=gcc-13 CXX=g++-13 cmake -DCMAKE_BUILD_TYPE=Release ..
+> ```
+> On macOS the scripts build against `SDKROOT=$(xcrun --show-sdk-path)` unless `SDKROOT` is set. Homebrew gcc may fail to compile against the newest Command Line Tools SDK, so point `SDKROOT` to an SDK your gcc supports if needed.
+
 
 ## Build the project
 
