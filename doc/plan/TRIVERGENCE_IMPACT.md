@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2 on `dev`; H4 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -23,7 +23,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
 | H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
 | H2 | `dev` @ `19d7ed2e6ef8a708965d87ebf28810b8c15cb1cf` | yes | — |
-| H4 | `ms/H4-coi-contract` (head) | yes; not yet merged into `dev`, awaiting review | — |
+| H4 | `dev` @ `ce7628a5219c1509ad49e104bad570b856bcf3bc` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -100,7 +100,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - New `--reduce implies` and `--dump-implications <json>`.
 - **[recommended]** Use them in trivergence stage 5 (suite selection) as a cheap, design-independent first pass before `FormalOracle.implies` (T8a). HARM's implication is *logical*, with no design and no reset, so it never needs a solver run on the RTL.
 
-### H4: COI contract (awaiting review, branch `ms/H4-coi-contract`)
+### H4: COI contract (on `dev`)
 - **Contract:** `doc/schemas/coi.v1.json`, plus the rules in `tests/coi/check_coi.py`.
   - **Names** are relative to `meta.vcd_scope`, with `::` between sub-scopes: exactly what HARM sees with `--vcd-ss <scope> --vcd-r <recursion>`. Trivergence's adapter passes `--vcd-ss traces.scope --vcd-r=16`, so a `coi.json` for trivergence must record the same scope and recursion.
   - **Depth** counts register crossings (D-005), measured as HARM samples traces: the values just before each rising edge, which is the Preponed-region view of SVA (VCD dumps record the end of the time step). So a register is one cycle behind its inputs, i.e. `G(a -> X q)`, and HARM's verdicts match what trivergence's simulator assertions see.
