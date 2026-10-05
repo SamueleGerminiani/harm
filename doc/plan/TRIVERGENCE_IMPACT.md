@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 merged into `dev`; H1 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 and H1 merged into `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -21,7 +21,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 |---|---|---|---|
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
 | H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
-| H1 | `ms/H1-language` (head) | yes; not yet merged into `dev`, awaiting review | — |
+| H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -58,7 +58,7 @@ Impact on trivergence:
    - since the adapter selects by (length, text), `make e2e` should give **identical candidates, verdicts, triage and kills**. If it doesn't, report it back; that would be a HARM regression.
 5. **[optional]** HARM now has its own regression suite (`ctest -L regression`, `ctest -L determinism`). Running it once on the Linux server would close H0's pending Linux validation.
 
-### H1: proposition and SVA language fixes (awaiting review, branch `ms/H1-language`)
+### H1: proposition and SVA language fixes (on `dev`)
 What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "SystemVerilog Syntax in Propositions".
 
 | Adapter workaround (trivergence `triad_mining/harm.py`) | M0 item | After H1 |
@@ -75,7 +75,7 @@ What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "
 1. **F10, a bug in the current pin `a8c302b`:** propositions with a **bit selection** (`r[7:4]`) were evaluated and printed with swapped bounds in every mined assertion (`r[4:7]`). Any trivergence mining run whose hints contained bit selections was affected. Re-run those after bumping.
 2. **SVA text changes** (D-002): if any trivergence code or fixture matches HARM's raw `--sva` text, expect `|=>`, `##n`, `1'b1`, `.` and `s_eventually`.
 
-**[recommended] D-011 (open in HARM): x/z semantics.**
+**[recommended] D-011 (decided in HARM: an SV-semantics option will come in milestone H1b): x/z semantics.**
 - HARM's comparisons with x/z operands are false, and `!` then makes them true. So a mined `!(a == b)` can hold in HARM but fail in Verilator on traces with x. This is the likely root cause of M0 #33.
 - Until D-011 is decided, triage should treat "HARM holds, simulator fails on x-valued cycles" as a known semantic gap, not as a bug in the RTL.
 
