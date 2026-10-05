@@ -134,6 +134,26 @@ add_subdirectory(src/SQLiteCpp)
 find_package(SPOTLTL REQUIRED)
 add_compile_definitions(SPOTLTL)
 
+#third-party libraries must be built with the same compiler as HARM: mixing C++ runtimes
+#(e.g. two libstdc++ versions, or libstdc++ and libc++) makes HARM crash at start-up
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version
+    OUTPUT_VARIABLE HARM_CXX_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(REGEX REPLACE "\n.*" "" HARM_CXX_VERSION "${HARM_CXX_VERSION}")
+foreach(dep spot antlr4 boost)
+    set(marker ${CMAKE_SOURCE_DIR}/third_party/${dep}/.harm_toolchain)
+    if(EXISTS ${marker})
+        file(STRINGS ${marker} dep_cxx_version LIMIT_COUNT 1)
+        if(NOT dep_cxx_version STREQUAL HARM_CXX_VERSION)
+            message(WARNING "third_party/${dep} was built with '${dep_cxx_version}', "
+                "but HARM is being built with '${HARM_CXX_VERSION}'. "
+                "Rebuild the dependencies with the same compiler (see README).")
+        endif()
+    else()
+        message(WARNING "third_party/${dep} has no compiler record (.harm_toolchain): "
+            "make sure it was built with '${HARM_CXX_VERSION}' (see README).")
+    endif()
+endforeach()
+
 
 ### LIBRARIES LINKED TO EVERYONE ######################################
 

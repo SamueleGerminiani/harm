@@ -1,0 +1,7 @@
+# mode: ordered
+### edit1_ass.txt
+always (v1 |-> ##3 v2)
+### edit2_ass.txt
+always (v3 |-> ##1 $stable(v4))
+### edit3_ass.txt
+always (v5 |-> ##1 $rose(v6))

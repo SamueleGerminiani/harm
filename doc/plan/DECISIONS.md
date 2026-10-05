@@ -1,0 +1,42 @@
+# Decisions
+
+One entry per decision: context, decision, alternatives, consequences. Numbering follows `PLAN.md` §3; IDs above D-009 are added as they come up.
+
+## D-010: one C++ toolchain for HARM and all third-party libraries (2026-10-05, H0)
+- **Context:** on the development Mac, `harm` aborted at start-up (`malloc: pointer being freed was not allocated`), even for `--help`. The dependencies had been built against three C++ runtimes, all loaded into one process:
+  - Spot: gcc-12 `libstdc++`;
+  - ANTLR and HARM: gcc-13 `libstdc++`;
+  - Boost: Apple `libc++`, because `b2` ignores `CC`/`CXX`.
+
+  The install scripts did not pin a compiler.
+- **Decision:**
+  - Build every dependency and HARM with **Homebrew g++-13**, chosen by the user.
+  - `third_party/install_*.sh` honour `CC`/`CXX` (Boost through an explicit `b2` toolset) and record the compiler in `<prefix>/.harm_toolchain`.
+  - CMake warns at configure time when a recorded compiler differs from HARM's, or when the record is missing.
+  - Boost is built `--with-regex` only: it is the only compiled Boost library HARM links; the rest is header-only.
+- **macOS SDK finding:**
+  - Homebrew gcc-13 (13.3.0) cannot compile a hello-world against its default sysroot, the newest Command Line Tools SDK (15.4). It fails with errors in `_stdio.h` and `_Alignof`, and `configure` reports "cannot run C compiled programs".
+  - It works with the Xcode 15.2 SDK, which is the one CMake passes for HARM.
+  - So on macOS the scripts set `SDKROOT=$(xcrun --show-sdk-path)` unless `SDKROOT` is already set.
+- **Alternatives considered:**
+  - Apple clang with `libc++` for everything. It avoids the SDK issue, but the user chose g++-13.
+  - Developing in Docker (Linux only). It leaves macOS broken.
+- **Consequences:** anyone building on macOS with Homebrew gcc needs an SDK their gcc supports. The README says so.
+
+## D-001: deterministic output (2026-10-05, H0)
+- **Context:** with identical inputs, HARM's output order changed with the number of threads and from run to run. Before the fix, 8 of 17 determinism tests failed. The `--max-ass` cut and the fault-coverage minimum subset could also change *which* assertions are reported (trivergence M0 #31). Five sources were found:
+  1. `TLMiner` appended each permutation's assertions in thread-completion order;
+  2. `extractUniqueAssertionsFast` iterated a pointer-hashed `unordered_set`, which is address-dependent even with one thread;
+  3. ranking sorted on the score only, so ties were in arbitrary order;
+  4. the fault-coverage code iterated id-keyed maps, and assertion ids come from a global counter incremented as threads create assertions;
+  5. `--fd` faulty traces came in the directory order, which is unspecified, and VCD traces were then shuffled with a **random seed** (for an early outlook on coverage in the progress bar). Fault ids changed on every run, and with them the greedy set cover's tie-breaking, even with one thread.
+- **Decision:**
+  1. Collect per `(template index, permutation index)` in a `std::map`, and concatenate in key order.
+  2. Deduplicate in input order; the first occurrence of a key is kept.
+  3. Ranking order: `final score desc`, then `toString() asc`.
+  4. The fault loop follows the order of `selected`. The set cover receives its candidate sets sorted by assertion text.
+  5. Sort the faulty-trace list, then shuffle VCD traces with a fixed seed (`std::mt19937{0}`). This keeps the early-outlook intent and makes it reproducible.
+- **Consequences:**
+  - Output is identical across runs and thread counts on all 19 regression cases, including the `--max-ass 10` ones.
+  - The ordered baseline is frozen after this change. Set changes against the pre-fix baseline are listed in `VALIDATION.md` (H0).
+  - Fault ids in logs are now stable, but they differ from those of earlier HARM versions.

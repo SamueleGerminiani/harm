@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <map>
 #include <mutex>
 #include <stddef.h>
 #include <string>
@@ -76,7 +77,10 @@ private:
                          std::vector<harm::AssertionPtr> &assp,
                          bool isOffset);
 
-  std::vector<std::vector<harm::AssertionPtr>> _collectedAssertions;
+  /// assertions mined by each (template index, permutation index), kept in this order so that the
+  /// output does not depend on which thread finishes first
+  std::map<std::pair<size_t, size_t>, std::vector<harm::AssertionPtr>>
+      _collectedAssertions;
   std::mutex _collectedAssertionsGuard;
   ContextPtr _context = nullptr;
   progresscpp::ParallelProgressBar _progressBar;

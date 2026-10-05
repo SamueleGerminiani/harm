@@ -320,10 +320,13 @@ void parseCommandLineArguments(int argc, char *args[]) {
           clc::faultyTraceFiles.push_back(entry.path().u8string());
         }
       }
-      //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage
+      //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage;
+      //sort first (the directory order is unspecified) and use a fixed seed, so that fault ids, and
+      //therefore the minimum covering subset, are the same on every run
+      std::sort(clc::faultyTraceFiles.begin(),
+                clc::faultyTraceFiles.end());
       std::shuffle(clc::faultyTraceFiles.begin(),
-                   clc::faultyTraceFiles.end(),
-                   std::mt19937{std::random_device{}()});
+                   clc::faultyTraceFiles.end(), std::mt19937{0});
 
     } else if (clc::parserType == "csv") {
       for (const auto &entry : std::filesystem::directory_iterator(
@@ -332,6 +335,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
           clc::faultyTraceFiles.push_back(entry.path().u8string());
         }
       }
+      //the directory order is unspecified: sort, so that fault ids are the same on every run
+      std::sort(clc::faultyTraceFiles.begin(),
+                clc::faultyTraceFiles.end());
     }
 
     if (result.count("find-min-subset")) {
