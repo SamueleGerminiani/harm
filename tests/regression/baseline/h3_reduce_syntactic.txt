@@ -1,0 +1,7 @@
+# mode: ordered
+### default_ass.txt
+G(a -> c)
+G(d -> c)
+G({a && b} -> c)
+G({a && d} -> c)
+G({b && d} -> c)

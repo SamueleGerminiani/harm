@@ -104,3 +104,11 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
 - **`coiDepthFit`:** fraction of antecedent leaves whose every variable `v` has a consequent leaf `q` and variable `c` with `offset(q) - offset(leaf)` among the depths of `v` in `cone(c)`, or above `max_depth` when saturated. When an offset is unknown (under `until`, `eventually`, `release`, repetitions or ranges), cone membership is enough.
 - **No antecedent leaves** (e.g. an invariant): both are 1.
 - **`coiUnknown`:** antecedent leaves with a variable `coi.json` does not know. They count as in the cone and fitting: never penalised, but counted.
+
+## D-004: implication reduction semantics (2026-10-05, H3, approved)
+- Assertions are compared with Spot (infinite-word LTL). Only pairs where **both** formulas are syntactic safety are reduced; others are always kept.
+- **Why:** for safety formulas, A ⇒ B over infinite words implies that every finite trace violating B also violates A. Dropping B then loses nothing for HARM's finite-trace evaluation or for simulation.
+
+## D-008: which assertion is kept (2026-10-05, H3, approved)
+- **Default `--keep stronger`:** when A ⇒ B and not B ⇒ A, keep A and drop B. `--keep weaker` and `--keep ranked` are options.
+- Equivalent assertions: keep the one with the smallest text.

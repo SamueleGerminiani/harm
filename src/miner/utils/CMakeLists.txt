@@ -26,6 +26,7 @@ SET(MINER_UTILS_SRC
     src/Edit.cc
     src/PropositionCanonicalizer.cc
     src/CoiInfo.cc
+    src/ImplicationReducer.cc
     )
 
 SET(METRIC_SRC
