@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4 on `dev`; H6 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4, H6 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -24,7 +24,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
 | H2 | `dev` @ `19d7ed2e6ef8a708965d87ebf28810b8c15cb1cf` | yes | — |
 | H4 | `dev` @ `ce7628a5219c1509ad49e104bad570b856bcf3bc` | yes | — |
-| H6 | `ms/H6-coi-rank` (head) | yes; not yet merged into `dev`, awaiting review | — |
+| H6 | `dev` @ `1e3b6f6175409ae8d103ceb95a466f864cd0bc78` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -107,7 +107,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - **Depth** counts register crossings (D-005), measured as HARM samples traces: the values just before each rising edge, which is the Preponed-region view of SVA (VCD dumps record the end of the time step). So a register is one cycle behind its inputs, i.e. `G(a -> X q)`, and HARM's verdicts match what trivergence's simulator assertions see.
 - **[optional]** The fixture corpus `tests/input/coi/` (6 designs with traces and hand-written cones) can serve as small sanity designs for trivergence's oracle and COI work (T9).
 
-### H6: COI rank mode (awaiting review, branch `ms/H6-coi-rank`)
+### H6: COI rank mode (on `dev`)
 - **[recommended] In `hints_to_xml`,** for designs with a `coi.json`:
   - write `<coi file="…" mode="rank"/>` (path relative to the hints XML);
   - add `origin="spec"` (or `llm`) to each proposition;
