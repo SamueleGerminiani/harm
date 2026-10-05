@@ -302,6 +302,12 @@ void parseCommandLineArguments(int argc, char *args[]) {
                        clc::keep + "'");
     messageErrorIf(clc::reduce != "implies", "--keep needs --reduce implies");
   }
+  if (result.count("trace-end")) {
+    clc::traceEnd = result["trace-end"].as<std::string>();
+    messageErrorIf(clc::traceEnd != "harm" && clc::traceEnd != "sva",
+                   "--trace-end must be 'harm' or 'sva', got '" + clc::traceEnd +
+                       "'");
+  }
   if (result.count("dump-implications")) {
     clc::dumpImplications = result["dump-implications"].as<std::string>();
     messageErrorIf(clc::reduce != "implies",

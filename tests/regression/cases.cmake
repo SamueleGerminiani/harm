@@ -48,3 +48,8 @@ set(H3 ${CMAKE_SOURCE_DIR}/tests/input/h3)
 # A3: implied conjunction variants are dropped only with --reduce implies (expected output by hand)
 harm_case(h3_reduce_syntactic ARGS --csv ${H3}/reduce.csv --conf ${H3}/reduce.xml)
 harm_case(h3_reduce_implies ARGS --csv ${H3}/reduce.csv --conf ${H3}/reduce.xml --reduce implies)
+
+# ---- H1c -----------------------------------------------------------------------------------------
+# A3: --trace-end sva on process; the expected output is the 'process' baseline filtered by the
+# independent Annex F oracle (tests/oracle/sva_finite_semantics.py filter), not by HARM
+harm_case(process_trace_end_sva ARGS --sva --csv-dir ${EX}/process/traces --conf ${EX}/process/processConfig.xml --trace-end sva)

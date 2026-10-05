@@ -33,6 +33,7 @@ addTest("SvaOutputTest" ./svaOutputTests.cc )
 addTest("Z3EquivalenceTest" ./z3EquivalenceTests.cc )
 addTest("CoiMetricsTest" ./coiMetricsTests.cc )
 addTest("ImplicationTest" ./implicationTests.cc )
+addTest("EndOfTraceTest" ./endOfTraceTests.cc )
 
 
 add_subdirectory(regression)

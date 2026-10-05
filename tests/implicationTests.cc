@@ -18,6 +18,7 @@
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/temporal/temporal.hh"
+#include "globals.hh"
 #include "message.hh"
 #include "temporalParsingUtils.hh"
 #include "gtest/gtest_pred_impl.h"
@@ -255,4 +256,52 @@ TEST(ImplicationTest, deepAssertionsAreSkippedQuickly) {
   ASSERT_NE(c, nullptr);
   ASSERT_NE(d, nullptr);
   EXPECT_EQ(toString(implicationBetween(c, d)), "A_IMPLIES_B");
+}
+
+// ---------------------------------------------------------------- H1c, A4: --trace-end sva
+// The same two oracle sets with the SVA end-of-trace semantics (D-016): both the reduction and
+// HARM's evaluator, which judges it, use '--trace-end sva'.
+namespace {
+struct SvaTraceEnd {
+  SvaTraceEnd() { clc::traceEnd = "sva"; }
+  ~SvaTraceEnd() { clc::traceEnd = "harm"; }
+};
+
+void soundOnAllShortTraces(const std::string &file, size_t expectedPairs) {
+  SvaTraceEnd sva;
+  TracePtr tr = traceWith({"a", "b", "c"}, 4, false);
+  std::ifstream in(h3 + file);
+  ASSERT_TRUE(in.good());
+  std::string line;
+  size_t pairs = 0, claims = 0, unsound = 0;
+  while (std::getline(in, line)) {
+    auto f = split(line, " ||| ");
+    if (f.size() != 2) {
+      continue;
+    }
+    TemporalExpressionPtr a = parse(f[0], tr), b = parse(f[1], tr);
+    if (a == nullptr || b == nullptr) {
+      continue;
+    }
+    pairs++;
+    Implication rel = implicationBetween(a, b);
+    claims += rel == Implication::AImpliesB || rel == Implication::BImpliesA ||
+              rel == Implication::Equivalent;
+    unsound += checkClaims(f[0], f[1], rel, {"a", "b", "c"}, 6);
+  }
+  std::cout << "[" << file << ", --trace-end sva] pairs: " << pairs
+            << ", implications claimed: " << claims << ", UNSOUND: " << unsound
+            << "\n";
+  EXPECT_EQ(pairs, expectedPairs);
+  EXPECT_GT(claims, 0u);
+  EXPECT_EQ(unsound, 0u);
+}
+} // namespace
+
+TEST(ImplicationTest, generatedPairsAreSoundWithSvaTraceEnd) {
+  soundOnAllShortTraces("generated_pairs.txt", 310);
+}
+
+TEST(ImplicationTest, minedShapesAreSoundWithSvaTraceEnd) {
+  soundOnAllShortTraces("generated_mined_pairs.txt", 200);
 }
