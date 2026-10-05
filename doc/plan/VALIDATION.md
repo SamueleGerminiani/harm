@@ -139,7 +139,7 @@ They were written first and committed failing in `e8237a9`, with the hand labels
 - **A3:** fresh builds reproduce all 6 traces.
 
 ### Independent validation by simulation
-- **HARM's sampling convention, measured first.** With inputs driven on the falling edge, HARM mines `G(a -> X q)` for `q <= a`, i.e. it sees the values in effect just before each rising edge. `perturb.py` samples the same way. A first version sampled just *after* the edge; every input-to-register depth then looked one cycle too short. The sampler was fixed and checked on that trace.
+- **HARM's sampling convention** (confirmed by measurement: HARM mines `G(a -> X q)` for `q <= a`). HARM takes the values in effect just before each rising edge. The reason: simulators dump VCD values from the end of the time step, after nonblocking assignments, while SVA concurrent assertions sample their values in the Preponed region, i.e. before the edge's updates. Sampling before the edge makes HARM see what an assertion would see in simulation. `perturb.py` samples the same way. A first version sampled just *after* the edge; every input-to-register depth then looked one cycle too short. The sampler was fixed and checked on that trace.
 - **A4, non-influence:** 120 (source, excluded target) pairs checked across the 6 designs, **0 violations**. Only the parameters `N` and `W` can't be forced.
   - **Sensitivity:** in a copy of `multipath`, deleting the edge `z <- rb` (or the whole `z` entry) is caught: forcing `b` or `rb` changes `z`.
   - The script also checks visible signals that `coi.json` omits.

@@ -103,7 +103,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 ### H4: COI contract (awaiting review, branch `ms/H4-coi-contract`)
 - **Contract:** `doc/schemas/coi.v1.json`, plus the rules in `tests/coi/check_coi.py`.
   - **Names** are relative to `meta.vcd_scope`, with `::` between sub-scopes: exactly what HARM sees with `--vcd-ss <scope> --vcd-r <recursion>`. Trivergence's adapter passes `--vcd-ss traces.scope --vcd-r=16`, so a `coi.json` for trivergence must record the same scope and recursion.
-  - **Depth** counts register crossings (D-005), measured as HARM samples traces: a register is one cycle behind its inputs, i.e. `G(a -> X q)`.
+  - **Depth** counts register crossings (D-005), measured as HARM samples traces: the values just before each rising edge, which is the Preponed-region view of SVA (VCD dumps record the end of the time step). So a register is one cycle behind its inputs, i.e. `G(a -> X q)`, and HARM's verdicts match what trivergence's simulator assertions see.
 - **[optional]** The fixture corpus `tests/input/coi/` (6 designs with traces and hand-written cones) can serve as small sanity designs for trivergence's oracle and COI work (T9).
 
 ### H4–H9: COI hints (planned)

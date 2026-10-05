@@ -58,8 +58,10 @@ def read_vcd(path, scope, clock):
         time_events.append(tok)
     if clock_id is None:
         sys.exit(f"clock '{clock}' not found under scope '{scope}' in {path}")
-    # HARM's convention: the values in effect just before each rising clock edge (registers
-    # updated at that edge show their new value at the next edge)
+    # HARM's convention: the values in effect just before each rising clock edge. SVA concurrent
+    # assertions sample in the Preponed region, while VCD dumps record the end of the time step
+    # (after nonblocking assignments): sampling before the edge gives what an assertion sees, so
+    # a register updated at an edge shows its new value at the next edge
     def sample():
         for ident, hs in names.items():
             for h in hs:

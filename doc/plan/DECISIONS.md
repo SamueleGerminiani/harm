@@ -89,6 +89,7 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
 - **Depth = number of register crossings on a path from source to target.**
   - 0 means combinational: the source's value now can affect the target now.
   - d means the source's value d cycles ago can affect the target now.
+- **Depths are counted on traces sampled as HARM samples them:** the values just before each rising edge. That is the Preponed-region view of SVA concurrent assertions; VCD dumps record the end of the time step instead. In practice a register is one cycle behind its inputs (`q <= a` gives `G(a -> X q)`).
 - All depths are listed up to `max_depth`. A register's own feedback puts it in its own cone at depths 1, 2, ….
 - `saturated: true` marks a source with paths deeper than `max_depth`.
 
