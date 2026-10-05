@@ -49,3 +49,20 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - `a::b` → `a.b`.
 - **The outer `always (…)`:** kept in `--sva` (valid, and backward compatible). Dropped in `--sva-assert`, which prints `assert property (@(posedge <clk>) …);`.
 - **Validation:** Verilator replay of printed assertions against HARM's own evaluation. Verilator is installed on the development Mac with Homebrew.
+
+## D-011: x/z semantics of propositions (2026-10-05, H1). **Open; your decision is needed**
+- **Finding (H1 oracle, A2):** HARM's propositions do not follow SystemVerilog when values contain x/z.
+  - **HARM's rule:** a relational or equality comparison (`== != < <= > >=`) is **false** if either operand contains an x or z bit. Boolean operators (`! && ||`) then work on 2-valued results.
+  - **SV's rule:** the comparison yields x, or a known 0/1 when known bits already decide it (e.g. `!=` with a known differing bit is 1). `!`, `&&`, `||` propagate x (Kleene logic). An assertion treats a final x as false.
+  - **Consequences:**
+    - `!(a == b)` is **true** in HARM but x (false) in SV when `a` has x bits;
+    - `4'bx10x != q4` is always false in HARM, but 1 in SV when a known bit differs.
+  - **Evidence:** iverilog oracle over 32 random 4-valued rows. Of 300 random pre-H1 expressions, 78 differ from SV on at least one row. All 300 match the rule above exactly, which confirms it describes HARM's behaviour precisely.
+- **Impact:** a HARM-mined assertion with a negated proposition can hold on a trace in HARM but fail in an SV simulator on the same trace when x/z values are present. This explains HARM/Verilator disagreements like trivergence M0 #33.
+- **Status:** H1 keeps the current semantics, as its plan states. The oracle checks new operators against HARM's rule (the "HARM model" column) and reports the SV gap.
+- **Options:**
+  - (a) keep it and document it in the README;
+  - (b) add SV-faithful three-valued semantics as an option (e.g. `--sv-xsemantics`);
+  - (c) make SV semantics the default. This changes mining results on traces with x/z.
+
+  Proposed: (b), as a new milestone after H1. The oracle fixture already contains the SV column needed to validate it.

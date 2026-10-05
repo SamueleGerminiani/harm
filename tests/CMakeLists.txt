@@ -27,6 +27,9 @@ addTest("PermutatorTest" ./permutatorTests.cc )
 addTest("DTOTest" ./dtoTests.cc )
 addTest("TempExpSyntaxTreeTests" ./tempExpSyntaxTreeTests.cc )
 addTest("svaParserPrinterTests" ./svaParserPrinterTests.cc )
+addTest("PropositionOracleTest" ./propositionOracleTests.cc )
+addTest("PropositionLanguageTest" ./propositionLanguageTests.cc )
+addTest("SvaOutputTest" ./svaOutputTests.cc )
 
 
 add_subdirectory(regression)

@@ -26,3 +26,8 @@ harm_case(svaFunctions ARGS --vcd ${EX}/svaFunctions/bl_master1h.vcd --clk wb_cl
 # A4: cut stability (ties at the --max-ass cut-off); determinism checks only
 harm_case(ex3_cut10 NO_BASELINE ARGS --csv ${EX}/ex3/ex3.csv --conf ${EX}/ex3/ex3Config.xml --max-ass 10)
 harm_case(bl_master1k_cut10 NO_BASELINE ARGS --vcd ${EX}/bl_master/bl_master1k.vcd --clk wb_clk --conf ${EX}/bl_master/bl_masterConfig.xml --vcd-ss sim1::p::core::master_interface --min-frank 0.9 --max-ass 10)
+
+# ---- H1 ------------------------------------------------------------------------------------------
+set(H1 ${CMAKE_SOURCE_DIR}/tests/input/h1)
+# A5: new operators and an invariant template, expected output written by hand
+harm_case(h1_newops ARGS --csv ${H1}/newops.csv --conf ${H1}/newops.xml)

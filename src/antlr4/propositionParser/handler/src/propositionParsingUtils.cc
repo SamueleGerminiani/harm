@@ -245,6 +245,18 @@ parsePropositionAlreadyTyped(std::string formula,
   return listener.getProposition();
 }
 
+expression::PropositionPtr
+tryParseProposition(std::string formula, const harm::TracePtr &trace,
+                    std::string &error) {
+  hlog::ScopedThrowOnError throwOnError;
+  try {
+    return parseProposition(formula, trace);
+  } catch (const hlog::HarmError &e) {
+    error = e.what();
+    return nullptr;
+  }
+}
+
 static std::vector<std::string> reservedKeywords = {
     "inside",      "true",   "false",      "substr",   "and",
     "or",          "not",    "eventually", "nexttime", "next",

@@ -28,3 +28,19 @@ function(harm_case name)
 endfunction()
 
 include(${REGRESSION_DIR}/cases.cmake)
+
+# ---- H1 acceptance tests that are not baseline comparisons ----------------------------------------
+# A4: a decision-tree operator in an invariant template is rejected with a clear message
+add_test(NAME h1_invariant_needs_implication_for_dt
+    COMMAND $<TARGET_FILE:harm> --csv ${CMAKE_SOURCE_DIR}/tests/input/h1/newops.csv
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/h1/invariant_dt.xml --psilent --max-threads 1)
+set_tests_properties(h1_invariant_needs_implication_for_dt PROPERTIES
+    LABELS regression
+    PASS_REGULAR_EXPRESSION "Decision-tree operators need an implication")
+# A7: --skip-invalid-props
+add_test(NAME h1_skip_invalid_props
+    COMMAND bash ${REGRESSION_DIR}/skip_invalid_props.sh $<TARGET_FILE:harm>
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/newops.csv
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/skip_invalid.xml
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/skip_invalid_ref.xml 2)
+set_tests_properties(h1_skip_invalid_props PROPERTIES LABELS regression)
