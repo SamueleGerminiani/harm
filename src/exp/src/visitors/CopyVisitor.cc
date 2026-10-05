@@ -7,6 +7,7 @@
 #include "formula/atom/NumericExpression.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Substring.hh"
@@ -218,8 +219,9 @@ UNARY_FUNCTION(IntRose, _proposition)
 
 void CopyVisitor::visit(IntBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _int = generatePtr<IntBitSelector>(_int, o.getUpperBound(),
-                                     o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  _int = generatePtr<IntBitSelector>(_int, o.getLowerBound(),
+                                     o.getUpperBound());
 }
 
 void CopyVisitor::visit(IntSetMembership &o) {
@@ -254,10 +256,30 @@ UNARY_FUNCTION(LogicStable, _proposition)
 UNARY_FUNCTION(LogicFell, _proposition)
 UNARY_FUNCTION(LogicRose, _proposition)
 
+EXPRESSION(LogicCaseEq, _logic, _proposition)
+EXPRESSION(LogicCaseNeq, _logic, _proposition)
+EXPRESSION(LogicConcat, _logic, _logic)
+
+#define TERNARY(OPERATOR, RESULT)                                    \
+  void CopyVisitor::visit(OPERATOR &o) {                             \
+    o.getCondition()->acceptVisitor(*this);                          \
+    auto cond = _proposition;                                        \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    auto whenTrue = RESULT;                                          \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+    auto whenFalse = RESULT;                                         \
+    RESULT = generatePtr<OPERATOR>(cond, whenTrue, whenFalse);       \
+  }
+TERNARY(PropositionTernary, _proposition)
+TERNARY(IntTernary, _int)
+TERNARY(LogicTernary, _logic)
+TERNARY(FloatTernary, _float)
+
 void CopyVisitor::visit(LogicBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _logic = generatePtr<LogicBitSelector>(_logic, o.getUpperBound(),
-                                         o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  _logic = generatePtr<LogicBitSelector>(_logic, o.getLowerBound(),
+                                         o.getUpperBound());
 }
 
 void CopyVisitor::visit(LogicSetMembership &o) {

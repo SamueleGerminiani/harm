@@ -68,6 +68,9 @@ VISITOR_CALL(LogicBOr, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicBXor, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicEq, LogicExpression, Proposition)
 VISITOR_CALL(LogicNeq, LogicExpression, Proposition)
+VISITOR_CALL(LogicCaseEq, LogicExpression, Proposition)
+VISITOR_CALL(LogicCaseNeq, LogicExpression, Proposition)
+VISITOR_CALL(LogicConcat, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicGreater, LogicExpression, Proposition)
 VISITOR_CALL(LogicGreaterEq, LogicExpression, Proposition)
 VISITOR_CALL(LogicLess, LogicExpression, Proposition)
@@ -846,6 +849,42 @@ void GenericExpression<ope::ope::LogicNeq, LogicExpression,
                                             _items[1]->getType());
     return neq(_items[0]->evaluate(time), _items[1]->evaluate(time),
                resType);
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicCaseEq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    return caseEq(_items[0]->evaluate(time), _items[1]->evaluate(time));
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicCaseNeq, LogicExpression,
+                       Proposition>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    return !caseEq(_items[0]->evaluate(time), _items[1]->evaluate(time));
+  };
+  disableCache();
+}
+
+template <>
+void GenericExpression<ope::ope::LogicConcat, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    std::vector<Logic> values;
+    values.reserve(_items.size());
+    for (const auto &item : _items) {
+      values.push_back(item->evaluate(time));
+    }
+    return concat(values);
   };
   disableCache();
 }

@@ -29,6 +29,7 @@ std::string evaluatorType = "AutomataBased";
 
 Language outputLang = Language::SpotLTL;
 bool svaAssert = false;
+bool legacySvaPrinting = false;
 bool genConfig = false;
 std::string dumpTraceAsCSV = "";
 size_t maxThreads = std::thread::hardware_concurrency();
@@ -36,6 +37,7 @@ bool findMinSubset = false;
 bool dumpAssToFile = false;
 bool dumpAssSplitContexts = false;
 bool keepVacAss = false;
+bool skipInvalidProps = false;
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;

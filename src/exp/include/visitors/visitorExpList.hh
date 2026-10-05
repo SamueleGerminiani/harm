@@ -88,6 +88,13 @@
   VIRTUAL void visit(LogicRose &o) OVVERIDE;                         \
   VIRTUAL void visit(LogicFell &o) OVVERIDE;                         \
   VIRTUAL void visit(LogicPast &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicCaseEq &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicCaseNeq &o) OVVERIDE;                      \
+  VIRTUAL void visit(LogicConcat &o) OVVERIDE;                       \
+  VIRTUAL void visit(PropositionTernary &o) OVVERIDE;                \
+  VIRTUAL void visit(IntTernary &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicTernary &o) OVVERIDE;                      \
+  VIRTUAL void visit(FloatTernary &o) OVVERIDE;                      \
   VIRTUAL void visit(StringVariable &o) OVVERIDE;                    \
   VIRTUAL void visit(StringConstant &o) OVVERIDE;                    \
   VIRTUAL void visit(StringEq &o) OVVERIDE;                          \

@@ -1,10 +1,20 @@
 grammar proposition;
 
-startBoolean : boolean EOF;
-startInt : numeric EOF;
-startLogic : numeric EOF;
-startFloat : numeric EOF;
+startBoolean : (boolean | booleanTernary) EOF;
+startInt : (numeric | numericTernary) EOF;
+startLogic : (numeric | numericTernary) EOF;
+startFloat : (numeric | numericTernary) EOF;
 startString : string EOF;
+
+// ------------------------------------------ TERNARY (SystemVerilog precedence: lowest)
+// A ternary is allowed at the top of an expression, as a branch of a ternary, or in parentheses
+// (as an operand of any other operator it must be parenthesized, as in SystemVerilog)
+booleanTernary
+    : boolean QUESTION (boolean | booleanTernary) COL (boolean | booleanTernary)
+    ;
+numericTernary
+    : boolean QUESTION (numeric | numericTernary) COL (numeric | numericTernary)
+    ;
 
 // ------------------------------------------ BOOLEAN
 boolean
@@ -14,6 +24,8 @@ boolean
     | numeric relop numeric
     | numeric EQ numeric
     | numeric NEQ numeric
+    | numeric CASE_EQ numeric
+    | numeric CASE_NEQ numeric
     | string relop string
     | string EQ string
     | string NEQ string
@@ -24,6 +36,7 @@ boolean
     | booleanAtom
     | numeric
     | LROUND boolean RROUND
+    | LROUND booleanTernary RROUND
     ;
 
 
@@ -57,7 +70,19 @@ numeric
     | intAtom
     | logicAtom
     | floatAtom
+    | concatenation
     | LROUND numeric RROUND
+    | LROUND numericTernary RROUND
+    ;
+
+// at least two items (or a replication), so that '{a}' stays a SERE in temporal formulas
+concatenation
+    : LCURLY concatItem (',' concatItem)+ RCURLY
+    | LCURLY UINTEGER LCURLY concatItem (',' concatItem)* RCURLY RCURLY
+    ;
+concatItem
+    : numeric
+    | booleanAtom
     ;
 
 range: LSQUARED (SINTEGER | UINTEGER) (COL (SINTEGER | UINTEGER))? RSQUARED;
@@ -97,7 +122,8 @@ logicAtom
 
 
 logic_constant
-    : UINTEGER? VERILOG_BINARY
+    : UINTEGER? VERILOG_BASED
+    | FILL_LITERAL
     ;
 
 
@@ -232,10 +258,16 @@ fragment VALID_ID_CHAR
     ;
 
 
-   VERILOG_BINARY: SINGLE_QUOTE FVL
+   // [size]'[s]<base><digits>: the size is a separate UINTEGER token (see logic_constant)
+   VERILOG_BASED
+   : SINGLE_QUOTE [sS]? ( [bB] [01xXzZ?_]+
+                        | [oO] [0-7xXzZ?_]+
+                        | [dD] ( [0-9_]+ | [xXzZ?] '_'* )
+                        | [hH] [0-9a-fA-FxXzZ?_]+ )
    ;
 
-   FVL:('b'|'B') ('0'|'1'|'z'|'x')+;
+   // '0 '1 'x 'z: every bit set to the digit, width taken from the context
+   FILL_LITERAL: SINGLE_QUOTE [01xXzZ];
 
    SINGLE_QUOTE: '\'';
 //------------------------------------------------------------------------------
@@ -292,6 +324,18 @@ EQ
 
 NEQ
     : '!='
+    ;
+
+CASE_EQ
+    : '==='
+    ;
+
+CASE_NEQ
+    : '!=='
+    ;
+
+QUESTION
+    : '?'
     ;
 //------------------------------------------------------------------------------
 

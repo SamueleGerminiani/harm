@@ -87,11 +87,11 @@ TEST(svaParserPrinterTests, parse_print3) {
       "G(b_0 -> Xb_1)");
   clc::outputLang = Language::SVA;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "always (b_0 |-> nexttime b_1)");
+            "always (b_0 |=> b_1)"); // D-002
   clc::svaAssert = 1;
   ASSERT_EQ(
       temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-      "assert property (@(posedge clk) (b_0 |-> nexttime b_1))");
+      "assert property (@(posedge clk) (b_0 |=> b_1))"); // D-002
   clc::svaAssert = 0;
   assertion = hparser::parseTemporalExpression(
       "assert property (@(posedge clk) (b_0 |-> nexttime b_1))",
@@ -137,11 +137,11 @@ TEST(svaParserPrinterTests, parse_print7) {
       "G(b_0 -> Fb_1 W b_2)");
   clc::outputLang = Language::SVA;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "always (b_0 |-> eventually b_1 until b_2)");
+            "always (b_0 |-> s_eventually b_1 until b_2)"); // D-002
   clc::svaAssert = 1;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "assert property (@(posedge clk) (b_0 |-> eventually b_1 "
-            "until b_2))");
+            "assert property (@(posedge clk) (b_0 |-> s_eventually b_1 "
+            "until b_2))"); // D-002
   clc::svaAssert = 0;
   assertion = hparser::parseTemporalExpression(
       "assert property (@(posedge clk) (b_0 |-> eventually b_1 until "
@@ -169,12 +169,12 @@ TEST(svaParserPrinterTests, parse_print8) {
       "G({b_0} |-> X[9](b_1))");
   clc::outputLang = Language::SVA;
   ASSERT_EQ(temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-            "always (b_0 |-> nexttime[9] b_1)");
+            "always (b_0 |-> ##9 b_1)"); // D-002
 
   clc::svaAssert = 1;
   ASSERT_EQ(
       temp2String(assertion, Language::SVA, PrintMode::ShowAll),
-      "assert property (@(posedge clk) (b_0 |-> nexttime[9] b_1))");
+      "assert property (@(posedge clk) (b_0 |-> ##9 b_1))"); // D-002
   clc::svaAssert = 0;
   assertion = hparser::parseTemporalExpression(
       "assert property (@(posedge clk) (b_0 |-> nexttime[9] b_1))",

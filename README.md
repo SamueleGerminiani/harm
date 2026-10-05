@@ -241,6 +241,26 @@ Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise
 
 > **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antl4/propositionParser/grammar/proposition.g4`.
 
+### SystemVerilog Syntax in Propositions
+Besides C/C++ operators, propositions accept these SystemVerilog forms:
+
+| Form | Example | Notes |
+| :--- | :--- | :--- |
+| Based literals | `8'd9`, `4'hA`, `6'o7x`, `4'b1?0?`, `8'sd5` | `x`, `z` and `?` (= `z`) digits; `_` separators. A leading `x`/`z` digit extends to the full width. Values wider than the size are truncated, with a warning. Unsized `'h`/`'d`/`'o` literals are 32 bits wide. Unsized `'b` literals keep HARM's historical width (the number of digits). |
+| Fill literals | `q4 == '1`, `r8 !== 'z` | `'0 '1 'x 'z` take the width of the other operand. A fill literal must meet a sized operand. |
+| Concatenation | `{go, s} == 3'b110` | At least two items. Items can be logic, int (with its declared width) or bool variables. Unsized integer constants are not allowed (use e.g. `4'd3`). |
+| Replication | `{2{q4}}`, `{4{1'b0}}` | |
+| Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
+| Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
+| Hierarchical names | `u_core.state` | The same as `u_core::state` (the name used in VCD traces). |
+
+Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (where `{...}` is a SERE).
+
+> **x/z semantics:** in HARM, a relational or equality comparison (`== != < <= > >=`) is **false** if an operand contains an `x` or `z` bit. `!`, `&&` and `||` then work on true/false values. This differs from SystemVerilog, where the comparison yields `x`, which an assertion treats as false, and `!x` is still `x`. For example, `!(a == b)` is true in HARM but false in an SV simulator when `a` has `x` bits. `===` and `!==` behave as in SystemVerilog. See `doc/plan/DECISIONS.md` (D-011).
+
+### Invalid propositions
+By default, a proposition that cannot be parsed stops HARM. With **`--skip-invalid-props`**, it is skipped with a warning (`Invalid proposition skipped`) and mining continues with the others.
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**
@@ -317,6 +337,8 @@ Templates define the structural patterns for mining assertions. They follow the 
 * **Domain Restriction:** Placeholders can specify allowed domains using `P<N>(id1, ...)` to restrict which propositions fill them.
     * *Example:* `G(P0 && P1 -> P2 W P3)` has 4 placeholders.
     * *Example:* `P0(1, c)` accepts propositions from local domain `1` or global domain `c`.
+
+* **Invariants:** `G(P0)` (or `G(<formula>)`, without an implication) mines invariants. It is read as `G(true -> P0)`, so its placeholders take consequent (`c`) propositions, and it is printed back as `G(P0)`. Decision-tree operators need an implication and are not allowed in invariants. Causality-type metrics are not meaningful for invariants.
 
 > **Grammar Reference:** For the full grammar, check `src/antlr4/temporalParser/grammarTemporal/temporal.g4`.
 
@@ -593,8 +615,16 @@ Harm produces three main types of textual outputs:
     Print assertions with non-normalized ranking metrics.
 
 #### Output Formats
-* **`--sva`**: SystemVerilog Assertion format.
-* **`--sva-assert`**: Simulable SVA format: `assert property( (posedge <input_clk>) <assertion> )`.
+* **`--sva`**: SystemVerilog Assertion format, e.g. `always (req |=> ack)`.
+* **`--sva-assert`**: Simulable SVA format: `assert property (@(posedge <input_clk>) (<property>))`.
+
+  The SVA output is valid SystemVerilog and is accepted by common tools such as Verilator. Specifically:
+  - `true`/`false` are printed `1'b1`/`1'b0`;
+  - hierarchical names use `.`;
+  - `p |-> nexttime q` is printed `p |=> q`, and `nexttime[n]` as `##n`, when `q` is boolean;
+  - unbounded eventually is printed `s_eventually`.
+
+  `<edit>` rules still match the previous printing (`true`, `::`, `nexttime`, `eventually`), so existing rules keep working. See `doc/plan/DECISIONS.md` (D-002).
 * **`--psl`**: PSL format.
 * **`--spotltl`**: Spot LTL format.
 

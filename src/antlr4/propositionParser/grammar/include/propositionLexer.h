@@ -1,5 +1,5 @@
 
-// Generated from proposition.g4 by ANTLR 4.10.1
+// Generated from proposition.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -17,11 +17,12 @@ public:
     SUBSTR = 9, STRING_CONSTANT = 10, STRING_VARIABLE = 11, LCURLY = 12, 
     RCURLY = 13, LSQUARED = 14, RSQUARED = 15, LROUND = 16, RROUND = 17, 
     INSIDE = 18, FUNCTION = 19, SINTEGER = 20, UINTEGER = 21, FLOAT = 22, 
-    GCC_BINARY = 23, HEX = 24, VERILOG_BINARY = 25, FVL = 26, SINGLE_QUOTE = 27, 
+    GCC_BINARY = 23, HEX = 24, VERILOG_BASED = 25, FILL_LITERAL = 26, SINGLE_QUOTE = 27, 
     PLUS = 28, MINUS = 29, TIMES = 30, DIV = 31, GT = 32, GE = 33, LT = 34, 
-    LE = 35, EQ = 36, NEQ = 37, BAND = 38, BOR = 39, BXOR = 40, NEG = 41, 
-    LSHIFT = 42, RSHIFT = 43, AND = 44, OR = 45, NOT = 46, COL = 47, DCOL = 48, 
-    DOLLAR = 49, RANGE = 50, CLS_TYPE = 51, WS = 52
+    LE = 35, EQ = 36, NEQ = 37, CASE_EQ = 38, CASE_NEQ = 39, QUESTION = 40, 
+    BAND = 41, BOR = 42, BXOR = 43, NEG = 44, LSHIFT = 45, RSHIFT = 46, 
+    AND = 47, OR = 48, NOT = 49, COL = 50, DCOL = 51, DOLLAR = 52, RANGE = 53, 
+    CLS_TYPE = 54, WS = 55
   };
 
   explicit propositionLexer(antlr4::CharStream *input);

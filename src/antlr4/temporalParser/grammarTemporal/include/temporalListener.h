@@ -1,13 +1,5 @@
 
-#include <string>
-// Forward declaration
-bool isUnary(const std::string& token);
-bool isSharedOperator(const std::string& token);
-bool canUseSharedOperator(const std::string& unaryOp, const std::string& sharedOp);
-bool canTakeThisNot(const std::string& unaryOp, const std::string& ph);
-
-
-// Generated from temporal.g4 by ANTLR 4.10.1
+// Generated from temporal.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -73,6 +65,12 @@ public:
   virtual void enterStartString(temporalParser::StartStringContext *ctx) = 0;
   virtual void exitStartString(temporalParser::StartStringContext *ctx) = 0;
 
+  virtual void enterBooleanTernary(temporalParser::BooleanTernaryContext *ctx) = 0;
+  virtual void exitBooleanTernary(temporalParser::BooleanTernaryContext *ctx) = 0;
+
+  virtual void enterNumericTernary(temporalParser::NumericTernaryContext *ctx) = 0;
+  virtual void exitNumericTernary(temporalParser::NumericTernaryContext *ctx) = 0;
+
   virtual void enterBoolean(temporalParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(temporalParser::BooleanContext *ctx) = 0;
 
@@ -81,6 +79,12 @@ public:
 
   virtual void enterNumeric(temporalParser::NumericContext *ctx) = 0;
   virtual void exitNumeric(temporalParser::NumericContext *ctx) = 0;
+
+  virtual void enterConcatenation(temporalParser::ConcatenationContext *ctx) = 0;
+  virtual void exitConcatenation(temporalParser::ConcatenationContext *ctx) = 0;
+
+  virtual void enterConcatItem(temporalParser::ConcatItemContext *ctx) = 0;
+  virtual void exitConcatItem(temporalParser::ConcatItemContext *ctx) = 0;
 
   virtual void enterRange(temporalParser::RangeContext *ctx) = 0;
   virtual void exitRange(temporalParser::RangeContext *ctx) = 0;

@@ -87,6 +87,11 @@ enum ope : int {
   LogicLShift,
   LogicRShift,
   LogicSetMembership,
+  LogicCaseEq,
+  LogicCaseNeq,
+  LogicConcat,
+
+  Ternary,
 
   StringEq,
   StringNeq,
@@ -127,7 +132,8 @@ inline std::string opeToString(temporalOpe o,
     case Language::PSL:
       return "eventually";
     case Language::SVA:
-      return "eventually";
+      // unbounded (strong) eventually; 'eventually' without a range is not SystemVerilog
+      return clc::legacySvaPrinting ? "eventually" : "s_eventually";
     default:
       messageError("Unset language");
     }
@@ -400,6 +406,14 @@ inline std::string opeToString(ope o) {
     return "<";
   case StringLessEq:
     return "<=";
+  case LogicCaseEq:
+    return "===";
+  case LogicCaseNeq:
+    return "!==";
+  case LogicConcat:
+    return "{,}";
+  case Ternary:
+    return "?:";
   case StringConcat:
     return "+";
   case Substring:
@@ -607,6 +621,15 @@ inline int opeToPrecedenceClass(ope o) {
 
   case PropositionOr:
     return 11;
+
+  case LogicCaseEq:
+    return 5;
+  case LogicCaseNeq:
+    return 5;
+  case LogicConcat:
+    return 0;
+  case Ternary:
+    return 12;
 
   case NoOp:
     return 12;

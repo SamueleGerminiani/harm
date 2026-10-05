@@ -15,6 +15,7 @@
 #include "formula/atom/Constant.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Substring.hh"
@@ -47,9 +48,14 @@ std::string PrinterVisitor::get() {
 
 //Atom------------------------------------------------------------------------------
 #define selCol(bw, col) (_colored ? col : bw)
+//in SystemVerilog, hierarchical names use '.' (a::b is a package scope)
 #define VARIABLE(LEAF)                                               \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << selCol(o.getName(), VAR(o.getName()));                    \
+    std::string name = o.getName();                                  \
+    if (_lang == Language::SVA && !clc::legacySvaPrinting) {         \
+      replace("::", ".", name);                                      \
+    }                                                                \
+    _ss << selCol(name, VAR(name));                                  \
   }
 
 #define INT_CONSTANT(LEAF)                                           \
@@ -91,12 +97,13 @@ std::string PrinterVisitor::get() {
     }                                                                \
   }
 
+//'true' and 'false' are not SystemVerilog
 #define BOOLEAN_CONSTANT(LEAF)                                       \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << (o.evaluate(0) ? selCol(std::string("true"),              \
-                                   BOOL(std::string("true")))        \
-                          : selCol(std::string("false"),             \
-                                   BOOL(std::string("false"))));     \
+    bool sv = _lang == Language::SVA && !clc::legacySvaPrinting;     \
+    std::string t = sv ? "1'b1" : "true";                            \
+    std::string f = sv ? "1'b0" : "false";                           \
+    _ss << (o.evaluate(0) ? selCol(t, BOOL(t)) : selCol(f, BOOL(f))); \
   }
 
 #define STRING_CONSTANT(LEAF)                                        \
@@ -304,6 +311,58 @@ EXP_OPE(LogicGreaterEq)
 EXP_OPE(LogicLess)
 EXP_OPE(LogicLessEq)
 EXP_OPE_BIT_SELECTION(LogicBitSelector)
+EXP_OPE(LogicCaseEq)
+EXP_OPE(LogicCaseNeq)
+
+void PrinterVisitor::visit(expression::LogicConcat &o) {
+  _ope_stack.push(ope::ope::LogicConcat);
+  //print each item on its own, to fold a replication {N{a}} back
+  std::string prefix = _ss.str();
+  std::vector<std::string> parts;
+  for (const auto &item : o.getItems()) {
+    _ss.str("");
+    _ss.clear();
+    item->acceptVisitor(*this);
+    parts.push_back(_ss.str());
+  }
+  _ss.str("");
+  _ss.clear();
+  _ss << prefix;
+  bool replication =
+      parts.size() > 1 &&
+      std::all_of(parts.begin(), parts.end(),
+                  [&parts](const std::string &p) { return p == parts[0]; });
+  _ss << selCol("{", BOOL("{"));
+  if (replication) {
+    _ss << selCol(std::to_string(parts.size()),
+                  VAR(std::to_string(parts.size())))
+        << selCol("{", BOOL("{")) << parts[0] << selCol("}", BOOL("}"));
+  } else {
+    for (size_t i = 0; i < parts.size(); i++) {
+      _ss << (i ? selCol(", ", BOOL(", ")) : "") << parts[i];
+    }
+  }
+  _ss << selCol("}", BOOL("}"));
+  _ope_stack.pop();
+}
+
+//a ternary is always parenthesized, so that the output can be parsed again
+#define TERNARY(NODE)                                                \
+  void PrinterVisitor::visit(expression::NODE &o) {                  \
+    _ope_stack.push(ope::ope::Ternary);                              \
+    _ss << selCol("(", BOOL("("));                                   \
+    o.getCondition()->acceptVisitor(*this);                          \
+    _ss << selCol(" ? ", BOOL(" ? "));                               \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    _ss << selCol(" : ", BOOL(" : "));                               \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+    _ss << selCol(")", BOOL(")"));                                   \
+    _ope_stack.pop();                                                \
+  }
+TERNARY(PropositionTernary)
+TERNARY(IntTernary)
+TERNARY(LogicTernary)
+TERNARY(FloatTernary)
 EXP_OPE(LogicLShift)
 EXP_OPE(LogicRShift)
 TYPE_CAST(LogicToFloat)
@@ -573,7 +632,10 @@ void PrinterVisitor::visit(BooleanLayerPermutationPlaceholder &o) {
 void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
   if (_printMode == PrintMode::ShowAll) {
     if (isEmptyPropositionAnd(*o.getPlaceholderPointer())) {
-      _ss << selCol("true", BOOL("true"));
+      std::string t = _lang == Language::SVA && !clc::legacySvaPrinting
+                          ? "1'b1"
+                          : "true";
+      _ss << selCol(t, BOOL(t));
       return;
     }
 
@@ -667,8 +729,56 @@ void PrinterVisitor::visit(PropertyNext &o) {
   _temporal_ope_stack.pop();
 }
 
+namespace {
+/// true for the antecedent of an invariant G(true -> p)
+bool isTrueAntecedent(const TemporalExpressionPtr &te) {
+  auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(te);
+  if (inst == nullptr) {
+    return false;
+  }
+  auto c = std::dynamic_pointer_cast<BooleanConstant>(inst->getProposition());
+  return c != nullptr && c->evaluate(0);
+}
+} // namespace
+
 void PrinterVisitor::visit(PropertyImplication &o) {
+  // an invariant G(true -> p) is printed as G(p)
+  if (!o.isMMImplication() && o.isOverlapping() &&
+      isTrueAntecedent(o.getItems()[0])) {
+    // printed exactly as the consequent of an implication
+    _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
+    o.getItems()[1]->acceptVisitor(*this);
+    _temporal_ope_stack.pop();
+    return;
+  }
   _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
+
+  // SystemVerilog: 'p |-> nexttime q' is printed 'p |=> q', and more nexttimes as '##n', when q
+  // is boolean (equivalent: a sequence used as a property is weak by default, like nexttime);
+  // nexttime is valid SystemVerilog but not accepted by common tools (Verilator, EBMC)
+  if (_lang == Language::SVA && !clc::legacySvaPrinting) {
+    TemporalExpressionPtr consequent = o.getItems()[1];
+    size_t shift = o.isOverlapping() ? 0 : 1;
+    size_t nexts = 0;
+    while (auto next =
+               std::dynamic_pointer_cast<PropertyNext>(consequent)) {
+      shift += next->getDelay();
+      nexts++;
+      consequent = next->getItems()[0];
+    }
+    if (nexts > 0 && isBooleanLayer(consequent)) {
+      o.getItems()[0]->acceptVisitor(*this);
+      if (shift == 1) {
+        _ss << selCol(" |=> ", TIMPL(" |=> "));
+      } else {
+        std::string delay = " |-> ##" + std::to_string(shift) + " ";
+        _ss << selCol(delay, TIMPL(delay));
+      }
+      consequent->acceptVisitor(*this);
+      _temporal_ope_stack.pop();
+      return;
+    }
+  }
 
   auto [open, close] = getSereBrackets();
 

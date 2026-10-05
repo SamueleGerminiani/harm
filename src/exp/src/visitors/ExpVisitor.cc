@@ -5,6 +5,7 @@
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/Substring.hh"
 #include "formula/expression/TypeCast.hh"
 #include "formula/function/SVAfunction.hh"
@@ -186,4 +187,19 @@ EXP_OPE(SerePlus)
 EXP_OPE(SereGoto)
 EXP_OPE(SereNonConsecutiveRep)
 
+
+EXP_OPE(LogicCaseEq)
+EXP_OPE(LogicCaseNeq)
+EXP_OPE(LogicConcat)
+
+#define TERNARY(NODE)                                                \
+  void ExpVisitor::visit(NODE &o) {                                  \
+    o.getCondition()->acceptVisitor(*this);                          \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+  }
+TERNARY(PropositionTernary)
+TERNARY(IntTernary)
+TERNARY(LogicTernary)
+TERNARY(FloatTernary)
 } // namespace expression

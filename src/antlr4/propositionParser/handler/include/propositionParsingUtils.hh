@@ -28,4 +28,10 @@ expression::PropositionPtr
 parsePropositionAlreadyTyped(std::string formula,
                              const harm::TracePtr &trace);
 
+/// @brief like parseProposition, but a syntax or type error does not terminate HARM: it returns
+/// nullptr and stores the reason in 'error'
+expression::PropositionPtr
+tryParseProposition(std::string formula, const harm::TracePtr &trace,
+                    std::string &error);
+
 } // namespace hparser

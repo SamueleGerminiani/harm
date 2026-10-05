@@ -184,6 +184,13 @@ using LogicEq = GenericExpression<ope::ope::LogicEq, LogicExpression,
                                   Proposition>;
 using LogicNeq = GenericExpression<ope::ope::LogicNeq,
                                    LogicExpression, Proposition>;
+using LogicCaseEq = GenericExpression<ope::ope::LogicCaseEq,
+                                      LogicExpression, Proposition>;
+using LogicCaseNeq = GenericExpression<ope::ope::LogicCaseNeq,
+                                       LogicExpression, Proposition>;
+/// n-ary: items[0] gives the most significant bits; a replication {N{a}} repeats its items
+using LogicConcat = GenericExpression<ope::ope::LogicConcat,
+                                      LogicExpression, LogicExpression>;
 using LogicGreater = GenericExpression<ope::ope::LogicGreater,
                                        LogicExpression, Proposition>;
 using LogicGreaterEq =
@@ -264,6 +271,9 @@ using LogicBOrPtr = std::shared_ptr<LogicBOr>;
 using LogicBXorPtr = std::shared_ptr<LogicBXor>;
 using LogicEqPtr = std::shared_ptr<LogicEq>;
 using LogicNeqPtr = std::shared_ptr<LogicNeq>;
+using LogicCaseEqPtr = std::shared_ptr<LogicCaseEq>;
+using LogicCaseNeqPtr = std::shared_ptr<LogicCaseNeq>;
+using LogicConcatPtr = std::shared_ptr<LogicConcat>;
 using LogicGreaterPtr = std::shared_ptr<LogicGreater>;
 using LogicGreaterEqPtr = std::shared_ptr<LogicGreaterEq>;
 using LogicLessPtr = std::shared_ptr<LogicLess>;

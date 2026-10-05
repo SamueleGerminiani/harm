@@ -44,6 +44,9 @@ extern std::string evaluatorType;
 extern Language outputLang;
 ///--sva-assert
 extern bool svaAssert;
+///print SystemVerilog as HARM did before D-002 (true, ::, nexttime, eventually); set only while
+///edit rules are matched, so that existing edit rules keep working
+extern bool legacySvaPrinting;
 ///--generate-config
 extern bool genConfig;
 ///--dump-trace-as-csv
@@ -58,6 +61,8 @@ extern std::string dumpPath;
 extern bool dumpAssSplitContexts;
 ///--keep-vac-ass
 extern bool keepVacAss;
+///--skip-invalid-props
+extern bool skipInvalidProps;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass

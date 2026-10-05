@@ -13,6 +13,11 @@
 
 namespace hlog {
 
+//number of active ScopedThrowOnError in this thread
+static thread_local size_t throwOnErrorDepth = 0;
+ScopedThrowOnError::ScopedThrowOnError() { throwOnErrorDepth++; }
+ScopedThrowOnError::~ScopedThrowOnError() { throwOnErrorDepth--; }
+
 std::string NowTime() {
   struct timeval tv;
   gettimeofday(&tv, 0);
@@ -131,6 +136,10 @@ void _harm_internal_messageWarning(const std::string &file,
 void _harm_internal_messageError(const std::string &file,
                                  unsigned int line,
                                  const std::string &message) {
+
+  if (throwOnErrorDepth > 0) {
+    throw HarmError(message);
+  }
 
   dumpErrorToFile(message);
 

@@ -28,3 +28,38 @@ function(harm_case name)
 endfunction()
 
 include(${REGRESSION_DIR}/cases.cmake)
+
+# ---- H1 acceptance tests that are not baseline comparisons ----------------------------------------
+# A4: a decision-tree operator in an invariant template is rejected with a clear message
+add_test(NAME h1_invariant_needs_implication_for_dt
+    COMMAND $<TARGET_FILE:harm> --csv ${CMAKE_SOURCE_DIR}/tests/input/h1/newops.csv
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/h1/invariant_dt.xml --psilent --max-threads 1)
+set_tests_properties(h1_invariant_needs_implication_for_dt PROPERTIES
+    LABELS regression
+    PASS_REGULAR_EXPRESSION "Decision-tree operators need an implication")
+# A7: --skip-invalid-props
+add_test(NAME h1_skip_invalid_props
+    COMMAND bash ${REGRESSION_DIR}/skip_invalid_props.sh $<TARGET_FILE:harm>
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/newops.csv
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/skip_invalid.xml
+            ${CMAKE_SOURCE_DIR}/tests/input/h1/skip_invalid_ref.xml 2)
+set_tests_properties(h1_skip_invalid_props PROPERTIES LABELS regression)
+
+# ---- H1 validation: Verilator replay of HARM's SVA output (only if Verilator and Python exist) -----
+find_program(VERILATOR_FOUND verilator)
+find_program(PYTHON3_FOUND python3)
+if(VERILATOR_FOUND AND PYTHON3_FOUND)
+    function(verilator_replay name csv conf)
+        add_test(NAME verilator_replay_${name}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/verilator_replay.py
+                    --harm $<TARGET_FILE:harm> --csv ${csv} --conf ${conf})
+        set_tests_properties(verilator_replay_${name} PROPERTIES LABELS "verilator;slow")
+    endfunction()
+    set(H1 ${CMAKE_SOURCE_DIR}/tests/input/h1)
+    verilator_replay(newops ${H1}/newops.csv ${H1}/newops.xml)
+    verilator_replay(temporal2v ${H1}/temporal2v.csv ${H1}/temporal2v.xml)
+    verilator_replay(edit ${CMAKE_SOURCE_DIR}/examples/edit/edit.csv ${CMAKE_SOURCE_DIR}/examples/edit/edit.xml)
+    verilator_replay(ex3 ${CMAKE_SOURCE_DIR}/examples/ex3/ex3.csv ${CMAKE_SOURCE_DIR}/examples/ex3/ex3Config.xml)
+else()
+    message(STATUS "Verilator or python3 not found: the verilator_replay validation tests are skipped")
+endif()

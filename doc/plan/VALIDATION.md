@@ -41,3 +41,51 @@ One entry per completed milestone: commands, results, date, and anything checked
 
 ### Pending
 - Linux run of `ctest -L regression` and `ctest -L determinism` on the Linux machine.
+
+## H1: proposition and SVA language fixes (2026-10-05, macOS arm64, g++-13)
+
+### Acceptance tests
+They were written first and committed failing in `182b492`: 7 of 7 new tests failed before the implementation.
+
+| Test | Result |
+|---|---|
+| A1 `PropositionLanguageTest` (literals, fill, concat/replication, ternary, `===`, print/parse round trip) | 9/9 pass |
+| A2 `PropositionOracleTest` (iverilog oracle) | pass: 700 new-feature expressions × 32 rows, 0 parse errors, 0 mismatches; 300 existing-syntax expressions, 0 mismatches |
+| A3 `.` alias and identifier boundaries (in `PropositionLanguageTest`) | pass |
+| A4 `h1_invariant_needs_implication_for_dt` + invariants in A5 | pass |
+| A5 `regression_h1_newops` | pass. The output matches the hand-derived expectation written before the implementation, byte for byte (7 assertions) |
+| A6 `SvaOutputTest` (trivergence's M0 cases) | pass: 12/12 |
+| A7 `h1_skip_invalid_props` | pass |
+| A8 H0 regression | pass. Only `process` changed: re-captured, equal to the old output with the D-002 rewrites applied (checked as sets, 138 assertions). `edit` unchanged |
+
+### Independent validation
+- **Proposition semantics, iverilog oracle (A2).** iverilog 12.0 computes two columns:
+  - the SV value;
+  - HARM's documented model: comparisons are false with x/z operands (D-011).
+
+  HARM matches the model everywhere. SV and the model differ on 337/700 new and 255/300 existing expressions (at least one row), which is the documented x/z gap. **Finding D-011, open.**
+- **SVA printing, Verilator 5.034 replay** (`tests/oracle/verilator_replay.py`, ctest label `verilator`):
+
+  | Case | Assertions | Checked as printed | Checked via `$past` encoding | Unsupported by Verilator | Lint errors | Failures | Controls fired |
+  |---|---|---|---|---|---|---|---|
+  | newops | 7 | 7 | 0 | 0 | 0 | 0 | all |
+  | temporal2v | 653 | 64 | 194 | 395 (`until`, `s_eventually`) | 0 | 0 | all |
+  | edit (example) | 3 | 0 | 3 | 0 | 0 | 0 | all |
+  | ex3 (example) | 1 | 1 | 0 | 0 | 0 | 0 | all |
+
+  - **What the replay does:** HARM's mined assertions are replayed on the same trace in Verilator. Each must never fail, and each negated control must fail at least once.
+  - **The `$past` encoding:** Verilator 5.034 rejects any `##` in a property ("Unsupported: ## () cycle delay range expression"), so `b0 ##1 … |-> ##n q` is checked as the equivalent `cyc >= d && $past(b0, d) && … |-> q`. The encoding is written independently of HARM's printer.
+  - **Sensitivity:** a hand mutation (`cnt >= 4'b110` → `4'b111`) was reported as failing at the expected cycle.
+
+### Found and fixed during H1
+- **F9:** variable substitution ignored identifier boundaries. Variables `x`, `a`, `b` corrupted literals such as `'b1x0` and `0xa`.
+- **F10:** copying a bit selection swapped its bounds. Mined assertions with `r[7:4]` printed and evaluated `r[4:7]`. **This affects `main`.**
+- **Grammar:** the semantic predicates dereferenced `LT(-1)`, which is null at the start of the input. They are now null-safe.
+- **Edit rules and `--sva-assert`:** edit rules failed with `--sva-assert` on CSV traces, because the clock was not a trace variable. Edit rules now match the property without the `assert` wrapper.
+- **Edit rules and D-002:** edit rules are matched against the pre-D-002 printing, so existing rules keep working.
+
+### Determinism
+`ctest -L determinism` after the last H1 change: 20/20 pass (416 s), including `h1_newops`, slow cases and the `--max-ass` cuts.
+
+### Pending
+- The Linux run of the regression, determinism and Verilator suites.

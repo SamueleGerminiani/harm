@@ -1,5 +1,7 @@
 
 #include <algorithm>
+#include <cctype>
+#include <unordered_map>
 #include <iterator>
 #include <utility>
 
@@ -245,9 +247,21 @@ parsePropositionAlreadyTyped(std::string formula,
   return listener.getProposition();
 }
 
+expression::PropositionPtr
+tryParseProposition(std::string formula, const harm::TracePtr &trace,
+                    std::string &error) {
+  hlog::ScopedThrowOnError throwOnError;
+  try {
+    return parseProposition(formula, trace);
+  } catch (const hlog::HarmError &e) {
+    error = e.what();
+    return nullptr;
+  }
+}
+
 static std::vector<std::string> reservedKeywords = {
     "inside",      "true",   "false",      "substr",   "and",
-    "or",          "not",    "eventually", "nexttime", "next",
+    "or",          "not",    "eventually", "s_eventually", "nexttime", "next",
     "X",           "until",  "W",          "always",   "G",
     "first_match", ".substr"};
 void checkReservedKeywords(const std::string &formula) {
@@ -259,6 +273,78 @@ void checkReservedKeywords(const std::string &formula) {
     }
   }
 }
+
+namespace {
+bool isIdentifierChar(char c) {
+  return std::isalnum((unsigned char)c) || c == '_';
+}
+
+/// Replace whole identifiers only. A token matches at position i if
+///  - it starts a word: the character before i is not part of an identifier or literal
+///    ([A-Za-z0-9_$']), or the word before i consists only of the LTL unary operators X, F, G
+///    written without a space (e.g. 'Xcon', 'GFa', as in Spot syntax), or only of the digits of a
+///    cycle delay ('##3v2', produced by edit rules), and
+///  - the character after the match cannot continue an identifier ([A-Za-z0-9_]).
+/// Among the tokens matching at i, the longest wins.
+/// This keeps literals such as 3'b1x0, 0xa and 8'hb1 intact when variables x, a or b1 exist.
+void replaceIdentifiers(
+    const std::vector<std::pair<std::string, std::string>> &tokens,
+    std::string &formula) {
+  std::unordered_map<char, std::vector<const std::pair<std::string,
+                                                       std::string> *>>
+      byFirstChar;
+  for (const auto &t : tokens) {
+    if (!t.first.empty()) {
+      byFirstChar[t.first[0]].push_back(&t);
+    }
+  }
+  std::string out;
+  size_t i = 0;
+  while (i < formula.size()) {
+    //start of the word containing position i
+    size_t wordStart = i;
+    while (wordStart > 0 && isIdentifierChar(formula[wordStart - 1])) {
+      wordStart--;
+    }
+    char beforeWord = wordStart == 0 ? ' ' : formula[wordStart - 1];
+    bool canStart = beforeWord != '$' && beforeWord != '\'';
+    if (canStart && wordStart < i) {
+      //the word so far must be LTL unary operators ('Xa') or a cycle delay ('##3a')
+      bool ltlOps = true, delay = beforeWord == '#';
+      for (size_t k = wordStart; k < i; k++) {
+        ltlOps &= formula[k] == 'X' || formula[k] == 'F' || formula[k] == 'G';
+        delay &= std::isdigit((unsigned char)formula[k]) != 0;
+      }
+      canStart = ltlOps || delay;
+    }
+    const std::pair<std::string, std::string> *best = nullptr;
+    if (canStart && byFirstChar.count(formula[i])) {
+      for (const auto *t : byFirstChar.at(formula[i])) {
+        const std::string &name = t->first;
+        if (formula.compare(i, name.size(), name) != 0) {
+          continue;
+        }
+        size_t end = i + name.size();
+        if (end < formula.size() && isIdentifierChar(formula[end]) &&
+            isIdentifierChar(name.back())) {
+          continue;
+        }
+        if (best == nullptr || name.size() > best->first.size()) {
+          best = t;
+        }
+      }
+    }
+    if (best != nullptr) {
+      out += best->second;
+      i += best->first.size();
+    } else {
+      out += formula[i];
+      i++;
+    }
+  }
+  formula = out;
+}
+} // namespace
 
 void addTypeToExp(std::string &formula,
                   std::vector<harm::VarDeclaration> varDeclarations) {
@@ -306,6 +392,12 @@ void addTypeToExp(std::string &formula,
 
     varSubstitutions.push_back(
         std::make_pair(varDec.getName(), nameType));
+    //hierarchical names can also be written with '.' (SystemVerilog style) instead of '::'
+    if (varDec.getName().find("::") != std::string::npos) {
+      std::string dotted = varDec.getName();
+      replace("::", ".", dotted);
+      varSubstitutions.push_back(std::make_pair(dotted, nameType));
+    }
 
   } // end var
 
@@ -324,8 +416,8 @@ void addTypeToExp(std::string &formula,
       varSubstitutions.emplace_back(rk, rk);
     }
   }
-  //replace all the variables in the formula
-  replace(varSubstitutions, formula);
+  //replace all the variables in the formula (whole identifiers only)
+  replaceIdentifiers(varSubstitutions, formula);
   //        debug
   //       std::cout << "After: " << formula << "\n";
 }

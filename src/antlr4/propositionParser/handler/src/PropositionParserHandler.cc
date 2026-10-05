@@ -1,4 +1,6 @@
+#include <cctype>
 #include <limits>
+#include <tuple>
 #include <ostream>
 #include <stdexcept>
 #include <unordered_set>
@@ -18,6 +20,7 @@
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/Substring.hh"
 #include "formula/function/SVAfunction.hh"
 #include "misc.hh"
@@ -86,26 +89,244 @@ std::string getVariableName(const std::string &input,
   return input.substr(startDelimiterPos + 2,
                       typePos - (startDelimiterPos + 2));
 }
+namespace {
+/// The bits (MSB first, 0/1/x/z) and width of a SystemVerilog based literal.
+/// 'text' is the token after the size: '[s]<base><digits>. 'size' is 0 if unsized.
+std::tuple<std::string, size_t, bool> basedLiteral(const std::string &text,
+                                                   size_t size,
+                                                   const std::string &where) {
+  std::string t = text.substr(1); //drop the quote
+  bool isSigned = false;
+  if (t[0] == 's' || t[0] == 'S') {
+    isSigned = true;
+    t = t.substr(1);
+  }
+  char base = (char)std::tolower((unsigned char)t[0]);
+  std::string digits;
+  for (char c : t.substr(1)) {
+    if (c == '_') {
+      continue;
+    }
+    c = (char)std::tolower((unsigned char)c);
+    digits += c == '?' ? 'z' : c;
+  }
+
+  std::string bits;
+  if (base == 'b' || base == 'o' || base == 'h') {
+    size_t bitsPerDigit = base == 'b' ? 1 : base == 'o' ? 3 : 4;
+    for (char c : digits) {
+      if (c == 'x' || c == 'z') {
+        bits += std::string(bitsPerDigit, c);
+        continue;
+      }
+      unsigned v = std::isdigit((unsigned char)c) ? c - '0' : c - 'a' + 10;
+      for (int i = (int)bitsPerDigit - 1; i >= 0; i--) {
+        bits += ((v >> i) & 1) ? '1' : '0';
+      }
+    }
+  } else { // 'd'
+    if (digits == "x" || digits == "z") {
+      bits = digits; //extended to the whole width below
+    } else {
+      ULogic v(digits);
+      for (; v > 0; v >>= 1) {
+        bits = ((v & 1) == 1 ? '1' : '0') + bits;
+      }
+      if (bits.empty()) {
+        bits = "0";
+      }
+      messageErrorIf(bits.size() > (sizeOfLogic() * 8) - 1,
+                     "Constant '" + text + "' is too large" + where);
+    }
+  }
+
+  // width: the stated size; unsized literals are 32 bits wide (at least) as in SystemVerilog,
+  // except 'b, which keeps HARM's historical width (the number of digits)
+  size_t width = size;
+  if (width == 0) {
+    width = base == 'b' ? bits.size() : std::max<size_t>(32, bits.size());
+  }
+  messageErrorIf(width > (sizeOfLogic() * 8) - 1,
+                 "Constant '" + text + "' is wider than " +
+                     std::to_string((sizeOfLogic() * 8) - 1) +
+                     " bits" + where);
+  if (bits.size() < width) {
+    // a leading x or z digit extends, otherwise zeros
+    char pad = (bits[0] == 'x' || bits[0] == 'z') ? bits[0] : '0';
+    bits = std::string(width - bits.size(), pad) + bits;
+  } else if (bits.size() > width) {
+    std::string dropped = bits.substr(0, bits.size() - width);
+    messageWarningIf(dropped.find_first_not_of('0') != std::string::npos,
+                     "Constant '" + std::to_string(size) + text +
+                         "' truncated to " + std::to_string(width) +
+                         " bits" + where);
+    bits = bits.substr(bits.size() - width);
+  }
+  return {bits, width, isSigned};
+}
+} // namespace
+
 void PropositionParserHandler::exitLogic_constant(
     propositionParser::Logic_constantContext *ctx) {
 
-  if (ctx->VERILOG_BINARY()) {
-    //get the size of the logic constant: in the prefix of the binary or form the length of the binary
-    size_t size = ctx->UINTEGER()
-                      ? safeStoull(ctx->UINTEGER()->getText())
-                      : ctx->VERILOG_BINARY()->getText().size() - 2;
-
-    std::string binary_str =
-        ctx->VERILOG_BINARY()->getText().substr(2);
-
+  if (ctx->VERILOG_BASED()) {
+    size_t size =
+        ctx->UINTEGER() ? safeStoull(ctx->UINTEGER()->getText()) : 0;
+    messageErrorIf(ctx->UINTEGER() && size == 0,
+                   "A constant cannot be 0 bits wide" +
+                       printErrorMessage());
+    auto [bits, width, isSigned] = basedLiteral(
+        ctx->VERILOG_BASED()->getText(), size, printErrorMessage());
     LogicConstantPtr logConstant = generatePtr<LogicConstant>(
-        Logic(binary_str, size), ExpType::ULogic, size,
+        Logic(bits, width, isSigned),
+        isSigned ? ExpType::SLogic : ExpType::ULogic, width,
         _trace->getLength());
     _numericExpressions.push(logConstant);
     return;
-  } else {
-    messageError("Invalid logic constant");
   }
+  if (ctx->FILL_LITERAL()) {
+    // a placeholder: its width is set when it meets a sized operand (resolveFill)
+    char c = (char)std::tolower(
+        (unsigned char)ctx->FILL_LITERAL()->getText()[1]);
+    LogicConstantPtr fill = generatePtr<LogicConstant>(
+        Logic(std::string(1, c), 1), ExpType::ULogic, 1,
+        _trace->getLength());
+    _fillLiterals[fill.get()] = c;
+    _numericExpressions.push(fill);
+    return;
+  }
+  messageError("Invalid logic constant" + printErrorMessage());
+}
+
+bool PropositionParserHandler::isFill(NumericPack &p) {
+  return p._logExp != nullptr && _fillLiterals.count(p._logExp.get());
+}
+
+void PropositionParserHandler::resolveFill(NumericPack &a,
+                                          NumericPack &b) {
+  bool fa = isFill(a), fb = isFill(b);
+  messageErrorIf(fa && fb,
+                 "Both operands are fill literals ('0, '1, 'x, 'z): their "
+                 "width is unknown" +
+                     printErrorMessage());
+  if (!fa && !fb) {
+    return;
+  }
+  NumericPack &fill = fa ? a : b;
+  NumericPack &other = fa ? b : a;
+  messageErrorIf(other._floatExp != nullptr,
+                 "A fill literal cannot be compared with a float" +
+                     printErrorMessage());
+  char c = _fillLiterals.at(fill._logExp.get());
+  _fillLiterals.erase(fill._logExp.get());
+  size_t width = other.getType().second;
+  fill = NumericPack(LogicExpressionPtr(generatePtr<LogicConstant>(
+      Logic(std::string(width, c), width), ExpType::ULogic, width,
+      _trace->getLength())));
+}
+
+void PropositionParserHandler::checkNoUnresolvedFill() {
+  messageErrorIf(!_fillLiterals.empty(),
+                 "A fill literal ('0, '1, 'x, 'z) needs a sized operand "
+                 "to take its width from" +
+                     printErrorMessage());
+}
+
+void PropositionParserHandler::exitConcatenation(
+    propositionParser::ConcatenationContext *ctx) {
+  auto items = ctx->concatItem();
+  std::vector<LogicExpressionPtr> parts(items.size());
+  for (int i = (int)items.size() - 1; i >= 0; i--) {
+    if (items[i]->booleanAtom() != nullptr) {
+      // a 1-bit item: b ? 1'b1 : 1'b0
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      auto one = generatePtr<LogicConstant>(Logic("1", 1), ExpType::ULogic,
+                                            1, _trace->getLength());
+      auto zero = generatePtr<LogicConstant>(
+          Logic("0", 1), ExpType::ULogic, 1, _trace->getLength());
+      parts[i] = generatePtr<LogicTernary>(p, one, zero);
+      continue;
+    }
+    NumericPack np = _numericExpressions.top();
+    _numericExpressions.pop();
+    messageErrorIf(isFill(np), "A fill literal ('0, '1, 'x, 'z) cannot be "
+                               "used in a concatenation" +
+                                   printErrorMessage());
+    messageErrorIf(np._floatExp != nullptr,
+                   "A float cannot be used in a concatenation" +
+                       printErrorMessage());
+    messageErrorIf(
+        std::dynamic_pointer_cast<IntConstant>(np._intExp) != nullptr,
+        "An unsized integer constant cannot be used in a concatenation, "
+        "use a sized constant (e.g. 4'd3)" +
+            printErrorMessage());
+    if (np._intExp != nullptr) {
+      np.convert(NumericType::NumericLogic);
+    }
+    parts[i] = np._logExp;
+  }
+
+  size_t times = 1;
+  if (ctx->UINTEGER() != nullptr) {
+    times = safeStoull(ctx->UINTEGER()->getText());
+    messageErrorIf(times == 0, "A replication count must be positive" +
+                                   printErrorMessage());
+  }
+
+  auto c = makeGenericExpression<LogicConcat>(_trace->getLength());
+  size_t width = 0;
+  for (size_t t = 0; t < times; t++) {
+    for (const auto &part : parts) {
+      c->addItem(part);
+      width += part->getType().second;
+    }
+  }
+  messageErrorIf(width > (sizeOfLogic() * 8) - 1,
+                 "Concatenation is wider than " +
+                     std::to_string((sizeOfLogic() * 8) - 1) + " bits" +
+                     printErrorMessage());
+  c->setType(ExpType::ULogic, width);
+  _numericExpressions.push(LogicExpressionPtr(c));
+}
+
+void PropositionParserHandler::exitNumericTernary(
+    propositionParser::NumericTernaryContext *ctx) {
+  NumericPack whenFalse = _numericExpressions.top();
+  _numericExpressions.pop();
+  NumericPack whenTrue = _numericExpressions.top();
+  _numericExpressions.pop();
+  PropositionPtr cond = _proposition.top();
+  _proposition.pop();
+
+  resolveFill(whenTrue, whenFalse);
+  auto type =
+      applyCStandardConversion(whenTrue.getType(), whenFalse.getType());
+  convert(whenTrue, whenFalse, type);
+  if (isLogic(type.first)) {
+    _numericExpressions.push(LogicExpressionPtr(generatePtr<LogicTernary>(
+        cond, whenTrue._logExp, whenFalse._logExp, type)));
+  } else if (isInt(type.first)) {
+    _numericExpressions.push(IntExpressionPtr(generatePtr<IntTernary>(
+        cond, whenTrue._intExp, whenFalse._intExp, type)));
+  } else if (isFloat(type.first)) {
+    _numericExpressions.push(FloatExpressionPtr(generatePtr<FloatTernary>(
+        cond, whenTrue._floatExp, whenFalse._floatExp, type)));
+  } else {
+    messageError("Unknown type in ternary operator" + printErrorMessage());
+  }
+}
+
+void PropositionParserHandler::exitBooleanTernary(
+    propositionParser::BooleanTernaryContext *ctx) {
+  PropositionPtr whenFalse = _proposition.top();
+  _proposition.pop();
+  PropositionPtr whenTrue = _proposition.top();
+  _proposition.pop();
+  PropositionPtr cond = _proposition.top();
+  _proposition.pop();
+  _proposition.push(
+      generatePtr<PropositionTernary>(cond, whenTrue, whenFalse));
 }
 
 void PropositionParserHandler::exitSm_range(
@@ -775,6 +996,29 @@ void PropositionParserHandler::exitBoolean(
         _numericExpressions.top();
     _numericExpressions.pop();
 
+    resolveFill(exp1, exp2);
+
+    if (ctx->CASE_EQ() != nullptr || ctx->CASE_NEQ() != nullptr) {
+      // === and !== compare 4-valued bit patterns: both operands as logic
+      messageErrorIf(exp1._floatExp != nullptr || exp2._floatExp != nullptr,
+                     "=== and !== cannot be used with floats" +
+                         printErrorMessage());
+      if (exp1._intExp != nullptr) {
+        exp1.convert(NumericType::NumericLogic);
+      }
+      if (exp2._intExp != nullptr) {
+        exp2.convert(NumericType::NumericLogic);
+      }
+      if (ctx->CASE_EQ() != nullptr) {
+        _proposition.push(makeGenericExpression<LogicCaseEq>(
+            exp1._logExp, exp2._logExp));
+      } else {
+        _proposition.push(makeGenericExpression<LogicCaseNeq>(
+            exp1._logExp, exp2._logExp));
+      }
+      return;
+    }
+
     auto conversionResult =
         applyCStandardConversion(exp1.getType(), exp2.getType());
 
@@ -875,7 +1119,8 @@ void PropositionParserHandler::exitBoolean(
 void PropositionParserHandler::exitNumeric(
     propositionParser::NumericContext *ctx) {
 
-  if (ctx->floatAtom() || ctx->intAtom() || ctx->logicAtom()) {
+  if (ctx->floatAtom() || ctx->intAtom() || ctx->logicAtom() ||
+      ctx->concatenation()) {
     //handled elsewhere
     return;
   }
@@ -981,6 +1226,8 @@ void PropositionParserHandler::exitNumeric(
           _numericExpressions.top();
       _numericExpressions.pop();
 
+      resolveFill(np1, np2);
+
       auto conversionResult =
           applyCStandardConversion(np1.getType(), np2.getType());
 
@@ -1031,6 +1278,8 @@ void PropositionParserHandler::exitNumeric(
       PropositionParserHandler::NumericPack np1 =
           _numericExpressions.top();
       _numericExpressions.pop();
+
+      resolveFill(np1, np2);
 
       auto conversionResult =
           applyCStandardConversion(np1.getType(), np2.getType());
@@ -1121,6 +1370,7 @@ void PropositionParserHandler::exitString(
 }
 
 PropositionPtr PropositionParserHandler::getProposition() {
+  checkNoUnresolvedFill();
   messageErrorIf(_proposition.empty(),
                  "No proposition to return" + printErrorMessage());
   messageErrorIf(!_numericExpressions.empty(),
@@ -1136,6 +1386,7 @@ PropositionPtr PropositionParserHandler::getProposition() {
 }
 
 IntExpressionPtr PropositionParserHandler::getIntExpression() {
+  checkNoUnresolvedFill();
   messageErrorIf(!_proposition.empty(),
                  "Stray propositions in stack" + printErrorMessage());
   messageErrorIf(!_string.empty(),
@@ -1162,6 +1413,7 @@ IntExpressionPtr PropositionParserHandler::getIntExpression() {
 }
 
 LogicExpressionPtr PropositionParserHandler::getLogicExpression() {
+  checkNoUnresolvedFill();
   messageErrorIf(!_proposition.empty(),
                  "Stray propositions in stack" + printErrorMessage());
   messageErrorIf(!_string.empty(),
@@ -1187,6 +1439,7 @@ LogicExpressionPtr PropositionParserHandler::getLogicExpression() {
 }
 
 FloatExpressionPtr PropositionParserHandler::getFloatExpression() {
+  checkNoUnresolvedFill();
   messageErrorIf(!_proposition.empty(),
                  "Stray propositions in stack" + printErrorMessage());
   messageErrorIf(!_string.empty(),

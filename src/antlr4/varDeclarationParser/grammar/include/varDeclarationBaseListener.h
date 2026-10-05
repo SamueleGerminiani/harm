@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.10.1
+// Generated from varDeclaration.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -37,6 +37,12 @@ public:
   virtual void enterStartString(varDeclarationParser::StartStringContext * /*ctx*/) override { }
   virtual void exitStartString(varDeclarationParser::StartStringContext * /*ctx*/) override { }
 
+  virtual void enterBooleanTernary(varDeclarationParser::BooleanTernaryContext * /*ctx*/) override { }
+  virtual void exitBooleanTernary(varDeclarationParser::BooleanTernaryContext * /*ctx*/) override { }
+
+  virtual void enterNumericTernary(varDeclarationParser::NumericTernaryContext * /*ctx*/) override { }
+  virtual void exitNumericTernary(varDeclarationParser::NumericTernaryContext * /*ctx*/) override { }
+
   virtual void enterBoolean(varDeclarationParser::BooleanContext * /*ctx*/) override { }
   virtual void exitBoolean(varDeclarationParser::BooleanContext * /*ctx*/) override { }
 
@@ -45,6 +51,12 @@ public:
 
   virtual void enterNumeric(varDeclarationParser::NumericContext * /*ctx*/) override { }
   virtual void exitNumeric(varDeclarationParser::NumericContext * /*ctx*/) override { }
+
+  virtual void enterConcatenation(varDeclarationParser::ConcatenationContext * /*ctx*/) override { }
+  virtual void exitConcatenation(varDeclarationParser::ConcatenationContext * /*ctx*/) override { }
+
+  virtual void enterConcatItem(varDeclarationParser::ConcatItemContext * /*ctx*/) override { }
+  virtual void exitConcatItem(varDeclarationParser::ConcatItemContext * /*ctx*/) override { }
 
   virtual void enterRange(varDeclarationParser::RangeContext * /*ctx*/) override { }
   virtual void exitRange(varDeclarationParser::RangeContext * /*ctx*/) override { }
