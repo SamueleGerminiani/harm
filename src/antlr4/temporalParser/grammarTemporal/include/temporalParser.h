@@ -68,6 +68,9 @@ public:
   antlr4::atn::SerializedATNView getSerializedATN() const override;
 
 
+  // text of a lookahead/lookbehind token; LT(-1) is null at the start of the input
+  static std::string safeTokenText(antlr4::Token* t) { return t == nullptr ? "" : t->getText(); }
+
   // Definition
   bool isUnary(const std::string& token){
   return token=="X" || token=="nexttime" || token=="F" || token=="eventually" || token=="!" || token=="not";
@@ -136,6 +139,7 @@ public:
     antlr4::tree::TerminalNode *RROUND();
     antlr4::tree::TerminalNode *EOF();
     Sva_assertContext *sva_assert();
+    TformulaContext *tformula();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -153,6 +157,7 @@ public:
     antlr4::tree::TerminalNode *RROUND();
     BooleanContext *boolean();
     ImplicationContext *implication();
+    TformulaContext *tformula();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

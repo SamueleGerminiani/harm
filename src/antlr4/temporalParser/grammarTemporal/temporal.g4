@@ -10,6 +10,9 @@ bool canTakeThisNot(const std::string& unaryOp, const std::string& ph);
 }
 
 @parser::members {
+// text of a lookahead/lookbehind token; LT(-1) is null at the start of the input
+static std::string safeTokenText(antlr4::Token* t) { return t == nullptr ? "" : t->getText(); }
+
 // Definition
 bool isUnary(const std::string& token){
 return token=="X" || token=="nexttime" || token=="F" || token=="eventually" || token=="!" || token=="not";
@@ -32,6 +35,9 @@ import proposition;
 formula : <assoc=right> ALWAYS LROUND implication RROUND EOF 
         | <assoc=right> ALWAYS implication EOF
         | sva_assert EOF
+        // invariant: G(p) is read as G(true -> p)
+        | <assoc=right> ALWAYS LROUND tformula RROUND EOF
+        | <assoc=right> ALWAYS tformula EOF
         ;
 
 sva_assert : 'assert property' LROUND sva_assert RROUND
@@ -39,6 +45,8 @@ sva_assert : 'assert property' LROUND sva_assert RROUND
             | '@(posedge' boolean RROUND sva_assert
             | <assoc=right> LROUND implication RROUND
             | <assoc=right> implication
+            | LROUND tformula RROUND
+            | tformula
             ;
             
 
@@ -79,8 +87,8 @@ booleanLayer: LROUND booleanLayer RROUND
 
 
 tformula: LROUND tformula RROUND 
-        | {canUseSharedOperator(_input->LT(-1)->getText(),_input->LT(2)->getText())}? LCURLY? sere RCURLY?  
-        | <assoc=right> {canTakeThisNot(_input->LT(1)->getText(),_input->LT(2)->getText())}? (TNOT|NOT) tformula 
+        | {canUseSharedOperator(safeTokenText(_input->LT(-1)),safeTokenText(_input->LT(2)))}? LCURLY? sere RCURLY?  
+        | <assoc=right> {canTakeThisNot(safeTokenText(_input->LT(1)),safeTokenText(_input->LT(2)))}? (TNOT|NOT) tformula 
     	| <assoc=right> NEXT LSQUARED? UINTEGER? RSQUARED? tformula
     	| <assoc=right> EVENTUALLY tformula 
     	| <assoc=right> tformula (UNTIL|RELEASE) tformula

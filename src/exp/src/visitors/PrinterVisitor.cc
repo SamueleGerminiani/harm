@@ -720,7 +720,25 @@ void PrinterVisitor::visit(PropertyNext &o) {
   _temporal_ope_stack.pop();
 }
 
+namespace {
+/// true for the antecedent of an invariant G(true -> p)
+bool isTrueAntecedent(const TemporalExpressionPtr &te) {
+  auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(te);
+  if (inst == nullptr) {
+    return false;
+  }
+  auto c = std::dynamic_pointer_cast<BooleanConstant>(inst->getProposition());
+  return c != nullptr && c->evaluate(0);
+}
+} // namespace
+
 void PrinterVisitor::visit(PropertyImplication &o) {
+  // an invariant G(true -> p) is printed as G(p)
+  if (!o.isMMImplication() && o.isOverlapping() &&
+      isTrueAntecedent(o.getItems()[0])) {
+    o.getItems()[1]->acceptVisitor(*this);
+    return;
+  }
   _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
 
   auto [open, close] = getSereBrackets();

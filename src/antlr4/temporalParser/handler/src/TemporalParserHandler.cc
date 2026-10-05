@@ -173,6 +173,18 @@ void TemporalParserHandler::exitFormula(
     temporalParser::FormulaContext *ctx) {
   auto tformula = _tsubFormulas.top();
   _tsubFormulas.pop();
+  if (std::dynamic_pointer_cast<PropertyImplication>(tformula) ==
+      nullptr) {
+    // invariant G(p): read as G(true -> p) (printed back as G(p))
+    messageErrorIf(dtCount > 0,
+                   "Decision-tree operators need an implication: they "
+                   "build the antecedent of G(antecedent -> consequent)\n" +
+                       printErrorMessage());
+    std::string inst = handleNewInst("@true");
+    tformula = generatePtr<PropertyImplication>(
+        generatePtr<BooleanLayerInst>(_instToPP.at(inst), inst), tformula,
+        false, true);
+  }
   _temporalExpression = generatePtr<PropertyAlways>(tformula);
   _errorMessages.clear();
 }
