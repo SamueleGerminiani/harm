@@ -1,0 +1,23 @@
+<harm>
+    <!-- H6, acceptance test A4 (trace: tests/input/coi/multipath/trace.vcd, --vcd-ss tb::dut).
+         Hand-derived from the RTL (r1 <= a; r2 <= r1; rb <= b; y = a ^ r2; z = rb), the
+         assertions that hold, with (coiFrac, coiDepthFit) from the fixture's cones:
+           G(a -> X r1)    (1, 1)     G(a -> X X r2)  (1, 1)    G(r1 -> X r2)  (1, 1)
+           G(b -> X rb)    (1, 1)     G(b -> X z)     (1, 1)    G(rb -> z)     (1, 1)
+           G(z -> rb)      (0, 0)     true on the trace, but z is not in the cone of rb
+         Sorted by coiDepthFit, ties by text. -->
+    <context name="default">
+        <prop exp="a" loc="a,c"/>
+        <prop exp="b" loc="a,c"/>
+        <prop exp="y" loc="a,c"/>
+        <prop exp="z" loc="a,c"/>
+        <prop exp="r1" loc="a,c"/>
+        <prop exp="r2" loc="a,c"/>
+        <prop exp="rb" loc="a,c"/>
+        <coi file="../coi/multipath/expected_coi.json" mode="rank"/>
+        <template exp="G(P0 -> P1)"/>
+        <template exp="G(P0 -> X P1)"/>
+        <template exp="G(P0 -> X X P1)"/>
+        <sort name="fit" exp="coiDepthFit"/>
+    </context>
+</harm>

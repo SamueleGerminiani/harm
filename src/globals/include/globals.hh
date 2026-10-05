@@ -65,6 +65,8 @@ extern bool keepVacAss;
 extern bool skipInvalidProps;
 ///--reduce: "syntactic" or "equiv"
 extern std::string reduce;
+///--dump-assertion-info
+extern std::string dumpAssertionInfo;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass

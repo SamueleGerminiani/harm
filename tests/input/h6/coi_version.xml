@@ -1,0 +1,9 @@
+<harm>
+    <!-- H6, A3: invalid <coi> (version) -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="y" loc="c"/>
+        <coi file="bad_version.json" mode="rank"/>
+        <template exp="G(P0 -> P1)"/>
+    </context>
+</harm>

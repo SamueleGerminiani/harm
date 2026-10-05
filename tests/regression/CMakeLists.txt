@@ -87,3 +87,25 @@ if(PYTHON3_FOUND)
         endif()
     endforeach()
 endif()
+
+# ---- H6: COI rank mode ----------------------------------------------------------------------------
+set(H6 ${CMAKE_SOURCE_DIR}/tests/input/h6)
+set(MP ${CMAKE_SOURCE_DIR}/tests/input/coi/multipath/trace.vcd)
+# A3: configuration errors
+foreach(case "no_coi;needs a <coi> element" "coi_filter;not supported before H7"
+             "coi_missing;Cannot open coi file" "coi_version;unsupported coi.json version")
+    list(GET case 0 name)
+    list(GET case 1 message)
+    add_test(NAME h6_error_${name}
+        COMMAND $<TARGET_FILE:harm> --vcd ${MP} --clk clk --vcd-ss tb::dut --conf ${H6}/${name}.xml
+                --psilent --max-threads 1)
+    set_tests_properties(h6_error_${name} PROPERTIES LABELS regression PASS_REGULAR_EXPRESSION "${message}")
+endforeach()
+# A4: --dump-assertion-info values
+if(PYTHON3_FOUND)
+    add_test(NAME h6_assertion_info
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_assertion_info.py $<TARGET_FILE:harm>
+                ${H6}/multipath_rank_expected.txt --vcd ${MP} --clk clk --vcd-ss tb::dut
+                --conf ${H6}/multipath_rank.xml)
+    set_tests_properties(h6_assertion_info PROPERTIES LABELS regression)
+endif()

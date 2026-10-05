@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4 on `dev`; H6 awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -24,6 +24,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
 | H2 | `dev` @ `19d7ed2e6ef8a708965d87ebf28810b8c15cb1cf` | yes | — |
 | H4 | `dev` @ `ce7628a5219c1509ad49e104bad570b856bcf3bc` | yes | — |
+| H6 | `ms/H6-coi-rank` (head) | yes; not yet merged into `dev`, awaiting review | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -106,12 +107,18 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - **Depth** counts register crossings (D-005), measured as HARM samples traces: the values just before each rising edge, which is the Preponed-region view of SVA (VCD dumps record the end of the time step). So a register is one cycle behind its inputs, i.e. `G(a -> X q)`, and HARM's verdicts match what trivergence's simulator assertions see.
 - **[optional]** The fixture corpus `tests/input/coi/` (6 designs with traces and hand-written cones) can serve as small sanity designs for trivergence's oracle and COI work (T9).
 
-### H4–H9: COI hints (planned)
-- **Contract:** `coi.json` v1 (H4). It is produced by `harm-coi` (H5), a Python tool in the HARM repo that can run inside trivergence's image (pyslang or yosys-slang, both already in the image).
-- **[recommended] Rank mode (H6):**
-  - the adapter writes `<coi file=... mode="rank"/>` and `origin="spec|rtl"` on propositions;
-  - add `<sort exp="coiFrac"/>`;
-  - this keeps HARM's "behaviour" view independent from the RTL, since nothing is pruned.
+### H6: COI rank mode (awaiting review, branch `ms/H6-coi-rank`)
+- **[recommended] In `hints_to_xml`,** for designs with a `coi.json`:
+  - write `<coi file="…" mode="rank"/>` (path relative to the hints XML);
+  - add `origin="spec"` (or `llm`) to each proposition;
+  - add a sort metric such as `<sort exp="coiDepthFit"/>` next to the existing frequency sort.
+
+  Mined candidates are then ranked by structural plausibility as well as by trace frequency, with the LLM hints still the source of the propositions.
+- **[recommended] Read `--dump-assertion-info <json>`** instead of parsing HARM's text output. It gives every kept assertion with its contingency counts, final score, `coiFrac`/`coiDepthFit`/`coiUnknown`, and per proposition its text, offset, variables and `origin`. This is the per-proposition provenance that the M0 #27 fix (B4) needs: a mined candidate whose antecedent propositions are spec-derived *and* structurally plausible is a different case from one HARM assembled from unrelated signals.
+- **[optional] B3 ablation:** the same hints with and without `<coi>`, comparing the ranking of known-good assertions.
+- **Note:** a `coi.json` must use the same scope and recursion as the adapter's `--vcd-ss`/`--vcd-r` (see H4). HARM refuses a coi file naming signals that are not in the trace, and warns if the scope differs.
+
+### H7–H9: COI filter mode and out-of-cone report (planned)
 - **[optional] Filter mode (H7/H8):** GoldMine-style mining. It assumes the RTL is correct, so use it only as a *baseline* in Paper A, never in the method's triage.
 - **[recommended] Out-of-cone report (H9):** a spec-derived proposition outside a target's structural cone is a new disagreement signal: "spec says A affects B, RTL says it cannot". It is a candidate input to B4 triage.
 

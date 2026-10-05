@@ -6,6 +6,7 @@ namespace harm {
 
 ContextMiner::ContextMiner(std::string &configFile)
     : _configuration(nullptr), _xmlFile(nullptr), _doc(nullptr) {
+  _configFile = configFile;
 
   messageInfo("Parsing configuration file " + configFile);
 

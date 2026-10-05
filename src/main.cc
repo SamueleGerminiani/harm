@@ -281,6 +281,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("skip-invalid-props")) {
     clc::skipInvalidProps = true;
   }
+  if (result.count("dump-assertion-info")) {
+    clc::dumpAssertionInfo = result["dump-assertion-info"].as<std::string>();
+  }
   if (result.count("reduce")) {
     clc::reduce = result["reduce"].as<std::string>();
     messageErrorIf(clc::reduce != "syntactic" && clc::reduce != "equiv",

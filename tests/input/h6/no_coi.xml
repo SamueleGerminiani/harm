@@ -1,0 +1,9 @@
+<harm>
+    <!-- H6, A3: a coi metric without a <coi> element -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="y" loc="c"/>
+        <template exp="G(P0 -> P1)"/>
+        <sort name="fit" exp="coiFrac"/>
+    </context>
+</harm>

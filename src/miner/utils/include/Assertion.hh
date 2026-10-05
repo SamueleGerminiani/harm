@@ -43,6 +43,11 @@ public:
   size_t _maxLength = 0;
   //when using the faultCoverage metric
   size_t _nfCovered = 0;
+  ///COI rank metrics (D-014), valid if _hasCoi
+  bool _hasCoi = false;
+  double _coiFrac = 1;
+  double _coiDepthFit = 1;
+  size_t _coiUnknown = 0;
   ///id of the assertion
   size_t _id = (size_t)-1;
 };

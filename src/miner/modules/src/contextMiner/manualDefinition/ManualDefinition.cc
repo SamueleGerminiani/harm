@@ -1,3 +1,5 @@
+#include <filesystem>
+#include "CoiInfo.hh"
 #include <algorithm>
 #include <ctype.h>
 #include <istream>
@@ -411,6 +413,16 @@ void ManualDefinition::mineContexts(
                                     safeStod(th));
     }
 
+    // the COI metric variables need a <coi> (checked when the <coi> is known, below)
+    auto usesCoi = [](const MetricPtr &m) {
+      return m->contains("coiFrac") || m->contains("coiDepthFit") ||
+             m->contains("coiUnknown");
+    };
+    bool metricsUseCoi =
+        std::any_of(context->_sort.begin(), context->_sort.end(), usesCoi) ||
+        std::any_of(context->_filter.begin(), context->_filter.end(),
+                    [&](const auto &f) { return usesCoi(f.first); });
+
     // get edits
     std::vector<rapidxml::xml_node<> *> editsTag;
     getNodesFromName(contextTag, "edit", editsTag);
@@ -442,6 +454,40 @@ void ManualDefinition::mineContexts(
       }
     }
 
+    // cone of influence (H6): <coi file="..." mode="rank"/>
+    std::vector<rapidxml::xml_node<> *> coiTags;
+    getNodesFromName(contextTag, "coi", coiTags);
+    messageErrorIf(coiTags.size() > 1,
+                   "At most one <coi> per context (context '" + contextName +
+                       "')");
+    if (!coiTags.empty()) {
+      auto file = getAttributeValue(coiTags[0], "file", "");
+      auto mode = getAttributeValue(coiTags[0], "mode", "rank");
+      messageErrorIf(file.empty(), "<coi> needs a file attribute");
+      messageErrorIf(mode == "filter",
+                     "<coi mode=\"filter\"> is not supported before H7: use "
+                     "mode=\"rank\"");
+      messageErrorIf(mode != "rank",
+                     "Unknown <coi> mode '" + mode + "' (expected 'rank')");
+      // relative to the configuration file
+      std::filesystem::path path(file);
+      if (path.is_relative()) {
+        path = std::filesystem::path(_configFile).parent_path() / path;
+      }
+      context->_coi = CoiInfo::load(path.string(), trace);
+      messageWarningIf(
+          !clc::selectedScope.empty() &&
+              clc::selectedScope != context->_coi->_vcdScope,
+          "--vcd-ss '" + clc::selectedScope +
+              "' differs from the coi file's meta.vcd_scope '" +
+              context->_coi->_vcdScope + "'");
+    }
+
+    messageErrorIf(metricsUseCoi && context->_coi == nullptr,
+                   "A metric of context '" + contextName +
+                       "' uses coiFrac/coiDepthFit/coiUnknown, which needs a "
+                       "<coi> element in the context");
+
     // get propositions
     std::vector<rapidxml::xml_node<> *> propsTag;
     getNodesFromName(contextTag, "prop", propsTag);
@@ -457,6 +503,7 @@ void ManualDefinition::mineContexts(
       }
       auto domains = parseDomain<0>(locStr);
 
+      auto origin = getAttributeValue(propTag, "origin", "");
       PropositionPtr p = nullptr;
       if (clc::skipInvalidProps) {
         std::string error;
@@ -470,6 +517,9 @@ void ManualDefinition::mineContexts(
         p = hparser::parseProposition(exp, trace);
       }
       p->enableCache();
+      if (!origin.empty()) {
+        context->_origin[prop2String(p)] = origin;
+      }
       for (auto &[id, dontExpand] : domains) {
         //dontExpand is not used for non-numerics
         context->_domainIdToProps[id].push_back(p);
@@ -514,6 +564,10 @@ void ManualDefinition::mineContexts(
         }
 
         auto domains = parseDomain<1>(locStr);
+        auto origin = getAttributeValue(numTag, "origin", "");
+        if (!origin.empty()) {
+          context->_origin[exp] = origin;
+        }
 
         // use the proposition parser to parse the numeric expression, because we do not know the actual type of the numeric expression
         PropositionPtr np = nullptr;

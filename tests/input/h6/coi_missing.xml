@@ -1,0 +1,9 @@
+<harm>
+    <!-- H6, A3: invalid <coi> (missing) -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="y" loc="c"/>
+        <coi file="does_not_exist.json" mode="rank"/>
+        <template exp="G(P0 -> P1)"/>
+    </context>
+</harm>

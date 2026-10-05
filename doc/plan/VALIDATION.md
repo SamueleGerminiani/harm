@@ -150,3 +150,30 @@ They were written first and committed failing in `e8237a9`, with the hand labels
 ### Suites
 - `ctest -L coi`: 25/25.
 - `ctest -LE "determinism|coi"`: 65/65.
+
+## H6: COI rank mode (2026-10-05, macOS arm64, g++-13)
+
+### Acceptance tests
+They were written first and committed failing in `c8abf51`.
+
+| Test | Result |
+|---|---|
+| A1 leaf offsets, 16 formula shapes | pass |
+| A2 COI metrics, 19 assertions on `multipath` + 5 on `counter` (saturated depths) + the trace-name check | pass. All expected values computed by hand from D-014, on cones validated by simulation in H4 |
+| A3 configuration errors (no `<coi>`, `mode="filter"`, missing file, `version` ≠ 1) | pass |
+| A4 end to end on `multipath` with `<sort exp="coiDepthFit"/>` | pass. HARM mines exactly the 7 hand-derived assertions, with the hand-computed `coiFrac`/`coiDepthFit`/`coiUnknown` in `--dump-assertion-info`. **One correction after implementation:** the hand-written ordered baseline had two equal-score lines in the wrong order (`XXr2` sorts before `Xr1`, since `X` < `r` in ASCII: the D-001 tie-break). Values and set unchanged |
+| A5 no change without `<coi>` | pass: all H0–H4 regression and determinism tests unchanged |
+
+### Suites
+- `ctest -L determinism`: 23/23, including `h6_multipath_rank`.
+- `ctest -L coi`: 25/25 (H4, unchanged).
+- `ctest -LE "determinism|coi|verilator"`: 68/68 in 6 of 8 parallel runs (`-j6`); see below.
+
+### Open finding: intermittent crash under parallel load (not yet explained)
+- **What happens:** in 2 of 8 parallel runs (`ctest -j6`) after H6 was built, one test binary crashed with a segmentation fault. Once it was `PropositionOracleTest` (H1), once `Z3EquivalenceTest` (H2).
+- **What has been ruled out:**
+  - **Not reproducible in isolation:** 0 crashes in about 40 isolated runs, 25 of them under lldb, and 0 in 12 runs under lldb with the rest of the suite in parallel.
+  - **No heap errors under Guard Malloc** (`libgmalloc`): page-guarded allocations, scribbled frees. Clean for `PropositionOracleTest`, `PropositionLanguageTest` and `Z3EquivalenceTest` (without the wide random test, for time).
+  - **Not memory exhaustion:** peak resident memory is 112 MB and 181 MB on a 34 GB machine.
+- **Not yet determined:** whether it predates H6. The binaries that crashed don't use H6 code, and earlier milestones ran parallel suites about 8 times without a crash, which is not enough to conclude either way.
+- **Next step:** an AddressSanitizer and UndefinedBehaviorSanitizer build on the Linux machine. Homebrew g++-13 has no ASan on macOS. Until then, it's recorded here and in the H6 report, not hidden.

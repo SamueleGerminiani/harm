@@ -451,6 +451,23 @@ These variables represent the number of time units where specific conditions hol
 * **`nfCovered`**: Alias for `faultCoverage`.
 * **`nFaults`**: Total number of faulty traces provided as input.
 
+## Cone of influence (`<coi>`)
+A context can name a cone-of-influence description of the design (`coi.json`, schema `doc/schemas/coi.v1.json`): for every signal in the trace, which signals can influence it and through how many registers (depth). The path is relative to the configuration file:
+```xml
+<coi file="design_coi.json" mode="rank"/>
+```
+In `rank` mode nothing is pruned. Three metric variables become available for `<sort>` and `<filter>`:
+
+| Variable | Meaning |
+| :--- | :--- |
+| `coiFrac` | fraction of the antecedent propositions whose variables are all in the cone of the consequent's variables |
+| `coiDepthFit` | fraction of antecedent propositions placed at a delay, relative to the consequent, that matches a depth of the cone. Under `until`, `eventually`, repetitions and ranges, being in the cone is enough |
+| `coiUnknown` | number of antecedent propositions with a signal the cone file does not know (these are never penalised) |
+
+An assertion without antecedent propositions (e.g. an invariant) scores 1. Example: `<sort name="structure" exp="coiDepthFit"/>`. See `doc/plan/DECISIONS.md` (D-014) for the exact definitions.
+
+Propositions and numerics can carry an `origin` attribute (free text, e.g. `origin="spec"`), reported by `--dump-assertion-info`.
+
 ## Editing Rules Configuration
 
 Users can define assertion editing rules using the `<edit>` tag. These rules allow for the automated removal or rewriting of mined assertions based on pattern matching.
@@ -593,6 +610,9 @@ Harm produces three main types of textual outputs:
 ### Assertions & Ranking
 * **`--max-ass <uint>`**
     The maximum number of assertions to keep after ranking.
+
+* **`--dump-assertion-info <FILE>`**
+    Write, for every kept assertion, a JSON record with its context, text, metric values (contingency table, `complexity`, final score, and the `<coi>` metrics when available) and its propositions (text, antecedent or consequent, cycle offset, variables, `origin`).
 
 * **`--reduce <syntactic|equiv>`**
     How redundant assertions are removed.

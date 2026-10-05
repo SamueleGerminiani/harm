@@ -56,7 +56,10 @@ std::vector<std::tuple<std::string, expression::ExpType, size_t>>
         std::make_tuple("faultCoverage", ExpType::Float, 64),
         std::make_tuple("nfCovered", ExpType::Float, 64),
         std::make_tuple("nFaults", ExpType::Float, 64),
-        std::make_tuple("pRepetitions", ExpType::Float, 64)
+        std::make_tuple("pRepetitions", ExpType::Float, 64),
+        std::make_tuple("coiFrac", ExpType::Float, 64),
+        std::make_tuple("coiDepthFit", ExpType::Float, 64),
+        std::make_tuple("coiUnknown", ExpType::Float, 64)
 
 };
 
@@ -157,6 +160,12 @@ double Metric::evaluateMetric(Assertion &a, Metric &m) {
       m.assign(v, (double)clc::faultyTraceFiles.size());
     } else if (v == "nfCovered") {
       m.assign(v, (double)a._nfCovered);
+    } else if (v == "coiFrac" || v == "coiDepthFit" || v == "coiUnknown") {
+      messageErrorIf(!a._hasCoi, "Metric variable '" + v +
+                                     "' needs a <coi> element in the context");
+      m.assign(v, v == "coiFrac"       ? a._coiFrac
+                  : v == "coiDepthFit" ? a._coiDepthFit
+                                       : (double)a._coiUnknown);
     } else {
       messageError("Unknown metric variable name '" + v + "'");
     }
