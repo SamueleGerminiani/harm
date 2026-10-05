@@ -46,4 +46,4 @@ NONE | G(a -> X b) | G(a -> X X b) | different delays
 NONE | G(cnt > 4'd9 -> b) | G(cnt > 4'd8 -> b) | needs implication between atoms (H3b): not found by H3
 # ---- liveness: never reduced
 SKIPPED | G(a -> F b) | G(a -> X b) | F is not safety
-SKIPPED | G(a -> b U c) | G(a -> c) | strong until is not safety
+SKIPPED | G(a -> F b) | G(a -> b) | F is not safety (HARM has no strong until)

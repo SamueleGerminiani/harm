@@ -286,11 +286,26 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("reduce")) {
     clc::reduce = result["reduce"].as<std::string>();
-    messageErrorIf(clc::reduce != "syntactic" && clc::reduce != "equiv",
-                   "--reduce must be 'syntactic' or 'equiv', got '" +
+    messageErrorIf(clc::reduce != "syntactic" && clc::reduce != "equiv" &&
+                       clc::reduce != "implies",
+                   "--reduce must be 'syntactic', 'equiv' or 'implies', got '" +
                        clc::reduce + "'");
-    messageErrorIf(clc::reduce == "equiv" && !expression::smt::available(),
-                   "--reduce equiv needs Z3: build HARM with -DHARM_WITH_Z3=ON");
+    messageErrorIf(clc::reduce != "syntactic" && !expression::smt::available(),
+                   "--reduce " + clc::reduce +
+                       " needs Z3: build HARM with -DHARM_WITH_Z3=ON");
+  }
+  if (result.count("keep")) {
+    clc::keep = result["keep"].as<std::string>();
+    messageErrorIf(clc::keep != "stronger" && clc::keep != "weaker" &&
+                       clc::keep != "ranked",
+                   "--keep must be 'stronger', 'weaker' or 'ranked', got '" +
+                       clc::keep + "'");
+    messageErrorIf(clc::reduce != "implies", "--keep needs --reduce implies");
+  }
+  if (result.count("dump-implications")) {
+    clc::dumpImplications = result["dump-implications"].as<std::string>();
+    messageErrorIf(clc::reduce != "implies",
+                   "--dump-implications needs --reduce implies");
   }
 
   if (result.count("dump-trace-as-csv")) {

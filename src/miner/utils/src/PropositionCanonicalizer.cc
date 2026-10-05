@@ -15,23 +15,31 @@ using namespace expression;
 
 void PropositionCanonicalizer::build(
     const std::vector<AssertionPtr> &assertions) {
+  // the propositions of the boolean-layer instances
+  std::vector<PropositionPtr> props;
+  for (const auto &a : assertions) {
+    traverse(a->_formula, [&](const TemporalExpressionPtr &current) {
+      if (auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(current)) {
+        props.push_back(inst->getProposition());
+      }
+      return false;
+    });
+  }
+  build(props);
+}
+
+void PropositionCanonicalizer::build(const std::vector<PropositionPtr> &props) {
   _tokens.clear();
   _numberOfClasses = 0;
   _solverCalls = 0;
 
-  // the propositions of the boolean-layer instances, grouped by their text
+  // grouped by their text
   std::map<std::string, std::vector<const Proposition *>> byText;
   std::map<std::string, PropositionPtr> representative;
-  for (const auto &a : assertions) {
-    traverse(a->_formula, [&](const TemporalExpressionPtr &current) {
-      if (auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(current)) {
-        PropositionPtr p = inst->getProposition();
-        std::string text = prop2String(p);
-        byText[text].push_back(p.get());
-        representative.emplace(text, p);
-      }
-      return false;
-    });
+  for (const auto &p : props) {
+    std::string text = prop2String(p);
+    byText[text].push_back(p.get());
+    representative.emplace(text, p);
   }
 
   // buckets of texts over the same variables (deterministic order: texts are sorted)
@@ -70,7 +78,8 @@ void PropositionCanonicalizer::build(
   }
 
   for (const auto &[text, props] : byText) {
-    std::string token = "@C" + std::to_string(textToClass.at(text)) + "@";
+    std::string token =
+        _tokenPrefix + std::to_string(textToClass.at(text)) + _tokenSuffix;
     for (const auto *p : props) {
       _tokens[p] = token;
     }

@@ -1,6 +1,9 @@
 #include <fstream>
 #include <mutex>
 #include <algorithm>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 #include <cmath>
 #include <filesystem>
 #include <fstream> // IWYU pragma: keep
@@ -12,6 +15,7 @@
 #include <unordered_map>
 
 #include "CoiInfo.hh"
+#include "ImplicationReducer.hh"
 #include "PropositionCanonicalizer.hh"
 #include <unordered_set>
 #include <utility>
@@ -90,7 +94,7 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
   std::unordered_set<std::string> keys;
 
   // --reduce equiv: compare assertions with equivalent propositions replaced by one token
-  bool equiv = clc::reduce == "equiv";
+  bool equiv = clc::reduce == "equiv" || clc::reduce == "implies";
   PropositionCanonicalizer canon;
   if (equiv) {
     canon.build(inAssertions);
@@ -319,6 +323,52 @@ void dumpAssertionInfo(const Context &context,
   }
   out << "  ]\n}\n";
 }
+
+/// --reduce implies: drops the assertions implied by (or, with --keep weaker, implying) a kept
+/// one; --dump-implications: one JSON record per dropped assertion, all contexts in one file
+void applyImplicationReduction(const Context &context,
+                               std::vector<AssertionPtr> &assertions) {
+  static std::vector<std::string> records;
+  static std::mutex guard;
+  std::vector<ImplicationRecord> dropped;
+  size_t before = assertions.size(), pairs = 0;
+  auto start = std::chrono::steady_clock::now();
+  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs);
+  double seconds = std::chrono::duration<double>(
+                       std::chrono::steady_clock::now() - start)
+                       .count();
+  std::stringstream secs;
+  secs << std::fixed << std::setprecision(2) << seconds;
+  messageInfo("Implication: dropped " + std::to_string(before - assertions.size()) +
+              " of " + std::to_string(before) + " assertions (keep " +
+              clc::keep + ", " + std::to_string(pairs) + " pairs checked in " +
+              secs.str() + "s)");
+  if (clc::dumpImplications.empty()) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(guard);
+  for (const auto &d : dropped) {
+    std::vector<std::string> kept;
+    for (const auto &k : d.kept) {
+      kept.push_back(jsonString(k->toString()));
+    }
+    std::sort(kept.begin(), kept.end());
+    std::string r = "    {\"context\": " + jsonString(context._name) +
+                    ", \"dropped\": " + jsonString(d.dropped->toString()) +
+                    ", \"kept\": [";
+    for (size_t i = 0; i < kept.size(); i++) {
+      r += (i ? ", " : "") + kept[i];
+    }
+    records.push_back(r + "], \"relation\": " + jsonString(d.relation) + "}");
+  }
+  std::ofstream out(clc::dumpImplications);
+  messageErrorIf(!out.good(), "Cannot write '" + clc::dumpImplications + "'");
+  out << "{\n  \"version\": \"1\",\n  \"implications\": [\n";
+  for (size_t i = 0; i < records.size(); i++) {
+    out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
+  }
+  out << "  ]\n}\n";
+}
 } // namespace
 
 std::vector<AssertionPtr> Qualifier::qualify(Context &context,
@@ -354,11 +404,21 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   }
   filterUsingEdits(assertions, context._remove, trace);
 
+  // --reduce implies (D-008): before ranking, so that the kept assertions are ranked as usual;
+  // --keep ranked needs the scores, so it runs on the ranked list (dropping keeps the order)
+  bool implies = clc::reduce == "implies";
+  if (implies && clc::keep != "ranked") {
+    applyImplicationReduction(context, assertions);
+  }
+
   if (requiresFaultCoverage(context._sort)) {
     fillAssertionsWithFaultCoverage(assertions, trace);
   }
   std::vector<AssertionPtr> rankedAssertions =
       rankAssertions(assertions, context._sort);
+  if (implies && clc::keep == "ranked") {
+    applyImplicationReduction(context, rankedAssertions);
+  }
 
   filterAssertionsWithFrank(rankedAssertions);
 

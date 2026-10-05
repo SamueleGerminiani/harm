@@ -1,6 +1,6 @@
 # H3 plan: semantic redundancy reduction with Spot
 
-*Status: approved 2026-10-05 (D-004 safety only; D-008 keep stronger), in progress. Branch: `ms/H3-implies` (from `dev` @ H6). Effort: 3–4 d.*
+*Status: approved 2026-10-05 (D-004 safety only; D-008 keep stronger); implemented, awaiting review. D-004 amended during implementation (F5). Branch: `ms/H3-implies` (from `dev` @ H6). Effort: 3–4 d.*
 
 ## Goal
 `--reduce implies` removes a mined assertion when a kept one implies it. `--dump-implications` writes the relation for other tools (trivergence stage 5). This builds on H2: propositions are first canonicalised with Z3, so that `cnt == 4'd9` and `4'd9 == cnt` are the same atom for Spot.
@@ -9,6 +9,7 @@
 - **F1.** HARM links Spot 2.9.7, which has `spot::contains` and `spot::are_equivalent` (also on pre-translated automata), plus `formula::is_syntactic_safety()`.
 - **F2. Atoms must keep their boolean structure.** HARM's decision trees produce leaves such as `a && b`. If a whole conjunction becomes one atom, Spot cannot see that `G({a} |-> c)` implies `G({a && b} |-> c)`, which is the most common redundancy in DT-mined sets. So abstraction stops at **maximal non-boolean subexpressions**: comparisons, logic-to-bool conversions, function calls. `&&`, `||`, `!` and `^` between them are kept and given to Spot.
 - **F3. H2's canonical tokens (`@C3@`) are not valid Spot atoms.** H3 prints its own atom names (`p0`, `p1`, …) from the same equivalence classes.
+- **F5 (found during implementation by A2): infinite-word implication is not sound for HARM's end of trace.** HARM's consequent automaton works on boolean *leaves*, and an instance still pending at the end holds. So A ⇒ B over infinite words does not imply it on HARM's finite traces: `X (b && !b)` is pending at the end, while `(b && !b)` fails. The fix is the D-004 amendment: implication is claimed only if it also holds in an exact model of HARM's evaluator, explored over all finite traces.
 - **F4. The number of pairs grows quickly.** A context can keep thousands of mined assertions. Every formula is translated to an automaton once, containment is checked on the automata, and only pairs that share at least one atom are compared (the USM-T heuristic). That is sound (it only misses implications, never invents one) but incomplete.
 
 ## Decisions to approve

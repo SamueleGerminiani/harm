@@ -108,6 +108,19 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
 ## D-004: implication reduction semantics (2026-10-05, H3, approved)
 - Assertions are compared with Spot (infinite-word LTL). Only pairs where **both** formulas are syntactic safety are reduced; others are always kept.
 - **Why:** for safety formulas, A ⇒ B over infinite words implies that every finite trace violating B also violates A. Dropping B then loses nothing for HARM's finite-trace evaluation or for simulation.
+- **Amendment (2026-10-05, during H3 implementation, pending acknowledgement): the "Why" is wrong at the trace end.** The A2 oracle refuted `G({b ##2 !a} |-> X (b && !b))` ⇒ `G({b ##2 !a} |-> (b && !b))` on a 3-cycle trace. Both formulas are false on infinite words, and B fails on the trace. A does not fail, because HARM evaluates the consequent with a deterministic Spot automaton whose atoms are the boolean *leaves*. It cannot see that `b && !b` is false, so the `X` instance is still pending at the trace end, and a pending instance counts as holding. A trace violating B therefore need not violate A in HARM's evaluation, even though A is a bad prefix in theory.
+  - **Fix: A ⇒ B is claimed only if it holds in both semantics.**
+    - (1) As before, Spot containment over infinite words, which serves SVA, simulators and formal tools.
+    - (2) An exact model of HARM's evaluator (`AutomataBasedEvaluator`):
+      - each antecedent is a fixed-length sequence of boolean steps;
+      - each consequent is the same deterministic, complete Spot automaton over leaves that HARM builds, with leaf conditions mapped to atoms;
+      - an instance starts on every cycle;
+      - a consequent fails when it reaches the rejecting sink;
+      - an instance still pending at the end holds.
+
+    The model explores every finite trace by a breadth-first search over (pending instances of A, pending instances of B), and A ⇒ B is refuted when B fails while A has not.
+  - Assertions whose antecedent is not a fixed-length boolean sequence are never reduced: `[*]`, `##[m:n]`, and `&&` with operands of different lengths. Neither are those without `G(… -> …)`.
+  - This only removes claims, so it does not change the approved policy. It is stricter (more conservative) than the approved wording.
 
 ## D-008: which assertion is kept (2026-10-05, H3, approved)
 - **Default `--keep stronger`:** when A ⇒ B and not B ⇒ A, keep A and drop B. `--keep weaker` and `--keep ranked` are options.

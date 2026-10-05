@@ -19,11 +19,19 @@ using AssertionPtr = std::shared_ptr<Assertion>;
 /// classes: a timeout or an unknown result keeps them apart.
 class PropositionCanonicalizer {
 public:
-  explicit PropositionCanonicalizer(unsigned timeoutMs = 1000)
-      : _timeoutMs(timeoutMs) {}
+  /// @param tokenPrefix, tokenSuffix the token of class k is prefix + k + suffix
+  explicit PropositionCanonicalizer(unsigned timeoutMs = 1000,
+                                    std::string tokenPrefix = "@C",
+                                    std::string tokenSuffix = "@")
+      : _timeoutMs(timeoutMs), _tokenPrefix(std::move(tokenPrefix)),
+        _tokenSuffix(std::move(tokenSuffix)) {}
 
-  /// @brief compute the classes of the propositions of these assertions
+  /// @brief compute the classes of the propositions of these assertions (their boolean-layer
+  /// instances)
   void build(const std::vector<AssertionPtr> &assertions);
+
+  /// @brief compute the classes of these propositions
+  void build(const std::vector<expression::PropositionPtr> &props);
 
   /// @brief the token of the class of every proposition object seen by build()
   const std::unordered_map<const expression::Proposition *, std::string> &
@@ -39,6 +47,7 @@ public:
 
 private:
   unsigned _timeoutMs;
+  std::string _tokenPrefix, _tokenSuffix;
   std::unordered_map<const expression::Proposition *, std::string> _tokens;
   size_t _numberOfClasses = 0;
   size_t _solverCalls = 0;

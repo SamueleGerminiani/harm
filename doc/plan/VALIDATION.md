@@ -177,3 +177,54 @@ They were written first and committed failing in `c8abf51`.
   - **Not memory exhaustion:** peak resident memory is 112 MB and 181 MB on a 34 GB machine.
 - **Not yet determined:** whether it predates H6. The binaries that crashed don't use H6 code, and earlier milestones ran parallel suites about 8 times without a crash, which is not enough to conclude either way.
 - **Next step:** an AddressSanitizer and UndefinedBehaviorSanitizer build on the Linux machine. Homebrew g++-13 has no ASan on macOS. Until then, it's recorded here and in the H6 report, not hidden.
+
+## H3: semantic redundancy reduction (2026-10-05, macOS arm64, g++-13)
+
+### Acceptance tests
+They were written first and committed failing in `60be5aa`.
+
+| Test | Result |
+|---|---|
+| A1 hand-labelled pairs (`pairs.txt`, 37) | pass. **One pair changed after the first run:** `G(a -> b U c)` doesn't parse, because HARM's temporal grammar has no strong until. It was replaced by `G(a -> F b)` vs `G(a -> b)`, same label `SKIPPED` (not safety). Its label and the 36 others are unchanged |
+| A2 bounded oracle, 310 generated pairs, every boolean trace of 3 atoms up to length 6, judged by **HARM's own evaluator** | pass: 239 implications claimed, 10 skipped (liveness), **0 unsound**. The first implementation (Spot over infinite words only, as D-004 was approved) had **1 unsound claim**: `G({b ##2 !a} \|-> X (b && !b))` ⇒ `G({b ##2 !a} \|-> (b && !b))`, refuted on a 3-cycle trace. That led to the D-004 amendment (see DECISIONS, H3_PLAN F5) |
+| A2, second set: 200 pairs in mined shapes (`gen_mined_pairs.py`: SERE `&&`/`&` antecedents, `##1`/`##2` sequences, `\|=>`, `W`, `R`) | pass: 152 claimed, 1 skipped, **0 unsound**; 75 pairs contain SERE conjunction nodes. **Added after implementation:** A3 showed that mined antecedents (`{a && b}`) are SERE conjunctions, which the first set never produced and the first model rejected. The test is answer-agnostic (it checks claims against HARM's evaluator), but its thresholds were set after a first run: "> 100 pairs with SERE conjunctions" was lowered to "> 50", because `{a && b}` often parses as one boolean leaf |
+| A3 `--reduce implies` on `reduce.csv`/`reduce.xml`: hand-derived output and `--dump-implications` | pass: the three conjunction variants are dropped, with exactly the hand-derived kept assertions |
+| A4 determinism of A3 | pass |
+| A5 without `--reduce implies`, baselines byte-identical | pass: all regression and determinism tests unchanged |
+
+### Not part of the acceptance tests, also checked
+- **`--keep weaker` and `--keep ranked` on A3:** checked by hand.
+  - `weaker` keeps the three conjunctions and drops `G(a -> c)` and `G(d -> c)`.
+  - `ranked` keeps the two frequency-0.5 assertions.
+- **Error paths:** `--keep` or `--dump-implications` without `--reduce implies` is an error.
+- **Synthetic ground truth** (`s6 = X(s0 || s1)`, `s7 = s2 && s3 || s4`, 8 signals, 400 cycles, 6 templates): 116 mined assertions, of which 112 are dropped. The 4 kept are exactly the planted relations:
+  - `G(s0 -> X s6)`;
+  - `G(s1 -> X s6)`;
+  - `G(s4 -> s7)`;
+  - `G({s2 && s3} -> s7)`.
+
+  12 sampled records of the dump were checked by hand.
+
+### Performance (acceptance item 5)
+
+| Case | Assertions | Pairs checked | Reduction time | Total, `implies` / `syntactic` |
+|---|---|---|---|---|
+| `bl_master1k` (no `--min-frank`) | 31 | 332 | 0.04 s | 14.96 s / 15.05 s (×1.0; mining dominates) |
+| `camellia` | 3 | 0 | 0 s | 0.11 s / 0.10 s |
+| synthetic (above) | 116 | 5,439 | 0.06 s | 0.23 s / 0.16 s (×1.4, including Z3 canonicalisation) |
+
+- **`camellia` found two problems:**
+  - **The example's `camellia.xml` is not valid XML** (raw `&`), so rapidxml mangles the templates, and its propositions lack the `camallia_u::` scope that `--vcd-r 1` gives. This happens before any H3 code runs; the measurement used a fixed copy. Not fixed in the repository (out of scope); to be raised separately.
+  - **A real H3 performance bug.** Its assertions span 25 cycles (`X[23]`). Spot's infinite-word automaton for `G(a -> X^k b)` needs about 2^k states, and the first finite-trace model tracked all pending instances of both assertions, which is exponential as well. `--reduce implies` ran for over 10 minutes before being stopped. The fixes:
+    - assertions spanning more than `maxImplicationDepth` = 10 cycles are never reduced;
+    - the finite-trace search follows one chosen instance of the dropped assertion, not all of them;
+    - the search gives up after 20,000 states, which means "not proved", so both assertions are kept.
+
+    All three only remove claims. A1 and both A2 sets were rerun after these changes and are unchanged: 239 and 152 claims, 0 unsound.
+
+### Suites
+- `ctest -j6 -LE slow`: 100/100, both before and after the performance fixes (2 runs; no intermittent crash this time).
+- Regression test for the `camellia` bug: `ImplicationTest.deepAssertionsAreSkippedQuickly`. A 24-cycle pair is `SKIPPED` in 0.14 s, and a 10-cycle pair is still decided.
+
+### Still pending
+- Cross-check with USM-T's `semantic_equivalence`: needs Linux.

@@ -4,6 +4,7 @@
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -14,7 +15,9 @@
 #include "TemplateImplication.hh"
 #include "Trace.hh"
 #include "VarDeclaration.hh"
+#include "expUtils/expUtils.hh"
 #include "formula/atom/Variable.hh"
+#include "formula/temporal/temporal.hh"
 #include "message.hh"
 #include "temporalParsingUtils.hh"
 #include "gtest/gtest_pred_impl.h"
@@ -185,4 +188,71 @@ TEST(ImplicationTest, generatedPairsAreSoundOnAllShortTraces) {
   EXPECT_GT(claims, 0u);
   EXPECT_EQ(skipped, 10u);
   EXPECT_EQ(unsound, 0u);
+}
+
+// ---------------------------------------------------------------- A2, mined shapes
+// The second set has the antecedents HARM's decision trees produce: SERE conjunctions ('&&', '&')
+// and sequences of leaves. Added after the first run of A3, which showed that the first set does
+// not exercise them.
+TEST(ImplicationTest, minedShapesAreSoundOnAllShortTraces) {
+  TracePtr tr = traceWith({"a", "b", "c"}, 4, false);
+  std::ifstream in(h3 + "generated_mined_pairs.txt");
+  ASSERT_TRUE(in.good());
+  std::string line;
+  size_t pairs = 0, claims = 0, skipped = 0, unsound = 0, sereConj = 0;
+  auto hasSereConj = [](const TemporalExpressionPtr &te) {
+    bool found = false;
+    traverse(te, [&](const TemporalExpressionPtr &current) {
+      found |= std::dynamic_pointer_cast<SereIntersect>(current) != nullptr ||
+               std::dynamic_pointer_cast<SereAnd>(current) != nullptr;
+      return false;
+    });
+    return found;
+  };
+  while (std::getline(in, line)) {
+    auto f = split(line, " ||| ");
+    if (f.size() != 2) {
+      continue;
+    }
+    TemporalExpressionPtr a = parse(f[0], tr), b = parse(f[1], tr);
+    if (a == nullptr || b == nullptr) {
+      continue;
+    }
+    pairs++;
+    sereConj += hasSereConj(a) || hasSereConj(b);
+    Implication rel = implicationBetween(a, b);
+    skipped += rel == Implication::Skipped;
+    claims += rel == Implication::AImpliesB || rel == Implication::BImpliesA ||
+              rel == Implication::Equivalent;
+    unsound += checkClaims(f[0], f[1], rel, {"a", "b", "c"}, 6);
+  }
+  std::cout << "[mined] pairs: " << pairs << " (with SERE conjunctions: " << sereConj
+            << "), implications claimed: " << claims << ", skipped: " << skipped
+            << ", UNSOUND: " << unsound << "\n";
+  EXPECT_EQ(pairs, 200u);
+  EXPECT_GT(sereConj, 50u);
+  EXPECT_GT(claims, 50u);
+  EXPECT_EQ(unsound, 0u);
+}
+
+// ---------------------------------------------------------------- performance guard
+// Found on 'camellia' (X[23]): Spot's automaton of G(a -> X^k b) has about 2^k states, so deep
+// assertions are never reduced (maxImplicationDepth); before the guard, this pair did not finish.
+TEST(ImplicationTest, deepAssertionsAreSkippedQuickly) {
+  TracePtr tr = traceWith({"a", "b", "c"}, 4, false);
+  TemporalExpressionPtr a = parse("G({a ##1 b} |-> X(c && X[23] b))", tr),
+                        b = parse("G({a ##1 b} |-> X(c && X[23] (b || c)))", tr);
+  ASSERT_NE(a, nullptr);
+  ASSERT_NE(b, nullptr);
+  auto start = std::chrono::steady_clock::now();
+  EXPECT_EQ(toString(implicationBetween(a, b)), "SKIPPED");
+  EXPECT_LT(std::chrono::duration<double>(std::chrono::steady_clock::now() - start)
+                .count(),
+            5.0);
+  // at the limit, still decided
+  TemporalExpressionPtr c = parse("G(a -> X[10] b)", tr),
+                        d = parse("G(a -> X[10] (b || c))", tr);
+  ASSERT_NE(c, nullptr);
+  ASSERT_NE(d, nullptr);
+  EXPECT_EQ(toString(implicationBetween(c, d)), "A_IMPLIES_B");
 }

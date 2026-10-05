@@ -97,9 +97,21 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
    - It costs one Z3 call per pair of distinct propositions over the same variables.
 3. **[optional]** `expression::smt::checkEquivalence` can decide equivalence of two HARM propositions in C++ (exact 4-valued semantics). It isn't exposed on the command line; tell HARM if trivergence needs it as a tool, e.g. to deduplicate hints before mining.
 
-### H3: semantic redundancy reduction with Spot (planned)
-- New `--reduce implies` and `--dump-implications <json>`.
+### H3: semantic redundancy reduction with Spot (implemented on `ms/H3-implies`, awaiting review)
+- **New options:**
+  - `--reduce implies`, which includes `equiv`;
+  - `--keep stronger|weaker|ranked`;
+  - `--dump-implications <json>`: `{"version": "1", "implications": [{"context", "dropped", "kept": [...], "relation": "implied|implies|equivalent"}]}`.
 - **[recommended]** Use them in trivergence stage 5 (suite selection) as a cheap, design-independent first pass before `FormalOracle.implies` (T8a). HARM's implication is *logical*, with no design and no reset, so it never needs a solver run on the RTL.
+- **What "implies" means** (D-004 as amended): A ⇒ B is claimed only if it holds both over infinite words (what SVA and formal tools see) and on every finite trace as HARM evaluates it.
+  - Dropping B is therefore safe for both trivergence's simulator checks and its formal oracle.
+  - It is incomplete: some true implications are not found. Never treat "not dropped" as "not implied".
+- **Limits that matter to trivergence:**
+  - Only safety assertions `G(antecedent -> consequent)` with a fixed-length antecedent are reduced.
+  - Assertions spanning more than 10 cycles are always kept.
+  - Implications between atoms (`x > 5 ⇒ x > 3`) are not used (H3b).
+- **[recommended] Prefer `--keep stronger`** (the default) for suite selection. `ranked` keeps the better-scored side, which can be the weaker assertion.
+- **[optional]** The `kept` list lets trivergence show, for each dropped candidate, which kept assertion covers it: useful in triage reports.
 
 ### H4: COI contract (on `dev`)
 - **Contract:** `doc/schemas/coi.v1.json`, plus the rules in `tests/coi/check_coi.py`.
