@@ -36,3 +36,9 @@ harm_case(h1_newops ARGS --csv ${H1}/newops.csv --conf ${H1}/newops.xml)
 # A5: the same predicate spelled twice; merged only with --reduce equiv (expected output by hand)
 harm_case(h2_reduce_syntactic ARGS --csv ${H1}/newops.csv --conf ${CMAKE_SOURCE_DIR}/tests/input/h2/reduce.xml)
 harm_case(h2_reduce_equiv ARGS --csv ${H1}/newops.csv --conf ${CMAKE_SOURCE_DIR}/tests/input/h2/reduce.xml --reduce equiv)
+
+# ---- H6 ------------------------------------------------------------------------------------------
+set(COI ${CMAKE_SOURCE_DIR}/tests/input/coi)
+set(H6 ${CMAKE_SOURCE_DIR}/tests/input/h6)
+# A4: COI rank mode on the multipath fixture (expected output by hand)
+harm_case(h6_multipath_rank ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${H6}/multipath_rank.xml)

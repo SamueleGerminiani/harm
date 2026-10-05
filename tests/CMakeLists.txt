@@ -31,6 +31,7 @@ addTest("PropositionOracleTest" ./propositionOracleTests.cc )
 addTest("PropositionLanguageTest" ./propositionLanguageTests.cc )
 addTest("SvaOutputTest" ./svaOutputTests.cc )
 addTest("Z3EquivalenceTest" ./z3EquivalenceTests.cc )
+addTest("CoiMetricsTest" ./coiMetricsTests.cc )
 
 
 add_subdirectory(regression)

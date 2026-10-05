@@ -1,0 +1,9 @@
+# H6, A4: --dump-assertion-info values, hand-derived (see multipath_rank.xml)
+# <assertion text> | coiFrac | coiDepthFit | coiUnknown
+G(a -> Xr1) | 1 | 1 | 0
+G(a -> XXr2) | 1 | 1 | 0
+G(b -> Xrb) | 1 | 1 | 0
+G(b -> Xz) | 1 | 1 | 0
+G(r1 -> Xr2) | 1 | 1 | 0
+G(rb -> z) | 1 | 1 | 0
+G(z -> rb) | 0 | 0 | 0

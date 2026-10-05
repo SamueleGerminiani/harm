@@ -1,0 +1,9 @@
+# mode: ordered
+### default_ass.txt
+G(a -> Xr1)
+G(a -> XXr2)
+G(b -> Xrb)
+G(b -> Xz)
+G(r1 -> Xr2)
+G(rb -> z)
+G(z -> rb)

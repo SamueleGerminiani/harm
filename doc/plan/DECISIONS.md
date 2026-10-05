@@ -97,3 +97,10 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
 - **Targets:** every signal visible in the trace under the recorded VCD scope.
 - **Sources:** visible signals only. Paths through invisible nets are followed through.
 - The clock is never a source; reset is an ordinary source.
+
+## D-014: COI rank metrics (2026-10-05, H6, approved)
+For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic propositions and leaf offsets = the cycle at which each is evaluated, relative to the start of the antecedent:
+- **`coiFrac`:** fraction of the antecedent leaves (those with variables) whose variables are **all** in the union of the cones of the consequent's variables.
+- **`coiDepthFit`:** fraction of antecedent leaves whose every variable `v` has a consequent leaf `q` and variable `c` with `offset(q) - offset(leaf)` among the depths of `v` in `cone(c)`, or above `max_depth` when saturated. When an offset is unknown (under `until`, `eventually`, `release`, repetitions or ranges), cone membership is enough.
+- **No antecedent leaves** (e.g. an invariant): both are 1.
+- **`coiUnknown`:** antecedent leaves with a variable `coi.json` does not know. They count as in the cone and fitting: never penalised, but counted.

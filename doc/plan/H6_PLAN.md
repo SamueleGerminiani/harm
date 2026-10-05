@@ -1,6 +1,6 @@
 # H6 plan: COI rank mode
 
-*Status: proposed 2026-10-05, awaiting approval. Branch: `ms/H6-coi-rank` (from `dev` @ H4). Effort: 2–3 d.*
+*Status: approved 2026-10-05 (D-014: all variables; unknown = in cone, counted), in progress. Branch: `ms/H6-coi-rank` (from `dev` @ H4). Effort: 2–3 d.*
 
 ## Goal
 HARM reads a `coi.json` (H4 contract) for a context and exposes **metric variables** that score each mined assertion by how plausible it is structurally. Nothing is pruned: `<sort>` and `<filter>` decide what to do with the scores. This is the mode trivergence will use, where COI hints sit next to LLM hints (PLAN §1 goal 2).
