@@ -1,5 +1,6 @@
 
 #pragma once
+#include <unordered_map>
 
 #include <stack>
 #include <stddef.h>
@@ -124,6 +125,20 @@ private:
   exitLogicAtom(propositionParser::LogicAtomContext *ctx) override;
   void exitLogic_constant(
       propositionParser::Logic_constantContext *ctx) override;
+  void exitConcatenation(
+      propositionParser::ConcatenationContext *ctx) override;
+  void exitNumericTernary(
+      propositionParser::NumericTernaryContext *ctx) override;
+  void exitBooleanTernary(
+      propositionParser::BooleanTernaryContext *ctx) override;
+
+  /// fill literals ('0 '1 'x 'z) waiting for the width of the other operand
+  std::unordered_map<expression::LogicExpression *, char> _fillLiterals;
+  bool isFill(NumericPack &p);
+  /// if one of the operands is a fill literal, replace it with a constant as wide as the other
+  void resolveFill(NumericPack &a, NumericPack &b);
+  /// error if a fill literal never got a width
+  void checkNoUnresolvedFill();
   virtual void
   exitStringAtom(propositionParser::StringAtomContext *ctx) override;
   void exitInt_constant(

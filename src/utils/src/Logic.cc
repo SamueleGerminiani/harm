@@ -219,6 +219,63 @@ Logic div(const Logic &lhs, const Logic &rhs,
 
   return Logic(1, 0, 0, 1, 0);
 }
+namespace {
+ULogic lowMask(size_t width) {
+  return width == 0 ? ULogic(0) : ((ULogic(1) << width) - 1);
+}
+
+/// the value of 'l' extended (or kept) to 'width' bits, with the bits above its size cleaned
+Logic extendTo(const Logic &l, size_t width, bool signExtend) {
+  ULogic m = lowMask(l._size);
+  ULogic x = l._x & m, z = l._z & m;
+  ULogic i = l._int & m & ~(x | z);
+  if (signExtend && l._size > 0 && width > l._size) {
+    ULogic high = lowMask(width) & ~m;
+    ULogic msb = ULogic(1) << (l._size - 1);
+    if (x & msb) {
+      x |= high;
+    } else if (z & msb) {
+      z |= high;
+    } else if (i & msb) {
+      i |= high;
+    }
+  }
+  return Logic(width, l._isSigned, i, x, z);
+}
+} // namespace
+
+Logic resize(const Logic &l, size_t width, bool signExtend) {
+  if (width <= l._size) {
+    ULogic m = lowMask(width);
+    return Logic(width, l._isSigned, l._int & m, l._x & m, l._z & m);
+  }
+  return extendTo(l, width, signExtend);
+}
+
+Logic concat(const std::vector<Logic> &items) {
+  size_t width = 0;
+  ULogic i = 0, x = 0, z = 0;
+  for (const auto &item : items) {
+    width += item._size;
+    messageErrorIf(width > (sizeOfLogic() * 8) - 1,
+                   "Concatenation is wider than the maximum logic size (" +
+                       std::to_string((sizeOfLogic() * 8) - 1) + ")");
+    Logic l = extendTo(item, item._size, false);
+    i = (i << item._size) | l._int;
+    x = (x << item._size) | l._x;
+    z = (z << item._size) | l._z;
+  }
+  return Logic(width, false, i, x, z);
+}
+
+bool caseEq(const Logic &lhs, const Logic &rhs) {
+  size_t width = std::max(lhs._size, rhs._size);
+  bool signExtend = lhs._isSigned && rhs._isSigned;
+  Logic l = extendTo(lhs, width, signExtend);
+  Logic r = extendTo(rhs, width, signExtend);
+  return l._int == r._int && l._x == r._x && l._z == r._z;
+}
+
 Logic band(const Logic &lhs, const Logic &rhs,
            const std::pair<ExpType, size_t> &resType) {
 

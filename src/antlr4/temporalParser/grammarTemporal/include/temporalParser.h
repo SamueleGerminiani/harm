@@ -7,7 +7,7 @@ bool canUseSharedOperator(const std::string& unaryOp, const std::string& sharedO
 bool canTakeThisNot(const std::string& unaryOp, const std::string& ph);
 
 
-// Generated from temporal.g4 by ANTLR 4.10.1
+// Generated from temporal.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -29,11 +29,12 @@ public:
     FLOAT_CONSTANT = 34, FLOAT_VARIABLE = 35, SUBSTR = 36, STRING_CONSTANT = 37, 
     STRING_VARIABLE = 38, LCURLY = 39, RCURLY = 40, LSQUARED = 41, RSQUARED = 42, 
     LROUND = 43, RROUND = 44, INSIDE = 45, FUNCTION = 46, SINTEGER = 47, 
-    UINTEGER = 48, FLOAT = 49, GCC_BINARY = 50, HEX = 51, VERILOG_BINARY = 52, 
-    FVL = 53, SINGLE_QUOTE = 54, PLUS = 55, MINUS = 56, TIMES = 57, DIV = 58, 
-    GT = 59, GE = 60, LT = 61, LE = 62, EQ = 63, NEQ = 64, BAND = 65, BOR = 66, 
-    BXOR = 67, NEG = 68, LSHIFT = 69, RSHIFT = 70, AND = 71, OR = 72, NOT = 73, 
-    COL = 74, DCOL = 75, DOLLAR = 76, RANGE = 77, CLS_TYPE = 78, WS = 79
+    UINTEGER = 48, FLOAT = 49, GCC_BINARY = 50, HEX = 51, VERILOG_BASED = 52, 
+    FILL_LITERAL = 53, SINGLE_QUOTE = 54, PLUS = 55, MINUS = 56, TIMES = 57, 
+    DIV = 58, GT = 59, GE = 60, LT = 61, LE = 62, EQ = 63, NEQ = 64, CASE_EQ = 65, 
+    CASE_NEQ = 66, QUESTION = 67, BAND = 68, BOR = 69, BXOR = 70, NEG = 71, 
+    LSHIFT = 72, RSHIFT = 73, AND = 74, OR = 75, NOT = 76, COL = 77, DCOL = 78, 
+    DOLLAR = 79, RANGE = 80, CLS_TYPE = 81, WS = 82
   };
 
   enum {
@@ -41,11 +42,13 @@ public:
     RuleBooleanLayer = 4, RuleTformula = 5, RuleTemporalFunction = 6, RuleTfunc_arg = 7, 
     RulePlaceholder_domain = 8, RuleDt_next = 9, RuleDt_next_and = 10, RuleDt_ncreps = 11, 
     RuleStartBoolean = 12, RuleStartInt = 13, RuleStartLogic = 14, RuleStartFloat = 15, 
-    RuleStartString = 16, RuleBoolean = 17, RuleBooleanAtom = 18, RuleNumeric = 19, 
-    RuleRange = 20, RuleSm_range = 21, RuleMin_dollar = 22, RuleMax_dollar = 23, 
-    RuleSm_constant = 24, RuleIntAtom = 25, RuleInt_constant = 26, RuleLogicAtom = 27, 
-    RuleLogic_constant = 28, RuleFloatAtom = 29, RuleString = 30, RuleStringAtom = 31, 
-    RuleNonTemporalFunction = 32, RulePfunc_arg = 33, RuleRelop = 34, RuleCls_op = 35
+    RuleStartString = 16, RuleBooleanTernary = 17, RuleNumericTernary = 18, 
+    RuleBoolean = 19, RuleBooleanAtom = 20, RuleNumeric = 21, RuleConcatenation = 22, 
+    RuleConcatItem = 23, RuleRange = 24, RuleSm_range = 25, RuleMin_dollar = 26, 
+    RuleMax_dollar = 27, RuleSm_constant = 28, RuleIntAtom = 29, RuleInt_constant = 30, 
+    RuleLogicAtom = 31, RuleLogic_constant = 32, RuleFloatAtom = 33, RuleString = 34, 
+    RuleStringAtom = 35, RuleNonTemporalFunction = 36, RulePfunc_arg = 37, 
+    RuleRelop = 38, RuleCls_op = 39
   };
 
   explicit temporalParser(antlr4::TokenStream *input);
@@ -99,9 +102,13 @@ public:
   class StartLogicContext;
   class StartFloatContext;
   class StartStringContext;
+  class BooleanTernaryContext;
+  class NumericTernaryContext;
   class BooleanContext;
   class BooleanAtomContext;
   class NumericContext;
+  class ConcatenationContext;
+  class ConcatItemContext;
   class RangeContext;
   class Sm_rangeContext;
   class Min_dollarContext;
@@ -376,8 +383,9 @@ public:
   public:
     StartBooleanContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    BooleanContext *boolean();
     antlr4::tree::TerminalNode *EOF();
+    BooleanContext *boolean();
+    BooleanTernaryContext *booleanTernary();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -390,8 +398,9 @@ public:
   public:
     StartIntContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    NumericContext *numeric();
     antlr4::tree::TerminalNode *EOF();
+    NumericContext *numeric();
+    NumericTernaryContext *numericTernary();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -404,8 +413,9 @@ public:
   public:
     StartLogicContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    NumericContext *numeric();
     antlr4::tree::TerminalNode *EOF();
+    NumericContext *numeric();
+    NumericTernaryContext *numericTernary();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -418,8 +428,9 @@ public:
   public:
     StartFloatContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    NumericContext *numeric();
     antlr4::tree::TerminalNode *EOF();
+    NumericContext *numeric();
+    NumericTernaryContext *numericTernary();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -442,6 +453,43 @@ public:
 
   StartStringContext* startString();
 
+  class  BooleanTernaryContext : public antlr4::ParserRuleContext {
+  public:
+    BooleanTernaryContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<BooleanContext *> boolean();
+    BooleanContext* boolean(size_t i);
+    antlr4::tree::TerminalNode *QUESTION();
+    antlr4::tree::TerminalNode *COL();
+    std::vector<BooleanTernaryContext *> booleanTernary();
+    BooleanTernaryContext* booleanTernary(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  BooleanTernaryContext* booleanTernary();
+
+  class  NumericTernaryContext : public antlr4::ParserRuleContext {
+  public:
+    NumericTernaryContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    BooleanContext *boolean();
+    antlr4::tree::TerminalNode *QUESTION();
+    antlr4::tree::TerminalNode *COL();
+    std::vector<NumericContext *> numeric();
+    NumericContext* numeric(size_t i);
+    std::vector<NumericTernaryContext *> numericTernary();
+    NumericTernaryContext* numericTernary(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  NumericTernaryContext* numericTernary();
+
   class  BooleanContext : public antlr4::ParserRuleContext {
   public:
     antlr4::Token *booleanop = nullptr;
@@ -463,11 +511,14 @@ public:
     RelopContext *relop();
     antlr4::tree::TerminalNode *EQ();
     antlr4::tree::TerminalNode *NEQ();
+    antlr4::tree::TerminalNode *CASE_EQ();
+    antlr4::tree::TerminalNode *CASE_NEQ();
     std::vector<StringContext *> string();
     StringContext* string(size_t i);
     BooleanAtomContext *booleanAtom();
     antlr4::tree::TerminalNode *LROUND();
     antlr4::tree::TerminalNode *RROUND();
+    BooleanTernaryContext *booleanTernary();
     antlr4::tree::TerminalNode *AND();
     antlr4::tree::TerminalNode *OR();
 
@@ -505,8 +556,10 @@ public:
     IntAtomContext *intAtom();
     LogicAtomContext *logicAtom();
     FloatAtomContext *floatAtom();
+    ConcatenationContext *concatenation();
     antlr4::tree::TerminalNode *LROUND();
     antlr4::tree::TerminalNode *RROUND();
+    NumericTernaryContext *numericTernary();
     antlr4::tree::TerminalNode *TIMES();
     antlr4::tree::TerminalNode *DIV();
     antlr4::tree::TerminalNode *PLUS();
@@ -525,6 +578,39 @@ public:
 
   NumericContext* numeric();
   NumericContext* numeric(int precedence);
+  class  ConcatenationContext : public antlr4::ParserRuleContext {
+  public:
+    ConcatenationContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    std::vector<antlr4::tree::TerminalNode *> LCURLY();
+    antlr4::tree::TerminalNode* LCURLY(size_t i);
+    std::vector<ConcatItemContext *> concatItem();
+    ConcatItemContext* concatItem(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> RCURLY();
+    antlr4::tree::TerminalNode* RCURLY(size_t i);
+    antlr4::tree::TerminalNode *UINTEGER();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ConcatenationContext* concatenation();
+
+  class  ConcatItemContext : public antlr4::ParserRuleContext {
+  public:
+    ConcatItemContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    NumericContext *numeric();
+    BooleanAtomContext *booleanAtom();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  ConcatItemContext* concatItem();
+
   class  RangeContext : public antlr4::ParserRuleContext {
   public:
     RangeContext(antlr4::ParserRuleContext *parent, size_t invokingState);
@@ -652,8 +738,9 @@ public:
   public:
     Logic_constantContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *VERILOG_BINARY();
+    antlr4::tree::TerminalNode *VERILOG_BASED();
     antlr4::tree::TerminalNode *UINTEGER();
+    antlr4::tree::TerminalNode *FILL_LITERAL();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

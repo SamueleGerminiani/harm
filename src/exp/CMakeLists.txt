@@ -7,6 +7,7 @@ SET(EXP_SRCS
     src/formula/atom/Variable.cc 
     src/formula/expression/GenericExpression.cc
     src/formula/expression/BitSelector.cc
+    src/formula/expression/Ternary.cc
     src/formula/expression/Substring.cc
     src/formula/expression/SetMembership.cc
     src/formula/expression/TypeCast.cc

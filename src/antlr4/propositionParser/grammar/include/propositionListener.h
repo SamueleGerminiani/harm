@@ -1,5 +1,5 @@
 
-// Generated from proposition.g4 by ANTLR 4.10.1
+// Generated from proposition.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -29,6 +29,12 @@ public:
   virtual void enterStartString(propositionParser::StartStringContext *ctx) = 0;
   virtual void exitStartString(propositionParser::StartStringContext *ctx) = 0;
 
+  virtual void enterBooleanTernary(propositionParser::BooleanTernaryContext *ctx) = 0;
+  virtual void exitBooleanTernary(propositionParser::BooleanTernaryContext *ctx) = 0;
+
+  virtual void enterNumericTernary(propositionParser::NumericTernaryContext *ctx) = 0;
+  virtual void exitNumericTernary(propositionParser::NumericTernaryContext *ctx) = 0;
+
   virtual void enterBoolean(propositionParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(propositionParser::BooleanContext *ctx) = 0;
 
@@ -37,6 +43,12 @@ public:
 
   virtual void enterNumeric(propositionParser::NumericContext *ctx) = 0;
   virtual void exitNumeric(propositionParser::NumericContext *ctx) = 0;
+
+  virtual void enterConcatenation(propositionParser::ConcatenationContext *ctx) = 0;
+  virtual void exitConcatenation(propositionParser::ConcatenationContext *ctx) = 0;
+
+  virtual void enterConcatItem(propositionParser::ConcatItemContext *ctx) = 0;
+  virtual void exitConcatItem(propositionParser::ConcatItemContext *ctx) = 0;
 
   virtual void enterRange(propositionParser::RangeContext *ctx) = 0;
   virtual void exitRange(propositionParser::RangeContext *ctx) = 0;

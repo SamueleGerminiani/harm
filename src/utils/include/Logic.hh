@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/fwd.hpp>
 #include <boost/multiprecision/number.hpp>
@@ -51,6 +52,19 @@ public:
   ///all the 1s in the binary representation are the Zs in the logic, these values are 0s in _int
   ULogic _z;
 };
+
+/// @brief 'l' resized to 'width' bits: truncated, or extended with its sign (x/z included) if
+/// 'signExtend', with zeros otherwise
+Logic resize(const Logic &l, size_t width, bool signExtend);
+
+/// @brief SystemVerilog concatenation {items[0], items[1], ...}: items[0] gives the most
+/// significant bits; the result is unsigned and as wide as the sum of the item widths
+Logic concat(const std::vector<Logic> &items);
+
+/// @brief SystemVerilog case equality (===): true iff the operands are bitwise identical,
+/// including x and z bits, after extending both to the wider width (sign extension if both are
+/// signed, zero extension otherwise)
+bool caseEq(const Logic &lhs, const Logic &rhs);
 
 //the following functions need the result type to handle implicit conversions
 

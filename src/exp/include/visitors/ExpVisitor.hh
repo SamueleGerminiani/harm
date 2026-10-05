@@ -5,6 +5,7 @@
 #include "formula/expression/BitSelector.hh" // IWYU pragma: keep
 #include "formula/expression/GenericExpression.hh" // IWYU pragma: keep
 #include "formula/expression/SetMembership.hh" // IWYU pragma: keep
+#include "formula/expression/Ternary.hh"       // IWYU pragma: keep
 #include "formula/expression/Substring.hh"     // IWYU pragma: keep
 #include "formula/expression/TypeCast.hh"      // IWYU pragma: keep
 #include "formula/function/SVAfunction.hh"     // IWYU pragma: keep

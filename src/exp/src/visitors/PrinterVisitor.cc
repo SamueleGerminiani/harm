@@ -15,6 +15,7 @@
 #include "formula/atom/Constant.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Substring.hh"
@@ -304,6 +305,58 @@ EXP_OPE(LogicGreaterEq)
 EXP_OPE(LogicLess)
 EXP_OPE(LogicLessEq)
 EXP_OPE_BIT_SELECTION(LogicBitSelector)
+EXP_OPE(LogicCaseEq)
+EXP_OPE(LogicCaseNeq)
+
+void PrinterVisitor::visit(expression::LogicConcat &o) {
+  _ope_stack.push(ope::ope::LogicConcat);
+  //print each item on its own, to fold a replication {N{a}} back
+  std::string prefix = _ss.str();
+  std::vector<std::string> parts;
+  for (const auto &item : o.getItems()) {
+    _ss.str("");
+    _ss.clear();
+    item->acceptVisitor(*this);
+    parts.push_back(_ss.str());
+  }
+  _ss.str("");
+  _ss.clear();
+  _ss << prefix;
+  bool replication =
+      parts.size() > 1 &&
+      std::all_of(parts.begin(), parts.end(),
+                  [&parts](const std::string &p) { return p == parts[0]; });
+  _ss << selCol("{", BOOL("{"));
+  if (replication) {
+    _ss << selCol(std::to_string(parts.size()),
+                  VAR(std::to_string(parts.size())))
+        << selCol("{", BOOL("{")) << parts[0] << selCol("}", BOOL("}"));
+  } else {
+    for (size_t i = 0; i < parts.size(); i++) {
+      _ss << (i ? selCol(", ", BOOL(", ")) : "") << parts[i];
+    }
+  }
+  _ss << selCol("}", BOOL("}"));
+  _ope_stack.pop();
+}
+
+//a ternary is always parenthesized, so that the output can be parsed again
+#define TERNARY(NODE)                                                \
+  void PrinterVisitor::visit(expression::NODE &o) {                  \
+    _ope_stack.push(ope::ope::Ternary);                              \
+    _ss << selCol("(", BOOL("("));                                   \
+    o.getCondition()->acceptVisitor(*this);                          \
+    _ss << selCol(" ? ", BOOL(" ? "));                               \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    _ss << selCol(" : ", BOOL(" : "));                               \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+    _ss << selCol(")", BOOL(")"));                                   \
+    _ope_stack.pop();                                                \
+  }
+TERNARY(PropositionTernary)
+TERNARY(IntTernary)
+TERNARY(LogicTernary)
+TERNARY(FloatTernary)
 EXP_OPE(LogicLShift)
 EXP_OPE(LogicRShift)
 TYPE_CAST(LogicToFloat)

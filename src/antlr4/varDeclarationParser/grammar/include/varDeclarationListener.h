@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.10.1
+// Generated from varDeclaration.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -35,6 +35,12 @@ public:
   virtual void enterStartString(varDeclarationParser::StartStringContext *ctx) = 0;
   virtual void exitStartString(varDeclarationParser::StartStringContext *ctx) = 0;
 
+  virtual void enterBooleanTernary(varDeclarationParser::BooleanTernaryContext *ctx) = 0;
+  virtual void exitBooleanTernary(varDeclarationParser::BooleanTernaryContext *ctx) = 0;
+
+  virtual void enterNumericTernary(varDeclarationParser::NumericTernaryContext *ctx) = 0;
+  virtual void exitNumericTernary(varDeclarationParser::NumericTernaryContext *ctx) = 0;
+
   virtual void enterBoolean(varDeclarationParser::BooleanContext *ctx) = 0;
   virtual void exitBoolean(varDeclarationParser::BooleanContext *ctx) = 0;
 
@@ -43,6 +49,12 @@ public:
 
   virtual void enterNumeric(varDeclarationParser::NumericContext *ctx) = 0;
   virtual void exitNumeric(varDeclarationParser::NumericContext *ctx) = 0;
+
+  virtual void enterConcatenation(varDeclarationParser::ConcatenationContext *ctx) = 0;
+  virtual void exitConcatenation(varDeclarationParser::ConcatenationContext *ctx) = 0;
+
+  virtual void enterConcatItem(varDeclarationParser::ConcatItemContext *ctx) = 0;
+  virtual void exitConcatItem(varDeclarationParser::ConcatItemContext *ctx) = 0;
 
   virtual void enterRange(varDeclarationParser::RangeContext *ctx) = 0;
   virtual void exitRange(varDeclarationParser::RangeContext *ctx) = 0;
