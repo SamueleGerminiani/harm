@@ -63,3 +63,27 @@ if(VERILATOR_FOUND AND PYTHON3_FOUND)
 else()
     message(STATUS "Verilator or python3 not found: the verilator_replay validation tests are skipped")
 endif()
+
+# ---- H4: COI contract and fixture corpus (label coi) ---------------------------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME coi_invalid_documents
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/test_invalid.py)
+    set_tests_properties(coi_invalid_documents PROPERTIES LABELS coi)
+    foreach(design counter arbiter fsm hier structs multipath)
+        set(F ${CMAKE_SOURCE_DIR}/tests/input/coi/${design})
+        add_test(NAME coi_valid_${design}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/check_coi.py ${F}/expected_coi.json
+                    --vcd ${F}/trace.vcd --harm $<TARGET_FILE:harm>)
+        set_tests_properties(coi_valid_${design} PROPERTIES LABELS coi)
+        if(VERILATOR_FOUND)
+            add_test(NAME coi_reproduce_${design}
+                COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py reproduce ${F})
+            add_test(NAME coi_influence_${design}
+                COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py influence ${F})
+            add_test(NAME coi_depths_${design}
+                COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py depths ${F})
+            set_tests_properties(coi_reproduce_${design} coi_influence_${design} PROPERTIES LABELS "coi;slow")
+            set_tests_properties(coi_depths_${design} PROPERTIES LABELS "coi;slow;report")
+        endif()
+    endforeach()
+endif()

@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SamueleGerminiani/harm/doc/schemas/coi.v1.json",
+  "title": "HARM cone of influence, version 1",
+  "description": "Structural cones of influence of the signals visible in a trace (H4). Written by harm-coi (H5) or by hand; read by HARM (H6-H9). Depth = number of register crossings from source to target (D-005). Names are relative to meta.vcd_scope and use '::' between sub-scopes, as HARM names VCD signals (D-013).",
+  "type": "object",
+  "required": [
+    "version",
+    "meta",
+    "targets"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": "1"
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "design",
+        "top",
+        "vcd_scope",
+        "vcd_recursion",
+        "clock",
+        "max_depth",
+        "generator"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "design": {
+          "type": "string",
+          "minLength": 1
+        },
+        "top": {
+          "type": "string",
+          "minLength": 1,
+          "description": "the RTL top module the cones are computed in"
+        },
+        "vcd_scope": {
+          "type": "string",
+          "description": "the --vcd-ss scope the names are relative to ('::' separated)"
+        },
+        "vcd_recursion": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "the --vcd-r depth the visible signals assume"
+        },
+        "clock": {
+          "type": "string",
+          "minLength": 1,
+          "description": "the sampling clock: never a source"
+        },
+        "max_depth": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64
+        },
+        "generator": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "targets": {
+      "type": "object",
+      "description": "visible signal name -> its cone",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "sources"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "sig",
+                "depths"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "sig": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "depths": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "description": "every register-crossing count of a path from sig to the target, sorted, unique, <= max_depth; empty only if saturated (sig reaches the target only through paths deeper than max_depth)"
+                },
+                "saturated": {
+                  "type": "boolean",
+                  "description": "true if paths deeper than max_depth exist"
+                },
+                "bits": {
+                  "description": "reserved for per-bit cones (not used in v1)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "unknown": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "visible signals whose cone could not be computed: never treated as out-of-cone"
+    },
+    "predicates": {
+      "type": "array",
+      "description": "RTL predicates (H10)",
+      "items": {
+        "type": "object",
+        "required": [
+          "expr",
+          "origin"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "expr": {
+            "type": "string",
+            "minLength": 1
+          },
+          "origin": {
+            "const": "rtl"
+          },
+          "src": {
+            "type": "string",
+            "description": "file:line"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

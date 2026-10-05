@@ -1,0 +1,18 @@
+design = structs
+top = structs
+vcd_scope = tb::dut
+vcd_recursion = 1
+clock = clk
+max_depth = 3
+
+target x
+target xv
+target m
+# interface bus: registered copies of x and xv
+bus::data <- x @1
+bus::valid <- xv @1
+# struct c: mode follows m; val loads bus.data when bus.valid, holds otherwise
+c::mode <- m @1
+c::val <- bus::data @1
+c::val <- bus::valid @1
+c::val <- c::val @1

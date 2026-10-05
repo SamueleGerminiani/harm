@@ -1,0 +1,105 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "structs",
+    "top": "structs",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 1,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "hand-written",
+      "version": "edges.txt"
+    }
+  },
+  "targets": {
+    "bus::data": {
+      "sources": [
+        {
+          "sig": "x",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "bus::valid": {
+      "sources": [
+        {
+          "sig": "xv",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "c::mode": {
+      "sources": [
+        {
+          "sig": "m",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "c::val": {
+      "sources": [
+        {
+          "sig": "bus::data",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "bus::valid",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "c::val",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "x",
+          "depths": [
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "xv",
+          "depths": [
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "m": {
+      "sources": []
+    },
+    "x": {
+      "sources": []
+    },
+    "xv": {
+      "sources": []
+    }
+  },
+  "unknown": [],
+  "predicates": []
+}

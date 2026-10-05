@@ -84,3 +84,16 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - Constructs not encoded exactly become opaque atoms, keyed by their text. This is sound but incomplete.
   - A timeout or unknown result means "not equivalent".
 - **Z3:** built from source in `third_party/` with HARM's compiler (D-010), behind the CMake option `HARM_WITH_Z3` (default ON).
+
+## D-005: COI depth convention (2026-10-05, H4, approved)
+- **Depth = number of register crossings on a path from source to target.**
+  - 0 means combinational: the source's value now can affect the target now.
+  - d means the source's value d cycles ago can affect the target now.
+- **Depths are counted on traces sampled as HARM samples them:** the values just before each rising edge. That is the Preponed-region view of SVA concurrent assertions; VCD dumps record the end of the time step instead. In practice a register is one cycle behind its inputs (`q <= a` gives `G(a -> X q)`).
+- All depths are listed up to `max_depth`. A register's own feedback puts it in its own cone at depths 1, 2, ….
+- `saturated: true` marks a source with paths deeper than `max_depth`.
+
+## D-013: COI sources and targets (2026-10-05, H4, approved)
+- **Targets:** every signal visible in the trace under the recorded VCD scope.
+- **Sources:** visible signals only. Paths through invisible nets are followed through.
+- The clock is never a source; reset is an ordinary source.

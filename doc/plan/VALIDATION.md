@@ -124,3 +124,29 @@ They were written first and committed failing in `e8237a9`, with the hand labels
 
 ### Pending
 - The Linux run of all suites, and the USM-T cross-check.
+
+## H4: COI contract and RTL fixture corpus (2026-10-05, macOS arm64, Verilator 5.034)
+
+### Contract
+- The schema `doc/schemas/coi.v1.json` (JSON Schema 2020-12) plus `tests/coi/check_coi.py`.
+- **Change from the plan:** `depths` may be empty when `saturated` is true, for a source that reaches the target only through paths deeper than `max_depth`. Without this, such a source could not be listed and would look out of the cone.
+- **A2:** 13 documents checked, 1 valid and 12 invalid. Each invalid one is rejected for its expected reason.
+
+### Fixtures
+`counter`, `arbiter`, `fsm`, `hier`, `structs`, `multipath`.
+- The direct edges are written by hand from the RTL (`edges.txt`); the closure is mechanical (`closure.py`).
+- **A1:** all 6 `expected_coi.json` are valid. Their names are exactly the signals HARM sees in the committed `trace.vcd` at the recorded `--vcd-ss` and `--vcd-r`, as reported by HARM itself through `--generate-config`.
+- **A3:** fresh builds reproduce all 6 traces.
+
+### Independent validation by simulation
+- **HARM's sampling convention** (confirmed by measurement: HARM mines `G(a -> X q)` for `q <= a`). HARM takes the values in effect just before each rising edge. The reason: simulators dump VCD values from the end of the time step, after nonblocking assignments, while SVA concurrent assertions sample their values in the Preponed region, i.e. before the edge's updates. Sampling before the edge makes HARM see what an assertion would see in simulation. `perturb.py` samples the same way. A first version sampled just *after* the edge; every input-to-register depth then looked one cycle too short. The sampler was fixed and checked on that trace.
+- **A4, non-influence:** 120 (source, excluded target) pairs checked across the 6 designs, **0 violations**. Only the parameters `N` and `W` can't be forced.
+  - **Sensitivity:** in a copy of `multipath`, deleting the edge `z <- rb` (or the whole `z` entry) is caught: forcing `b` or `rb` changes `z`.
+  - The script also checks visible signals that `coi.json` omits.
+- **A5, depth evidence:** **102 of 105** claimed (source, target, depth) observed with one-cycle pulses (5 seeds × 4 pulse cycles × 2 values). The 3 not observed are structural paths whose effect can't, or rarely can, be excited, which a structural cone allows:
+  - `fsm`, `finished <- go @1`: `go` only switches IDLE/RUN, and `finished` is 0 in both. The effect is impossible.
+  - `counter`, `wrap <- cnt @3` and `wrap <- rst @3`: not excited by these pulses.
+
+### Suites
+- `ctest -L coi`: 25/25.
+- `ctest -LE "determinism|coi"`: 65/65.

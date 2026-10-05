@@ -1,0 +1,18 @@
+design = fsm
+top = fsm
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3
+
+target rst
+target go
+target stop
+# state: next state from state, go, stop; reset
+state <- state @1
+state <- go @1
+state <- stop @1
+state <- rst @1
+# outputs decoded from the state
+busy <- state @0
+finished <- state @0
