@@ -1,0 +1,16 @@
+design = multipath
+top = multipath
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3
+
+target a
+target b
+r1 <- a @1
+r2 <- r1 @1
+rb <- b @1
+# y = a ^ r2: 'a' directly (depth 0) and through r1, r2 (depth 2)
+y <- a @0
+y <- r2 @0
+z <- rb @0

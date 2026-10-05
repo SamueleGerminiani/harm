@@ -1,0 +1,150 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "fsm",
+    "top": "fsm",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "hand-written",
+      "version": "edges.txt"
+    }
+  },
+  "targets": {
+    "busy": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "finished": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "go": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    },
+    "state": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "stop": {
+      "sources": []
+    }
+  },
+  "unknown": [],
+  "predicates": []
+}
