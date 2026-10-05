@@ -27,6 +27,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H6 | `dev` @ `1e3b6f6175409ae8d103ceb95a466f864cd0bc78` | yes | — |
 | H3 | `dev` @ `53a4d8fbaf45142eed529e427d061beb20dfa499` | yes | — |
 | H1c | `dev` @ `745bc9f0a852027fb1f42160354aaabfc7544b8f` | yes | — |
+| H7 | `dev` @ `942b583a15eb4b55c4674127a41c331102dc216f` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -141,7 +142,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] B3 ablation:** the same hints with and without `<coi>`, comparing the ranking of known-good assertions.
 - **Note:** a `coi.json` must use the same scope and recursion as the adapter's `--vcd-ss`/`--vcd-r` (see H4). HARM refuses a coi file naming signals that are not in the trace, and warns if the scope differs.
 
-### H7: COI filter mode (implemented on `ms/H7-coi-filter`, awaiting review)
+### H7: COI filter mode (on `dev`)
 - `<coi file="…" mode="filter"/>` never tries antecedent propositions outside the consequent's cone.
   - On the fixtures, it cuts permutations by 48–90% and the output by 39–82%.
   - `--dump-assertion-info` reports the search space under `coiFilter`.
