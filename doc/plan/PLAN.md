@@ -294,7 +294,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H3b | Atom-implication premises | todo (optional) |
 | H4 | COI contract and RTL fixtures | done |
 | H5 | `harm-coi` generator | todo |
-| H6 | COI rank mode | awaiting-review |
+| H6 | COI rank mode | done |
 | H7 | COI filter mode, signal level | todo |
 | H8 | Depth-aware COI filter | todo |
 | H9 | Out-of-cone report | todo |
