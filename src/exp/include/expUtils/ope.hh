@@ -672,6 +672,44 @@ inline bool hasHigherPrecedence(const temporalOpe &o1,
                                 const temporalOpe &o2) {
   return opeToPrecedenceClass(o1) < opeToPrecedenceClass(o2);
 }
+/// IEEE 1800-2017 Table 16-3 for the property operators HARM prints (lower binds tighter); it
+/// differs from HARM's own (LTL) precedence: in SVA, 'until' binds looser than 'and'/'or', and
+/// 's_eventually' (like 'always') looser than everything (H1c)
+inline int svaPrecedenceClass(temporalOpe o) {
+  switch (o) {
+  case PropertyNot:
+  case PropertyNext:
+    return 0;
+  case PropertyAnd:
+    return 1;
+  case PropertyOr:
+    return 2;
+  case PropertyUntil:
+  case PropertyRelease:
+    return 3;
+  case PropertyImplication:
+    return 4;
+  case PropertyEventually:
+  case PropertyAlways:
+    return 5;
+  default:
+    return -1; // sequences and booleans bind tighter than any property operator
+  }
+}
+/// true if, printed in SVA, a 'child' property under 'parent' needs brackets
+inline bool svaNeedsBrackets(temporalOpe parent, temporalOpe child) {
+  if (parent == TemporalNoOp || parent == PropertyAlways ||
+      svaPrecedenceClass(parent) < 0 || svaPrecedenceClass(child) < 0) {
+    return false;
+  }
+  if (child == PropertyEventually) {
+    // a prefix operator with the lowest precedence extends to the right: wrap it unless it
+    // is the whole consequent
+    return parent != PropertyImplication;
+  }
+  return svaPrecedenceClass(parent) < svaPrecedenceClass(child);
+}
+
 inline bool isPropertyOpe(const temporalOpe &o) {
   return o == PropertyAlways || o == PropertyEventually ||
          o == PropertyNext || o == PropertyUntil ||

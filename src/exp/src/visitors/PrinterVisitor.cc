@@ -460,8 +460,17 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
                                                                      \
     bool putBrakets =                                                \
         (items.size() > 1 &&                                         \
-         hasHigherPrecedence(parent_op, ope::temporalOpe::NODE)) ||  \
+         (hasHigherPrecedence(parent_op, ope::temporalOpe::NODE) ||  \
+          (_lang == Language::SVA &&                                 \
+           svaNeedsBrackets(parent_op, ope::temporalOpe::NODE)))) || \
         ope::temporalOpe::NODE == ope::temporalOpe::PropertyAlways;  \
+    /* SVA: a unary operator of low precedence is wrapped whole */   \
+    bool wrapSelf = items.size() == 1 && _lang == Language::SVA &&   \
+                    svaNeedsBrackets(parent_op, ope::temporalOpe::NODE); \
+    if (wrapSelf) {                                                  \
+      _ss << selCol("(", chooseTemporalOpColor(                      \
+                             "(", ope::temporalOpe::NODE));          \
+    }                                                                \
                                                                      \
     if (items.size() > 1) {                                          \
       bool leftRequiresBrackets = false;                             \
@@ -515,6 +524,10 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     items.back()->acceptVisitor(*this);                              \
                                                                      \
     if (putBrakets) {                                                \
+      _ss << selCol(                                                 \
+          ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
+    }                                                                \
+    if (wrapSelf) {                                                  \
       _ss << selCol(                                                 \
           ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
     }                                                                \
