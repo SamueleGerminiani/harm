@@ -63,8 +63,12 @@ extern bool dumpAssSplitContexts;
 extern bool keepVacAss;
 ///--skip-invalid-props
 extern bool skipInvalidProps;
-///--reduce: "syntactic" or "equiv"
+///--reduce: "syntactic", "equiv" or "implies"
 extern std::string reduce;
+///--keep: "stronger", "weaker" or "ranked" (with --reduce implies)
+extern std::string keep;
+///--dump-implications
+extern std::string dumpImplications;
 ///--dump-assertion-info
 extern std::string dumpAssertionInfo;
 ///--dump-vac-ass

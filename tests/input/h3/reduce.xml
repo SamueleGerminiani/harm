@@ -1,0 +1,17 @@
+<harm>
+    <!-- H3, acceptance test A3. Trace reduce.csv: c = a || d, b unrelated (b -> c fails at row 2).
+         Hand-derived mined assertions (frequency = atct/traceLength):
+           G(a -> c) 0.5    G(d -> c) 0.5
+           G(a && b -> c) 0.25   G(a && d -> c) 0.25   G(b && d -> c) 0.25
+         With reduce=implies (keep stronger): the three conjunction variants are implied by
+         G(a -> c) or G(d -> c) and are dropped. -->
+    <context name="default">
+        <prop exp="a" loc="a"/>
+        <prop exp="b" loc="a"/>
+        <prop exp="d" loc="a"/>
+        <prop exp="c" loc="c"/>
+        <template exp="G(P0 -> P1)"/>
+        <template exp="G(P0 &amp;&amp; P1 -> P2)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

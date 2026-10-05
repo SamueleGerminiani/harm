@@ -109,3 +109,13 @@ if(PYTHON3_FOUND)
                 --conf ${H6}/multipath_rank.xml)
     set_tests_properties(h6_assertion_info PROPERTIES LABELS regression)
 endif()
+
+# ---- H3: --dump-implications ----------------------------------------------------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h3_dump_implications
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_implications.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h3/reduce_implications_expected.txt
+                --csv ${CMAKE_SOURCE_DIR}/tests/input/h3/reduce.csv
+                --conf ${CMAKE_SOURCE_DIR}/tests/input/h3/reduce.xml)
+    set_tests_properties(h3_dump_implications PROPERTIES LABELS regression)
+endif()

@@ -614,10 +614,20 @@ Harm produces three main types of textual outputs:
 * **`--dump-assertion-info <FILE>`**
     Write, for every kept assertion, a JSON record with its context, text, metric values (contingency table, `complexity`, final score, and the `<coi>` metrics when available) and its propositions (text, antecedent or consequent, cycle offset, variables, `origin`).
 
-* **`--reduce <syntactic|equiv>`**
+* **`--reduce <syntactic|equiv|implies>`**
     How redundant assertions are removed.
     * `syntactic` (default): assertions with the same text (ignoring spaces and brackets) and the same contingency table.
     * `equiv`: assertions are also merged when they differ only in **equivalent propositions**, e.g. `cnt == 4'd9` vs `4'd9 == cnt`. Equivalence is proved with Z3 under HARM's semantics, including `x`/`z`: `a != b` and `!(a == b)` are *not* merged, because they differ when `a` has `x` bits. A timeout or an unknown result never merges anything. Of a merged group, the assertion with the smallest text is kept.
+    * `implies`: everything `equiv` does. In addition, an assertion is dropped when another kept assertion **implies** it, e.g. `G({a && b} -> c)` is implied by `G(a -> c)`.
+      * Propositions keep their boolean structure (`&&`, `||`, `!`); the comparisons inside them are compared with Z3, as in `equiv`.
+      * An implication is claimed only if it holds both over infinite words (proved with Spot, which is what SVA and formal tools need) and on every finite trace as HARM evaluates it, where an assertion still pending at the end of the trace holds.
+      * Only **safety** assertions of the form `G(antecedent -> consequent)` with a fixed-length antecedent are reduced; the others (`F`, `[*]`, `##[m:n]`, …) are always kept.
+      * Only assertions sharing a proposition are compared.
+* **`--keep <stronger|weaker|ranked>`** (with `--reduce implies`)
+    Which side of an implication is kept: `stronger` (default) keeps the implying assertion, `weaker` keeps the implied one, and `ranked` keeps the better ranked. Equivalent assertions keep the smallest text.
+
+* **`--dump-implications <FILE>`** (with `--reduce implies`)
+    Write a JSON record for every dropped assertion, all contexts in one file: `{"version": "1", "implications": [{"context", "dropped", "kept": [...], "relation"}]}`, where `kept` lists the kept assertions that imply it (or that it implies, with `--keep weaker`), and `relation` is `implied`, `implies` or `equivalent`.
 
 * **`--min-frank <float>`**
     Minimum final ranking score (0.0 to 1.0). All assertions below this level are discarded.

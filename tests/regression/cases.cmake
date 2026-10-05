@@ -42,3 +42,9 @@ set(COI ${CMAKE_SOURCE_DIR}/tests/input/coi)
 set(H6 ${CMAKE_SOURCE_DIR}/tests/input/h6)
 # A4: COI rank mode on the multipath fixture (expected output by hand)
 harm_case(h6_multipath_rank ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${H6}/multipath_rank.xml)
+
+# ---- H3 ------------------------------------------------------------------------------------------
+set(H3 ${CMAKE_SOURCE_DIR}/tests/input/h3)
+# A3: implied conjunction variants are dropped only with --reduce implies (expected output by hand)
+harm_case(h3_reduce_syntactic ARGS --csv ${H3}/reduce.csv --conf ${H3}/reduce.xml)
+harm_case(h3_reduce_implies ARGS --csv ${H3}/reduce.csv --conf ${H3}/reduce.xml --reduce implies)

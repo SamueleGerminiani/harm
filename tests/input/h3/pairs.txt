@@ -1,0 +1,49 @@
+# H3, acceptance test A1: hand-labelled assertion pairs (atoms a, b, c, d: bool; cnt: logic [3:0]).
+# Labels are written from LTL semantics before any implementation (D-004, D-008).
+#   EQUIVALENT   A <=> B          A_IMPLIES_B  A => B, not B => A
+#   B_IMPLIES_A  B => A, not A    NONE         neither (or not provable without H3b)
+#   SKIPPED      at least one formula is not syntactic safety: never reduced
+# Format: <label> | <A> | <B> | <reason>   (fields separated by " | ": write bitwise OR without spaces)
+#
+# ---- same property written differently
+EQUIVALENT | G(a -> X b) | G({a} |=> b) | |=> is -> X
+EQUIVALENT | G({a ##1 b} |-> c) | G({a ; b} |-> c) | ; is ##1
+EQUIVALENT | G(a -> b) | G(!b -> !a) | contrapositive
+EQUIVALENT | G(a && b -> c) | G(b && a -> c) | commutativity
+EQUIVALENT | G({a} |-> X X b) | G(a |-> ##2 b) | ##2 is X X
+EQUIVALENT | G(cnt == 4'd9 -> b) | G(4'd9 == cnt -> b) | equivalent atoms (Z3)
+EQUIVALENT | G(cnt >= 4'd9 -> b) | G(cnt > 4'd8 -> b) | equivalent atoms for a 4-bit unsigned (Z3)
+EQUIVALENT | G(a) | G(true -> a) | invariant
+EQUIVALENT | G(a -> b) | G(a -> b) | identical
+EQUIVALENT | G({a ##2 b} |-> c) | G({a ##1 true ##1 b} |-> c) | ##2 is ##1 true ##1
+EQUIVALENT | G({a : b} |-> c) | G({a && b} |-> c) | fusion of one-cycle sequences
+EQUIVALENT | G(a -> X !b) | G(a -> !X b) | X is self-dual in LTL
+# ---- strengthening and weakening
+A_IMPLIES_B | G(a -> b) | G(a && c -> b) | a weaker antecedent is a stronger assertion
+A_IMPLIES_B | G(a -> b && c) | G(a -> b) | stronger consequent
+A_IMPLIES_B | G(a -> X b) | G({a ##1 c} |-> b) | extra condition in the antecedent
+A_IMPLIES_B | G(b) | G(a -> b) | invariant implies any implication with that consequent
+A_IMPLIES_B | G(a -> b) | G(a -> b || c) | weaker consequent
+A_IMPLIES_B | G({a ##1 b} |-> c) | G({a ##1 b && d} |-> c) | extra conjunct in the antecedent sequence
+A_IMPLIES_B | G(a -> X b) | G(a && c -> X b) | extra conjunct
+A_IMPLIES_B | G(a -> b W c) | G(a -> b W (c || d)) | weaker release condition
+A_IMPLIES_B | G(a -> b R c) | G(a -> c) | b R c requires c now
+A_IMPLIES_B | G(a -> b W c) | G(a -> b || c) | b W c requires b or c now
+A_IMPLIES_B | G(!a) | G(a -> b) | a never holds: the implication is vacuous
+A_IMPLIES_B | G(cnt == 4'd9 -> b) | G(cnt == 4'd9 && c -> b) | canonical atom plus a conjunct
+# ---- the reverse direction
+B_IMPLIES_A | G(a && c -> b) | G(a -> b) | reverse of the first strengthening
+B_IMPLIES_A | G(a -> b) | G(b) | reverse
+B_IMPLIES_A | G(a -> b || c) | G(a -> b) | reverse
+B_IMPLIES_A | G({a && b ##1 c} |-> X d) | G({a ##1 c} |-> X d) | B has the weaker antecedent (DT shape)
+B_IMPLIES_A | G({a ##1 b} |-> X (c || d)) | G({a ##1 b} |-> X c) | X c implies X (c || d)
+# ---- unrelated
+NONE | G(a -> b) | G(a -> b W c) | b now does not keep b; b W c can hold through c alone
+NONE | G(a -> X X b) | G(a -> X b) | different delays
+NONE | G(a -> b) | G(a -> X b) | different delays
+NONE | G(a -> b) | G(c -> b) | different antecedents
+NONE | G(a -> X b) | G(a -> X X b) | different delays
+NONE | G(cnt > 4'd9 -> b) | G(cnt > 4'd8 -> b) | needs implication between atoms (H3b): not found by H3
+# ---- liveness: never reduced
+SKIPPED | G(a -> F b) | G(a -> X b) | F is not safety
+SKIPPED | G(a -> F b) | G(a -> b) | F is not safety (HARM has no strong until)
