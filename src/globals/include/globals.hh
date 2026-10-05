@@ -61,6 +61,8 @@ extern std::string dumpPath;
 extern bool dumpAssSplitContexts;
 ///--keep-vac-ass
 extern bool keepVacAss;
+///--skip-invalid-props
+extern bool skipInvalidProps;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass

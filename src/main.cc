@@ -276,6 +276,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("keep-vac-ass")) {
     clc::keepVacAss = 1;
   }
+  if (result.count("skip-invalid-props")) {
+    clc::skipInvalidProps = true;
+  }
 
   if (result.count("dump-trace-as-csv")) {
     clc::dumpTraceAsCSV =

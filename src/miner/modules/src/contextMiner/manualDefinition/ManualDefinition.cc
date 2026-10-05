@@ -457,7 +457,18 @@ void ManualDefinition::mineContexts(
       }
       auto domains = parseDomain<0>(locStr);
 
-      PropositionPtr p = hparser::parseProposition(exp, trace);
+      PropositionPtr p = nullptr;
+      if (clc::skipInvalidProps) {
+        std::string error;
+        p = hparser::tryParseProposition(exp, trace, error);
+        if (p == nullptr) {
+          messageWarning("Invalid proposition skipped: '" + exp +
+                         "'\n\t" + error);
+          continue;
+        }
+      } else {
+        p = hparser::parseProposition(exp, trace);
+      }
       p->enableCache();
       for (auto &[id, dontExpand] : domains) {
         //dontExpand is not used for non-numerics
@@ -505,7 +516,19 @@ void ManualDefinition::mineContexts(
         auto domains = parseDomain<1>(locStr);
 
         // use the proposition parser to parse the numeric expression, because we do not know the actual type of the numeric expression
-        PropositionPtr np = hparser::parseProposition(exp, trace);
+        PropositionPtr np = nullptr;
+        if (clc::skipInvalidProps) {
+          std::string error;
+          np = hparser::tryParseProposition(exp, trace, error);
+          if (np == nullptr) {
+            messageWarning("Invalid proposition skipped: '" + exp +
+                           "' (numeric)\n\t" + error);
+            pb.increment(0);
+            continue;
+          }
+        } else {
+          np = hparser::parseProposition(exp, trace);
+        }
 
         messageErrorIf(
             std::dynamic_pointer_cast<LogicToBool>(np) == nullptr &&

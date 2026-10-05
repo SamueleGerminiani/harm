@@ -35,13 +35,20 @@ using namespace expression;
 
 namespace {
 /// edit rules are written against HARM's SystemVerilog printing before D-002 (true, ::,
-/// nexttime): keep matching them against that printing
+/// nexttime): keep matching them against that printing. They match the property itself, so the
+/// --sva-assert wrapper (which names the clock, not always a trace variable) is not printed.
 struct LegacySvaPrinting {
   bool _previous;
-  LegacySvaPrinting() : _previous(clc::legacySvaPrinting) {
+  bool _previousSvaAssert;
+  LegacySvaPrinting()
+      : _previous(clc::legacySvaPrinting), _previousSvaAssert(clc::svaAssert) {
     clc::legacySvaPrinting = true;
+    clc::svaAssert = false;
   }
-  ~LegacySvaPrinting() { clc::legacySvaPrinting = _previous; }
+  ~LegacySvaPrinting() {
+    clc::legacySvaPrinting = _previous;
+    clc::svaAssert = _previousSvaAssert;
+  }
 };
 } // namespace
 
