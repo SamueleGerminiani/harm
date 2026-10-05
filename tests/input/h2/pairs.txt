@@ -1,0 +1,75 @@
+# H2, acceptance test A2: hand-labelled proposition pairs, under HARM's semantics (D-011): a
+# comparison with an x/z operand is false. Variables: a4, b4 (logic [3:0]), c8 (logic [7:0]),
+# e1 (logic, 1 bit), k (int), f (float), flag (bool), s (string).
+# Format: <EQ|NEQ> | <p1> | <p2> | <reason>
+#   EQ  : the pair must be proved equivalent (Z3 must find it, not only "not refute" it)
+#   NEQ : the pair must NOT be reported equivalent
+#
+# ---- re-spelled constants
+EQ  | a4 == 4'd9 | a4 == 4'b1001 | same constant
+EQ  | a4 == 4'h9 | a4 == 4'b1001 | same constant
+EQ  | c8 == 8'hFF | c8 == '1 | fill literal
+EQ  | c8 != 8'h00 | c8 != '0 | fill literal
+EQ  | a4 == 4'b0001 | a4 == 'b1 | unsized 'b1 is 1 bit, zero-extended in the comparison
+NEQ | a4 == 4'd9 | a4 == 4'd8 | different constants
+# ---- operand order and operator duality without negation
+EQ  | a4 < b4 | b4 > a4 | swapped operands
+EQ  | a4 <= b4 | b4 >= a4 | swapped operands
+EQ  | a4 == b4 | b4 == a4 | symmetric
+EQ  | a4 != b4 | b4 != a4 | symmetric
+# ---- negation across comparisons: equivalent only without x/z (HARM: comparison with x/z is false)
+NEQ | !(a4 == b4) | a4 != b4 | both operands may hold x: !(false) = true but != is false
+NEQ | !(a4 < b4) | a4 >= b4 | same reason
+NEQ | !(c8 > 8'd3) | c8 <= 8'd3 | c8 may hold x
+EQ  | !(k == 3) | k != 3 | int is 2-valued
+EQ  | !(k < 3) | k >= 3 | int is 2-valued
+EQ  | !(flag) | flag == 0 | bool is 2-valued
+# ---- boolean algebra over propositions (propositions are 2-valued)
+EQ  | (a4 == 4'd1) && (b4 == 4'd2) | (b4 == 4'd2) && (a4 == 4'd1) | commutativity
+EQ  | !((a4 == 4'd1) || (b4 == 4'd2)) | !(a4 == 4'd1) && !(b4 == 4'd2) | De Morgan on propositions
+EQ  | !(!(a4 < b4)) | a4 < b4 | double negation
+EQ  | (a4 == 4'd1) || (a4 == 4'd1) | a4 == 4'd1 | idempotence
+EQ  | (a4 == 4'd1) && ((a4 == 4'd1) || (b4 == 4'd2)) | a4 == 4'd1 | absorption
+NEQ | (a4 == 4'd1) && (b4 == 4'd2) | (a4 == 4'd1) || (b4 == 4'd2) | and vs or
+# ---- x/z-sensitive equalities
+EQ  | a4 == 4'd1 | (a4 === 4'd1) | == with a known constant is true only if a4 has no x/z and equals it
+NEQ | a4 == b4 | a4 === b4 | both all-x: == false, === true
+NEQ | a4 !== b4 | a4 != b4 | differ when an x/z is present
+EQ  | a4 === 4'bxxxx | !(a4 !== 4'bxxxx) | === and !== are exact complements
+NEQ | a4 === 4'bx000 | a4 === 4'bz000 | x and z are different values
+EQ  | e1 === 1'bx | !(e1 === 1'b0) && !(e1 === 1'b1) && !(e1 === 1'bz) | the four values of a bit
+EQ  | e1 | e1 == 1'b1 | a logic used as a boolean tests the value bits only (x/z count as 0), as e1 == 1'b1
+# ---- bitwise operators with x propagation
+EQ  | (a4 & 4'b0000) == 4'b0000 | 1'b1 == 1'b1 | 0 & x = 0, so the result is always 0
+NEQ | (a4 | 4'b0000) == a4 | 1'b1 == 1'b1 | false when a4 has x (comparison with x)
+EQ  | (a4 | 4'b1111) == 4'b1111 | 1'b1 == 1'b1 | 1 | x = 1
+NEQ | (a4 ^ a4) == 4'b0000 | 1'b1 == 1'b1 | x ^ x = x
+EQ  | (a4 & b4) == (b4 & a4) | (b4 & a4) == (a4 & b4) | commutativity of & and ==
+NEQ | ~(~a4) == a4 | 1'b1 == 1'b1 | false when a4 has x
+NEQ | ~(~a4) === a4 | (a4 === a4) | ~ turns z into x, so ~~z = x
+# ---- arithmetic: any x/z operand gives a 1-bit x
+EQ  | (a4 + 4'd0) == a4 | (a4 === a4) && (a4 == a4) | equal when 2-valued; false with x on both sides
+EQ  | (a4 + 4'd1) == 4'd0 | a4 == 4'd15 | the 4-bit sum wraps; with x both sides are false
+EQ  | (c8 - c8) == 8'd0 | c8 == c8 | 2-valued: 0; with x: both false
+# ---- concatenation, replication, bit selection, ternary
+EQ  | {a4, b4} == 8'h12 | (a4 == 4'h1) && (b4 == 4'h2) | concatenation splits
+EQ  | {2{a4}} == {a4, a4} | a4 == a4 | replication
+EQ  | c8[3:0] == 4'd5 | (c8 & 8'h0F) == 8'h05 | slice vs mask (both false with x in the low nibble; with x only in the high nibble the mask keeps 0 & x = 0)
+NEQ | c8[3:0] == 4'd5 | c8 == 8'h05 | high nibble ignored on the left
+EQ  | ((a4 === 4'd0) ? b4 : a4) == 4'd3 | ((a4 === 4'd0) && (b4 == 4'd3)) || (!(a4 === 4'd0) && (a4 == 4'd3)) | ternary as a case split
+EQ  | (flag ? (a4 == 4'd1) : (a4 == 4'd2)) | (flag && (a4 == 4'd1)) || (!flag && (a4 == 4'd2)) | boolean ternary
+# ---- set membership
+EQ  | a4 inside {4'd1, 4'd2} | (a4 == 4'd1) || (a4 == 4'd2) | inside as a disjunction (same x rule)
+EQ  | a4 inside {[4'd2:4'd4]} | (a4 >= 4'd2) && (a4 <= 4'd4) | range
+NEQ | a4 inside {4'd1} | a4 == 4'd2 | different sets
+# ---- int and float
+NEQ | k + 1 > 3 | k > 2 | 64-bit overflow: k = INT64_MAX wraps
+EQ  | f > 1.5 | 1.5 < f | float comparison swap
+NEQ | f > 1.5 | !(f <= 1.5) | NaN is neither <= nor >
+# ---- temporal functions are opaque atoms: only syntactic identity can be proved
+EQ  | $past(a4, 1) == 4'd1 | $past(a4, 1) == 4'b0001 | same atom, re-spelled constant
+NEQ | $past(a4, 1) == 4'd1 | a4 == 4'd1 | different instants
+NEQ | $stable(a4) | $past(a4, 1) == a4 | opaque atom vs its definition: not provable (incomplete, sound)
+# ---- strings are opaque
+EQ  | s == "abc" | s == "abc" | identical text
+NEQ | s == "abc" | s == "abd" | different constants

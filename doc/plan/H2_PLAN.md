@@ -1,6 +1,6 @@
 # H2 plan: Z3 back end and proposition canonicalisation
 
-*Status: proposed 2026-10-05, awaiting approval. Branch: `ms/H2-z3` (from `dev` @ H1). Effort: **4–5 d**, revised up from 3–4 d in PLAN.md (see F1).*
+*Status: approved 2026-10-05 (D-003 exact 4-valued; Z3 in third_party), in progress. Branch: `ms/H2-z3` (from `dev` @ H1). Effort: **4–5 d**, revised up from 3–4 d in PLAN.md (see F1).*
 
 ## Goal
 Decide with Z3 when two propositions are **equivalent under HARM's semantics**, and give equivalent propositions one canonical token. H3 uses the tokens to abstract assertions for Spot. In H2 they let the existing redundancy filter merge assertions that differ only in how a proposition is written. Examples:

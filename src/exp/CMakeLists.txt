@@ -24,6 +24,7 @@ SET(EXP_SRCS
     src/visitors/TraceChangerVisitor.cc
     #utils
     src/expUtils/expUtils.cc
+    src/expUtils/smtEquivalence.cc
     )
 
 

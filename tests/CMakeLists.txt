@@ -30,6 +30,7 @@ addTest("svaParserPrinterTests" ./svaParserPrinterTests.cc )
 addTest("PropositionOracleTest" ./propositionOracleTests.cc )
 addTest("PropositionLanguageTest" ./propositionLanguageTests.cc )
 addTest("SvaOutputTest" ./svaOutputTests.cc )
+addTest("Z3EquivalenceTest" ./z3EquivalenceTests.cc )
 
 
 add_subdirectory(regression)
