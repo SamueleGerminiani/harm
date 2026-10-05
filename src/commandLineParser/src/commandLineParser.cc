@@ -68,6 +68,26 @@ options.add_options()
       std::cout << options.help({"", "Group"}) << std::endl;
       exit(0);
     }
+
+    //usage
+    if (((result.count("vcd") == 1 || result.count("vcd-dir") == 1) &&
+         result.count("clk") == 0) ||
+        (result.count("vcd") == 0 && result.count("vcd-dir") == 0 &&
+         result.count("csv") == 0 && result.count("csv-dir") == 0) ||
+        (result.count("conf") == 0 &&
+         result.count("dump-trace-as-csv") == 0)) {
+
+      std::cout << "Usage:\n";
+      std::cout << "vcd input --> harm [--vcd <vcdFile> | --vcd-dir "
+                   "<dirPath>] --clk "
+                   "<clkSignal> --conf <xmlConfigFile> "
+                   "[<OptionalArguments...>]\n";
+      std::cout << "csv input --> harm [--csv <csvFile> | --csv-dir "
+                   "<dirPath>] "
+                   "--conf <xmlConfigFile> [<OptionalArguments...>]"
+                << "\n";
+      exit(0);
+    }
     //errors
     messageErrorIf(result.count("vcd-unroll") &&
                        (result.count("vcd-r")),
@@ -90,26 +110,6 @@ options.add_options()
         result.count("split-logic") &&
             !result.count("generate-config"),
         "--split-logic must be used with --generate-config");
-
-    //usage
-    if (((result.count("vcd") == 1 || result.count("vcd-dir") == 1) &&
-         result.count("clk") == 0) ||
-        (result.count("vcd") == 0 && result.count("vcd-dir") == 0 &&
-         result.count("csv") == 0 && result.count("csv-dir") == 0) ||
-        (result.count("conf") == 0 &&
-         result.count("dump-trace-as-csv") == 0)) {
-
-      std::cout << "Usage:\n";
-      std::cout << "vcd input --> harm [--vcd <vcdFile> | --vcd-dir "
-                   "<dirPath>] --clk "
-                   "<clkSignal> --conf <xmlConfigFile> "
-                   "[<OptionalArguments...>]\n";
-      std::cout << "csv input --> harm [--csv <csvFile> | --csv-dir "
-                   "<dirPath>] "
-                   "--conf <xmlConfigFile> [<OptionalArguments...>]"
-                << "\n";
-      exit(0);
-    }
 
     return result;
 
