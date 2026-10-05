@@ -660,6 +660,18 @@ Permutator::PermMatrix::~PermMatrix() {
   }
 }
 
+void Permutator::PermMatrix::keepRows(const std::vector<bool> &keep) {
+  size_t n = 0;
+  for (size_t i = 0; i < _nRows; ++i) {
+    if (keep[i]) {
+      _matrix[n++] = _matrix[i];
+    } else {
+      delete[] _matrix[i];
+    }
+  }
+  _nRows = n;
+}
+
 void Permutator::PermMatrix::removeDuplicateRows() {
   auto hashFunc = [&](const std::vector<int> &vec) -> size_t {
     std::hash<int> hash;

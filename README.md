@@ -466,6 +466,16 @@ In `rank` mode nothing is pruned. Three metric variables become available for `<
 
 An assertion without antecedent propositions (e.g. an invariant) scores 1. Example: `<sort name="structure" exp="coiDepthFit"/>`. See `doc/plan/DECISIONS.md` (D-014) for the exact definitions.
 
+**`mode="filter"`** prunes the search instead of ranking, GoldMine-style.
+- **What is pruned:** for each consequent, antecedent propositions outside its cone are never tried.
+  - Permutations of plain templates that use such a proposition are removed before mining.
+  - Decision-tree candidates are restricted to the consequent's cone.
+- **What counts as in the cone:** the same rule as `coiFrac`, so every assertion has `coiFrac` = 1. All variables of the proposition must be in the cone. Unknown signals count as in the cone. Propositions without variables, and placeholders shared by the antecedent and the consequent, are kept.
+- **The other metrics** (`coiDepthFit`, `coiUnknown`) are still computed and can be used to sort.
+- **Statistics:** HARM reports the search space before and after pruning, and `--dump-assertion-info` records it under `coiFilter`.
+- **Assumes the RTL is correct.** Behaviour that an RTL bug removed or added cannot be mined, and HARM warns about it once. Use `mode="rank"` when looking for bugs.
+- **Not "rank mode minus out-of-cone assertions."** For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. The guarantee is that filter mode gives the same result as rank mode on a configuration from which you deleted, for each consequent, the propositions outside its cone. See D-017 and D-018.
+
 Propositions and numerics can carry an `origin` attribute (free text, e.g. `origin="spec"`), reported by `--dump-assertion-info`.
 
 ## Editing Rules Configuration

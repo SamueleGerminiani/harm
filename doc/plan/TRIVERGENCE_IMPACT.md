@@ -141,8 +141,15 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] B3 ablation:** the same hints with and without `<coi>`, comparing the ranking of known-good assertions.
 - **Note:** a `coi.json` must use the same scope and recursion as the adapter's `--vcd-ss`/`--vcd-r` (see H4). HARM refuses a coi file naming signals that are not in the trace, and warns if the scope differs.
 
-### H7–H9: COI filter mode and out-of-cone report (planned)
-- **[optional] Filter mode (H7/H8):** GoldMine-style mining. It assumes the RTL is correct, so use it only as a *baseline* in Paper A, never in the method's triage.
+### H7: COI filter mode (implemented on `ms/H7-coi-filter`, awaiting review)
+- `<coi file="…" mode="filter"/>` never tries antecedent propositions outside the consequent's cone.
+  - On the fixtures, it cuts permutations by 48–90% and the output by 39–82%.
+  - `--dump-assertion-info` reports the search space under `coiFilter`.
+- **[optional] Use it only as a baseline** (GoldMine-style) in Paper A, never in the method's triage: it assumes the RTL is correct, and HARM warns about this.
+- **Not "rank mode minus out-of-cone assertions"** for decision-tree templates (D-018). If Paper A compares rank and filter, it should state this. Filter mode's guarantee is the output of rank mode on per-consequent restricted configurations.
+
+### H8–H9: depth-aware filter and out-of-cone report (planned)
+- **[optional] Depth-aware filter (H8):** the same baseline caveat as H7.
 - **[recommended] Out-of-cone report (H9):** a spec-derived proposition outside a target's structural cone is a new disagreement signal: "spec says A affects B, RTL says it cannot". It is a candidate input to B4 triage.
 
 ### H10: RTL predicate harvesting (planned)

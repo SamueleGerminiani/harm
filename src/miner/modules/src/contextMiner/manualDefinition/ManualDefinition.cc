@@ -454,7 +454,7 @@ void ManualDefinition::mineContexts(
       }
     }
 
-    // cone of influence (H6): <coi file="..." mode="rank"/>
+    // cone of influence: <coi file="..." mode="rank|filter"/> (H6, H7)
     std::vector<rapidxml::xml_node<> *> coiTags;
     getNodesFromName(contextTag, "coi", coiTags);
     messageErrorIf(coiTags.size() > 1,
@@ -464,11 +464,18 @@ void ManualDefinition::mineContexts(
       auto file = getAttributeValue(coiTags[0], "file", "");
       auto mode = getAttributeValue(coiTags[0], "mode", "rank");
       messageErrorIf(file.empty(), "<coi> needs a file attribute");
-      messageErrorIf(mode == "filter",
-                     "<coi mode=\"filter\"> is not supported before H7: use "
-                     "mode=\"rank\"");
-      messageErrorIf(mode != "rank",
-                     "Unknown <coi> mode '" + mode + "' (expected 'rank')");
+      messageErrorIf(mode != "rank" && mode != "filter",
+                     "Unknown <coi> mode '" + mode +
+                         "' (expected 'rank' or 'filter')");
+      context->_coiMode = mode;
+      static bool warned = false;
+      if (mode == "filter" && !warned) {
+        warned = true;
+        messageWarning(
+            "COI filter mode assumes the RTL is correct: behaviour removed or "
+            "added by an RTL bug cannot be mined (use mode=\"rank\" to look for "
+            "bugs)");
+      }
       // relative to the configuration file
       std::filesystem::path path(file);
       if (path.is_relative()) {

@@ -92,7 +92,7 @@ endif()
 set(H6 ${CMAKE_SOURCE_DIR}/tests/input/h6)
 set(MP ${CMAKE_SOURCE_DIR}/tests/input/coi/multipath/trace.vcd)
 # A3: configuration errors
-foreach(case "no_coi;needs a <coi> element" "coi_filter;not supported before H7"
+foreach(case "no_coi;needs a <coi> element" "coi_mode;Unknown <coi> mode"
              "coi_missing;Cannot open coi file" "coi_version;unsupported coi.json version")
     list(GET case 0 name)
     list(GET case 1 message)

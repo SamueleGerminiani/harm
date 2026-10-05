@@ -27,6 +27,8 @@ def run(conf, d, tag):
     info = Path(d) / f"{tag}.json"
     r = subprocess.run([harm, *trace_args, "--conf", str(conf), "--max-threads", "1", "--psilent",
                         "--dump-assertion-info", str(info)], cwd=d, capture_output=True, text=True)
+    if r.returncode == 0 and not info.exists() and "Could not mine any assertions" in r.stdout + r.stderr:
+        return [], r.stdout + r.stderr  # nothing mined: HARM writes no dump
     if r.returncode != 0 or not info.exists():
         sys.exit(f"HARM failed on {conf}:\n{(r.stdout + r.stderr)[-3000:]}")
     return json.loads(info.read_text())["assertions"], r.stdout + r.stderr

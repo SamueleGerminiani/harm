@@ -1,6 +1,6 @@
 # H7 plan: COI filter mode, signal level
 
-*Status: plan, awaiting approval. Branch: `ms/H7-coi-filter` (from `dev` @ H1c). Effort: 2–3 d.*
+*Status: approved 2026-10-05 (D-017, D-018); implemented, awaiting review. Branch: `ms/H7-coi-filter` (from `dev` @ H1c). Effort: 2–3 d.*
 
 ## Goal
 `<coi file="…" mode="filter"/>` prunes the search *before* mining. For each consequent, antecedent propositions whose signals cannot structurally influence it are never tried. This is GoldMine-style mining: faster, and with no out-of-cone antecedents. It assumes the RTL is correct, so trivergence should use it only as a baseline (see TRIVERGENCE_IMPACT, H7–H9).
