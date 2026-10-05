@@ -41,6 +41,10 @@ Matrix operator*(const Matrix &m1, const Matrix &m2) {
 }
 
 int computeBinomialCoefficient(int n, int k) {
+  // fewer propositions than placeholders: no combination (before H7, k > n recursed without
+  // reaching a base case, in exponential time)
+  if (k < 0 || k > n)
+    return 0;
   if (k == 0 || k == n)
     return 1;
   return computeBinomialCoefficient(n - 1, k - 1) +
@@ -49,6 +53,9 @@ int computeBinomialCoefficient(int n, int k) {
 
 Matrix genBinomialCombinations(int N, int K) {
   Matrix ret;
+  if (K > N) {
+    return ret; // no combination (see computeBinomialCoefficient)
+  }
   std::string bitmask(K, 1); // K leading 1's
   bitmask.resize(N, 0);      // N-K trailing 0's
 
@@ -540,6 +547,12 @@ void Permutator::genPermutations(
   // set the dimensions
   _permMatrix =
       std::make_shared<PermMatrix>(pu->_dim._row, pu->_dim._col);
+
+  if (pu->_dim._row == 0) {
+    // more placeholders than propositions in a domain: no permutation
+    deletePermUnit(pu);
+    return;
+  }
 
   // generate the permutations
   auto perms = visitPermUnit(pu);
