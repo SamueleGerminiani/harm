@@ -1,3 +1,7 @@
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "Automaton.hh"
 #include "Evaluator.hh"
 #include "Location.hh"
@@ -7,6 +11,18 @@
 #include "formula/temporal/TemporalExpression.hh"
 
 namespace harm {
+class EdgeProposition;
+
+/// --trace-end sva (D-016): the formula in LTLf (Spot's from_ltlf, nexttime weak), as a
+/// deterministic automaton run while the trace lasts, and for each state whether the trace may
+/// end there (the neutral view of IEEE 1800's end of simulation)
+struct TraceEndModel {
+  ~TraceEndModel();
+  bool needed = false; // some reachable state may not end the trace
+  unsigned init = 0;
+  std::vector<std::vector<std::pair<EdgeProposition *, unsigned>>> edges;
+  std::vector<bool> endOK;
+};
 
 ///@brief This class is used to evaluate a formula using an automaton
 class AutomataBasedEvaluator : public Evaluator {
@@ -55,6 +71,13 @@ private:
 
   void generateAutomaton();
 
+  /// --trace-end sva: built on first use (the mode may change after construction)
+  void buildTraceEndModel();
+
+  /// --trace-end sva: pending instances of a consequent whose pending obligation is strong
+  /// (s_eventually, s_nexttime, s_until) fail at the end of the trace segment
+  template <bool Dynamic> void applySvaTraceEnd(const Range &traceRange);
+
   void initCache();
 
   void changeTrace(const harm::TracePtr &trace) override;
@@ -70,6 +93,8 @@ private:
   Trinary **_cacheParallel = nullptr;
   ///the automaton that represents the formula
   Automaton *_automaton = nullptr;
+  ///--trace-end sva (D-016)
+  std::unique_ptr<TraceEndModel> _traceEnd;
 };
 // shared pointer to the AutomataBasedEvaluator
 using AutomataBasedEvaluatorPtr =

@@ -1,6 +1,6 @@
 # H1c plan: end-of-trace strength (D-015)
 
-*Status: plan, awaiting approval. Branch: `ms/H1c-liveness` (from `dev` @ H3). Effort: 1–1.5 d.*
+*Status: approved 2026-10-05 with D-016 (a), an option with the default unchanged; implemented, awaiting review. Branch: `ms/H1c-liveness` (from `dev` @ H3). Effort: 1–1.5 d.*
 
 ## Goal
 When HARM prints an assertion in SVA, it should judge the end of the trace as a simulator judges what HARM prints: weak operators pending at the end hold, and strong ones fail.
@@ -21,6 +21,9 @@ When HARM prints an assertion in SVA, it should judge the end of the trace as a 
 
   Under the IEEE 1800 finite-trace semantics (Annex F), a strong property is not satisfied by a trace that ends before it completes. HARM treats all of these as weak. This also affects one H3 hand label: `G(a -> X !b)` and `G(a -> !X b)` are equivalent in HARM's current semantics, but not in SVA's.
 - **F4. Other HARM users are affected.** The `process` example mines with `G(P0 |-> F(P1))`, `G(P0 |-> !X(P1))` and `G(P0 |-> !(true until P1))`, and 51 of its 143 baseline lines contain `F`. Changing the default changes their results.
+
+- **F5 (during implementation): SVA printer precedence bug**, fixed; see VALIDATION H1c F-a.
+- **F6 (during implementation):** Spot 2.9.7's `from_ltlf` reads `X` as weak; see VALIDATION H1c F-b.
 
 ## Decisions to approve
 ### D-016: how strong operators are judged at the end of the trace

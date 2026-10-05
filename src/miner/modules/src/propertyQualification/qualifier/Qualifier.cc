@@ -317,7 +317,8 @@ void dumpAssertionInfo(const Context &context,
   std::ofstream out(clc::dumpAssertionInfo);
   messageErrorIf(!out.good(),
                  "Cannot write '" + clc::dumpAssertionInfo + "'");
-  out << "{\n  \"version\": \"1\",\n  \"assertions\": [\n";
+  out << "{\n  \"version\": \"1\",\n  \"traceEnd\": \"" << clc::traceEnd
+      << "\",\n  \"assertions\": [\n";
   for (size_t i = 0; i < records.size(); i++) {
     out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
   }

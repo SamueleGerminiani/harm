@@ -18,6 +18,7 @@
 #include <spot/twaalgos/isdet.hh>
 #include <spot/twaalgos/postproc.hh>
 #include <spot/twaalgos/translate.hh>
+#include <spot/tl/ltlf.hh>
 
 #include "Assertion.hh"
 #include "CoiInfo.hh"
@@ -26,6 +27,7 @@
 #include "formula/atom/Constant.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/temporal/temporal.hh"
+#include "globals.hh"
 #include "message.hh"
 
 namespace harm {
@@ -148,6 +150,12 @@ struct HarmModel {
   unsigned init = 0;      // the consequent automaton (as in AutomataBasedEvaluator)
   std::vector<int> term;  // 0 pending, 1 accepting sink, 2 rejecting sink
   std::vector<std::vector<std::pair<bdd, unsigned>>> edges; // atom-level conditions
+  // --trace-end sva (D-016): the consequent in LTLf, as in AutomataBasedEvaluator's
+  // TraceEndModel; a pending instance fails at the end if its state here may not end the trace.
+  // With --trace-end harm: one state, which may always end the trace
+  unsigned init2 = 0;
+  std::vector<std::vector<std::pair<bdd, unsigned>>> edges2{{{bddtrue, 0}}};
+  std::vector<bool> endOK2{true};
 };
 
 /// the antecedent as one boolean step per cycle, starting at 'start'; false if not a fixed
@@ -286,23 +294,91 @@ std::optional<HarmModel> harmModel(
       m.term[s] = aut->state_is_accepting(s) ? 1 : 2;
     }
   }
+  if (clc::traceEnd == "sva") {
+    // as AutomataBasedEvaluator::buildTraceEndModel, where a formula it cannot model keeps
+    // HARM's semantics: here such an assertion is never reduced
+    if (!pf.f.is_ltl_formula()) {
+      bdd_freepair(pair);
+      return std::nullopt;
+    }
+    const std::string alive = "harm_trace_alive";
+    auto aut2 = post.run(ctx.det.run(spot::from_ltlf(pf.f, alive.c_str())));
+    if (!spot::is_deterministic(aut2)) {
+      bdd_freepair(pair);
+      return std::nullopt;
+    }
+    for (const auto &[name, cond] : leafOf) {
+      int v = ctx.dict->has_registered_proposition(spot::formula::ap(name),
+                                                    aut2);
+      if (v >= 0) {
+        bdd_setbddpair(pair, v, cond);
+      }
+    }
+    int av = ctx.dict->has_registered_proposition(spot::formula::ap(alive), aut2);
+    auto dead = ctx.trans.run(
+        spot::formula::G(spot::formula::Not(spot::formula::ap(alive))));
+    unsigned n2 = aut2->num_states();
+    m.init2 = aut2->get_init_state_number();
+    m.edges2.assign(n2, {});
+    m.endOK2.assign(n2, true);
+    for (unsigned s = 0; s < n2; s++) {
+      auto from = spot::make_twa_graph(aut2, spot::twa::prop_set::all());
+      from->set_init_state(s);
+      m.endOK2[s] = from->intersects(dead);
+      for (auto &e : aut2->out(s)) {
+        bdd cond = av < 0 ? e.cond : bdd_restrict(e.cond, bdd_ithvar(av));
+        if (cond != bddfalse) {
+          m.edges2[s].emplace_back(bdd_veccompose(cond, pair), e.dst);
+        }
+      }
+    }
+  }
   bdd_freepair(pair);
   return m;
+}
+
+/// a pending consequent instance: its state in HARM's automaton and in the LTLf automaton
+using ConState = std::pair<unsigned, unsigned>;
+
+/// the next state of a pending consequent instance; 'outcome' 2: failed, 1: held, 0: pending
+ConState stepCon(const HarmModel &m, ConState c, const bdd &letter, int &outcome) {
+  auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
+  outcome = 0;
+  for (const auto &[cond, dst] : m.edges[c.first]) {
+    if (holds(cond)) {
+      outcome = m.term[dst];
+      c.first = dst;
+      break;
+    }
+  }
+  for (const auto &[cond, dst] : m.edges2[c.second]) {
+    if (holds(cond)) {
+      c.second = dst;
+      break;
+    }
+  }
+  return c;
 }
 
 /// the pending instances of one assertion after a prefix of the trace
 struct Pending {
   uint64_t ant = 0;          // bit k: an antecedent instance has matched k cycles
   bool startNext = false;    // a consequent starts on the next cycle (|=>)
-  std::vector<unsigned> con; // the states of the pending consequent instances
-  bool failed = false;
+  std::vector<ConState> con; // the pending consequent instances
+  bool failed = false;       // an instance failed inside the trace
 
   std::string key() const {
     std::string k = std::to_string(ant) + (startNext ? "+" : "-");
-    for (unsigned c : con) {
-      k += "," + std::to_string(c);
+    for (auto c : con) {
+      k += "," + std::to_string(c.first) + "." + std::to_string(c.second);
     }
     return k;
+  }
+  /// fails if the trace ends now (--trace-end sva: a strong obligation is pending)
+  bool failsAtEnd(const HarmModel &m) const {
+    return failed || std::any_of(con.begin(), con.end(), [&](const ConState &c) {
+             return !m.endOK2[c.second];
+           });
   }
 };
 
@@ -311,9 +387,9 @@ Pending step(const HarmModel &m, const Pending &p, const bdd &letter) {
   auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
   Pending q;
   q.failed = p.failed;
-  std::set<unsigned> active(p.con.begin(), p.con.end());
+  std::set<ConState> active(p.con.begin(), p.con.end());
   if (p.startNext) {
-    active.insert(m.init);
+    active.insert({m.init, m.init2});
   }
   uint64_t positions = p.ant | 1; // an instance starts on every cycle
   size_t last = m.ant.size() - 1;
@@ -322,23 +398,20 @@ Pending step(const HarmModel &m, const Pending &p, const bdd &letter) {
       if (k < last) {
         q.ant |= (uint64_t)1 << (k + 1);
       } else if (m.overlap) {
-        active.insert(m.init);
+        active.insert({m.init, m.init2});
       } else {
         q.startNext = true;
       }
     }
   }
-  std::set<unsigned> next;
-  for (unsigned s : active) {
-    for (const auto &[cond, dst] : m.edges[s]) {
-      if (holds(cond)) {
-        if (m.term[dst] == 2) {
-          q.failed = true;
-        } else if (m.term[dst] == 0) {
-          next.insert(dst);
-        }
-        break;
-      }
+  std::set<ConState> next;
+  for (auto c : active) {
+    int outcome;
+    ConState d = stepCon(m, c, letter, outcome);
+    if (outcome == 2) {
+      q.failed = true;
+    } else if (outcome == 0) {
+      next.insert(d);
     }
   }
   q.con.assign(next.begin(), next.end());
@@ -348,22 +421,30 @@ Pending step(const HarmModel &m, const Pending &p, const bdd &letter) {
 /// one instance of y, chosen to be the one that fails
 struct Instance {
   int ant = -1;           // the next antecedent step to match; -1 if not started or past it
-  int con = -1;           // the consequent state; -1 if not started
+  bool conActive = false; // the consequent is pending in state 'con'
+  ConState con{0, 0};
   bool started = false;
   bool startNext = false; // the consequent starts on the next cycle (|=>)
+  bool failed = false;    // failed inside the trace (absorbing)
 
   std::string key() const {
-    return std::to_string(ant) + "/" + std::to_string(con) +
-           (started ? "s" : "w") + (startNext ? "+" : "-");
+    return std::to_string(ant) + "/" +
+           (conActive ? std::to_string(con.first) + "." + std::to_string(con.second)
+                      : std::string("-")) +
+           (started ? "s" : "w") + (startNext ? "+" : "-") + (failed ? "F" : "");
+  }
+  bool failsAtEnd(const HarmModel &m) const {
+    return failed || (conActive && !m.endOK2[con.second]);
   }
 };
 
 /// one cycle of y's chosen instance; nullopt if it can no longer fail. 'start' starts it now
 std::optional<Instance> stepInstance(const HarmModel &m, Instance i,
-                                     const bdd &letter, bool start,
-                                     bool &failed) {
+                                     const bdd &letter, bool start) {
   auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
-  failed = false;
+  if (i.failed) {
+    return i;
+  }
   if (!i.started) {
     if (!start) {
       return i;
@@ -371,11 +452,10 @@ std::optional<Instance> stepInstance(const HarmModel &m, Instance i,
     i.started = true;
     i.ant = 0;
   }
-  bool conNow = false;
   if (i.startNext) {
     i.startNext = false;
-    i.con = (int)m.init;
-    conNow = true;
+    i.conActive = true;
+    i.con = {m.init, m.init2};
   } else if (i.ant >= 0) {
     if (!holds(m.ant[i.ant])) {
       return std::nullopt; // the antecedent does not match: this instance holds
@@ -389,22 +469,17 @@ std::optional<Instance> stepInstance(const HarmModel &m, Instance i,
       i.startNext = true;
       return i;
     }
-    i.con = (int)m.init;
-    conNow = true;
-  } else {
-    conNow = i.con >= 0;
+    i.conActive = true;
+    i.con = {m.init, m.init2};
   }
-  if (conNow) {
-    for (const auto &[cond, dst] : m.edges[i.con]) {
-      if (holds(cond)) {
-        if (m.term[dst] == 2) {
-          failed = true;
-        } else if (m.term[dst] == 1) {
-          return std::nullopt; // the consequent holds
-        }
-        i.con = (int)dst;
-        return i;
-      }
+  if (i.conActive) {
+    int outcome;
+    i.con = stepCon(m, i.con, letter, outcome);
+    if (outcome == 2) {
+      i.failed = true;
+      i.conActive = false;
+    } else if (outcome == 1) {
+      return std::nullopt; // the consequent holds
     }
   }
   return i;
@@ -432,9 +507,11 @@ bool harmImplies(const HarmModel &x, const HarmModel &y,
     for (const auto &b : m->ant) {
       refine(b);
     }
-    for (const auto &es : m->edges) {
-      for (const auto &e : es) {
-        refine(e.first);
+    for (const auto *edges : {&m->edges, &m->edges2}) {
+      for (const auto &es : *edges) {
+        for (const auto &e : es) {
+          refine(e.first);
+        }
       }
     }
   }
@@ -453,12 +530,14 @@ bool harmImplies(const HarmModel &x, const HarmModel &y,
         if (start && iy.started) {
           break;
         }
-        bool yFailed;
-        auto qy = stepInstance(y, iy, l, start, yFailed);
-        if (yFailed) {
+        auto qy = stepInstance(y, iy, l, start);
+        if (!qy) {
+          continue;
+        }
+        if (qy->failsAtEnd(y) && !qx.failsAtEnd(x)) {
           return false; // the trace can end here: x holds, y fails
         }
-        if (qy && seen.insert(qx.key() + "|" + qy->key()).second) {
+        if (seen.insert(qx.key() + "|" + qy->key()).second) {
           if (seen.size() > maxStates) {
             return false; // too large to decide: keep both
           }

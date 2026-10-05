@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "ImplicationReducer.hh"
@@ -304,4 +305,51 @@ TEST(ImplicationTest, generatedPairsAreSoundWithSvaTraceEnd) {
 
 TEST(ImplicationTest, minedShapesAreSoundWithSvaTraceEnd) {
   soundOnAllShortTraces("generated_mined_pairs.txt", 200);
+}
+
+// Added after the first A4 run: the two sets above have almost no strong operators that are
+// safety (F is skipped by D-004), so their claims were the same in both modes. These pairs swap a
+// strong form ('!X p', '!(p W q)') for its weak twin.
+TEST(ImplicationTest, strongWeakTwinsAreSoundInBothModes) {
+  // with --trace-end harm
+  {
+    TracePtr tr = traceWith({"a", "b", "c"}, 4, false);
+    std::ifstream in(h3 + "generated_strong_pairs.txt");
+    ASSERT_TRUE(in.good());
+    std::string line;
+    size_t unsound = 0;
+    while (std::getline(in, line)) {
+      auto f = split(line, " ||| ");
+      TemporalExpressionPtr a = parse(f[0], tr), b = parse(f[1], tr);
+      if (a != nullptr && b != nullptr) {
+        unsound += checkClaims(f[0], f[1], implicationBetween(a, b),
+                               {"a", "b", "c"}, 6);
+      }
+    }
+    EXPECT_EQ(unsound, 0u);
+  }
+  soundOnAllShortTraces("generated_strong_pairs.txt", 150);
+}
+
+// hand-derived: the strong form implies its weak twin only with --trace-end sva
+TEST(ImplicationTest, strongWeakTwinsHandLabelled) {
+  TracePtr tr = traceWith({"a", "b", "c"}, 4, false);
+  // A, B, relation with --trace-end harm, relation with --trace-end sva
+  std::vector<std::tuple<std::string, std::string, std::string, std::string>> cases = {
+      {"G(a -> !X b)", "G(a -> X !b)", "EQUIVALENT", "A_IMPLIES_B"},
+      {"G(a -> !X !X b)", "G(a -> X X b)", "EQUIVALENT", "A_IMPLIES_B"},
+      // '!(b W c)' = '!c U (!b && !c)', a strong until, is not syntactic safety: D-004 skips it
+      // (label corrected after the first run, it was A_IMPLIES_B in sva mode)
+      {"G(a -> !(b W c))", "G(a -> (!c W (!b && !c)))", "SKIPPED", "SKIPPED"},
+      {"G(a -> X !b)", "G(a -> X !b)", "EQUIVALENT", "EQUIVALENT"},
+  };
+  for (const auto &[x, y, harmRel, svaRel] : cases) {
+    TemporalExpressionPtr a = parse(x, tr), b = parse(y, tr);
+    ASSERT_NE(a, nullptr);
+    ASSERT_NE(b, nullptr);
+    EXPECT_EQ(toString(implicationBetween(a, b)), harmRel) << x << " vs " << y;
+    SvaTraceEnd sva;
+    EXPECT_EQ(toString(implicationBetween(a, b)), svaRel)
+        << x << " vs " << y << " (sva)";
+  }
 }
