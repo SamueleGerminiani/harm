@@ -1,6 +1,6 @@
 # H3 plan: semantic redundancy reduction with Spot
 
-*Status: approved 2026-10-05 (D-004 safety only; D-008 keep stronger); implemented, awaiting review. D-004 amended during implementation (F5). Branch: `ms/H3-implies` (from `dev` @ H6). Effort: 3–4 d.*
+*Status: approved 2026-10-05 (D-004 safety only; D-008 keep stronger); done, approved 2026-10-05, with the D-004 amendment (F5). Branch: `ms/H3-implies` (from `dev` @ H6). Effort: 3–4 d.*
 
 ## Goal
 `--reduce implies` removes a mined assertion when a kept one implies it. `--dump-implications` writes the relation for other tools (trivergence stage 5). This builds on H2: propositions are first canonicalised with Z3, so that `cnt == 4'd9` and `4'd9 == cnt` are the same atom for Spot.

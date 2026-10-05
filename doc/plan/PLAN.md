@@ -75,6 +75,14 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
   - evaluation of the new operators is checked against Verilator simulation on a small fuzzed set (random expressions × random 4-valued vectors);
   - the SVA printing change updates the baseline (D-002).
 
+### H1c: end-of-trace strength for liveness operators (D-015)
+- **Depends on:** H1, H3 · **Effort:** 1 d
+- **Scope:**
+  - A pending `F` (printed `s_eventually`) at the end of the trace counts as failed, as in an SVA simulator. Weak operators are unchanged.
+  - The H3 finite-trace model follows the same rule.
+- **Acceptance:** a Verilator replay of mined liveness assertions agrees with HARM's verdicts at the end of the trace. Existing safety baselines are unchanged.
+- **First step:** confirm the mismatch with a Verilator test before changing anything.
+
 ### H1b: SystemVerilog x/z semantics as an option (D-011)
 - **Depends on:** H1 · **Effort:** 2–3 d
 - **Scope:**
@@ -289,8 +297,9 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H0 | Baseline and safety net | done |
 | H1 | Proposition and SVA language fixes | done |
 | H1b | SystemVerilog x/z semantics as an option (D-011) | todo |
+| H1c | End-of-trace strength for liveness operators (D-015) | todo |
 | H2 | Z3 back end and canonicalisation | done |
-| H3 | Semantic redundancy reduction | review (implemented, awaiting approval) |
+| H3 | Semantic redundancy reduction | done |
 | H3b | Atom-implication premises | todo (optional) |
 | H4 | COI contract and RTL fixtures | done |
 | H5 | `harm-coi` generator | todo |

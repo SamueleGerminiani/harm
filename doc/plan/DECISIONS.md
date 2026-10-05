@@ -108,7 +108,7 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
 ## D-004: implication reduction semantics (2026-10-05, H3, approved)
 - Assertions are compared with Spot (infinite-word LTL). Only pairs where **both** formulas are syntactic safety are reduced; others are always kept.
 - **Why:** for safety formulas, A ⇒ B over infinite words implies that every finite trace violating B also violates A. Dropping B then loses nothing for HARM's finite-trace evaluation or for simulation.
-- **Amendment (2026-10-05, during H3 implementation, pending acknowledgement): the "Why" is wrong at the trace end.** The A2 oracle refuted `G({b ##2 !a} |-> X (b && !b))` ⇒ `G({b ##2 !a} |-> (b && !b))` on a 3-cycle trace. Both formulas are false on infinite words, and B fails on the trace. A does not fail, because HARM evaluates the consequent with a deterministic Spot automaton whose atoms are the boolean *leaves*. It cannot see that `b && !b` is false, so the `X` instance is still pending at the trace end, and a pending instance counts as holding. A trace violating B therefore need not violate A in HARM's evaluation, even though A is a bad prefix in theory.
+- **Amendment (2026-10-05, during H3 implementation, approved with H3): the "Why" is wrong at the trace end.** The A2 oracle refuted `G({b ##2 !a} |-> X (b && !b))` ⇒ `G({b ##2 !a} |-> (b && !b))` on a 3-cycle trace. Both formulas are false on infinite words, and B fails on the trace. A does not fail, because HARM evaluates the consequent with a deterministic Spot automaton whose atoms are the boolean *leaves*. It cannot see that `b && !b` is false, so the `X` instance is still pending at the trace end, and a pending instance counts as holding. A trace violating B therefore need not violate A in HARM's evaluation, even though A is a bad prefix in theory.
   - **Fix: A ⇒ B is claimed only if it holds in both semantics.**
     - (1) As before, Spot containment over infinite words, which serves SVA, simulators and formal tools.
     - (2) An exact model of HARM's evaluator (`AutomataBasedEvaluator`):
@@ -125,3 +125,11 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
 ## D-008: which assertion is kept (2026-10-05, H3, approved)
 - **Default `--keep stronger`:** when A ⇒ B and not B ⇒ A, keep A and drop B. `--keep weaker` and `--keep ranked` are options.
 - Equivalent assertions: keep the one with the smallest text.
+
+## D-015: finite and infinite semantics (2026-10-05, after H3, approved)
+- **Mining and qualification keep HARM's simulator semantics.** An assertion fails only if an instance fails inside the trace, and an instance still pending at the end holds. For the default weak SVA properties, this is what a simulator reports at the end of a simulation, including the leaf-level evaluation (a simulator also waits for the next clock to evaluate `X (b && !b)`).
+- **Reduction (`--reduce implies`) requires both semantics:** the finite-trace semantics above and infinite words (D-004 as amended). So a dropped assertion is covered for both trivergence's simulator checks and its formal oracle.
+- **Not done, deliberately:**
+  - a global `--trace-end strong` option, where pending means failed. It would make every `G(a -> X b)` fail when `a` holds on the last cycle;
+  - exact infinite-word evaluation of mined assertions, with atom-level monitors. It would cost one automaton per candidate instead of one per template, and would only change verdicts in the last cycles for contradictory or valid leaf combinations.
+- **To fix (H1c):** HARM prints `F` as `s_eventually` (D-002), which is strong, but evaluates a pending `F` as holding. A liveness assertion HARM accepts could therefore fail in a simulator at the end of the simulation. Liveness operators get the strong end-of-trace semantics instead.
