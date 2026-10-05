@@ -1,6 +1,6 @@
 # HARM extension plan: semantic reduction and RTL-derived (COI) hints
 
-*Drafted 2026-10-05. Status: proposal, not yet approved.*
+*Drafted 2026-10-05. Approved 2026-10-05.*
 
 ## 0. Goals and ground rules
 
@@ -269,7 +269,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 
 | ID | Title | Status |
 |---|---|---|
-| H0 | Baseline and safety net | todo |
+| H0 | Baseline and safety net | awaiting-review |
 | H1 | Proposition and SVA language fixes | todo |
 | H2 | Z3 back end and canonicalisation | todo |
 | H3 | Semantic redundancy reduction | todo |

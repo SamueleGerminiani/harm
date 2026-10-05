@@ -1,4 +1,4 @@
-# mode: set
+# mode: ordered
 ### edit1_ass.txt
 always (v1 |-> ##3 v2)
 ### edit2_ass.txt

@@ -1,4 +1,4 @@
-# mode: set
+# mode: ordered
 ### external_ass.txt
 G({!ready_from_bus && byte_sel >= 4'b1 && byte_sel <= 4'b1111} |-> {##1 wb_cyc})
 G({!ready_from_bus && request} |-> {##1 wb_cyc})

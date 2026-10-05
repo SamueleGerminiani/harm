@@ -22,3 +22,21 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - Apple clang with `libc++` for everything. It avoids the SDK issue, but the user chose g++-13.
   - Developing in Docker (Linux only). It leaves macOS broken.
 - **Consequences:** anyone building on macOS with Homebrew gcc needs an SDK their gcc supports. The README says so.
+
+## D-001: deterministic output (2026-10-05, H0)
+- **Context:** with identical inputs, HARM's output order changed with the number of threads and from run to run. Before the fix, 8 of 17 determinism tests failed. The `--max-ass` cut and the fault-coverage minimum subset could also change *which* assertions are reported (trivergence M0 #31). Five sources were found:
+  1. `TLMiner` appended each permutation's assertions in thread-completion order;
+  2. `extractUniqueAssertionsFast` iterated a pointer-hashed `unordered_set`, which is address-dependent even with one thread;
+  3. ranking sorted on the score only, so ties were in arbitrary order;
+  4. the fault-coverage code iterated id-keyed maps, and assertion ids come from a global counter incremented as threads create assertions;
+  5. `--fd` faulty traces came in the directory order, which is unspecified, and VCD traces were then shuffled with a **random seed** (for an early outlook on coverage in the progress bar). Fault ids changed on every run, and with them the greedy set cover's tie-breaking, even with one thread.
+- **Decision:**
+  1. Collect per `(template index, permutation index)` in a `std::map`, and concatenate in key order.
+  2. Deduplicate in input order; the first occurrence of a key is kept.
+  3. Ranking order: `final score desc`, then `toString() asc`.
+  4. The fault loop follows the order of `selected`. The set cover receives its candidate sets sorted by assertion text.
+  5. Sort the faulty-trace list, then shuffle VCD traces with a fixed seed (`std::mt19937{0}`). This keeps the early-outlook intent and makes it reproducible.
+- **Consequences:**
+  - Output is identical across runs and thread counts on all 19 regression cases, including the `--max-ass 10` ones.
+  - The ordered baseline is frozen after this change. Set changes against the pre-fix baseline are listed in `VALIDATION.md` (H0).
+  - Fault ids in logs are now stable, but they differ from those of earlier HARM versions.

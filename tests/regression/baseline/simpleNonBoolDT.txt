@@ -1,3 +1,3 @@
-# mode: set
+# mode: ordered
 ### default_ass.txt
 G({a >= 100 && a <= 102} |-> con)

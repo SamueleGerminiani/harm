@@ -61,7 +61,7 @@ void TLMiner::mineProperties(const ContextPtr &context,
   l3Handler(clc::maxThreads);
 
   //store all the generated assertions into the context
-  for (auto &pack : _collectedAssertions) {
+  for (auto &[templAndPerm, pack] : _collectedAssertions) {
     for (const AssertionPtr &ass : pack) {
       context->_assertions.push_back(ass);
     }
@@ -325,7 +325,7 @@ end:;
   //store the assertions collected in the current permutation
   if (!assp.empty()) {
     std::lock_guard<std::mutex> lock{_collectedAssertionsGuard};
-    _collectedAssertions.push_back(assp);
+    _collectedAssertions[{l3InstId, l2InstId}] = assp;
   }
 
   _progressBar.incrementCounter(l3InstId, assp.size());

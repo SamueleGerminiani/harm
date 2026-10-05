@@ -82,20 +82,21 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     const std::vector<AssertionPtr> &inAssertions) {
 
   std::vector<AssertionPtr> outAssertions;
-  std::unordered_set<AssertionPtr> assP;
   std::unordered_set<std::string> keys;
-  //change data structer to allow constant access with id (in this context the pointer is the id)
-  for (const AssertionPtr &ass : inAssertions) {
-    assP.insert(ass);
-  }
 
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Filtering redundant assertions... 0 discarded",
                  inAssertions.size(), 70);
   size_t discarded = 0;
 
-  //discard assertions deemed 'equivalent'
-  for (auto &ass : assP) {
+  //discard assertions deemed 'equivalent'; iterate in input order (not in the pointer-hashed set's
+  //order) so that the output does not depend on memory addresses
+  std::unordered_set<AssertionPtr> visited;
+  for (auto &ass : inAssertions) {
+    if (!visited.insert(ass).second) {
+      //the same assertion object appears twice in the input
+      continue;
+    }
 
     pb.changeMessage(0, "Filtering redundant assertions... " +
                             std::to_string(discarded) + " discarded");
@@ -390,7 +391,31 @@ std::vector<size_t> Qualifier::getCoverageSet() {
   std::vector<std::vector<int>> set_to_elements;
   std::unordered_map<int, int> setIdToAssId;
   size_t setId = 0;
-  for (auto &[aID, fIDS] : _aidToF) {
+  //ties in the greedy set cover are broken by the order of the sets: give them to the solver
+  //sorted by the assertion's text, because both the ids and the mining order depend on thread
+  //timing; ids without a known assertion (e.g. when _aidToF is filled directly) go last, by id
+  std::unordered_map<size_t, std::string> aidToText;
+  for (const AssertionPtr &a : _originalAssertions) {
+    if (_aidToF.count(a->_id)) {
+      aidToText[a->_id] = a->toString();
+    }
+  }
+  std::vector<size_t> aids;
+  for (const auto &[aID, fIDS] : _aidToF) {
+    aids.push_back(aID);
+  }
+  std::sort(aids.begin(), aids.end(), [&aidToText](size_t l, size_t r) {
+    bool lKnown = aidToText.count(l), rKnown = aidToText.count(r);
+    if (lKnown != rKnown) {
+      return lKnown;
+    }
+    if (lKnown && aidToText.at(l) != aidToText.at(r)) {
+      return aidToText.at(l) < aidToText.at(r);
+    }
+    return l < r;
+  });
+  for (size_t aID : aids) {
+    const std::vector<size_t> &fIDS = _aidToF.at(aID);
     std::vector<int> cfSubset;
     for (auto fID : fIDS) {
       cfSubset.push_back(fID);
@@ -433,9 +458,13 @@ void Qualifier::sortAssertionsWithMetrics(
     a->_finalScore = score;
   }
 
+  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic
   std::sort(assertions.begin(), assertions.end(),
             [](const AssertionPtr &left, const AssertionPtr &right) {
-              return left->_finalScore > right->_finalScore;
+              if (left->_finalScore != right->_finalScore) {
+                return left->_finalScore > right->_finalScore;
+              }
+              return left->toString() < right->toString();
             });
 }
 
@@ -639,7 +668,12 @@ void Qualifier::fbqUsingFaultyTraces(
 
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
     size_t elaborated = 0;
-    for (auto [aid, noCacheTemplate] : aid_to_noCacheTemplates) {
+    //iterate in the order of 'selected': assertion ids depend on thread timing, so the id-keyed
+    //map's order would decide (non-deterministically) which assertion is credited with a fault
+    for (const AssertionPtr &a : selected) {
+      size_t aid = a->_id;
+      const TemplateImplicationPtr &noCacheTemplate =
+          aid_to_noCacheTemplates.at(aid);
       //test if the assertion fails on the faulty trace
 
       //new assertion with faulty trace

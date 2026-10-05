@@ -1,12 +1,12 @@
-# mode: set
+# mode: ordered
 ### default_ass.txt
+G({!intf::a ##1 true} |-> DUT::state == 2'b0)
+G({DUT::state == 2'b1} |-> intf::out1)
 G({!intf::a ##1 intf::a ##1 true} |-> DUT::state == 2'b1)
 G({!intf::a ##1 intf::a ##1 true} |-> intf::out1)
-G({!intf::a ##1 true} |-> DUT::state == 2'b0)
+G({DUT::state == 2'b10} |-> intf::out2)
+G({DUT::state == 2'b11} |-> intf::out3)
 G({DUT::state == 2'b1 && intf::a ##1 true} |-> DUT::state == 2'b10)
 G({DUT::state == 2'b1 && intf::a ##1 true} |-> intf::out2)
 G({DUT::state == 2'b10 && intf::a ##1 true} |-> DUT::state == 2'b11)
 G({DUT::state == 2'b10 && intf::a ##1 true} |-> intf::out3)
-G({DUT::state == 2'b10} |-> intf::out2)
-G({DUT::state == 2'b11} |-> intf::out3)
-G({DUT::state == 2'b1} |-> intf::out1)
