@@ -20,7 +20,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | HARM milestone | Commit / branch | Pushed? | Trivergence pins today |
 |---|---|---|---|
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
-| H0 | `dev` at the H0 merge (see `git log --merges dev`) | yes | — |
+| H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
