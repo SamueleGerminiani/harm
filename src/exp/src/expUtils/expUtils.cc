@@ -78,6 +78,13 @@ std::string temp2String(const TemporalExpressionPtr &exp, const Language lang, c
     exp->acceptVisitor(printer);                                        
     return printer.get();                                            
   }                                                                  
+std::string temp2StringSubst(const TemporalExpressionPtr &exp, const Language lang,
+                             const std::unordered_map<const Proposition *, std::string> &subst){
+    PrinterVisitor printer(lang,false,PrintMode::ShowAll);
+    printer.setPropositionSubstitution(&subst);
+    exp->acceptVisitor(printer);
+    return printer.get();
+  }
 std::string temp2ColoredString(const TemporalExpressionPtr &exp, const Language lang, const PrintMode mode){
     PrinterVisitor printer(lang,true,mode);
     exp->acceptVisitor(printer);                                      

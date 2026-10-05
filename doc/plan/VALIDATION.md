@@ -89,3 +89,38 @@ They were written first and committed failing in `182b492`: 7 of 7 new tests fai
 
 ### Pending
 - The Linux run of the regression, determinism and Verilator suites.
+
+## H2: Z3 back end and proposition canonicalisation (2026-10-05, macOS arm64, g++-13)
+
+### Build
+- Z3 4.13.4 is built by `third_party/install_z3.sh` with g++-13. `otool -L` shows gcc-13 `libstdc++` only, and the `.harm_toolchain` record matches. CMake reports `Z3 4.13.4.0 found`.
+
+### Acceptance tests
+They were written first and committed failing in `e8237a9`, with the hand labels fixed from the evaluator's source code before any result existed.
+
+| Test | Result |
+|---|---|
+| A2 hand-labelled pairs (56) | pass: every EQ proved, every NEQ not reported equivalent |
+| A3 small variables (v1, v2, v3 = 6 bits; all 4^6 = 4,096 four-valued assignments; 960 pairs) | 765 equivalent by evaluation, **765 proved (none missed)**, **0 unsound**. All 195 "not equivalent" answers come with a counterexample that HARM's evaluator confirms |
+| A3 wide variables (q4, r8, t13, u32; 20,000 random rows; 640 pairs) | **0 unsound.** 502 proved equivalent. 138 "not equivalent" answers, every counterexample confirmed by HARM's evaluator. These include 11 pairs that the random rows did not separate |
+| A4 a timeout or unknown result is never "equivalent" | pass |
+| A5 `h2_reduce_syntactic` / `h2_reduce_equiv` | pass. Both outputs match the hand-derived expectations (6 → 4 assertions; `!=` and `!==` kept apart) |
+| A6 determinism with `--reduce equiv` | pass |
+| All suites | `ctest -LE determinism`: 65/65 (including the Verilator replays). `ctest -L determinism`: 22/22 |
+
+### Independent validation
+- **HARM's evaluator as the oracle (A3), in both directions:**
+  - no "equivalent" answer is refuted on any assignment;
+  - every "not equivalent" answer has a counterexample that the evaluator confirms (333 in total);
+  - for the 6-bit variables, every equivalent pair is proved, which shows the 4-valued encoding is exact there.
+- **The USM-T cross-check** in the plan was **not run**. USM-T builds only on Linux. It is pending for the Linux machine, and it would only cover the bool/int subset, which A2 also covers.
+
+### Semantics found while implementing (encoded exactly)
+- HARM's `Logic` keeps hidden value bits above a value's width: the carry of `+`, the ones of `~`. Every operator masks or sign-extends at its own width.
+- `~` turns z into x.
+- A logic value used as a boolean tests only the value bits (x/z count as 0).
+- Arithmetic with an x/z operand gives a 1-bit x.
+- **Opaque atoms** (sound, incomplete): `/` and shifts (bad operands abort HARM); `$past`, `$stable`, `$rose`, `$fell`; strings; int types narrower than 64 bits; numeric conversions other than int→logic; consumers that depend on the run-time width of an arithmetic result.
+
+### Pending
+- The Linux run of all suites, and the USM-T cross-check.

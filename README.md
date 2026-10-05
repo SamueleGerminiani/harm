@@ -52,6 +52,7 @@ For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clan
 * [spotLTL](https://spot.lrde.epita.fr/install.html)
 * [antlr4-runtime](https://www.antlr.org)
 * [boost 1.83+](https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/)
+* [Z3 4.13](https://github.com/Z3Prover/z3) (optional, for `--reduce equiv`; build with `-DHARM_WITH_Z3=OFF` to do without)
 
   
 
@@ -592,6 +593,11 @@ Harm produces three main types of textual outputs:
 ### Assertions & Ranking
 * **`--max-ass <uint>`**
     The maximum number of assertions to keep after ranking.
+
+* **`--reduce <syntactic|equiv>`**
+    How redundant assertions are removed.
+    * `syntactic` (default): assertions with the same text (ignoring spaces and brackets) and the same contingency table.
+    * `equiv`: assertions are also merged when they differ only in **equivalent propositions**, e.g. `cnt == 4'd9` vs `4'd9 == cnt`. Equivalence is proved with Z3 under HARM's semantics, including `x`/`z`: `a != b` and `!(a == b)` are *not* merged, because they differ when `a` has `x` bits. A timeout or an unknown result never merges anything. Of a merged group, the assertion with the smallest text is kept.
 
 * **`--min-frank <float>`**
     Minimum final ranking score (0.0 to 1.0). All assertions below this level are discarded.

@@ -70,12 +70,29 @@ readPairs(const std::string &file) {
 
 struct Soundness {
   size_t pairs = 0, unsound = 0, provedEquivalent = 0, trulyEquivalent = 0,
-         missed = 0, unknown = 0;
+         missed = 0, unknown = 0, counterexamples = 0, badCounterexamples = 0;
 };
+
+// Z3's counterexample, replayed with HARM's evaluator on a one-row trace: the propositions must
+// differ there (this validates "not equivalent" answers)
+bool counterexampleDiffers(const std::string &a, const std::string &b,
+                           const std::vector<std::pair<std::string, size_t>> &vars,
+                           const smt::Counterexample &cex) {
+  TracePtr row = logicTrace(vars, 1);
+  for (const auto &[n, w] : vars) {
+    std::string value = cex.count(n) ? cex.at(n) : std::string(w, '0');
+    row->getLogicVariable(n)->assign(0, Logic(value, w));
+  }
+  std::string error;
+  PropositionPtr p = hparser::tryParseProposition(a, row, error);
+  PropositionPtr q = hparser::tryParseProposition(b, row, error);
+  return p != nullptr && q != nullptr && p->evaluate(0) != q->evaluate(0);
+}
 
 // Z3 must never say "equivalent" when HARM's evaluator finds a row where the propositions differ
 Soundness checkSoundness(const std::vector<std::pair<std::string, std::string>> &pairs,
-                         const TracePtr &trace) {
+                         const TracePtr &trace,
+                         const std::vector<std::pair<std::string, size_t>> &vars) {
   Soundness s;
   for (const auto &[a, b] : pairs) {
     PropositionPtr p = parse(a, trace), q = parse(b, trace);
@@ -87,7 +104,21 @@ Soundness checkSoundness(const std::vector<std::pair<std::string, std::string>> 
     for (size_t t = 0; t < trace->getLength() && same; t++) {
       same = p->evaluate(t) == q->evaluate(t);
     }
-    Equivalence e = smt::checkEquivalence(p, q);
+    smt::Counterexample cex;
+    Equivalence e = smt::checkEquivalence(p, q, 1000, &cex);
+    if (e == Equivalence::NotEquivalent) {
+      s.counterexamples++;
+      if (!counterexampleDiffers(a, b, vars, cex)) {
+        s.badCounterexamples++;
+        if (s.badCounterexamples <= 10) {
+          std::cout << "BAD COUNTEREXAMPLE: '" << a << "' vs '" << b << "':";
+          for (const auto &[n, v] : cex) {
+            std::cout << " " << n << "=" << v;
+          }
+          std::cout << "\n";
+        }
+      }
+    }
     s.trulyEquivalent += same;
     s.provedEquivalent += e == Equivalence::Equivalent;
     s.unknown += e == Equivalence::Unknown;
@@ -110,7 +141,9 @@ void report(const std::string &name, const Soundness &s) {
             << ", proved equivalent: " << s.provedEquivalent
             << ", UNSOUND: " << s.unsound
             << ", not proved although equivalent on all rows: " << s.missed
-            << ", unknown: " << s.unknown << "\n";
+            << ", unknown: " << s.unknown
+            << ", counterexamples: " << s.counterexamples
+            << ", BAD counterexamples: " << s.badCounterexamples << "\n";
 }
 
 } // namespace
@@ -180,9 +213,10 @@ TEST(Z3EquivalenceTest, soundOnAllAssignmentsOfSmallVariables) {
       trace->getLogicVariable(n)->assign(row, Logic(bits, w));
     }
   }
-  Soundness s = checkSoundness(readPairs("small_pairs.txt"), trace);
+  Soundness s = checkSoundness(readPairs("small_pairs.txt"), trace, vars);
   report("small, exhaustive", s);
   EXPECT_EQ(s.unsound, 0u);
+  EXPECT_EQ(s.badCounterexamples, 0u);
   // completeness: every pair that is equivalent on all assignments should be proved
   EXPECT_EQ(s.missed, 0u);
 }
@@ -204,9 +238,11 @@ TEST(Z3EquivalenceTest, soundOnRandomAssignmentsOfWideVariables) {
       trace->getLogicVariable(n)->assign(row, Logic(bits, w));
     }
   }
-  Soundness s = checkSoundness(readPairs("wide_pairs.txt"), trace);
+  Soundness s = checkSoundness(readPairs("wide_pairs.txt"), trace, vars);
   report("wide, random", s);
   EXPECT_EQ(s.unsound, 0u);
+  // every "not equivalent" answer comes with a counterexample that HARM's evaluator confirms
+  EXPECT_EQ(s.badCounterexamples, 0u);
 }
 
 // ---------------------------------------------------------------- A4

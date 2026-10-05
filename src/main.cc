@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string>
 #include <thread>
+
+#include "expUtils/smtEquivalence.hh"
 #include <unordered_map>
 #include <vector>
 
@@ -278,6 +280,14 @@ void parseCommandLineArguments(int argc, char *args[]) {
   }
   if (result.count("skip-invalid-props")) {
     clc::skipInvalidProps = true;
+  }
+  if (result.count("reduce")) {
+    clc::reduce = result["reduce"].as<std::string>();
+    messageErrorIf(clc::reduce != "syntactic" && clc::reduce != "equiv",
+                   "--reduce must be 'syntactic' or 'equiv', got '" +
+                       clc::reduce + "'");
+    messageErrorIf(clc::reduce == "equiv" && !expression::smt::available(),
+                   "--reduce equiv needs Z3: build HARM with -DHARM_WITH_Z3=ON");
   }
 
   if (result.count("dump-trace-as-csv")) {

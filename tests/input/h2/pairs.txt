@@ -1,7 +1,7 @@
 # H2, acceptance test A2: hand-labelled proposition pairs, under HARM's semantics (D-011): a
 # comparison with an x/z operand is false. Variables: a4, b4 (logic [3:0]), c8 (logic [7:0]),
 # e1 (logic, 1 bit), k (int), f (float), flag (bool), s (string).
-# Format: <EQ|NEQ> | <p1> | <p2> | <reason>
+# Format: <EQ|NEQ> | <p1> | <p2> | <reason>  (fields are separated by " | ": write bitwise OR without spaces)
 #   EQ  : the pair must be proved equivalent (Z3 must find it, not only "not refute" it)
 #   NEQ : the pair must NOT be reported equivalent
 #
@@ -41,8 +41,8 @@ EQ  | e1 === 1'bx | !(e1 === 1'b0) && !(e1 === 1'b1) && !(e1 === 1'bz) | the fou
 EQ  | e1 | e1 == 1'b1 | a logic used as a boolean tests the value bits only (x/z count as 0), as e1 == 1'b1
 # ---- bitwise operators with x propagation
 EQ  | (a4 & 4'b0000) == 4'b0000 | 1'b1 == 1'b1 | 0 & x = 0, so the result is always 0
-NEQ | (a4 | 4'b0000) == a4 | 1'b1 == 1'b1 | false when a4 has x (comparison with x)
-EQ  | (a4 | 4'b1111) == 4'b1111 | 1'b1 == 1'b1 | 1 | x = 1
+NEQ | (a4|4'b0000) == a4 | 1'b1 == 1'b1 | false when a4 has x (comparison with x)
+EQ  | (a4|4'b1111) == 4'b1111 | 1'b1 == 1'b1 | 1 | x = 1
 NEQ | (a4 ^ a4) == 4'b0000 | 1'b1 == 1'b1 | x ^ x = x
 EQ  | (a4 & b4) == (b4 & a4) | (b4 & a4) == (a4 & b4) | commutativity of & and ==
 NEQ | ~(~a4) == a4 | 1'b1 == 1'b1 | false when a4 has x
