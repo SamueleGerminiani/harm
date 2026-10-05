@@ -26,3 +26,6 @@ third_party/z3
 tests/bl_master/bl_master100k.vcd
 .DS_Store
 examples/sobel/ass.txt
+
+# ctest output when run from the source tree
+Testing/
