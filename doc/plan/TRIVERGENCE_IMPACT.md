@@ -26,6 +26,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H4 | `dev` @ `ce7628a5219c1509ad49e104bad570b856bcf3bc` | yes | — |
 | H6 | `dev` @ `1e3b6f6175409ae8d103ceb95a466f864cd0bc78` | yes | — |
 | H3 | `dev` @ `53a4d8fbaf45142eed529e427d061beb20dfa499` | yes | — |
+| H1c | `dev` @ `745bc9f0a852027fb1f42160354aaabfc7544b8f` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -116,7 +117,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - **Corrected in H1c:** an earlier version of this note said to recheck mined liveness assertions. That was overstated: trivergence's adapter already discards every mined line with `eventually`, `s_eventually`, `until` or `nexttime` (`_UNSUPPORTED` in `triad_mining/harm.py`), so they never reach its simulator or oracles.
 - **[optional]** The `kept` list lets trivergence show, for each dropped candidate, which kept assertion covers it: useful in triage reports.
 
-### H1c: end-of-trace semantics and SVA brackets (implemented on `ms/H1c-liveness`, awaiting review)
+### H1c: end-of-trace semantics and SVA brackets (on `dev`)
 - **SVA printing fix (affects every user of `--sva`):** HARM now brackets SVA output by SVA's operator precedence. Before, `(b W c) && X X F d` was printed `b until c and nexttime nexttime s_eventually d`, which SystemVerilog reads differently. HARM's existing baselines are unchanged, because the bug needs `and`/`or` combined with `until` or `s_eventually`.
   - **[optional]** Trivergence's adapter rejects `until` and `s_eventually` anyway, so it is not affected today. If it ever accepts them, it needs this fix.
 - **`--trace-end sva`:** mined assertions are judged at the end of each trace as a SystemVerilog simulator judges them. Pending `s_eventually`, `not nexttime` and `not (… until …)` fail; weak operators hold. The default (`harm`) is unchanged.
