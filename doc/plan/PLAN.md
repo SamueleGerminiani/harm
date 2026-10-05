@@ -277,7 +277,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 
 | ID | Title | Status |
 |---|---|---|
-| H0 | Baseline and safety net | awaiting-review |
+| H0 | Baseline and safety net | done |
 | H1 | Proposition and SVA language fixes | todo |
 | H2 | Z3 back end and canonicalisation | todo |
 | H3 | Semantic redundancy reduction | todo |

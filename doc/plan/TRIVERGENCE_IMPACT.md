@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 merged into `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -20,7 +20,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | HARM milestone | Commit / branch | Pushed? | Trivergence pins today |
 |---|---|---|---|
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
-| H0 | `ms/H0-baseline` (head) | yes; not yet merged into `dev`, awaiting review | — |
+| H0 | `dev` at the H0 merge (see `git log --merges dev`) | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -32,7 +32,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 
 ## 2. Per-milestone impact
 
-### H0: deterministic output and toolchain (awaiting review)
+### H0: deterministic output and toolchain (on `dev`)
 What changed in HARM: see `doc/plan/DECISIONS.md` (D-001, D-010).
 - HARM's output (order, `--max-ass` cut, `--find-min-subset`) is now identical across runs and thread counts.
 - Ranking ties are broken by assertion text.
