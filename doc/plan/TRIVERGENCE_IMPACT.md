@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 and H1 on `dev`; H2 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -22,7 +22,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
 | H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
 | H1 | `dev` @ `778c43b6044bbb53dbfd372a9f1aec629c725eb5` | yes | — |
-| H2 | `ms/H2-z3` (head) | yes; not yet merged into `dev`, awaiting review | — |
+| H2 | `dev` @ `19d7ed2e6ef8a708965d87ebf28810b8c15cb1cf` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -84,7 +84,7 @@ What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "
 
 **[optional]** `tests/oracle/verilator_replay.py` in HARM replays HARM's assertions in Verilator. Trivergence's trace view does the same thing with its own harness, so the two results can be cross-checked.
 
-### H2: proposition equivalence with Z3 (awaiting review, branch `ms/H2-z3`)
+### H2: proposition equivalence with Z3 (on `dev`)
 What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--reduce equiv`.
 1. **[required] Docker image.**
    - `install_all.sh` now also builds **Z3 4.13.4** from source (several minutes) into `third_party/z3`. CMake requires it unless `-DHARM_WITH_Z3=OFF`.
