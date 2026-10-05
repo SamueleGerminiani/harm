@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 merged into `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0 merged into `dev`; H1 awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -21,6 +21,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 |---|---|---|---|
 | (baseline) | `a8c302b` | yes | **this one** (`HARM_VERSION` in `triad_mining/harm.py`; `HARM_COMMIT` in `code/docker/Dockerfile.toolchain`, in 2 places) |
 | H0 | `dev` @ `abe060dc4a41098a515108aa30a53a913698a707` | yes | — |
+| H1 | `ms/H1-language` (head) | yes; not yet merged into `dev`, awaiting review | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -57,20 +58,30 @@ Impact on trivergence:
    - since the adapter selects by (length, text), `make e2e` should give **identical candidates, verdicts, triage and kills**. If it doesn't, report it back; that would be a HARM regression.
 5. **[optional]** HARM now has its own regression suite (`ctest -L regression`, `ctest -L determinism`). Running it once on the Linux server would close H0's pending Linux validation.
 
-### H1: proposition and SVA language fixes (planned)
-Will remove most adapter workarounds. Each one maps to an M0_REPORT item:
+### H1: proposition and SVA language fixes (awaiting review, branch `ms/H1-language`)
+What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "SystemVerilog Syntax in Propositions".
 
-| Adapter workaround (trivergence) | M0 item | After H1 |
+| Adapter workaround (trivergence `triad_mining/harm.py`) | M0 item | After H1 |
 |---|---|---|
-| `to_harm_expr`: decimal/hex constants → sized binary | #7 | HARM accepts `8'd9`, `4'hA` |
-| `to_harm_expr`: `'0` → `0` | #29 | HARM accepts `'0 '1 'x 'z` |
-| `harm_incompatibility`: drops concatenation, `?:`, unsized literals, `===` | #29 | HARM accepts them; keep the filter as a safety net or remove it |
-| Invariants written as `G({..&&..} \|-> P0)` | #8 | `G(P0)` allowed |
-| `normalize_harm_sva`: `true` → `1'b1`, `\|-> nexttime` → `\|=>` | #9 | HARM prints valid SVA. **The A6 fixture `normalize_cases.yaml` will need new inputs**, and it is a golden fixture, so it needs approval |
-| One bad proposition aborts the run | #29 | `--skip-invalid-props` |
-| `.` vs `::` hierarchy | — | `.` accepted in propositions |
+| `to_harm_expr`: decimal/hex constants → sized binary | #7 | **Remove.** HARM accepts `8'd9`, `4'hA`, `'h1F` (oracle-tested against iverilog) |
+| `to_harm_expr`: `'0` → `0` | #29 | **Remove.** HARM accepts `'0 '1 'x 'z` next to a sized operand |
+| `harm_incompatibility`: drops concatenation, `?:`, unsized literals, `===` | #29 | **Remove, or keep only as a safety net.** All four are supported. Exceptions: a ternary used as an operand must be parenthesized (as in SV), and concatenation needs ≥ 2 items |
+| `.` → `::` in proposition hierarchy | — | **Remove.** `u_core.state` is accepted |
+| Invariants written as `G({..&&..} \|-> P0)` | #8 | **Use `G(P0)`.** HARM prints it back as `G(p)` / `always (p)` |
+| `normalize_harm_sva`: `true` → `1'b1`, `\|-> nexttime` → `\|=>`, `::` → `.` | #9 | **Remove.** HARM's `--sva` output already has these forms. HARM checked trivergence's own A6 cases: all 9 supported inputs print exactly trivergence's expected `out`. The 3 "unsupported" ones now print as valid SV (`a \|-> ##2 b`, `a \|-> s_eventually b`, `a until b`). **The A6 fixture `normalize_cases.yaml` will need new inputs** (golden fixture: needs approval) |
+| One bad proposition aborts the run | #29 | **Use `--skip-invalid-props`** and log the warnings (`Invalid proposition skipped: '<exp>'`) |
 
-**[recommended]** After H1, simplify the adapter. Tests `test_harm_adapter.py` A5/A6 and `tools/test_harm.py` A11 must be re-baselined, with approval.
+**[required] Two behaviour changes to know before bumping:**
+1. **F10, a bug in the current pin `a8c302b`:** propositions with a **bit selection** (`r[7:4]`) were evaluated and printed with swapped bounds in every mined assertion (`r[4:7]`). Any trivergence mining run whose hints contained bit selections was affected. Re-run those after bumping.
+2. **SVA text changes** (D-002): if any trivergence code or fixture matches HARM's raw `--sva` text, expect `|=>`, `##n`, `1'b1`, `.` and `s_eventually`.
+
+**[recommended] D-011 (open in HARM): x/z semantics.**
+- HARM's comparisons with x/z operands are false, and `!` then makes them true. So a mined `!(a == b)` can hold in HARM but fail in Verilator on traces with x. This is the likely root cause of M0 #33.
+- Until D-011 is decided, triage should treat "HARM holds, simulator fails on x-valued cycles" as a known semantic gap, not as a bug in the RTL.
+
+**[recommended]** After bumping, re-baseline `test_harm_adapter.py` A5/A6 and `tools/test_harm.py` A11 (with approval). `make e2e` should give the same candidate *set* where no bit selection was involved. Candidate text changes (SVA tokens) are expected.
+
+**[optional]** `tests/oracle/verilator_replay.py` in HARM replays HARM's assertions in Verilator. Trivergence's trace view does the same thing with its own harness, so the two results can be cross-checked.
 
 ### H2/H3: semantic redundancy reduction (planned)
 - New `--reduce equiv|implies` and `--dump-implications <json>`.
