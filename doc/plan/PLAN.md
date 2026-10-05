@@ -292,7 +292,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H2 | Z3 back end and canonicalisation | done |
 | H3 | Semantic redundancy reduction | todo |
 | H3b | Atom-implication premises | todo (optional) |
-| H4 | COI contract and RTL fixtures | awaiting-review |
+| H4 | COI contract and RTL fixtures | done |
 | H5 | `harm-coi` generator | todo |
 | H6 | COI rank mode | todo |
 | H7 | COI filter mode, signal level | todo |
