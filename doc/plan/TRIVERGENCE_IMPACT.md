@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d and H8 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d and H8 on `dev`; H9 awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -189,8 +189,13 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[none required]** Rank mode is unchanged, except for one fix. `coiDepthFit` now places the consequent of `->` at the start of a multi-cycle antecedent, as HARM evaluates it (H8 F6). Trivergence's templates use `|->` and single-cycle `->`, which are not affected.
 - **SVA printing of `->` with a multi-cycle antecedent (H8 F7): fixed in H1d** (see the H1d entry).
 
-### H9: out-of-cone report (planned)
-- **[recommended]** A spec-derived proposition outside a target's structural cone is a new disagreement signal: "the spec says A affects B, the RTL says it cannot". It is a candidate input to B4 triage.
+### H9: out-of-cone report (on `ms/H9-coi-report`, awaiting review; not on `dev` yet)
+- **`--dump-coi-report <file.json>`** lists, for each consequent proposition of a context with `<coi>`, the antecedent propositions whose signals cannot influence it, with their `origin` and the signals outside the cone (D-022). It is computed from the hints and `coi.json`, before mining, and works in rank mode.
+  - **Example:** in `multipath`, `y`'s cone is `{a, r1, r2}`. A hint proposition `a && b` with `origin="spec"` is reported against `y` with `outside: ["b"]`.
+- **[recommended] B4 triage:** after `hints_to_xml` writes the hints with `origin="spec"` (H6) and a `<coi>`, add `--dump-coi-report` to the HARM call and read it.
+  - A spec proposition in `outOfCone` of a spec consequent is a "spec says A influences B, RTL says it cannot" disagreement, independent of what HARM mines.
+  - `unknown` entries are not disagreements: the cone file could not decide them (e.g. signals harm-coi marked unknown).
+- **[none required]** Without the option, nothing changes.
 
 ### H10: RTL predicate harvesting (planned)
 - **[optional]** `harm-coi --emit-config` gives a hint set built from the RTL alone. Useful as the "no LLM" arm of the B3 ablation.

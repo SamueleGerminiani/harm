@@ -482,3 +482,27 @@ Requested by the user after H8's findings. Tests written first and committed fai
 - **Edit rules:** they match against the legacy SVA printing (D-002). The F7 change does not apply to it, and F8 only touches Spot text, so existing `<edit>` rules are unaffected. `EditTest` and the `edit` example pass.
 - **Also found:** before the fix, a property antecedent printed invalid SVA: `G(a && X b -> X c)` gave `a and nexttime b |=> c`, and `|=>` needs a sequence on its left. It is now `(a and nexttime b) implies nexttime c`.
 - **Suites:** `ctest -j6`: **164/164**, 31 min. Linux: pending.
+
+## H9: out-of-cone report (2026-10-06, macOS arm64, g++-13)
+Tests written first and committed failing in `e574590` (all 12 failed: the option did not exist). Implemented in `ddddff6`.
+
+| Test | Result |
+|---|---|
+| A1 hand-written reports, `multipath` (9 propositions, 2 origins) and `structs` (scoped names, a numeric with origin) | pass: 60 and 70 out-of-cone pairs, equal on texts, origins, `numeric`, `outside`, `coneUnknown` |
+| A2 unknown signals, `constructs` with a `coi.json` lacking the target `t` (and `unnamedblk1::i` listed unknown) | pass: 6 out-of-cone pairs; the unknown entries and the three `coneUnknown` consequents as written by hand; `t && a` against `k` is out (its known `a` settles it) |
+| A3 cross-check with the rule recomputed in Python, on H7's 5 configurations and H8's `constructs` | pass: 24–117 pairs per configuration |
+| A4 mining output with and without the option (`multipath` rank, H7 `multipath` filter); a context without `<coi>` | pass: identical outputs; `"coi": null` and the note printed |
+
+- **Hand values vs. the Python rule:** before any implementation, the hand-written expected reports were compared with `check_coi_report.py`'s own computation. They agreed on all three designs.
+- **Mutation test** (bugs planted in HARM's report):
+
+  | Planted bug | Caught by |
+  |---|---|
+  | "any variable in the cone" instead of "every variable" | 6 tests (A1 ×2, A3 ×4) |
+  | unknown variables counted as out | A2 (`h9_expected_constructs`) |
+  | a proposition paired with itself | 9 tests |
+  | origins dropped | A1 ×2 |
+
+  A3's configurations have no origins and no unknown propositions, so only A1/A2 catch those two bugs.
+- **Test change:** `structs.xml` declared its numeric with `loc="dt"`, which HARM expands into propositions at load. It was corrected to `loc="[dt]"` (a numeric candidate, as intended) before the first implementation run. The expected report did not change.
+- **Suites:** `ctest -j6` gives **192/192**, 31 min. Baselines byte-identical. Linux: pending.

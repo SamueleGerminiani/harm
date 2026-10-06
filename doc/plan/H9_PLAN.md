@@ -1,6 +1,6 @@
 # H9 plan: out-of-cone report
 
-*Status: approved 2026-10-06 (D-022); in progress. Branch: `ms/H9-coi-report` (from `dev` @ H8). Effort: 1 d.*
+*Status: approved 2026-10-06 (D-022); done, awaiting review. Branch: `ms/H9-coi-report` (from `dev` @ H8). Effort: 1 d.*
 
 ## Goal
 `--dump-coi-report <file.json>` writes, for each context with a `<coi>`, which antecedent propositions are structurally unable to influence each consequent proposition.
@@ -38,6 +38,13 @@
 - Sorted by text, so the output is deterministic.
 - `origin` is `null` when not given.
 - A context without `<coi>` is listed with `"coi": null` and no consequents, and HARM prints a note.
+
+## As built (2026-10-06): differences from the plan above
+- **`ac` propositions** (shared by antecedent and consequent) are both consequents and antecedents. The plan named only `c` for consequents.
+- **Mixed propositions:** a proposition with an unknown variable and a known variable outside the cone counts as **out** (the known variable settles it), with `outside` listing the known one. The plan did not cover this case. `t && a` against `k` in A2 tests it.
+- **Numeric origins** are also stored under the printed text, so the report finds them (`x` prints as `x`).
+- **The report is written by `ManualDefinition`** after every context is loaded. The function is in `CoiInfo.cc`, declared in `Context.hh` (a forward declaration in `CoiInfo.hh` collided with a private `struct Context` in `ImplicationReducer.cc`).
+- **Test input corrected before the first implementation run:** `structs.xml` declared its numeric with `loc="dt"`. That makes HARM expand it into propositions at load time, while the test meant a numeric candidate, `loc="[dt]"`. The expected report was written for `[dt]` and did not change.
 
 ## Acceptance tests (written first)
 | # | Test | Kind |

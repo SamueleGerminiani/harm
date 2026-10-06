@@ -644,6 +644,15 @@ Harm produces three main types of textual outputs:
 * **`--dump-assertion-info <FILE>`**
     Write, for every kept assertion, a JSON record with its context, text, metric values (contingency table, `complexity`, final score, and the `<coi>` metrics when available) and its propositions (text, antecedent or consequent, cycle offset, variables, `origin`).
 
+* **`--dump-coi-report <FILE>`**
+    Write, for every context with a `<coi>`, an out-of-cone report as JSON. It is computed from the configuration and the cone file, and does not change mining.
+    - **For each consequent proposition** (domain `c` or `ac`), it lists the antecedent propositions and numerics (every other domain) that cannot influence it, with their `origin` and the signals outside the cone (`outside`). The rule is the one filter mode prunes with: a proposition is out if one of its signals is not in the cone of any consequent signal.
+    - **Propositions HARM cannot decide** go to `unknown`, never to "out": a signal the cone file does not know, or a consequent whose cone is unknown (`coneUnknown`).
+    - **Use:** a proposition with `origin="spec"` outside the cone is a disagreement between the specification and the RTL.
+    - A context without `<coi>` is listed with `"coi": null`.
+    - Numerics expanded into propositions (`loc="dt"`, not `"[dt]"`) are reported as their propositions, which do not carry the numeric's origin.
+    - See D-022.
+
 * **`--reduce <syntactic|equiv|implies>`**
     How redundant assertions are removed.
     * `syntactic` (default): assertions with the same text (ignoring spaces and brackets) and the same contingency table.
