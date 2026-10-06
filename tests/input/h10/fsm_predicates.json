@@ -1,0 +1,43 @@
+{
+ "design": "fsm",
+ "predicates": [
+  {
+   "expr": "go",
+   "targets": [
+    "state"
+   ]
+  },
+  {
+   "expr": "rst",
+   "targets": [
+    "state"
+   ]
+  },
+  {
+   "expr": "state == 2'd0",
+   "targets": [
+    "state"
+   ]
+  },
+  {
+   "expr": "state == 2'd1",
+   "targets": [
+    "busy",
+    "state"
+   ]
+  },
+  {
+   "expr": "state == 2'd2",
+   "targets": [
+    "finished",
+    "state"
+   ]
+  },
+  {
+   "expr": "stop",
+   "targets": [
+    "state"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,41 @@
+{
+ "design": "arbiter",
+ "predicates": [
+  {
+   "expr": "!prio",
+   "targets": [
+    "prio"
+   ]
+  },
+  {
+   "expr": "gnt[0]",
+   "targets": [
+    "prio"
+   ]
+  },
+  {
+   "expr": "gnt[1]",
+   "targets": [
+    "prio"
+   ]
+  },
+  {
+   "expr": "prio",
+   "targets": [
+    "gnt"
+   ]
+  },
+  {
+   "expr": "req == 2'd3",
+   "targets": [
+    "gnt"
+   ]
+  },
+  {
+   "expr": "rst",
+   "targets": [
+    "prio"
+   ]
+  }
+ ]
+}

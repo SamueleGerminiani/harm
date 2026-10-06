@@ -1,0 +1,61 @@
+{
+ "design": "constructs",
+ "predicates": [
+  {
+   "expr": "!q",
+   "targets": [
+    "q"
+   ]
+  },
+  {
+   "expr": "a",
+   "targets": [
+    "r"
+   ]
+  },
+  {
+   "expr": "b",
+   "targets": [
+    "r"
+   ]
+  },
+  {
+   "expr": "rst",
+   "targets": [
+    "q"
+   ]
+  },
+  {
+   "expr": "s",
+   "targets": [
+    "y_cond"
+   ]
+  },
+  {
+   "expr": "sel == 2'd0",
+   "targets": [
+    "y_case",
+    "y_full"
+   ]
+  },
+  {
+   "expr": "sel == 2'd1",
+   "targets": [
+    "y_case",
+    "y_full"
+   ]
+  },
+  {
+   "expr": "sel == 2'd2",
+   "targets": [
+    "y_full"
+   ]
+  },
+  {
+   "expr": "sel == 2'd3",
+   "targets": [
+    "y_full"
+   ]
+  }
+ ]
+}
