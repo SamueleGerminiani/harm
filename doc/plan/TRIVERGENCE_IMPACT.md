@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9, H10 and H1b on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9, H10 and H1b on `dev`; H3b awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -186,6 +186,15 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - **[optional]** If a template like `G({..##1..} -> X P0)` is ever added, its SVA is now correct. It may contain `$past` or `implies`: check that the adapter and the formal tools accept them. Verilator accepts `$past`; `implies` is IEEE 1800, and tool support varies.
 - **Spot-LTL text** (the default output and the `text` field of `--dump-assertion-info`): `X(a && b)` keeps its brackets. It was printed `Xa && b`.
   - **[optional]** Only relevant if trivergence parses the Spot text; it reads `--sva`.
+
+### H3b: atom-implication premises (on `ms/H3b-atom-premises`, awaiting review; not on `dev` yet)
+- **`--atom-premises`** (with `--reduce implies`) also drops assertions implied through facts between comparisons, proved with Z3 under HARM's semantics:
+  - `G(cnt > 4'd8 -> b)` drops `G(cnt > 4'd9 -> b)`;
+  - mutually exclusive FSM states are used too.
+  - On `sub_platform1k` (the camellia design) the output goes from 89 to 69 assertions; the reduction takes 5.3 s instead of 0.9 s.
+- **[optional] Stage 5 / suite selection:** useful once trivergence mines with numeric candidates or H10's RTL predicates. With Boolean-only LLM hints it changes nothing (H3b measurement).
+  - `--dump-implications` records then carry `premises`, the facts the claim used.
+- **[none required]** Without the option, `--reduce implies` is unchanged.
 
 ### H8: depth-aware COI filter (on `dev`)
 - `<coi … mode="filter" depth="bounded|exact"/>` also uses the depths of the cone (D-020).

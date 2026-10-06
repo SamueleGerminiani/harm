@@ -542,3 +542,45 @@ Tests written first and committed failing in `60f3f10` (15 of 15 failed: `--pred
 - **Sources for the SV values:** IEEE 1800-2017 §11.4.4, §11.4.5, §11.4.7, §16.6 (the user's copy), and §12.4 for values used as conditions ("tested for being zero"); iverilog agrees (`if`/`assert` on `4'b01x0` pass, on `4'b00x0` fail).
 - **Correction:** D-011 and TRIVERGENCE_IMPACT had called x/z "the likely root cause" of trivergence M0 #33. M0 attributes #33 to inout sampling (#24); the text now says "may explain".
 - **No change to HARM's code;** the default and every baseline are unchanged.
+
+## H3b: atom-implication premises (2026-10-06, macOS arm64, g++-13)
+Tests written first and committed failing in `e87b42b` (API stubs). Implemented in `6217c07`, sped up in `e9e311f`.
+
+| Test | Result |
+|---|---|
+| A1 H3's 49 hand-labelled pairs (37 evaluated) with `--atom-premises`: only `G(cnt > 9 -> b)` / `G(cnt > 8 -> b)` changes, to `B_IMPLIES_A` | pass |
+| A2 20 new hand-labelled pairs (`tests/input/h3b/pairs.txt`): ranges, FSM exclusions, `X`/`\|=>`/`##2`/decision-tree shapes, x/z-sensitive pairs, pairs facts do not help | pass, 20/20; 14 of them are labelled differently without premises (the other 6: one H2 equivalence and five `NONE`) |
+| A2 oracle: every claim checked on 2,000 random traces per pair, in which `cnt` and `st` take x/z bits, with HARM's evaluator | pass, 0 unsound |
+| A3 facts between atoms (Z3), hand-labelled: ranges, bit selects, `!=` vs `!(==)` under x/z, exclusion, signed, a factoring query with a 1 ms timeout (no fact) | pass, 13 |
+| A4 without the option: H3's tests, dumps and all baselines unchanged; `--atom-premises` without `--reduce implies` is an error | pass |
+| A5 the cap: with no queries allowed, every claim is H3's own; at the command line `--atom-premises-max 0` keeps all 3 and prints the message | pass |
+
+- **Validation by enumeration** (`factsMatchEnumerationWithHarmsEvaluator`): the facts over `cnt`/`st` were re-checked with HARM's evaluator on all 4-valued values (4,096 rows). All 10 agree with Z3.
+- **Mutation test** (bugs planted in HARM):
+
+  | Planted bug | Caught by |
+  |---|---|
+  | M1 facts proved without x/z (2-valued encoding) | A3 |
+  | M2 premises given to Spot but not to the finite-trace model | A2, the CLI test |
+  | M3 `p → q` stored as `q → p` | A2 (6 unsound claims caught by the trace oracle), the CLI test |
+  | M4 the cap ignored | A5 (gtest and CLI) |
+- **F2 (from M1): why the x/z-sensitive pairs of A2 pass even with 2-valued facts.**
+  - The facts relate atoms: in `!(cnt == 1)`, the atom is `cnt == 1` and the `!` is structure.
+  - Only `p → q` and `p → ¬q` are asked. With a comparison `p`, which is false on x, those are vacuous on x cycles, so a 2-valued proof usually carries over.
+  - The direction a 2-valued encoding would add wrongly, `¬p → q` (covering), is never asked; it is almost never valid for 4-valued signals.
+  - A3 is the test that checks the encoding itself.
+- **Effect and cost** (`--reduce implies` with / without `--atom-premises`, 8 threads):
+
+  | Case | Dropped by the reduction | Final output | Reduction time |
+  |---|---|---|---|
+  | `sub_platform1k` (camellia design, numeric ranges) | 4 → **215** of 497 | 89 → **69** | 0.94 s → 5.3 s (first version: 33.8 s) |
+  | `bl_master1k` without `--min-frank` | 0 → 0 of 31 | 31 → 31 | 0.04 s → 0.12 s |
+
+  - The final `sub_platform1k` output loses exactly the 20 assertions the measurement's lower bound predicted.
+  - Checked by hand: `G({state ∈ [0,4] ##1 true} |-> X RSTn)` is dropped for `G({!(state ∈ [5,12]) ##1 true} |-> X RSTn)`.
+  - `camellia`'s own example is still the invalid XML noted in H3, so `sub_platform1k`, the same design, stands in for it.
+- **Test corrections after the first run:**
+  - A2's count of pairs that need premises: 14, not "at least 15" (miscounted when written);
+  - A3: `i` is a 64-bit int (the Z3 encoding is exact only at 64 bits; with 32 bits the "no" case is "unknown", soundly);
+  - A3: the timeout query `w64 * v64 == N ⇒ w64 != 1` was false (`w64 = 1`), so Z3 answered "no" at once; it was replaced by a true implication that needs factoring.
+- **Suites:** `ctest -j6`: **211/211**, 31 min. Baselines byte-identical. Linux: pending.

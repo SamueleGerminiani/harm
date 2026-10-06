@@ -1,6 +1,6 @@
 # H3b plan: atom-implication premises for `--reduce implies`
 
-*Status: approved 2026-10-06 after the measurement (D-025: opt-in, cap 2,000); in progress. Branch: `ms/H3b-atom-premises` (from `dev` @ H1b). Effort: 2 d.*
+*Status: approved 2026-10-06 after the measurement (D-025: opt-in, cap 2,000); done, awaiting review. Branch: `ms/H3b-atom-premises` (from `dev` @ H1b). Effort: 2 d.*
 
 ## Goal
 H3 compares assertions with their propositions abstracted to independent atoms, so it misses relations that hold only because of what the propositions mean.
@@ -50,6 +50,19 @@ H3b proves facts between atoms with Z3 (H2), under HARM's semantics including x/
 - **Proposed: opt-in, `--atom-premises`,** valid only with `--reduce implies` (an error otherwise). `--reduce implies` alone stays exactly H3, so its results and trivergence's pinned behaviour do not change.
 - **Alternative:** on by default under `--reduce implies`. That gives more reduction for everyone using `implies`, but changes their output.
 - **The cap:** 2,000 Z3 queries per reduction run by default, with `--atom-premises-max <n>`. Only atom pairs that share a variable are queried.
+
+## As built (2026-10-06): differences from the plan above
+- **Fact kinds:** `p → q`, `q → p` and `p → ¬q` (exclusion) between atoms over a common variable. "Covering" facts (`¬p → q`) are not asked: for 4-valued signals they are almost never valid under HARM's rule (an x makes both comparisons false). See VALIDATION F2.
+- **Order of the checks with premises:**
+  - HARM's finite-trace model first (cheap, rejects most pairs), Spot only if it passes;
+  - a direction that holds without premises is not checked again.
+
+  On `sub_platform1k` this took the reduction from 33.8 s to 5.3 s with the same result. The first version was 35 times slower than `--reduce implies` alone.
+- **`premises` in the dump** lists the facts over the pair's atoms, not a minimal subset.
+- **The validation by enumeration is a gtest** (`factsMatchEnumerationWithHarmsEvaluator`), over all 4-valued values of `cnt` and `st` (4,096 rows).
+- **Test corrections after the first run** (VALIDATION, H3b):
+  - the A2 count of pairs that need premises is exactly 14, not "at least 15";
+  - A3 uses a 64-bit int (the Z3 encoding is exact only at 64 bits) and a true factoring query for the timeout case.
 
 ## Acceptance tests (written first)
 | # | Test | Kind |
