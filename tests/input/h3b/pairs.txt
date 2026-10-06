@@ -1,0 +1,32 @@
+# H3b, acceptance test A2: assertion pairs whose relation needs facts between atoms (D-025).
+# Atoms: a, b bool; cnt logic [3:0]; st logic [1:0]. Labels written from the semantics, with HARM's
+# x/z rule (D-011): a comparison is false when an operand has x/z bits, so !(cnt == 1) is true on x
+# cycles while cnt != 1 is false. A => B for G(ant -> con) when B's antecedent implies A's and A's
+# consequent implies B's.
+# Format: <label> | <A> | <B> | <reason>
+#
+# ---- ranges and equalities
+A_IMPLIES_B | G(cnt >= 4'd5 -> b) | G(cnt == 4'd7 -> b) | cnt == 7 implies cnt >= 5: B's antecedent is stronger
+A_IMPLIES_B | G(a -> cnt == 4'd9) | G(a -> cnt > 4'd8) | cnt == 9 implies cnt > 8
+A_IMPLIES_B | G(a -> cnt < 4'd3) | G(a -> cnt != 4'd7) | cnt < 3 implies cnt != 7 (both false on x)
+EQUIVALENT | G(cnt > 4'd14 -> b) | G(cnt == 4'd15 -> b) | equivalent atoms for 4 bits (already H2)
+NONE | G(cnt > 4'd8 -> b) | G(cnt < 4'd8 -> b) | disjoint ranges
+A_IMPLIES_B | G(a -> cnt == 4'd3 && b) | G(a -> cnt <= 4'd3) | cnt == 3 implies cnt <= 3, inside a conjunction
+# ---- FSM states exclude each other
+A_IMPLIES_B | G(a -> st == 2'd1) | G(a -> !(st == 2'd2)) | st == 1 excludes st == 2
+B_IMPLIES_A | G(a -> !(st == 2'd2)) | G(a -> st == 2'd1) | the same pair, reversed
+A_IMPLIES_B | G(!(st == 2'd0) -> b) | G(st == 2'd1 -> b) | st == 1 implies !(st == 0)
+NONE | G(a -> st == 2'd1) | G(a -> st == 2'd2) | exclusive consequents: neither implies the other
+# ---- template shapes
+A_IMPLIES_B | G({!(st == 2'd0) ##1 a} |-> b) | G({st == 2'd1 ##1 a} |-> b) | in a sequence antecedent
+A_IMPLIES_B | G(a -> X (st == 2'd3)) | G(a -> X !(st == 2'd0)) | under X
+A_IMPLIES_B | G({a} |=> cnt == 4'd0) | G({a} |=> cnt < 4'd4) | with |=>
+A_IMPLIES_B | G(a |-> ##2 cnt == 4'd2) | G(a |-> ##2 cnt <= 4'd2) | with ##2
+A_IMPLIES_B | G({a && cnt > 4'd3} |-> b) | G({a && cnt > 4'd5} |-> b) | in a decision-tree conjunction
+# ---- x/z (D-011): only one direction holds
+A_IMPLIES_B | G(a -> cnt != 4'd1) | G(a -> !(cnt == 4'd1)) | cnt != 1 implies !(cnt == 1); not conversely (x cycles)
+A_IMPLIES_B | G(!(cnt == 4'd1) -> b) | G(cnt != 4'd1 -> b) | B's antecedent implies A's; not conversely (x cycles)
+NONE | G(a -> !(cnt >= 4'd8)) | G(a -> cnt != 4'd9) | !(cnt >= 8) is true on x where cnt != 9 is false; cnt != 9 allows 10
+# ---- facts that do not help
+NONE | G(cnt > 4'd9 -> b) | G(cnt > 4'd8 -> X b) | different delays
+NONE | G(cnt > 4'd9 -> b) | G(st == 2'd1 -> b) | unrelated variables

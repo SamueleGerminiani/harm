@@ -59,9 +59,17 @@ Equivalence checkEquivalence(const PropositionPtr &p1,
   return Equivalence::Unknown;
 }
 
+Entails checkImplication(const PropositionPtr &, const PropositionPtr &, unsigned) {
+  return Entails::Unknown; // H3b: not implemented yet
+}
+
 #else
 
 bool available() { return false; }
+
+Entails checkImplication(const PropositionPtr &, const PropositionPtr &, unsigned) {
+  return Entails::Unknown;
+}
 
 Equivalence checkEquivalence(const PropositionPtr &, const PropositionPtr &,
                              unsigned, Counterexample *) {

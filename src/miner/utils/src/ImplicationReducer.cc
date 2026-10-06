@@ -643,7 +643,7 @@ Implication relation(Abstracted &a, Abstracted &b, Context &ctx) {
 
 Implication implicationBetween(const TemporalExpressionPtr &a,
                                const TemporalExpressionPtr &b,
-                               unsigned z3TimeoutMs) {
+                               unsigned z3TimeoutMs, const AtomPremises &) {
   auto tokens = atomTokens({a, b}, z3TimeoutMs);
   Context ctx;
   Abstracted x = abstractFormula(a, tokens, ctx),
@@ -655,7 +655,8 @@ std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records,
-                    unsigned z3TimeoutMs, size_t *pairsChecked) {
+                    unsigned z3TimeoutMs, size_t *pairsChecked,
+                    const AtomPremises &) {
   const size_t n = in.size();
   std::vector<TemporalExpressionPtr> formulas;
   for (const auto &a : in) {
