@@ -10,7 +10,7 @@
 Values are compared at every rising clock edge, as HARM samples them: the values in effect just
 before the edge.
 
-Usage: perturb.py <reproduce|influence|depths> <fixture dir> [--harm <bin>] [--work <dir>]
+Usage: perturb.py <reproduce|influence|depths> <fixture dir> [--work <dir>] [--coi <coi.json>]
 """
 import argparse
 import json
@@ -273,9 +273,10 @@ def main():
     ap.add_argument("mode", choices=["reproduce", "influence", "depths"])
     ap.add_argument("fixture")
     ap.add_argument("--work")
+    ap.add_argument("--coi", help="the coi.json to check (default: the fixture's expected_coi.json)")
     a = ap.parse_args()
     fixture = Path(a.fixture).resolve()
-    coi = json.loads((fixture / "expected_coi.json").read_text())
+    coi = json.loads(Path(a.coi or fixture / "expected_coi.json").read_text())
     work = Path(a.work) if a.work else Path(tempfile.mkdtemp())
     work.mkdir(parents=True, exist_ok=True)
     print(f"[{fixture.name}] {a.mode}")

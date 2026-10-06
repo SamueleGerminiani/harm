@@ -144,3 +144,42 @@ if(PYTHON3_FOUND)
     endforeach()
 endif()
 set_tests_properties(regression_h7_small_domain PROPERTIES TIMEOUT 60)
+
+# ---- H5: harm-coi generator (A1-A4) ----------------------------------------------------------------
+# harm-coi needs Python >= 3.11 with pyslang (and pytest for A4). Set HARM_COI_PYTHON to such an
+# interpreter (e.g. a venv: python3.12 -m venv v && v/bin/pip install -e 'tools/harm-coi[test]');
+# by default python3 is tried. Without it, the H5 tests are skipped with a message.
+set(HARM_COI_PYTHON "${PYTHON3_FOUND}" CACHE FILEPATH "Python interpreter with pyslang and pytest, for harm-coi")
+set(HARM_COI_OK FALSE)
+if(HARM_COI_PYTHON)
+    execute_process(COMMAND ${HARM_COI_PYTHON} -c "import pyslang, pytest"
+                    RESULT_VARIABLE harm_coi_probe OUTPUT_QUIET ERROR_QUIET)
+    if(harm_coi_probe EQUAL 0)
+        set(HARM_COI_OK TRUE)
+    endif()
+endif()
+if(HARM_COI_OK)
+    set(H5_OUT ${CMAKE_BINARY_DIR}/h5)
+    # A4: constructs outside the fixtures (pytest)
+    add_test(NAME h5_unit
+        COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/tools/harm-coi/tests)
+    set_tests_properties(h5_unit PROPERTIES LABELS coi)
+    foreach(design counter arbiter fsm hier structs multipath)
+        set(F ${CMAKE_SOURCE_DIR}/tests/input/coi/${design})
+        # A1 + A2: equal to the hand-written expected_coi.json and edges.txt; valid for the trace
+        add_test(NAME h5_generator_${design}
+            COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_generator.py ${F}
+                    --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
+        set_tests_properties(h5_generator_${design} PROPERTIES LABELS coi FIXTURES_SETUP h5_coi_${design})
+        # A3: simulation non-influence, on the generator's output
+        if(VERILATOR_FOUND)
+            add_test(NAME h5_influence_${design}
+                COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py influence ${F}
+                        --coi ${H5_OUT}/${design}_coi.json)
+            set_tests_properties(h5_influence_${design} PROPERTIES LABELS "coi;slow"
+                                 FIXTURES_REQUIRED h5_coi_${design})
+        endif()
+    endforeach()
+else()
+    message(STATUS "HARM_COI_PYTHON (${HARM_COI_PYTHON}) lacks pyslang or pytest: the H5 harm-coi tests are skipped")
+endif()
