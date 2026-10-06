@@ -15,7 +15,7 @@ Everything here runs on the Linux machine (trivergence's), by the user or a Clau
   - A fix is a new milestone, with the usual workflow (plan, approval, failing tests first).
   - Only the evaluation's own inputs (manifests, paths) may be corrected on the branch, and noted as such.
 - **D-010 applies:** one compiler for HARM and its libraries.
-- **This work needs no change to trivergence:** it only uses its designs, traces and loaders.
+- **trivergence must not be modified.** Only read its designs, traces and loaders. If something there blocks a design, exclude the design and record why.
 
 
 Use `dev` (H11 is merged). Write down `build/harm --version`.
