@@ -59,3 +59,7 @@ harm_case(process_trace_end_sva ARGS --sva --csv-dir ${EX}/process/traces --conf
 harm_case(h7_multipath_filter NO_BASELINE ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${CMAKE_SOURCE_DIR}/tests/input/h7/multipath.xml)
 # finding: more placeholders than propositions must terminate (expected output by hand)
 harm_case(h7_small_domain ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${CMAKE_SOURCE_DIR}/tests/input/h7/small_domain.xml)
+
+# ---- H8 ------------------------------------------------------------------------------------------
+# A5: determinism of the depth-aware filter (the expected set is checked by h8_depth_multipath_exact)
+harm_case(h8_multipath_exact NO_BASELINE ARGS --vcd ${COI}/multipath/trace.vcd --clk clk --vcd-ss tb::dut --conf ${CMAKE_SOURCE_DIR}/tests/input/h8/multipath.xml)

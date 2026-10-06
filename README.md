@@ -476,6 +476,26 @@ An assertion without antecedent propositions (e.g. an invariant) scores 1. Examp
 - **Assumes the RTL is correct.** Behaviour that an RTL bug removed or added cannot be mined, and HARM warns about it once. Use `mode="rank"` when looking for bugs.
 - **Not "rank mode minus out-of-cone assertions."** For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. The guarantee is that filter mode gives the same result as rank mode on a configuration from which you deleted, for each consequent, the propositions outside its cone. See D-017 and D-018.
 
+**`depth="any|bounded|exact"`** (filter mode only; default `any`) also uses the depths of the cone. An antecedent proposition is checked at its distance `d`, in cycles, from each consequent proposition:
+
+| `depth` | A proposition is kept if each of its signals… |
+| :--- | :--- |
+| `any` | is in the cone of a consequent signal (as above) |
+| `bounded` | reaches a consequent signal with `0 ≤ d ≤` its largest depth, or is saturated and `d ≥ 0` |
+| `exact` | reaches a consequent signal with `d` among its depths, or is saturated and `d > max_depth` |
+
+- **Example:** `y` gets `a` at depths 0 and 2.
+  - `G(a -> X y)` (`d` = 1) is kept by `bounded`, not by `exact`;
+  - `G(a -> X X X y)` (`d` = 3) is kept by neither.
+- **Offsets:**
+  - with `|->` the consequent starts at the end of the antecedent, with `|=>` one cycle later, and with `->` together with the antecedent;
+  - a proposition after the consequent (`d < 0`) never fits;
+  - where the offset is not fixed (`until`, `eventually`, repetitions, ranges), being in the cone is enough.
+- **Decision trees:** each position of the operator has a fixed distance from the consequent. In `{..##1..} |-> c`, the last element is at distance 0, the one before at 1, and so on (D-007). A candidate is tried only at the positions where it fits.
+- **The rule is `coiDepthFit`'s,** so with `exact` every assertion has `coiDepthFit` = 1.
+- **Statistics:** the (candidate, position) pairs the trees tried, before and after the depth filter, in the info message and under `coiFilter` (`dtPairsBefore`, `dtPairsAfter`).
+- See D-020.
+
 Propositions and numerics can carry an `origin` attribute (free text, e.g. `origin="spec"`), reported by `--dump-assertion-info`.
 
 ## Editing Rules Configuration

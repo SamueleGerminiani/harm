@@ -454,7 +454,8 @@ void ManualDefinition::mineContexts(
       }
     }
 
-    // cone of influence: <coi file="..." mode="rank|filter"/> (H6, H7)
+    // cone of influence: <coi file="..." mode="rank|filter" depth="any|bounded|exact"/>
+    // (H6, H7, H8)
     std::vector<rapidxml::xml_node<> *> coiTags;
     getNodesFromName(contextTag, "coi", coiTags);
     messageErrorIf(coiTags.size() > 1,
@@ -468,6 +469,17 @@ void ManualDefinition::mineContexts(
                      "Unknown <coi> mode '" + mode +
                          "' (expected 'rank' or 'filter')");
       context->_coiMode = mode;
+      auto depth = getAttributeValue(coiTags[0], "depth", "");
+      messageErrorIf(!depth.empty() && mode != "filter",
+                     "<coi> depth applies only to mode=\"filter\" (context '" +
+                         contextName + "')");
+      messageErrorIf(!depth.empty() && depth != "any" && depth != "bounded" &&
+                         depth != "exact",
+                     "Unknown <coi> depth '" + depth +
+                         "' (expected 'any', 'bounded' or 'exact')");
+      context->_coiDepth = depth == "exact"     ? CoiDepth::Exact
+                           : depth == "bounded" ? CoiDepth::Bounded
+                                                : CoiDepth::Any;
       static bool warned = false;
       if (mode == "filter" && !warned) {
         warned = true;

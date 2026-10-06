@@ -127,6 +127,9 @@ inline void AntecedentGenerator::findCandidates(
     double currScore) {
 
   DTOperatorPtr dto = t->getDT();
+  if (!admissible(candidate, false, dto->insertionIndex(depth))) {
+    return; // COI depth filter (H8)
+  }
 
   // the 2 propositions of X
   std::vector<PropositionPtr> propPtr;
@@ -324,6 +327,9 @@ inline void AntecedentGenerator::findCandidatesNumeric(
 
   if (dto->isTaken(candidate + numLeavesOffset, 0, depth)) {
     return;
+  }
+  if (!admissible(candidate, true, dto->insertionIndex(depth))) {
+    return; // COI depth filter (H8)
   }
 
   // retrieve the propositions (props)

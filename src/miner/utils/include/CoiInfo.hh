@@ -13,6 +13,18 @@
 namespace harm {
 class Trace;
 using TracePtr = std::shared_ptr<Trace>;
+class TemplateImplication;
+using TemplateImplicationPtr = std::shared_ptr<TemplateImplication>;
+
+/// @brief <coi depth="...">: how the filter uses the depths of the cone (D-020, H8)
+enum class CoiDepth { Any, Bounded, Exact };
+
+/// @brief a consequent leaf seen from an antecedent proposition: its variables, and how many
+/// cycles after the proposition it is evaluated (std::nullopt if not fixed)
+struct ConsequentLeaf {
+  std::vector<std::string> vars;
+  std::optional<int> distance;
+};
 
 /// @brief A cone of influence description (coi.json v1, doc/schemas/coi.v1.json, H4)
 class CoiInfo {
@@ -35,6 +47,12 @@ public:
   /// proposition without variables is kept
   bool inCone(const std::vector<std::string> &propVars,
               const std::vector<std::string> &consequentVars) const;
+  /// @brief D-020: a proposition with these variables fits the consequent leaves at their
+  /// distances. Any: inCone. Exact: every variable has some consequent leaf and variable with the
+  /// distance among its depths (or beyond max_depth, saturated). Bounded: 0 <= distance <= its
+  /// largest depth (or saturated). Unknown signals and distances keep the proposition
+  bool fits(const std::vector<std::string> &propVars,
+            const std::vector<ConsequentLeaf> &consequent, CoiDepth depth) const;
   /// @brief the source entry of 'source' in the cone of 'target', or nullptr
   const Source *source(const std::string &target,
                        const std::string &source) const;
@@ -60,6 +78,15 @@ struct LeafOffset {
 /// @brief the leaves of G(antecedent -> consequent), in printing order
 std::vector<LeafOffset>
 leafOffsets(const expression::TemporalExpressionPtr &formula);
+
+/// @brief D-007: for each decision-tree index of t, the distance in cycles from an item at that
+/// index to each consequent leaf (in leafOffsets order); std::nullopt where it is not fixed.
+/// Empty if t has no decision-tree operator
+std::vector<std::vector<std::optional<int>>>
+dtIndexDistances(const TemplateImplicationPtr &t);
+/// @brief as dtIndexDistances, with the variables of each consequent leaf
+std::vector<std::vector<ConsequentLeaf>>
+dtIndexConsequents(const TemplateImplicationPtr &t);
 
 /// @brief the COI rank metrics of an assertion (D-014)
 struct CoiMetrics {

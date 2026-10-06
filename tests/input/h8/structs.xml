@@ -1,0 +1,32 @@
+<harm>
+    <!-- H8 (acceptance A2-A4, A6): depth-aware COI filter on the H4 fixture "structs". The propositions and the
+         cone are H7's; the templates add X X (depth 2), single-index decision trees (A3) and
+         multi-index ones, including '->', whose later indices come after the consequent. -->
+    <context name="default">
+        <prop exp="xv" loc="a, c, dt"/>
+        <prop exp="m == 2&apos;d0" loc="a, c, dt"/>
+        <prop exp="x == 3&apos;d0" loc="a, c, dt"/>
+        <prop exp="bus::valid" loc="a, c, dt"/>
+        <prop exp="bus::data == 3&apos;d0" loc="a, c, dt"/>
+        <prop exp="c::mode == 2&apos;d1" loc="a, c, dt"/>
+        <prop exp="c::val == 3&apos;d0" loc="a, c, dt"/>
+        <prop exp="xv &amp;&amp; m == 2&apos;d0" loc="a, c, dt"/>
+        <prop exp="bus::valid || x == 3&apos;d0" loc="a, c, dt"/>
+        <coi file="../coi/structs/expected_coi.json" mode="filter" depth="exact"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <template exp="G(P0 -&gt; X X P1)"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <!-- added after the oracle mutation test (H8 VALIDATION): |=> and a distance beyond max_depth -->
+        <template exp="G({P0 ##1 P1} |=&gt; P2)"/>
+        <template exp="G(P0 -&gt; X X X X P1)"/>
+        <!-- single index (A3) -->
+        <template dtLimits="3A" exp="G({..&amp;&amp;..}|-&gt; X P0)"/>
+        <template dtLimits="3A,1D" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <!-- several indices (A4) -->
+        <template dtLimits="3A,3D" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <template dtLimits="3A,3D" exp="G({..##1..}|=&gt; P0)"/>
+        <template dtLimits="3A,3D" exp="G({..##1..} -&gt; X P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

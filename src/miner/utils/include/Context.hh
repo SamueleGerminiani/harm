@@ -69,10 +69,14 @@ public:
   CoiInfoPtr _coi = nullptr;
   ///<coi mode="...">: "rank" (H6) or "filter" (H7, D-017)
   std::string _coiMode = "rank";
+  ///<coi depth="...">, filter mode only (H8, D-020)
+  CoiDepth _coiDepth = CoiDepth::Any;
   ///filter mode: the search space before and after pruning (H7), all templates of the context
   struct CoiFilterStats {
     size_t permutationsBefore = 0, permutationsAfter = 0;
     size_t dtCandidatesBefore = 0, dtCandidatesAfter = 0;
+    ///depth filter (H8): (decision-tree candidate, index) pairs the tree tried, before and after
+    size_t dtPairsBefore = 0, dtPairsAfter = 0;
   } _coiFilterStats;
   ///origin="..." of propositions and numerics, by their text
   std::unordered_map<std::string, std::string> _origin;

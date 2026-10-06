@@ -7,6 +7,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include "DTOperator.hh"
+#include "PointerUtils.hh"
+#include "TemplateImplication.hh"
 #include "Trace.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/temporal/temporal.hh"
@@ -121,6 +124,53 @@ bool CoiInfo::inCone(const std::vector<std::string> &propVars,
   return true;
 }
 
+bool CoiInfo::fits(const std::vector<std::string> &propVars,
+                   const std::vector<ConsequentLeaf> &consequent,
+                   CoiDepth depth) const {
+  if (depth == CoiDepth::Any) {
+    std::vector<std::string> all;
+    for (const auto &q : consequent) {
+      all.insert(all.end(), q.vars.begin(), q.vars.end());
+    }
+    return inCone(propVars, all);
+  }
+  for (const auto &v : propVars) {
+    if (!knows(v)) {
+      continue; // unknown: never excluded (D-017)
+    }
+    bool vFits = false;
+    for (const auto &q : consequent) {
+      for (const auto &c : q.vars) {
+        if (!knows(c)) {
+          vFits = true; // the cone of an unknown consequent signal is unknown
+          continue;
+        }
+        const Source *s = source(c, v);
+        if (s == nullptr) {
+          continue;
+        }
+        if (!q.distance) {
+          vFits = true; // offset not fixed: cone membership (D-014)
+          continue;
+        }
+        int d = *q.distance;
+        if (depth == CoiDepth::Exact) {
+          vFits |= std::find(s->depths.begin(), s->depths.end(), d) !=
+                       s->depths.end() ||
+                   (s->saturated && d > _maxDepth);
+        } else {
+          vFits |= d >= 0 && ((!s->depths.empty() && d <= s->depths.back()) ||
+                              s->saturated);
+        }
+      }
+    }
+    if (!vFits) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const CoiInfo::Source *CoiInfo::source(const std::string &target,
                                        const std::string &source) const {
   auto t = _targets.find(target);
@@ -144,6 +194,14 @@ Offset walk(const TemporalExpressionPtr &te, Offset start, bool inAntecedent,
     leaves.push_back({inst->getProposition(), inAntecedent, start});
     return start;
   }
+  if (auto ph = std::dynamic_pointer_cast<BooleanLayerPlaceholder>(te)) {
+    // a template formula: the proposition currently loaded in the placeholder (H8)
+    auto &pp = ph->getPlaceholderPointer();
+    if (pp != nullptr && *pp != nullptr) {
+      leaves.push_back({*pp, inAntecedent, start});
+    }
+    return start;
+  }
   if (auto c = std::dynamic_pointer_cast<SereConcat>(te)) {
     Offset e = walk(c->getItems()[0], start, inAntecedent, leaves);
     return walk(c->getItems()[1], c->isOverlapping() ? e : plus(e, 1),
@@ -162,7 +220,10 @@ Offset walk(const TemporalExpressionPtr &te, Offset start, bool inAntecedent,
   }
   if (auto imp = std::dynamic_pointer_cast<PropertyImplication>(te)) {
     Offset e = walk(imp->getItems()[0], 0, true, leaves);
-    return walk(imp->getItems()[1], imp->isOverlapping() ? e : plus(e, 1),
+    // |-> and |=> start the consequent at the end of the antecedent; -> and => start it with
+    // the antecedent, whatever its length (H8 finding F6)
+    Offset from = imp->isMMImplication() ? e : Offset(0);
+    return walk(imp->getItems()[1], imp->isOverlapping() ? from : plus(from, 1),
                 false, leaves);
   }
   if (auto n = std::dynamic_pointer_cast<PropertyNext>(te)) {
@@ -211,6 +272,62 @@ std::vector<LeafOffset> leafOffsets(const TemporalExpressionPtr &formula) {
   return leaves;
 }
 
+std::vector<std::vector<ConsequentLeaf>>
+dtIndexConsequents(const TemplateImplicationPtr &t) {
+  DTOperatorPtr dto = t->getDT();
+  if (dto == nullptr) {
+    return {};
+  }
+  // a marker at each index in turn: its offset, and the consequent leaves', in the instantiated
+  // formula (the same offsets as coiDepthFit, D-014). copy() copies propositions, so the marker
+  // is found by its name, which cannot be a signal name
+  const std::string markerName = "$harm_dt_index_marker";
+  std::vector<unsigned int> markerValues(t->getTraceLength() + 1, 0);
+  PropositionPtr marker = generatePtr<BooleanVariable>(
+      markerValues.data(), markerName, t->getTraceLength());
+  std::vector<std::vector<ConsequentLeaf>> out;
+  for (size_t i = 0; i < dto->getNumIndices(); i++) {
+    dto->addItem(marker, (int)i);
+    auto leaves = leafOffsets(copy(t->getTemplateFormula(), true));
+    dto->removeItems();
+    std::optional<int> at;
+    bool found = false;
+    for (const auto &l : leaves) {
+      auto vars = variablesOf(l.prop);
+      if (l.inAntecedent && vars.size() == 1 && vars[0] == markerName) {
+        at = l.offset;
+        found = true;
+      }
+    }
+    messageErrorIf(!found, "COI depth filter: cannot locate decision-tree index " +
+                               std::to_string(i) + " in " + t->getTemplateStr());
+    std::vector<ConsequentLeaf> row;
+    for (const auto &l : leaves) {
+      if (!l.inAntecedent) {
+        std::optional<int> d;
+        if (at && l.offset) {
+          d = *l.offset - *at;
+        }
+        row.push_back({variablesOf(l.prop), d});
+      }
+    }
+    out.push_back(row);
+  }
+  return out;
+}
+
+std::vector<std::vector<std::optional<int>>>
+dtIndexDistances(const TemplateImplicationPtr &t) {
+  std::vector<std::vector<std::optional<int>>> out;
+  for (const auto &row : dtIndexConsequents(t)) {
+    out.emplace_back();
+    for (const auto &q : row) {
+      out.back().push_back(q.distance);
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- metrics (D-014)
 CoiMetrics computeCoiMetrics(const TemporalExpressionPtr &formula,
                              const CoiInfo &coi) {
@@ -243,38 +360,20 @@ CoiMetrics computeCoiMetrics(const TemporalExpressionPtr &formula,
     counted++;
     // in the cone: the rule shared with filter mode (D-017)
     bool leafInCone = coi.inCone(vars, consequentVars);
-    bool hasUnknown = false, leafFits = true;
+    bool hasUnknown = false;
     for (const auto &v : vars) {
-      if (!coi.knows(v)) {
-        hasUnknown = true; // in the cone and fitting, but counted (D-014)
-        continue;
-      }
-      bool vFits = false;
-      for (const auto &q : consequent) {
-        for (const auto &c : q.vars) {
-          if (!coi.knows(c)) {
-            // the cone of an unknown consequent signal is unknown: it cannot exclude v
-            vFits = true;
-            continue;
-          }
-          const CoiInfo::Source *s = coi.source(c, v);
-          if (s == nullptr) {
-            continue;
-          }
-          if (!l.offset || !q.offset) {
-            vFits = true;
-            continue;
-          }
-          int d = *q.offset - *l.offset;
-          if (std::find(s->depths.begin(), s->depths.end(), d) !=
-                  s->depths.end() ||
-              (s->saturated && d > coi._maxDepth)) {
-            vFits = true;
-          }
-        }
-      }
-      leafFits &= vFits;
+      hasUnknown |= !coi.knows(v); // in the cone and fitting, but counted (D-014)
     }
+    std::vector<ConsequentLeaf> dist;
+    for (const auto &q : consequent) {
+      std::optional<int> d;
+      if (l.offset && q.offset) {
+        d = *q.offset - *l.offset;
+      }
+      dist.push_back({q.vars, d});
+    }
+    // fits(Exact) implies inCone; the rule is shared with the depth filter (D-020)
+    bool leafFits = coi.fits(vars, dist, CoiDepth::Exact);
     m.unknown += hasUnknown;
     inCone += leafInCone;
     fitting += leafInCone && leafFits;

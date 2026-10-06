@@ -1,0 +1,10 @@
+<harm>
+    <!-- H8 A5: a configuration error -->
+    <context name="default">
+        <prop exp="a" loc="a, c"/>
+        <prop exp="y" loc="a, c"/>
+        <coi file="../coi/multipath/expected_coi.json" mode="rank" depth="exact"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>
