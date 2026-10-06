@@ -1,9 +1,11 @@
 # H11 plan: evaluation, documentation and release
 
-*Status: plan, awaiting approval. Branch: `ms/H11-release` (from `dev` @ H3b). Effort: 3–5 d, of which part runs on the Linux machine.*
+*Status: approved 2026-10-06 (D-026, D-027), with the merge into `main` and the tag **deferred** by the user: HARM stays on `dev` for a while; in progress. Branch: `ms/H11-release` (from `dev` @ H3b). Effort: 3–5 d, of which part runs on the Linux machine.*
 
 ## Goal
-Measure what the extension plan added, finish the documentation and the Docker image, and release: merge `dev` into `main` with a tag (PLAN §0.3). The release waits for the Linux checks, which are still pending for every milestone.
+Measure what the extension plan added, and finish the documentation and the Docker image. Run the Linux checks that are still pending for every milestone.
+
+**The release** (merge `dev` into `main` with the tag `v4`, PLAN §0.3) is **deferred** at the user's request (2026-10-06): HARM stays on `dev` for a while. H11 ends on `dev`, and the release becomes a separate step the user starts.
 
 ## What can run where
 | Part | Here (macOS) | Linux machine (trivergence) |
@@ -54,7 +56,7 @@ The Linux part is a script plus a checklist (`eval/LINUX.md`) that you run there
   - builds a given ref (`ARG HARM_REF=v4`) instead of whatever `main` is;
   - installs Z3 (already in `install_all.sh`), Python ≥ 3.11 with harm-coi and pyslang, and Verilator and Icarus for the oracles;
   - runs the fast test suite at build time.
-- **The merge:** `dev` into `main`, `--no-ff`, in one reviewed step after the Linux results are in; then the tag, and pushes.
+- **The merge (deferred):** `dev` into `main`, `--no-ff`, in one reviewed step when the user decides; then the tag `v4`, and pushes. Until then, the Dockerfile's default ref is `dev`, and `--version` reports `git describe` (e.g. `v3-140-g1234abc`).
 
 ## Acceptance tests
 | # | Test | Where |
