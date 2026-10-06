@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9 and H10 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9, H10 and H1b on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -33,6 +33,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H8 | `dev` @ `366374a06511672e5c3405cd3ea64e8beb6793f3` | yes | — |
 | H9 | `dev` @ `28e606d4dacf5f73a76cd3a1dea7379196e912f2` | yes | — |
 | H10 | `dev` @ `63b5ff84ea3b987bc848222ef2dc174f03dd0dd2` | yes | — |
+| H1b | `dev` @ `165328a7208875a0659d409b857a828f08710ea6` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
