@@ -188,3 +188,43 @@ These complete D-005 (depth) and D-013 (sources and targets) for what the H4 fix
   - a (source, target) pair whose two names are one net in the simulator (same VCD identifier: a port and the signal connected to it, or `assign y = x` merged by Verilator) is not checked, because forcing one forces the other;
   - a name on the clock's net is never forced (D-013);
   - the skipped pairs are printed. On the H4 fixtures this removes 2 pairs (`hier` dout/g[2]::w, `multipath` z/rb), which passed before.
+
+## D-020: depth modes of the COI filter (2026-10-06, H8, approved)
+`<coi … mode="filter" depth="any|bounded|exact"/>`. `depth` with `mode="rank"` is an error, and so is an unknown value.
+
+For an antecedent proposition at distance `d` cycles before a consequent leaf (the offsets of D-014, computed by `leafOffsets`), with `v` a variable of the proposition and `c` a variable of the consequent leaf:
+- **`any`** (the default): H7, signal level (D-017).
+- **`exact`:** every known `v` has some consequent leaf and `c` such that `d` is among the depths of `v` in `cone(c)`, or `d > max_depth` and `v` is saturated.
+  - This is `coiDepthFit`'s leaf rule. The metric and the filter share one function (`CoiInfo::fits`), so filter output has `coiDepthFit = 1`.
+- **`bounded`:** the same, with `0 ≤ d ≤` the largest depth of `v` in `cone(c)`, or `d ≥ 0` and `v` saturated.
+- **Unchanged from D-017:**
+  - unknown signals and unknown consequent signals keep the proposition;
+  - a proposition without variables is kept;
+  - placeholders shared by antecedent and consequent are not filtered;
+  - an offset that is not fixed falls back to cone membership.
+- **Plain templates:** a permutation is removed if any antecedent leaf does not fit.
+- **Decision trees:** a (candidate, index) pair is skipped if the candidate does not fit at that index's distance (D-007). The tree is greedy, so filter output is not rank output post-filtered (as in D-018).
+
+## D-007: decision-tree index → cycle distance to the consequent (2026-10-06, H8, checked by hand)
+Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a fixed distance, in cycles, before each consequent leaf. The distance does not depend on how many items the tree adds later. Step `N` (`..##N..`, `..#N&..`); `off(q)` = offset of consequent leaf `q` from where the consequent starts (`X`, `##k` in the consequent).
+
+| Implication | Antecedent layout | Distance of index `i` to leaf `q` |
+|---|---|---|
+| `\|->` | `dM ##N … ##N d1 ##N d0` (index 0 is the last cycle) | `i·N + off(q)` |
+| `\|=>` | same | `i·N + 1 + off(q)` |
+| `->` | `d0 ##N d1 … ##N dM` from the start, which the consequent shares | `off(q) − i·N`, negative when the item comes after the consequent |
+| `..&&..` | one index | as index 0 |
+
+- **Other events in the antecedent shift every index alike:**
+  - `{..##1..;v4} |-> c`: `i + 1`;
+  - `{v4;..##1..} -> X c`: `−i`.
+- **Offsets that are not fixed** (`F`, `until`, repetitions, ranges): unknown, so cone membership only.
+- **Computed, not hard-coded:** HARM places a marker at each index and runs `leafOffsets`, the function behind `coiDepthFit`. `tests/coiDepthTests.cc` checks 12 template shapes against this table.
+- **Checked by hand on mined `counter` assertions (H8 VALIDATION):**
+
+  | Assertion | Index | Hand-counted distance | Table |
+  |---|---|---|---|
+  | `G({rst ##1 cnt == 4'b0} \|=> cnt == 4'b0)` | 1 (`rst`) | 2 | `\|=>`: 1 + 1 = 2 |
+  | `G({rst ##2 true} \|-> cnt == 4'b0)` | 2 | 2 | `\|->`: 2 |
+  | `G({##1 en ##1 cnt == 4'b0} -> X(en && wrap))` | 2 (`cnt`) | −1 | `->`: 1 − 2 = −1 |
+  | `G({!en && cnt == 4'b0} \|-> X cnt == 4'b0)` | `..&&..` | 1 | 1 |

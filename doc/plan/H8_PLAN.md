@@ -1,6 +1,6 @@
 # H8 plan: depth-aware COI filter
 
-*Status: approved 2026-10-06 (D-007 after the hand check, D-020); in progress. Branch: `ms/H8-depth-filter` (from `dev` @ H5). Effort: 3–4 d.*
+*Status: approved 2026-10-06 (D-007 after the hand check, D-020); done, awaiting review. Branch: `ms/H8-depth-filter` (from `dev` @ H5). Effort: 3–4 d.*
 
 ## Goal
 H7's filter mode keeps an antecedent proposition if its signals are in the consequent's cone, at any depth. H8 also uses the **depths** in `coi.json`: a proposition is kept only where its cycle offset from the consequent is one at which its signals can influence the consequent.
@@ -49,6 +49,17 @@ H7's filter mode keeps an antecedent proposition if its signals are in the conse
     - mutation tests.
 - **F5. No RTL for `bl_master`** (H7 F4) or the other examples, so the PLAN's "report on `bl_master`" cannot be done. The report covers the 5 fixtures HARM can load and H5's `constructs` design.
 
+- **F6 (found while writing A1): `leafOffsets` put the consequent of `->` at the end of a multi-cycle antecedent.** HARM evaluates it from the start of the antecedent; checked by mining:
+  - `G({a ##1 b} -> X c)` holds with `c` one cycle after `a`, but `leafOffsets` said 2;
+  - for `G(a && X b -> X c)` it said "unknown".
+
+  `coiDepthFit` (H6) was therefore wrong for those templates; plain `G(a -> X b)` was not affected. **Fixed in H8,** since the filter needs it. Rank mode's metric changes only for `->` templates with multi-cycle antecedents, and H3's depth cutoff uses the same offsets.
+- **F7 (found by A4): `--sva` prints `G({s} -> X c)` as `s |=> c`.**
+  - In SVA that anchors `c` at the end of `s`, while HARM mined it anchored at the start, so the printed SVA does not say what HARM checked. A correct translation is `(s) implies nexttime c`.
+  - **Not fixed in H8:** it changes printed output, and needs its own decision. Only `->` templates with a multi-cycle antecedent are affected. No example and no trivergence template uses them; only H8's test configurations do.
+  - A4 reads the Spot-LTL text instead, which keeps the distinction.
+- **F8 (found by A4):** the Spot-LTL text prints `X(p)` without parentheses (`Xen && wrap` for `X(en && wrap)`), which Spot itself would read as `(X en) && wrap`. A printing ambiguity, not fixed. A4's parser follows HARM's convention.
+
 ## Decisions to approve
 ### D-007: decision-tree index → cycle offset
 - **The table above (F2),** for `|->`, `|=>`, `->`, step `N`, and consequents with `X^k`/`##k`.
@@ -75,6 +86,14 @@ For an antecedent proposition at offset `d` before a consequent leaf (same leaf 
    - in `AntecedentGenerator::findCandidates`/`findCandidatesNumeric`, a (candidate, index) pair that does not fit is skipped. The test comes from `TLMiner` as a predicate, so `AntecedentGenerator` stays COI-agnostic.
 5. **Statistics:** the (candidate, index) pairs before and after, next to H7's counts, in the info messages and in `coiFilter` in `--dump-assertion-info`, which also records `depth`.
 6. **Docs:** README, DECISIONS, VALIDATION, TRIVERGENCE_IMPACT.
+
+## As built (2026-10-06): differences from the plan above
+- **`leafOffsets`** also reads template formulas: through a placeholder, the proposition currently loaded. Plain-template pruning uses this, and keeps H7's rule that placeholders shared by antecedent and consequent are not filtered. Assertion formulas have no placeholders, so the other callers are unchanged.
+- **The D-007 table is computed with a marker variable** (`$harm_dt_index_marker`, not a valid signal name), not by pointer: `copy()` copies propositions.
+- **`DTOperator`** gained `insertionIndex(depth)` and `getNumIndices()`. `DTAnd` has one index.
+- **A2:** the post-filter applies the Python D-020 rule to offsets parsed from the text, for both modes. For `exact`, HARM's `coiDepthFit == 1` must also select the same set. The plan said "the dump's offsets" for `bounded` only; this is more independent.
+- **A4 parses the Spot-LTL text, not the SVA** (F7).
+- **After the mutation test,** two plain templates were added to every configuration: `G({P0 ##1 P1} |=> P2)` and `G(P0 -> X X X X P1)`. The reason is in VALIDATION.
 
 ## Acceptance tests (written first)
 | # | Test | Kind |

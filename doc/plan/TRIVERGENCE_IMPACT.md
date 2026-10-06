@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`; H8 awaiting review on `ms/H8-depth-filter`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -170,9 +170,19 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] T9 cross-check:** `tests/coi/xcheck_yosys.py` compares harm-coi's signal-level cones with a yosys netlist (`read_slang`, yosys ≥ 0.67). It could be pointed at OpenFPV's AIGER-level COI on shared designs.
 - **Answer to §4, "where should the generator run":** it needs only the RTL file list, top, scope and a trace. It can run once per design in the benchmark loaders (F4), or in stage 3 next to the simulation that produces the trace. It takes well under a second on the fixtures; large designs are untested.
 
-### H8–H9: depth-aware filter and out-of-cone report (planned)
-- **[optional] Depth-aware filter (H8):** the same baseline caveat as H7.
-- **[recommended] Out-of-cone report (H9):** a spec-derived proposition outside a target's structural cone is a new disagreement signal: "spec says A affects B, RTL says it cannot". It is a candidate input to B4 triage.
+### H8: depth-aware COI filter (on `ms/H8-depth-filter`, awaiting review; not on `dev` yet)
+- `<coi … mode="filter" depth="bounded|exact"/>` also uses the depths of the cone (D-020).
+  - **Example:** `y` gets `a` at depths 0 and 2. `G(a -> X y)` is kept by `bounded` and pruned by `exact`; `G(a -> X X X y)` is pruned by both.
+  - On the fixtures, `exact` cuts the output by a further 26–46% below H7's filter mode (`depth="any"`), and `bounded` by 5–25% (VALIDATION, H8).
+- **[optional] The A3 baseline:** if Paper A uses "HARM + COI filter" as the GoldMine-style structural baseline, `depth="exact"` is the closest to GoldMine's cycle-accurate cones. Use the same caveat as H7: it assumes the RTL is correct.
+- **[none required]** Rank mode is unchanged, except for one fix. `coiDepthFit` now places the consequent of `->` at the start of a multi-cycle antecedent, as HARM evaluates it (H8 F6). Trivergence's templates use `|->` and single-cycle `->`, which are not affected.
+- **[recommended, check] SVA printing of `->` with a multi-cycle antecedent (H8 F7, not fixed yet).** `--sva` prints `G({s} -> X c)` as `s |=> c`, which in SVA anchors `c` at the end of `s` instead of its start.
+  - Trivergence's adapter reads `--sva` output, so it would get an SVA assertion that differs from what HARM mined.
+  - Its current templates do not produce this shape: `G({..#1&..}|-> …)`, `G({..&&..}|-> …)`, `G(p0 -> p1)`. Adding a template like `G({..##1..} -> X P0)` would.
+  - A fix is proposed for a later HARM milestone.
+
+### H9: out-of-cone report (planned)
+- **[recommended]** A spec-derived proposition outside a target's structural cone is a new disagreement signal: "the spec says A affects B, the RTL says it cannot". It is a candidate input to B4 triage.
 
 ### H10: RTL predicate harvesting (planned)
 - **[optional]** `harm-coi --emit-config` gives a hint set built from the RTL alone. Useful as the "no LLM" arm of the B3 ablation.

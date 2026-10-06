@@ -382,3 +382,71 @@ Written first and committed failing in `e43c091`, against a stub that raised `No
   - The suite includes the 23 H5 tests: `h5_unit`, `h5_generator_*` ×7, `h5_influence_*` ×7, `h5_xcheck_yosys_*` ×7 and `h5_reproduce_constructs`.
 - **The yosys cross-check ran with OSS CAD Suite's yosys** (`-DHARM_COI_YOSYS=…`). Without a yosys that has `read_slang`, those 7 tests are skipped with a message.
 - **Linux: pending** (A5).
+
+## H8: depth-aware COI filter (2026-10-06, macOS arm64, g++-13)
+
+### Acceptance tests
+Written first and committed failing in `7b52d80`, against stubs. Implemented in `a23ec43`; tests strengthened after the mutation test in `22f7edf` (see "Test changes").
+
+| Test | Result |
+|---|---|
+| A1 `CoiDepthTest`: D-007 table (12 template shapes), `insertionIndex`, D-020 `fits` (21 hand cases on `multipath` and `counter`), `->` offsets (F6) | pass. The expectations were written before the implementation; none changed |
+| A2 plain templates: filter (`exact`/`bounded`) = rank post-filtered by the Python D-020 rule on the printed text; for `exact`, HARM's `coiDepthFit == 1` selects the same set | pass, 6 designs × 2 modes |
+| A3 single-index decision trees: filter = union of per-(consequent, template) restricted rank runs | pass, 6 × 2 (e.g. multipath `exact` 9 = 9 from 8 runs) |
+| A4 soundness on every template, multi-index trees included, offsets parsed from the text | pass, 0 violations on 6 × 2 |
+| A5 errors (`depth` with rank mode, unknown value); `determinism_h8_multipath_exact`; H7 tests and all baselines unchanged | pass |
+| A6 report | below |
+
+### A6: search space and output (filter mode)
+| Design | Assertions: `any` / `bounded` / `exact` | Permutations, `exact` (`any`) | (candidate, index) pairs, `exact` |
+|---|---|---|---|
+| counter | 24 / 21 / 13 | 721 → 214 (225) | 332 → 277 |
+| arbiter | 76 / 72 / 51 | 1032 → 513 (536) | 544 → 401 |
+| fsm | 83 / 75 / 58 | 1422 → 353 (375) | 495 → 385 |
+| multipath | 55 / 41 / 37 | 1422 → 63 (129) | 120 → 59 |
+| structs | 34 / 30 / 25 | 1422 → 85 (140) | 118 → 65 |
+| constructs (H5) | 16 / 12 / 11 | 3156 → 96 (182) | 191 → 111 |
+
+- **Output:** `exact` removes 26–46% of filter mode's output, `bounded` 5–25%.
+- **Mining times** are about 0.12 s everywhere: the fixtures are too small to show a difference.
+- **No `bl_master`:** it has no RTL (F5 of the plan).
+- **Why `bounded` changes less on `counter`, `arbiter` and `fsm`:** their cones are saturated (register feedback), so what `bounded` prunes there is mostly items after the consequent (`d < 0`, `->` templates).
+
+### D-007, checked by hand
+On mined `counter` assertions, one or more per operator and implication, the distance of each tree item was counted by hand from the printed formula and compared with the table. All agree; the cases are listed in D-007.
+
+### Mutation test of the oracles (bugs planted in HARM, after `22f7edf`)
+| Planted bug | Caught by |
+|---|---|
+| M1: distance off by one in `fits` | A1, H6's `CoiMetricsTest` and `h6_assertion_info`, all 12 H8 checks |
+| M2: `\|=>` treated as `\|->` in `leafOffsets` | A1, `CoiMetricsTest`, 7 H8 checks |
+| M3: `->` anchored at the end of the antecedent (F6 reverted) | A1, 11 H8 checks |
+| M4: `bounded` and `exact` swapped | A1, `CoiMetricsTest`, 11 H8 checks |
+| M5: saturation dropped from `exact` | A1, `CoiMetricsTest`, `h8_depth_fsm_exact` |
+| M6: the tree's index ignored (every index checked as index 0) | 11 H8 checks (not A1: it does not run the tree) |
+
+- **The first run, before `22f7edf`, showed gaps:**
+  - M2 and M5 were caught only by the gtests;
+  - no fixture had a plain `|=>` template or a distance beyond `max_depth`;
+  - A2 `exact` compared with HARM's own `coiDepthFit`, which shares the mutated code.
+- **The fix:** two templates in every configuration, and A2 against the Python rule as well. M2 is then caught by 7 fixture checks and M5 by one.
+
+### Findings
+- **F6 (fixed): `leafOffsets` anchored the consequent of `->` at the end of a multi-cycle antecedent.**
+  - **Effect before the fix:** `coiDepthFit` (H6) was wrong for those templates. HARM evaluates them from the start: mining `G({a ##1 b} -> X c)` finds `c` one cycle after `a`.
+  - **The fix** changes rank-mode `coiDepthFit` only for `->` with a multi-cycle antecedent. No baseline or H6 test has such a template, and none changed. H3's depth cutoff uses the same offsets; H3's tests are unchanged.
+- **F7 (not fixed, to decide): `--sva` prints `G({s} -> X c)` as `s |=> c`.**
+  - The printed SVA anchors `c` at the end of `s`, which is not what HARM mined. A start-anchored translation is `(s) implies nexttime c`.
+  - It affects only `->` templates with multi-cycle antecedents. No example or trivergence template uses them, but the trivergence hand-off mentions it.
+- **F8 (not fixed): the Spot-LTL text prints `X(en && wrap)` as `Xen && wrap`,** which Spot reads as `(X en) && wrap`. A printing ambiguity.
+- **Test changes after the first implementation run:**
+  - **A4 parses the Spot-LTL text instead of the SVA** (F7). With SVA it flagged `r1 ##1 !a |=> y`, which HARM had mined as `{r1 ##1 !a} -> X y`, a correct `exact` result.
+  - **The A4 parser fixes:**
+    - a leading `X` applies to the rest of the operand (F8);
+    - `:` (fusion) no longer matches inside `bus::valid`. Before the fix, scoped names were split into unknown "signals", so `structs` and `constructs` were checked too leniently. The strengthened A2 exposed it.
+  - **After the mutation test:** the two templates and the A2 change described above.
+  - No expected value of A1 changed. A2/A3 compare HARM runs, so they have no hand-written expected values.
+
+### Suites
+- `ctest -j6` (all labels): **178/178**, 31 min. Baselines byte-identical.
+- **Linux: pending.**
