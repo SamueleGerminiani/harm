@@ -309,4 +309,5 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H8 | Depth-aware COI filter | done |
 | H9 | Out-of-cone report | done |
 | H10 | RTL predicate harvesting | done |
-| H11 | Evaluation, docs and release | merged into `dev`; Linux checklist `eval/LINUX.md` pending; release to `main` deferred by the user |
+| H11 | Evaluation, docs and release | merged into `dev`; Linux checklist `eval/LINUX.md` blocked(F-L1: no Linux build); release to `main` deferred by the user |
+| H11b | HARM builds on Linux (F-L1) | planned |
