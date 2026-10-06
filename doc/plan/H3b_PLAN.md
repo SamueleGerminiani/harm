@@ -1,6 +1,6 @@
 # H3b plan: atom-implication premises for `--reduce implies`
 
-*Status: approved 2026-10-06 after the measurement (D-025: opt-in, cap 2,000); done, awaiting review. Branch: `ms/H3b-atom-premises` (from `dev` @ H1b). Effort: 2 d.*
+*Status: approved 2026-10-06 after the measurement (D-025: opt-in, cap 2,000); done, approved 2026-10-06 and merged into `dev`. Branch: `ms/H3b-atom-premises` (from `dev` @ H1b). Effort: 2 d.*
 
 ## Goal
 H3 compares assertions with their propositions abstracted to independent atoms, so it misses relations that hold only because of what the propositions mean.
