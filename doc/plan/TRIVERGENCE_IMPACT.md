@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9, H10 and H1b on `dev`; H3b awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9, H10, H1b and H3b on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -34,6 +34,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H9 | `dev` @ `28e606d4dacf5f73a76cd3a1dea7379196e912f2` | yes | — |
 | H10 | `dev` @ `63b5ff84ea3b987bc848222ef2dc174f03dd0dd2` | yes | — |
 | H1b | `dev` @ `165328a7208875a0659d409b857a828f08710ea6` | yes | — |
+| H3b | `dev` @ `244b4f83a18e0eb1fc8dfede9c1533bd798678f2` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -187,7 +188,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **Spot-LTL text** (the default output and the `text` field of `--dump-assertion-info`): `X(a && b)` keeps its brackets. It was printed `Xa && b`.
   - **[optional]** Only relevant if trivergence parses the Spot text; it reads `--sva`.
 
-### H3b: atom-implication premises (on `ms/H3b-atom-premises`, awaiting review; not on `dev` yet)
+### H3b: atom-implication premises (on `dev`)
 - **`--atom-premises`** (with `--reduce implies`) also drops assertions implied through facts between comparisons, proved with Z3 under HARM's semantics:
   - `G(cnt > 4'd8 -> b)` drops `G(cnt > 4'd9 -> b)`;
   - mutually exclusive FSM states are used too.
