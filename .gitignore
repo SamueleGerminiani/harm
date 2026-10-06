@@ -31,3 +31,5 @@ examples/sobel/ass.txt
 Testing/
 tools/harm-coi/src/*.egg-info/
 __pycache__/
+error.log
+warning.log
