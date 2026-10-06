@@ -1,6 +1,6 @@
 # H8 plan: depth-aware COI filter
 
-*Status: plan, awaiting approval. Branch: `ms/H8-depth-filter` (from `dev` @ H5). Effort: 3–4 d.*
+*Status: approved 2026-10-06 (D-007 after the hand check, D-020); in progress. Branch: `ms/H8-depth-filter` (from `dev` @ H5). Effort: 3–4 d.*
 
 ## Goal
 H7's filter mode keeps an antecedent proposition if its signals are in the consequent's cone, at any depth. H8 also uses the **depths** in `coi.json`: a proposition is kept only where its cycle offset from the consequent is one at which its signals can influence the consequent.
