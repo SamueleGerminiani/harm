@@ -163,7 +163,7 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
   - yosys needs yosys ≥ 0.67 (OSS CAD Suite on macOS), loses struct fields and parameters, and lowers the conditions that H10 needs.
 - **Decided (user, 2026-10-06): (a) pyslang 12.0.0**, pinned. yosys stays an optional signal-level cross-check: it runs only when a yosys with `read_slang` is found, and is not a dependency.
 
-## D-019: `harm-coi` conventions (2026-10-06, H5). **Proposed, for approval with H5**
+## D-019: `harm-coi` conventions (2026-10-06, H5, approved)
 These complete D-005 (depth) and D-013 (sources and targets) for what the H4 fixtures did not settle. The guiding rule: a cone may be too large, never too small. Where the RTL leaves a doubt, the signal goes to `unknown`, which HARM treats as in every cone (D-017).
 - **Visible names come from the trace when `--vcd` is given.**
   - A packed struct dumped as one vector is one signal, the union of its fields. Icarus does this, and so does Verilator without `--trace-structs`, as trivergence runs it.
