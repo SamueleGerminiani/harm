@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 awaiting review on `ms/H5-harm-coi`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -28,6 +28,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H3 | `dev` @ `53a4d8fbaf45142eed529e427d061beb20dfa499` | yes | — |
 | H1c | `dev` @ `745bc9f0a852027fb1f42160354aaabfc7544b8f` | yes | — |
 | H7 | `dev` @ `942b583a15eb4b55c4674127a41c331102dc216f` | yes | — |
+| H5 | `dev` @ `927b856e7a9639627a026ab4530363e40f954804` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -149,7 +150,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] Use it only as a baseline** (GoldMine-style) in Paper A, never in the method's triage: it assumes the RTL is correct, and HARM warns about this.
 - **Not "rank mode minus out-of-cone assertions"** for decision-tree templates (D-018). If Paper A compares rank and filter, it should state this. Filter mode's guarantee is the output of rank mode on per-consequent restricted configurations.
 
-### H5: `harm-coi` generator (on `ms/H5-harm-coi`, awaiting review; not on `dev` yet)
+### H5: `harm-coi` generator (on `dev`)
 - **What it is:** `tools/harm-coi/`, a Python package (pyslang 12.0.0, D-006). It reads the RTL and writes the `coi.json` that rank mode (H6) and filter mode (H7) read. Until now that file was written by hand.
   ```
   harm-coi --top <top> --files <rtl>.sv... --vcd-scope <traces.scope> --vcd-recursion 16 \
