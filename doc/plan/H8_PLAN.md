@@ -56,9 +56,9 @@ H7's filter mode keeps an antecedent proposition if its signals are in the conse
   `coiDepthFit` (H6) was therefore wrong for those templates; plain `G(a -> X b)` was not affected. **Fixed in H8,** since the filter needs it. Rank mode's metric changes only for `->` templates with multi-cycle antecedents, and H3's depth cutoff uses the same offsets.
 - **F7 (found by A4): `--sva` prints `G({s} -> X c)` as `s |=> c`.**
   - In SVA that anchors `c` at the end of `s`, while HARM mined it anchored at the start, so the printed SVA does not say what HARM checked. A correct translation is `(s) implies nexttime c`.
-  - **Not fixed in H8:** it changes printed output, and needs its own decision. Only `->` templates with a multi-cycle antecedent are affected. No example and no trivergence template uses them; only H8's test configurations do.
-  - A4 reads the Spot-LTL text instead, which keeps the distinction.
-- **F8 (found by A4):** the Spot-LTL text prints `X(p)` without parentheses (`Xen && wrap` for `X(en && wrap)`), which Spot itself would read as `(X en) && wrap`. A printing ambiguity, not fixed. A4's parser follows HARM's convention.
+  - **Fixed in H1d** (D-021), merged into `dev` before H8. Only `->` templates with a multi-cycle antecedent were affected.
+  - A4 reads the Spot-LTL text, which always kept the distinction.
+- **F8 (found by A4):** the Spot-LTL text prints `X(p)` without parentheses (`Xen && wrap` for `X(en && wrap)`), which Spot itself would read as `(X en) && wrap`. **Fixed in H1d** (D-021). A4's parser accepts both forms.
 
 ## Decisions to approve
 ### D-007: decision-tree index → cycle offset

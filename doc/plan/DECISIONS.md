@@ -228,3 +228,20 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   | `G({rst ##2 true} \|-> cnt == 4'b0)` | 2 | 2 | `\|->`: 2 |
   | `G({##1 en ##1 cnt == 4'b0} -> X(en && wrap))` | 2 (`cnt`) | −1 | `->`: 1 − 2 = −1 |
   | `G({!en && cnt == 4'b0} \|-> X cnt == 4'b0)` | `..&&..` | 1 | 1 |
+
+## D-021: printing of `->` in SVA, and brackets in Spot LTL (2026-10-06, H1d; fixes H8 findings F7 and F8)
+- **F7, SVA:** HARM's `->`/`=>` start the consequent with the antecedent (as in Spot and PSL). SVA's `|->`/`|=>` start it at the antecedent's end, so they are equivalent only for a single-cycle antecedent.
+  - **A multi-cycle antecedent `s`** that is a sequence of fixed length (last cycle `n−1`), with a Boolean consequent after `k` cycles of `X` (+1 for `=>`), is printed re-anchored at its end, with `j = k − (n−1)`:
+    - `j = 0`: `s |-> c`;
+    - `j = 1`: `s |=> c`;
+    - `j > 1`: `s |-> ##j c`;
+    - `j < 0`: `s |-> $past(c, −j)`.
+
+    These are forms Verilator and EBMC accept (see D-002).
+  - **Otherwise** (a property antecedent such as `a && X b`, a variable-length sequence, or a non-Boolean consequent): `(s) implies <consequent>`, or `(s) implies nexttime (<consequent>)` for `=>`. IEEE 1800 `implies` starts both sides at the same cycle.
+  - **Unchanged:** a single-cycle antecedent, `|->`/`|=>`, and the legacy SVA printing that `<edit>` rules are matched against (D-002), so existing edit rules keep matching.
+- **F8, Spot LTL:** Spot binds `X`, `F`, `!`, `U`/`W` and `R` tighter than `&&`/`||`, and `&&` tighter than `||`.
+  - A proposition whose top operator is a Boolean connective (`&&` with more than one item, `||`, `^`, `==`/`!=` between propositions) is printed in brackets under those operators. A `||`, `^`, `==` or `!=` one is also bracketed under a property `&&`.
+  - `G(…)` already prints its brackets. SVA and PSL are unchanged: there, Boolean operators bind tighter than property operators.
+- **Baseline change:** `sub_platform1k` only. In 46 of its 91 assertions, `|-> X<a && b>` becomes `|-> X(<a && b>)`. Nothing else changes: same assertions, same order (checked by applying the rewrite to the old baseline).
+- **Validation:** `tests/oracle/h1d_spot_equivalence.py`. Spot (`ltlfilt`) checks that the new texts mean HARM's formulas and that the old ones do not.

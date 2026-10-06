@@ -3,7 +3,7 @@
 
 A2  plain templates: filter output (depth=<mode>) == rank output post-filtered with coiFrac == 1
     and the D-020 rule computed here (sva_offsets.py) on the printed assertions; for exact, HARM's
-    coiDepthFit == 1 must select the same set (Spot LTL: the SVA text loses '->', finding F7)
+    coiDepthFit == 1 must select the same set (Spot LTL: before H1d the SVA text lost '->', finding F7)
 A3  single-index decision trees: filter output == union of rank runs on per-(consequent, template)
     restricted configurations (restrict_config.py --depth, offsets and cones computed in Python)
 A4  every template: every filter-mode antecedent leaf fits under the mode, with offsets parsed

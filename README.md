@@ -688,6 +688,11 @@ Harm produces three main types of textual outputs:
   - `true`/`false` are printed `1'b1`/`1'b0`;
   - hierarchical names use `.`;
   - `p |-> nexttime q` is printed `p |=> q`, and `nexttime[n]` as `##n`, when `q` is boolean;
+  - **HARM's `->` with an antecedent longer than one cycle** starts its consequent together with the antecedent, while SVA's `|->` starts it at the antecedent's end. It is therefore printed re-anchored at the end. For example:
+    - `G({a ##1 b} -> X c)` is printed `a ##1 b |-> c`;
+    - `G({a ##1 b} -> c)` is printed `a ##1 b |-> $past(c, 1)`.
+
+    When that is not possible (an antecedent of variable length, or a non-Boolean consequent), it is printed with `implies`, which starts both sides together: `(a and nexttime b) implies nexttime c`. A single-cycle `->` (`a |=> b`) is printed as before. See D-021.
   - unbounded eventually is printed `s_eventually`;
   - brackets follow SVA's operator precedence (IEEE 1800-2017 Table 16-3), which differs from HARM's: in SVA, `until` binds looser than `and`/`or`, and `s_eventually` looser than everything. So `(b W c) && F d` is printed `(b until c) and (s_eventually d)`.
 * **`--trace-end <harm|sva>`**: how an assertion instance still pending at the end of a trace is judged.
@@ -701,6 +706,7 @@ Harm produces three main types of textual outputs:
   * Use `sva` when the mined SVA will be checked by a simulator. Each input trace (`--csv-dir`, `--vcd-dir`) ends separately. `--reduce implies` follows the selected semantics. See D-016.
 
   `<edit>` rules still match the previous printing (`true`, `::`, `nexttime`, `eventually`), so existing rules keep working. See `doc/plan/DECISIONS.md` (D-002).
+* **Spot LTL (the default output):** a proposition with `&&`, `||` or `^` at its top is printed in brackets under `X`, `F`, `!`, `W`/`U` and `R` (and `||`/`^` under `&&`), because Spot binds those operators tighter: `G(a -> X(b && c))`, not `G(a -> Xb && c)` (D-021).
 * **`--psl`**: PSL format.
 * **`--spotltl`**: Spot LTL format.
 

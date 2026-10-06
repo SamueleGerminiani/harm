@@ -249,4 +249,11 @@ if(PYTHON3_FOUND)
             set_tests_properties(h8_depth_${design}_${mode} PROPERTIES LABELS "regression;coi")
         endforeach()
     endforeach()
+
+# ---- H1d: printing fixes F7/F8, independent check with Spot's ltlfilt ------------------------------
+set(H1D_LTLFILT ${CMAKE_SOURCE_DIR}/third_party/spot/bin/ltlfilt)
+if(PYTHON3_FOUND AND EXISTS ${H1D_LTLFILT})
+    add_test(NAME h1d_spot_equivalence
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/h1d_spot_equivalence.py ${H1D_LTLFILT})
+    set_tests_properties(h1d_spot_equivalence PROPERTIES LABELS regression)
 endif()

@@ -435,10 +435,10 @@ On mined `counter` assertions, one or more per operator and implication, the dis
 - **F6 (fixed): `leafOffsets` anchored the consequent of `->` at the end of a multi-cycle antecedent.**
   - **Effect before the fix:** `coiDepthFit` (H6) was wrong for those templates. HARM evaluates them from the start: mining `G({a ##1 b} -> X c)` finds `c` one cycle after `a`.
   - **The fix** changes rank-mode `coiDepthFit` only for `->` with a multi-cycle antecedent. No baseline or H6 test has such a template, and none changed. H3's depth cutoff uses the same offsets; H3's tests are unchanged.
-- **F7 (not fixed, to decide): `--sva` prints `G({s} -> X c)` as `s |=> c`.**
+- **F7 (fixed in H1d, D-021): `--sva` printed `G({s} -> X c)` as `s |=> c`.**
   - The printed SVA anchors `c` at the end of `s`, which is not what HARM mined. A start-anchored translation is `(s) implies nexttime c`.
   - It affects only `->` templates with multi-cycle antecedents. No example or trivergence template uses them, but the trivergence hand-off mentions it.
-- **F8 (not fixed): HARM's Spot-LTL printer writes `X(en && wrap)` as `Xen && wrap`,** which Spot reads as `(X en) && wrap` (`ltlfilt -p` gives `(wrap) & (X(en))`). The bug is in HARM's printer, not in Spot.
+- **F8 (fixed in H1d, D-021): HARM's Spot-LTL printer wrote `X(en && wrap)` as `Xen && wrap`,** which Spot reads as `(X en) && wrap` (`ltlfilt -p` gives `(wrap) & (X(en))`). The bug is in HARM's printer, not in Spot.
   - It affects only the Spot-LTL text: the default output and the dump.
   - The SVA output is correct (`|=> en && wrap`), and so is H3's reducer, which writes every Boolean connective in parentheses (`skeleton`).
 - **Spot's own check of F6 and F7** (`third_party/spot/bin/ltlfilt --equivalent-to`, added after review questions):
@@ -464,3 +464,20 @@ On mined `counter` assertions, one or more per operator and implication, the dis
 ### Suites
 - `ctest -j6` (all labels): **178/178**, 31 min. Baselines byte-identical.
 - **Linux: pending.**
+
+## H1d: printing fixes F7 and F8 (2026-10-06, macOS arm64, g++-13)
+Requested by the user after H8's findings. Tests written first and committed failing in `447807d`.
+
+| Test | Result |
+|---|---|
+| A1 `PrintingTest`, hand-written texts | pass: 8 F7 cases, 3 F8 cases, 9 unchanged cases. Before the fix, all 11 F7/F8 cases failed with the old texts and all unchanged ones passed |
+| A2 `h1d_spot_equivalence` (Spot `ltlfilt`) | pass: 6 F7 meanings equivalent to HARM's formulas; 3 F8 texts parse as intended. Every control fails as it should: the old SVA meanings are not equivalent, and the old Spot texts parse differently |
+| A3 baselines | 1 changed, `sub_platform1k` (see below); all others byte-identical |
+
+- **The baseline change:**
+  - 46 of 91 assertions change, from `|-> X<a && b>` to `|-> X(<a && b>)`.
+  - Rewriting the old baseline that way gives the new one exactly: same assertions, same order. So nothing else changed.
+  - Recaptured with `HARM_REGRESSION_CAPTURE=ordered`, as part of the requested fix.
+- **Edit rules:** they match against the legacy SVA printing (D-002). The F7 change does not apply to it, and F8 only touches Spot text, so existing `<edit>` rules are unaffected. `EditTest` and the `edit` example pass.
+- **Also found:** before the fix, a property antecedent printed invalid SVA: `G(a && X b -> X c)` gave `a and nexttime b |=> c`, and `|=>` needs a sequence on its left. It is now `(a and nexttime b) implies nexttime c`.
+- **Suites:** `ctest -j6`: **164/164**, 31 min. Linux: pending.

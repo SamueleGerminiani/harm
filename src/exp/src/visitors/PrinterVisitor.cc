@@ -1,3 +1,4 @@
+#include <optional>
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -621,6 +622,35 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     _temporal_ope_stack.pop();                                       \
   }
 
+namespace {
+/// Spot LTL: X, F, !, U (printed W) and R bind tighter than && and ||, and && tighter than ||;
+/// a proposition with such a connective at the top needs brackets under them (H1d, F8, D-021)
+bool spotNeedsBrackets(const PropositionPtr &p, ope::temporalOpe parent) {
+  using T = ope::temporalOpe;
+  auto op = p->getOperator();
+  bool connective =
+      (op == ope::PropositionAnd && getPropositionAndSize(p) > 1) ||
+      op == ope::PropositionOr || op == ope::PropositionXor ||
+      op == ope::PropositionEq || op == ope::PropositionNeq;
+  if (!connective) {
+    return false;
+  }
+  switch (parent) {
+  case T::PropertyNext:
+  case T::PropertyEventually:
+  case T::PropertyNot:
+  case T::BooleanLayerNot:
+  case T::PropertyUntil:
+  case T::PropertyRelease:
+    return true;
+  case T::PropertyAnd:
+    return op != ope::PropositionAnd;
+  default:
+    return false;
+  }
+}
+} // namespace
+
 void PrinterVisitor::visit(BooleanLayerNot &o) {
   _temporal_ope_stack.push(ope::temporalOpe::BooleanLayerNot);
   _ss << selCol(opeToString(ope::temporalOpe::BooleanLayerNot),
@@ -660,6 +690,8 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
     needsBrackets &=
         !isPropositionAnd(*o.getPlaceholderPointer()) ||
         getPropositionAndSize(*o.getPlaceholderPointer()) > 1;
+    needsBrackets |= _lang == Language::SpotLTL &&
+                     spotNeedsBrackets(*o.getPlaceholderPointer(), parent_op);
 
     if (needsBrackets) {
       _ss << selCol("(", TEMP("("));
@@ -689,6 +721,8 @@ void PrinterVisitor::visit(BooleanLayerInst &o) {
       o.getProposition()->getOperator(), parent_op);
   needsBrackets &= !isPropositionAnd(o.getProposition()) ||
                    getPropositionAndSize(o.getProposition()) > 1;
+  needsBrackets |= _lang == Language::SpotLTL &&
+                   spotNeedsBrackets(o.getProposition(), parent_op);
 
   if (_printMode != PrintMode::Hide) {
     if (needsBrackets) {
@@ -747,6 +781,51 @@ void PrinterVisitor::visit(PropertyNext &o) {
 }
 
 namespace {
+/// the last cycle of a sequence of fixed length, counting from 0 (a Boolean: 0); std::nullopt if
+/// te is not a sequence (e.g. a property with nexttime) or its length is not fixed (H1d, F7)
+std::optional<int> sequenceLastCycle(const TemporalExpressionPtr &te) {
+  if (isBooleanLayer(te)) {
+    return 0;
+  }
+  if (auto c = std::dynamic_pointer_cast<SereConcat>(te)) {
+    auto l = sequenceLastCycle(c->getItems()[0]);
+    auto r = sequenceLastCycle(c->getItems()[1]);
+    if (!l || !r) {
+      return std::nullopt;
+    }
+    return *l + (c->isOverlapping() ? 0 : 1) + *r;
+  }
+  if (auto d = std::dynamic_pointer_cast<SereDelay>(te)) {
+    auto w = d->getWindow();
+    if (w.first != w.second || w.first < 0) {
+      return std::nullopt;
+    }
+    auto &items = d->getItems();
+    std::optional<int> from = 0;
+    if (items.size() == 2) {
+      from = sequenceLastCycle(items[0]);
+    }
+    auto r = sequenceLastCycle(items.back());
+    if (!from || !r) {
+      return std::nullopt;
+    }
+    return *from + w.first + *r;
+  }
+  if (std::dynamic_pointer_cast<SereAnd>(te) || std::dynamic_pointer_cast<SereOr>(te) ||
+      std::dynamic_pointer_cast<SereIntersect>(te)) {
+    std::optional<int> last;
+    for (const auto &i : te->getItems()) {
+      auto l = sequenceLastCycle(i);
+      if (!l || (last && *l != *last)) {
+        return std::nullopt; // only operands of equal length have one end
+      }
+      last = l;
+    }
+    return last;
+  }
+  return std::nullopt;
+}
+
 /// true for the antecedent of an invariant G(true -> p)
 bool isTrueAntecedent(const TemporalExpressionPtr &te) {
   auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(te);
@@ -773,6 +852,49 @@ void PrinterVisitor::visit(PropertyImplication &o) {
   // SystemVerilog: 'p |-> nexttime q' is printed 'p |=> q', and more nexttimes as '##n', when q
   // is boolean (equivalent: a sequence used as a property is weak by default, like nexttime);
   // nexttime is valid SystemVerilog but not accepted by common tools (Verilator, EBMC)
+  // SystemVerilog: HARM's '->' starts the consequent with the antecedent, SVA's '|->' at its end
+  // (H1d, F7, D-021). A multi-cycle antecedent is re-anchored at its end when it is a sequence of
+  // fixed length and the consequent is Boolean after k nexttimes; otherwise 'implies', which
+  // starts both sides together
+  if (_lang == Language::SVA && !clc::legacySvaPrinting && !o.isMMImplication() &&
+      !isBooleanLayer(o.getItems()[0])) {
+    TemporalExpressionPtr consequent = o.getItems()[1];
+    int k = o.isOverlapping() ? 0 : 1;
+    while (auto next = std::dynamic_pointer_cast<PropertyNext>(consequent)) {
+      k += (int)next->getDelay();
+      consequent = next->getItems()[0];
+    }
+    auto last = sequenceLastCycle(o.getItems()[0]);
+    if (last && isBooleanLayer(consequent)) {
+      int j = k - *last;
+      o.getItems()[0]->acceptVisitor(*this);
+      std::string op = j == 0   ? " |-> "
+                       : j == 1 ? " |=> "
+                       : j > 1  ? " |-> ##" + std::to_string(j) + " "
+                                : " |-> $past(";
+      _ss << selCol(op, TIMPL(op));
+      consequent->acceptVisitor(*this);
+      if (j < 0) {
+        std::string tail = ", " + std::to_string(-j) + ")";
+        _ss << selCol(tail, TIMPL(tail));
+      }
+    } else {
+      _ss << selCol("(", TIMPL("("));
+      o.getItems()[0]->acceptVisitor(*this);
+      std::string op = std::string(") implies ") + (o.isOverlapping() ? "" : "nexttime ");
+      _ss << selCol(op, TIMPL(op));
+      if (!o.isOverlapping()) {
+        _ss << selCol("(", TIMPL("("));
+      }
+      o.getItems()[1]->acceptVisitor(*this);
+      if (!o.isOverlapping()) {
+        _ss << selCol(")", TIMPL(")"));
+      }
+    }
+    _temporal_ope_stack.pop();
+    return;
+  }
+
   if (_lang == Language::SVA && !clc::legacySvaPrinting) {
     TemporalExpressionPtr consequent = o.getItems()[1];
     size_t shift = o.isOverlapping() ? 0 : 1;

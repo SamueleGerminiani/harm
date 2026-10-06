@@ -36,6 +36,7 @@ addTest("ImplicationTest" ./implicationTests.cc )
 addTest("EndOfTraceTest" ./endOfTraceTests.cc )
 addTest("CoiFilterTest" ./coiFilterTests.cc )
 addTest("CoiDepthTest" ./coiDepthTests.cc )
+addTest("PrintingTest" ./printingTests.cc )
 
 
 add_subdirectory(regression)

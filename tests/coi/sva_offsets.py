@@ -2,12 +2,13 @@
 """H8, acceptance A4: cycle offsets of the leaves of a mined assertion, parsed from the text HARM
 prints by default (Spot LTL), independently of HARM's leafOffsets; and the D-020 depth rule, from
 coi.json. The SVA text (--sva) cannot be used: it prints {s} -> X c as s |=> c, which anchors c at
-the end of s instead of its start (H8 finding F7).
+the end of s instead of its start (H8 finding F7, fixed in H1d; the Spot text is still used).
 
 Supported: G(<antecedent> (|-> | |=> | ->) <consequent>) and G(<consequent>), where an antecedent
 or consequent is a SERE {..} of items joined by ##k, ';' (##1) or ':' (##0), or Boolean items
 joined by '&&', each possibly prefixed by X (one cycle each). A leading X applies to the rest of
-the operand, as HARM prints it ("Xen && wrap" is X(en && wrap), finding F8); so a template like
+the operand, as HARM printed it before H1d ("Xen && wrap" was X(en && wrap), finding F8); since
+H1d HARM prints X(en && wrap), which the same rule reads correctly; so a template like
 G(X P0 && P1 -> ...) is not supported. Offsets count from the first cycle
 of the antecedent:
   |->  the consequent starts at the antecedent's last cycle;  |=>  one cycle later;
@@ -72,7 +73,7 @@ def _part(text, start, leaves, ant):
             if item:
                 t = _part(item, t, leaves, ant)
         return t
-    # HARM prints X(p) without parentheses ("Xen && wrap" is X(en && wrap), finding F8): a
+    # before H1d HARM printed X(p) without parentheses ("Xen && wrap" was X(en && wrap), F8): a
     # leading X applies to the rest of the operand; otherwise a conjunction with an X in a later
     # conjunct ("a && Xb") is split
     xm = re.match(r"X(?=[\s({A-Za-z!])\s*", text)

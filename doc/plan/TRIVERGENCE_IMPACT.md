@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`; H8 awaiting review on `ms/H8-depth-filter`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d and H8 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -29,6 +29,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H1c | `dev` @ `745bc9f0a852027fb1f42160354aaabfc7544b8f` | yes | — |
 | H7 | `dev` @ `942b583a15eb4b55c4674127a41c331102dc216f` | yes | — |
 | H5 | `dev` @ `927b856e7a9639627a026ab4530363e40f954804` | yes | — |
+| H1d | `dev` @ `b608a90046d630c8e9ff30d2b3a51c8290dd4db4` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -170,16 +171,22 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] T9 cross-check:** `tests/coi/xcheck_yosys.py` compares harm-coi's signal-level cones with a yosys netlist (`read_slang`, yosys ≥ 0.67). It could be pointed at OpenFPV's AIGER-level COI on shared designs.
 - **Answer to §4, "where should the generator run":** it needs only the RTL file list, top, scope and a trace. It can run once per design in the benchmark loaders (F4), or in stage 3 next to the simulation that produces the trace. It takes well under a second on the fixtures; large designs are untested.
 
+### H1d: printing fixes (on `dev`)
+- **SVA (`--sva`, `--sva-assert`):** HARM's `->` with an antecedent longer than one cycle is now printed with the meaning HARM mined (D-021):
+  - `G({a ##1 b} -> X c)` → `a ##1 b |-> c`. It was `a ##1 b |=> c`, which puts `c` a cycle late.
+  - Other forms: `$past(c, k)`, or `(…) implies …`.
+  - **[none required]** Trivergence's templates (`|->` with decision trees, single-cycle `G(p0 -> p1)`) print exactly as before.
+  - **[optional]** If a template like `G({..##1..} -> X P0)` is ever added, its SVA is now correct. It may contain `$past` or `implies`: check that the adapter and the formal tools accept them. Verilator accepts `$past`; `implies` is IEEE 1800, and tool support varies.
+- **Spot-LTL text** (the default output and the `text` field of `--dump-assertion-info`): `X(a && b)` keeps its brackets. It was printed `Xa && b`.
+  - **[optional]** Only relevant if trivergence parses the Spot text; it reads `--sva`.
+
 ### H8: depth-aware COI filter (on `ms/H8-depth-filter`, awaiting review; not on `dev` yet)
 - `<coi … mode="filter" depth="bounded|exact"/>` also uses the depths of the cone (D-020).
   - **Example:** `y` gets `a` at depths 0 and 2. `G(a -> X y)` is kept by `bounded` and pruned by `exact`; `G(a -> X X X y)` is pruned by both.
   - On the fixtures, `exact` cuts the output by a further 26–46% below H7's filter mode (`depth="any"`), and `bounded` by 5–25% (VALIDATION, H8).
 - **[optional] The A3 baseline:** if Paper A uses "HARM + COI filter" as the GoldMine-style structural baseline, `depth="exact"` is the closest to GoldMine's cycle-accurate cones. Use the same caveat as H7: it assumes the RTL is correct.
 - **[none required]** Rank mode is unchanged, except for one fix. `coiDepthFit` now places the consequent of `->` at the start of a multi-cycle antecedent, as HARM evaluates it (H8 F6). Trivergence's templates use `|->` and single-cycle `->`, which are not affected.
-- **[recommended, check] SVA printing of `->` with a multi-cycle antecedent (H8 F7, not fixed yet).** `--sva` prints `G({s} -> X c)` as `s |=> c`, which in SVA anchors `c` at the end of `s` instead of its start.
-  - Trivergence's adapter reads `--sva` output, so it would get an SVA assertion that differs from what HARM mined.
-  - Its current templates do not produce this shape: `G({..#1&..}|-> …)`, `G({..&&..}|-> …)`, `G(p0 -> p1)`. Adding a template like `G({..##1..} -> X P0)` would.
-  - A fix is proposed for a later HARM milestone.
+- **SVA printing of `->` with a multi-cycle antecedent (H8 F7): fixed in H1d** (see the H1d entry).
 
 ### H9: out-of-cone report (planned)
 - **[recommended]** A spec-derived proposition outside a target's structural cone is a new disagreement signal: "the spec says A affects B, the RTL says it cannot". It is a candidate input to B4 triage.
