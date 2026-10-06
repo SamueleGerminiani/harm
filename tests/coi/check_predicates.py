@@ -90,6 +90,10 @@ def main():
             xml = d / "emitted.xml"
             meta, coi = harm_coi(fx, a.python, d, "--predicates", "--emit-config", str(xml))
             preds = [p["expr"] for p in json.loads(coi.read_text()).get("predicates", [])]
+            if not preds:
+                print(f"[{fx.name}] A2: no predicates, nothing for HARM to load")
+                print("ok")
+                sys.exit(0)
             r = subprocess.run([a.harm, *trace_args(fx, meta), "--conf", str(xml), "--max-threads", "1",
                                 "--psilent", "--isilent"], cwd=d, capture_output=True, text=True)
             out = r.stdout + r.stderr

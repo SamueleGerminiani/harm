@@ -61,6 +61,7 @@ class Design:
     processes: list               # clocked processes (their delays are fixed later, per clock)
     clock_uses: set          # atoms used as clocks of processes (before propagation)
     top_inputs: set               # atoms of the top's input ports
+    extractor: object = None      # for predicate harvesting (H10)
 
 
 def elaborate(top, files, defines=(), includes=()):
@@ -742,4 +743,5 @@ def extract(top, am):
     x = Extractor(top, am)
     x.run()
     return Design(edges=x.edges, signals=x.signals, params=x.params, unknown=x.unknown,
-                  processes=x.processes, clock_uses=x.clock_uses, top_inputs=x.top_inputs)
+                  processes=x.processes, clock_uses=x.clock_uses, top_inputs=x.top_inputs,
+                  extractor=x)
