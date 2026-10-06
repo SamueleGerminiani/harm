@@ -1,0 +1,209 @@
+{
+ "contexts": {
+  "default": {
+   "coi": true,
+   "consequents": {
+    "a": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "k": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "k"
+       ]
+      },
+      "t && a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "y_tmp": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "y_tmp"
+       ]
+      }
+     },
+     "unknown": {
+      "t": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "unnamedblk1::i != 32'b0": {
+       "origin": null,
+       "unknownVariables": [
+        "unnamedblk1::i"
+       ]
+      }
+     }
+    },
+    "k": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "t && a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "y_tmp": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "y_tmp"
+       ]
+      }
+     },
+     "unknown": {
+      "t": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "unnamedblk1::i != 32'b0": {
+       "origin": null,
+       "unknownVariables": [
+        "unnamedblk1::i"
+       ]
+      }
+     }
+    },
+    "t": {
+     "coneUnknown": true,
+     "origin": null,
+     "outOfCone": {},
+     "unknown": {
+      "a": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "k": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "t && a": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "unnamedblk1::i != 32'b0": {
+       "origin": null,
+       "unknownVariables": [
+        "unnamedblk1::i"
+       ]
+      },
+      "y_tmp": {
+       "origin": null,
+       "unknownVariables": []
+      }
+     }
+    },
+    "t && a": {
+     "coneUnknown": true,
+     "origin": null,
+     "outOfCone": {},
+     "unknown": {
+      "a": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "k": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "t": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "unnamedblk1::i != 32'b0": {
+       "origin": null,
+       "unknownVariables": [
+        "unnamedblk1::i"
+       ]
+      },
+      "y_tmp": {
+       "origin": null,
+       "unknownVariables": []
+      }
+     }
+    },
+    "unnamedblk1::i != 32'b0": {
+     "coneUnknown": true,
+     "origin": null,
+     "outOfCone": {},
+     "unknown": {
+      "a": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "k": {
+       "origin": null,
+       "unknownVariables": []
+      },
+      "t": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "t && a": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "y_tmp": {
+       "origin": null,
+       "unknownVariables": []
+      }
+     }
+    },
+    "y_tmp": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {},
+     "unknown": {
+      "t": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "t && a": {
+       "origin": null,
+       "unknownVariables": [
+        "t"
+       ]
+      },
+      "unnamedblk1::i != 32'b0": {
+       "origin": null,
+       "unknownVariables": [
+        "unnamedblk1::i"
+       ]
+      }
+     }
+    }
+   }
+  }
+ }
+}

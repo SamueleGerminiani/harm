@@ -1,0 +1,9 @@
+<harm>
+    <!-- H9 (acceptance A4): a context without <coi> is listed with "coi": null -->
+    <context name="default">
+        <prop exp="a" loc="a, c"/>
+        <prop exp="y" loc="a, c"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>
