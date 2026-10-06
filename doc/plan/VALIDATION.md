@@ -382,3 +382,20 @@ Written first and committed failing in `e43c091`, against a stub that raised `No
   - The suite includes the 23 H5 tests: `h5_unit`, `h5_generator_*` ×7, `h5_influence_*` ×7, `h5_xcheck_yosys_*` ×7 and `h5_reproduce_constructs`.
 - **The yosys cross-check ran with OSS CAD Suite's yosys** (`-DHARM_COI_YOSYS=…`). Without a yosys that has `read_slang`, those 7 tests are skipped with a message.
 - **Linux: pending** (A5).
+
+## H1d: printing fixes F7 and F8 (2026-10-06, macOS arm64, g++-13)
+Requested by the user after H8's findings. Tests written first and committed failing in `447807d`.
+
+| Test | Result |
+|---|---|
+| A1 `PrintingTest`, hand-written texts | pass: 8 F7 cases, 3 F8 cases, 9 unchanged cases. Before the fix, all 11 F7/F8 cases failed with the old texts and all unchanged ones passed |
+| A2 `h1d_spot_equivalence` (Spot `ltlfilt`) | pass: 6 F7 meanings equivalent to HARM's formulas; 3 F8 texts parse as intended. Every control fails as it should: the old SVA meanings are not equivalent, and the old Spot texts parse differently |
+| A3 baselines | 1 changed, `sub_platform1k` (see below); all others byte-identical |
+
+- **The baseline change:**
+  - 46 of 91 assertions change, from `|-> X<a && b>` to `|-> X(<a && b>)`.
+  - Rewriting the old baseline that way gives the new one exactly: same assertions, same order. So nothing else changed.
+  - Recaptured with `HARM_REGRESSION_CAPTURE=ordered`, as part of the requested fix.
+- **Edit rules:** they match against the legacy SVA printing (D-002). The F7 change does not apply to it, and F8 only touches Spot text, so existing `<edit>` rules are unaffected. `EditTest` and the `edit` example pass.
+- **Also found:** before the fix, a property antecedent printed invalid SVA: `G(a && X b -> X c)` gave `a and nexttime b |=> c`, and `|=>` needs a sequence on its left. It is now `(a and nexttime b) implies nexttime c`.
+- **Suites:** `ctest -j6`: **164/164**, 31 min. Linux: pending.

@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`; H1d awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -169,6 +169,15 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[recommended] Clock:** pass `--clock` for designs with several clocks; harm-coi refuses to guess. Registers on another clock are `unknown`.
 - **[optional] T9 cross-check:** `tests/coi/xcheck_yosys.py` compares harm-coi's signal-level cones with a yosys netlist (`read_slang`, yosys ≥ 0.67). It could be pointed at OpenFPV's AIGER-level COI on shared designs.
 - **Answer to §4, "where should the generator run":** it needs only the RTL file list, top, scope and a trace. It can run once per design in the benchmark loaders (F4), or in stage 3 next to the simulation that produces the trace. It takes well under a second on the fixtures; large designs are untested.
+
+### H1d: printing fixes (on `ms/H1d-printing`, awaiting review; not on `dev` yet)
+- **SVA (`--sva`, `--sva-assert`):** HARM's `->` with an antecedent longer than one cycle is now printed with the meaning HARM mined (D-021):
+  - `G({a ##1 b} -> X c)` → `a ##1 b |-> c`. It was `a ##1 b |=> c`, which puts `c` a cycle late.
+  - Other forms: `$past(c, k)`, or `(…) implies …`.
+  - **[none required]** Trivergence's templates (`|->` with decision trees, single-cycle `G(p0 -> p1)`) print exactly as before.
+  - **[optional]** If a template like `G({..##1..} -> X P0)` is ever added, its SVA is now correct. It may contain `$past` or `implies`: check that the adapter and the formal tools accept them. Verilator accepts `$past`; `implies` is IEEE 1800, and tool support varies.
+- **Spot-LTL text** (the default output and the `text` field of `--dump-assertion-info`): `X(a && b)` keeps its brackets. It was printed `Xa && b`.
+  - **[optional]** Only relevant if trivergence parses the Spot text; it reads `--sva`.
 
 ### H8–H9: depth-aware filter and out-of-cone report (planned)
 - **[optional] Depth-aware filter (H8):** the same baseline caveat as H7.
