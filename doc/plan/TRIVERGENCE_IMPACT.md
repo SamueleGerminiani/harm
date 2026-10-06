@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d and H8 on `dev`; H9 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8 and H9 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -31,6 +31,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H5 | `dev` @ `927b856e7a9639627a026ab4530363e40f954804` | yes | — |
 | H1d | `dev` @ `b608a90046d630c8e9ff30d2b3a51c8290dd4db4` | yes | — |
 | H8 | `dev` @ `366374a06511672e5c3405cd3ea64e8beb6793f3` | yes | — |
+| H9 | `dev` @ `28e606d4dacf5f73a76cd3a1dea7379196e912f2` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -189,7 +190,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[none required]** Rank mode is unchanged, except for one fix. `coiDepthFit` now places the consequent of `->` at the start of a multi-cycle antecedent, as HARM evaluates it (H8 F6). Trivergence's templates use `|->` and single-cycle `->`, which are not affected.
 - **SVA printing of `->` with a multi-cycle antecedent (H8 F7): fixed in H1d** (see the H1d entry).
 
-### H9: out-of-cone report (on `ms/H9-coi-report`, awaiting review; not on `dev` yet)
+### H9: out-of-cone report (on `dev`)
 - **`--dump-coi-report <file.json>`** lists, for each consequent proposition of a context with `<coi>`, the antecedent propositions whose signals cannot influence it, with their `origin` and the signals outside the cone (D-022). It is computed from the hints and `coi.json`, before mining, and works in rank mode.
   - **Example:** in `multipath`, `y`'s cone is `{a, r1, r2}`. A hint proposition `a && b` with `origin="spec"` is reported against `y` with `outside: ["b"]`.
 - **[recommended] B4 triage:** after `hints_to_xml` writes the hints with `origin="spec"` (H6) and a `<coi>`, add `--dump-coi-report` to the HARM call and read it.
