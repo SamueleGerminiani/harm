@@ -438,7 +438,21 @@ On mined `counter` assertions, one or more per operator and implication, the dis
 - **F7 (not fixed, to decide): `--sva` prints `G({s} -> X c)` as `s |=> c`.**
   - The printed SVA anchors `c` at the end of `s`, which is not what HARM mined. A start-anchored translation is `(s) implies nexttime c`.
   - It affects only `->` templates with multi-cycle antecedents. No example or trivergence template uses them, but the trivergence hand-off mentions it.
-- **F8 (not fixed): the Spot-LTL text prints `X(en && wrap)` as `Xen && wrap`,** which Spot reads as `(X en) && wrap`. A printing ambiguity.
+- **F8 (not fixed): HARM's Spot-LTL printer writes `X(en && wrap)` as `Xen && wrap`,** which Spot reads as `(X en) && wrap` (`ltlfilt -p` gives `(wrap) & (X(en))`). The bug is in HARM's printer, not in Spot.
+  - It affects only the Spot-LTL text: the default output and the dump.
+  - The SVA output is correct (`|=> en && wrap`), and so is H3's reducer, which writes every Boolean connective in parentheses (`skeleton`).
+- **Spot's own check of F6 and F7** (`third_party/spot/bin/ltlfilt --equivalent-to`, added after review questions):
+
+  | Formula | Compared with | Spot |
+  |---|---|---|
+  | `G({a;b} -> X c)` | `G(a && X b -> X c)` | equivalent: `->` starts the consequent with the antecedent (F6) |
+  | `G({a;b} []=> c)` (`\|=>`) | `G(a && X b -> X X c)` | equivalent: `\|=>` starts it after the end |
+  | `G({a;b} -> X c)` | `G({a;b} []=> c)` | **not equivalent** (F7) |
+  | `G({a} -> X c)` | `G({a} []=> c)` | equivalent: F7 needs an antecedent longer than one cycle |
+- **F7 on a trace:** `a` at `t`; `b` and `c1` at `t+1`; `c2` at `t+2`.
+  - HARM mines `G({a ##1 b} -> X c1)` and `G({a ##1 b} |-> X c2)`.
+  - `--sva` prints them as `a ##1 b |=> c1` and `a ##1 b |=> c2`. `c1` and `c2` are never true together, so these cannot both hold; in SVA the first is false.
+  - Verilator's replay (H1) reports both as unsupported (multi-cycle sequences), so it could not catch this.
 - **Test changes after the first implementation run:**
   - **A4 parses the Spot-LTL text instead of the SVA** (F7). With SVA it flagged `r1 ##1 !a |=> y`, which HARM had mined as `{r1 ##1 !a} -> X y`, a correct `exact` result.
   - **The A4 parser fixes:**
