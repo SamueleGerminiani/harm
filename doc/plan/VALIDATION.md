@@ -591,7 +591,7 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
 | Test | Result |
 |---|---|
 | A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
-| A2 the macOS full suite on the release commit | see below |
+| A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
 | A2 Linux `ctest` and harm-coi pytest | **pending** (`eval/LINUX.md` §2) |
 | A3 the Docker image | **pending**: the Docker daemon is not running here (`eval/LINUX.md` §3) |
 | A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
