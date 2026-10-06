@@ -86,9 +86,12 @@ What changed in HARM: `doc/plan/H1_PLAN.md`, DECISIONS D-002 and D-011, README "
 1. **F10, a bug in the current pin `a8c302b`:** propositions with a **bit selection** (`r[7:4]`) were evaluated and printed with swapped bounds in every mined assertion (`r[4:7]`). Any trivergence mining run whose hints contained bit selections was affected. Re-run those after bumping.
 2. **SVA text changes** (D-002): if any trivergence code or fixture matches HARM's raw `--sva` text, expect `|=>`, `##n`, `1'b1`, `.` and `s_eventually`.
 
-**[recommended] D-011 (decided in HARM: an SV-semantics option will come in milestone H1b): x/z semantics.**
-- HARM's comparisons with x/z operands are false, and `!` then makes them true. So a mined `!(a == b)` can hold in HARM but fail in Verilator on traces with x. This is the likely root cause of M0 #33.
-- Until D-011 is decided, triage should treat "HARM holds, simulator fails on x-valued cycles" as a known semantic gap, not as a bug in the RTL.
+**[recommended] D-011 (decided in HARM, H1b: documented, no SV-semantics option): x/z semantics.**
+- **The rule:** in HARM, x/z counts as false wherever a value becomes a truth value (comparisons, values used as conditions), and `!` then makes it true. So a mined `!(a == b)` can hold in HARM but fail in a simulator on cycles where `a` has x/z. In the other direction, `a != c` with a known differing bit is false in HARM but true in SV. See the README table, "x and z values".
+- **M0 #33** (`!(sda == 1'b0)` on an inout net) *may* be this case if the VCD records `z` for the released `sda`. M0 attributes it to inout sampling (#24); worth checking whether the trace has `z` there.
+- **Triage:** treat "HARM holds, simulator fails" on cycles with x/z as this known difference, not as an RTL bug.
+- **In hints:** prefer `===`/`!==` when x/z matter (`sda !== 1'b0`). They are exact in both HARM and SV.
+- **Traces:** Verilator traces are 2-state, so the difference arises only where x/z do appear (e.g. tri-state/inout nets, or 4-state simulators).
 
 **[recommended]** After bumping, re-baseline `test_harm_adapter.py` A5/A6 and `tools/test_harm.py` A11 (with approval). `make e2e` should give the same candidate *set* where no bit selection was involved. Candidate text changes (SVA tokens) are expected.
 

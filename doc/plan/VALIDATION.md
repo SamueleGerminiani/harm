@@ -533,3 +533,12 @@ Tests written first and committed failing in `60f3f10` (15 of 15 failed: `--pred
   - two A3 tests switched to non-constant assignments, and one test added for the reset rule's side effect;
   - A2 skips HARM when nothing is harvested.
 - **Suites:** `ctest -j6` gives **207/207**, 32 min. Baselines byte-identical. Linux: pending.
+
+## H1b: x/z semantics, documented (D-011 option a, 2026-10-06)
+- **The user's decision:** document the difference with SystemVerilog instead of adding an SV-semantics option. In HARM a proposition is true or false and complementary to its negation, which SV's three-valued evaluation would break. The plan for the option (D-024) is withdrawn.
+- **`h1b_x_semantics`** (regression): 23 propositions on a 2-row trace with x values (`tests/input/h1b`).
+  - HARM's value of each is pinned; pass.
+  - The documented SystemVerilog value of each was checked with iverilog 12.0 (`!(!(e))` on the same values): 23/23 agree. HARM differs from SV on 9 of them, in both directions, as the README table says.
+- **Sources for the SV values:** IEEE 1800-2017 §11.4.4, §11.4.5, §11.4.7, §16.6 (the user's copy), and §12.4 for values used as conditions ("tested for being zero"); iverilog agrees (`if`/`assert` on `4'b01x0` pass, on `4'b00x0` fail).
+- **Correction:** D-011 and TRIVERGENCE_IMPACT had called x/z "the likely root cause" of trivergence M0 #33. M0 attributes #33 to inout sampling (#24); the text now says "may explain".
+- **No change to HARM's code;** the default and every baseline are unchanged.

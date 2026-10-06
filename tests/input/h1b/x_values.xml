@@ -1,0 +1,33 @@
+<harm>
+    <!-- H1b (D-011 option a): HARM's x/z semantics, pinned. Trace (x_values.csv, 2 equal rows):
+         a = 4'b10x1, b = 4'b1001, c = 4'b0001, p = 1'bx, v = 4'b01x0, w = 4'b00x0, k = 1.
+         The template G(P0) is mined exactly for the propositions true on every row.
+         Expected (HARM), and the SystemVerilog value, in check_x_semantics.py. -->
+    <context name="default">
+        <prop exp="a == b" loc="c"/>
+        <prop exp="a != b" loc="c"/>
+        <prop exp="!(a == b)" loc="c"/>
+        <prop exp="a == c" loc="c"/>
+        <prop exp="a != c" loc="c"/>
+        <prop exp="!(a == c)" loc="c"/>
+        <prop exp="a &lt; c" loc="c"/>
+        <prop exp="!(a &lt; c)" loc="c"/>
+        <prop exp="a === b" loc="c"/>
+        <prop exp="a !== b" loc="c"/>
+        <prop exp="p" loc="c"/>
+        <prop exp="!p" loc="c"/>
+        <prop exp="p || !p" loc="c"/>
+        <prop exp="p &amp;&amp; 1'b0" loc="c"/>
+        <prop exp="p || 1'b1" loc="c"/>
+        <prop exp="v" loc="c"/>
+        <prop exp="!v" loc="c"/>
+        <prop exp="v != 4'b0" loc="c"/>
+        <prop exp="w" loc="c"/>
+        <prop exp="!w" loc="c"/>
+        <prop exp="!(w == 4'b0)" loc="c"/>
+        <prop exp="a[1]" loc="c"/>
+        <prop exp="!a[1]" loc="c"/>
+        <template exp="G(P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

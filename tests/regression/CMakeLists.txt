@@ -316,3 +316,11 @@ if(HARM_COI_OK)
         set_tests_properties(h10_predicates_${design} h10_emit_config_${design} PROPERTIES LABELS coi)
     endforeach()
 endif()
+
+# ---- H1b: HARM's x/z semantics, documented and pinned (D-011 option a) ----------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h1b_x_semantics
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_x_semantics.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h1b/x_values.csv ${CMAKE_SOURCE_DIR}/tests/input/h1b/x_values.xml)
+    set_tests_properties(h1b_x_semantics PROPERTIES LABELS regression)
+endif()
