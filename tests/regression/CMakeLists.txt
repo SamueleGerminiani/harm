@@ -249,6 +249,7 @@ if(PYTHON3_FOUND)
             set_tests_properties(h8_depth_${design}_${mode} PROPERTIES LABELS "regression;coi")
         endforeach()
     endforeach()
+endif()
 
 # ---- H1d: printing fixes F7/F8, independent check with Spot's ltlfilt ------------------------------
 set(H1D_LTLFILT ${CMAKE_SOURCE_DIR}/third_party/spot/bin/ltlfilt)
