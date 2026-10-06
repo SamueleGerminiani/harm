@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -70,7 +71,7 @@ private:
   std::map<std::string, LTerm> _logicAtoms;
 
   // ---- helpers
-  z3::expr bv(unsigned long long value) { return _ctx.bv_val(value, _U); }
+  z3::expr bv(uint64_t value) { return _ctx.bv_val(value, _U); }
   z3::expr zero() { return _ctx.bv_val(0, _U); }
   z3::expr mask(unsigned width);
   /// operand value as HARM's unsignedToSLogic/signedToSLogic sees it at width R
