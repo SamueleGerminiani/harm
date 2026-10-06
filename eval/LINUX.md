@@ -1,6 +1,23 @@
 # H11 on the Linux machine: checks and evaluation
 
-Everything here runs on the Linux machine (trivergence's). The results come back to be recorded in `doc/plan/VALIDATION.md` (H11). The release (merge into `main`, tag `v4`) waits for them and for the user's decision.
+Everything here runs on the Linux machine (trivergence's), by the user or a Claude session there. The session records the results itself, in the repository (see "Recording"). The release (merge into `main`, tag `v4`) waits for them and for the user's decision.
+
+## Recording (for the session that runs this)
+- **Work on a branch from `dev`:** `ms/H11-linux`. Commit there and push it. Do not merge it: the user reviews it first, like a milestone.
+- **What to commit:**
+  - `eval/results/linux-fixtures`, `linux-examples` and `assertllm2` (`results.csv`, `results.md`);
+  - the AssertLLM2 manifest, `eval/manifests/assertllm2.json`;
+  - the outcome in `doc/plan/VALIDATION.md`, in the H11 entry: update A1 (Linux), A2 (Linux, with the `ctest` summary) and A3 (Docker) from "pending" to their results;
+  - a short "Linux evaluation" paragraph under the H11 entry: the chosen designs, the reasons for the excluded ones, the AssertLLM2 table, and anything that differs from the Mac.
+- **Build artefacts and logs are not committed:** `build/`, `ctest-linux.log`.
+- **If something fails, record it; don't fix HARM here.**
+  - A test failure or a count that differs from the Mac is a finding: write it in VALIDATION with the output, push, and stop.
+  - A fix is a new milestone, with the usual workflow (plan, approval, failing tests first).
+  - Only the evaluation's own inputs (manifests, paths) may be corrected on the branch, and noted as such.
+- **Keep the rules of `doc/plan/PLAN.md`:**
+  - D-010: one compiler for HARM and its libraries;
+  - trivergence's repository is only read, never changed, from this work.
+
 
 Use `dev` (H11 is merged). Write down `build/harm --version`.
 
@@ -22,7 +39,7 @@ build/harm --version
 cd build && ctest -j$(nproc) 2>&1 | tee ctest-linux.log | tail -30
 ```
 - All labels, slow included; about 30 minutes on the Mac.
-- **Send back:** the last 30 lines (the summary, and any failure with `--output-on-failure`).
+- **Record:** the summary (the last lines), and every failure with its `--output-on-failure` output.
 - `h5_unit` (harm-coi's pytest) and `h5_*` run only when `HARM_COI_PYTHON` has pyslang, pytest and jsonschema. Check that they are not skipped (`ctest -N -R h5_`).
 
 ## 3. The Docker image (A3)
@@ -30,7 +47,7 @@ cd build && ctest -j$(nproc) 2>&1 | tee ctest-linux.log | tail -30
 docker/build.sh dev
 ```
 - It builds HARM, Z3, harm-coi, Verilator and Icarus, and runs the fast tests inside the image.
-- **Send back:** success, or the failing step.
+- **Record:** success, or the failing step and its error.
 
 ## 4. The evaluation (D-026)
 **4a. The local designs, as on the Mac.** HARM is deterministic (H0), so the counts must equal the Mac's; the times may differ:
@@ -60,7 +77,7 @@ python3 eval/run_eval.py eval/manifests/examples.json eval/results/linux-example
 
 **4c. GoldMine (optional, Paper A preview).** On the designs GoldMine supports, note its number of assertions, its time and, if possible, its fault coverage on the same mutants. A row per design is enough; `eval/run_eval.py` does not drive GoldMine.
 
-**Send back:** the `eval/results/*` directories (`results.csv`, `results.md`), and the list of chosen designs with the reasons for the excluded ones.
+**Record:** see "Recording" above.
 
 ## 5. What to watch for
 - **A `timeout` in the table** (default 30 minutes per run) is a measurement, not a failure.
