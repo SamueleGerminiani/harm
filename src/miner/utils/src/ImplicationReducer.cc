@@ -723,15 +723,16 @@ bool implies(Abstracted &x, Abstracted &y, Context &ctx,
   if (premises.empty()) {
     return !x.aut->intersects(y.negAut) && harmImplies(x.harm, y.harm);
   }
-  // H3b: every trace satisfies G(premises), so it is assumed in both checks
+  // H3b: every trace satisfies G(premises), so it is assumed in both checks. HARM's finite model
+  // first: it is cheap and rejects most pairs, before a Spot translation
   spot::parsed_formula pc = spot::parse_infix_boolean(premises);
-  auto withPremises =
-      ctx.trans.run(spot::formula::And({spot::formula::G(pc.f), x.f}));
-  if (withPremises->intersects(y.negAut)) {
+  bdd constraint = spot::formula_to_bdd(pc.f, ctx.dict, &ctx.owner);
+  if (!harmImplies(x.harm, y.harm, 20000, constraint)) {
     return false;
   }
-  bdd constraint = spot::formula_to_bdd(pc.f, ctx.dict, &ctx.owner);
-  return harmImplies(x.harm, y.harm, 20000, constraint);
+  auto withPremises =
+      ctx.trans.run(spot::formula::And({spot::formula::G(pc.f), x.f}));
+  return !withPremises->intersects(y.negAut);
 }
 
 Implication relation(Abstracted &a, Abstracted &b, Context &ctx,
@@ -740,14 +741,14 @@ Implication relation(Abstracted &a, Abstracted &b, Context &ctx,
   if (!a.ok || !b.ok || !a.safety || !b.safety) {
     return Implication::Skipped;
   }
-  auto rel = [&](const std::string &premises) {
-    bool ab = implies(a, b, ctx, premises), ba = implies(b, a, ctx, premises);
+  auto label = [](bool ab, bool ba) {
     return ab && ba ? Implication::Equivalent
            : ab     ? Implication::AImpliesB
            : ba     ? Implication::BImpliesA
                     : Implication::None;
   };
-  Implication without = rel("");
+  bool ab0 = implies(a, b, ctx), ba0 = implies(b, a, ctx);
+  Implication without = label(ab0, ba0);
   if (facts == nullptr || facts->list.empty()) {
     return without;
   }
@@ -758,8 +759,10 @@ Implication relation(Abstracted &a, Abstracted &b, Context &ctx,
   if (premises.empty()) {
     return without;
   }
-  // premises only remove traces, so they can only add implications
-  Implication with = rel(premises);
+  // premises only remove traces, so they can only add implications: a direction that holds
+  // without them is not checked again
+  Implication with = label(ab0 || implies(a, b, ctx, premises),
+                           ba0 || implies(b, a, ctx, premises));
   if (with != without && used != nullptr) {
     *used = texts;
   }

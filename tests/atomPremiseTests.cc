@@ -244,3 +244,44 @@ TEST(AtomPremiseTest, capGivesASubsetOfTheClaims) {
         << line;
   }
 }
+
+// ---------------------------------------------------------------- validation: facts by enumeration
+// Every fact of factsBetweenAtoms over cnt and st (no i or w64) is re-checked with HARM's own
+// evaluator on all 4-valued values: 256 for cnt times 16 for st, one value per trace row.
+TEST(AtomPremiseTest, factsMatchEnumerationWithHarmsEvaluator) {
+  const char bits[] = "01xz";
+  size_t rows = 256 * 16;
+  TracePtr tr = traceOf(rows);
+  for (size_t r = 0; r < rows; r++) {
+    std::string c, s;
+    for (size_t k = 0; k < 4; k++) {
+      c += bits[(r >> (2 * k)) & 3];
+    }
+    for (size_t k = 0; k < 2; k++) {
+      s += bits[(r >> (8 + 2 * k)) & 3];
+    }
+    tr->getLogicVariable("cnt")->assign(r, Logic(c, 4));
+    tr->getLogicVariable("st")->assign(r, Logic(s, 2));
+    tr->getBooleanVariable("a")->assign(r, (bool)(r & 1));
+  }
+  std::vector<std::tuple<std::string, std::string, bool>> facts = {
+      {"cnt > 4'd9", "cnt > 4'd8", true},       {"cnt > 4'd8", "cnt > 4'd9", false},
+      {"cnt == 4'd9", "cnt > 4'd8", true},      {"cnt == 4'd9", "cnt[3]", true},
+      {"cnt == 4'd9", "cnt[1]", false},         {"cnt != 4'd1", "!(cnt == 4'd1)", true},
+      {"!(cnt == 4'd1)", "cnt != 4'd1", false}, {"st == 2'd1", "!(st == 2'd2)", true},
+      {"!(st == 2'd2)", "st == 2'd1", false},   {"a && cnt > 4'd3", "a", true},
+  };
+  for (const auto &[ps, qs, valid] : facts) {
+    hlog::ScopedThrowOnError throwOnError;
+    auto p = hparser::parseProposition(ps, tr);
+    auto q = hparser::parseProposition(qs, tr);
+    size_t counterexamples = 0;
+    for (size_t r = 0; r < rows; r++) {
+      counterexamples += p->evaluate(r) && !q->evaluate(r);
+    }
+    EXPECT_EQ(counterexamples == 0, valid) << ps << "  =>  " << qs << ": " << counterexamples
+                                           << " counterexamples of " << rows;
+    // and Z3 agrees
+    EXPECT_EQ(smt::checkImplication(p, q, 2000) == smt::Entails::Yes, valid) << ps << " => " << qs;
+  }
+}
