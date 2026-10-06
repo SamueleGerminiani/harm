@@ -1,6 +1,6 @@
 # H10 plan: RTL predicate harvesting
 
-*Status: approved 2026-10-06 (D-023); done, awaiting review. Branch: `ms/H10-predicates` (from `dev` @ H9). Effort: 3–4 d.*
+*Status: approved 2026-10-06 (D-023); done, approved 2026-10-06 and merged into `dev`. Branch: `ms/H10-predicates` (from `dev` @ H9). Effort: 3–4 d.*
 
 ## Goal
 `harm-coi` (H5) also reads, from the same pyslang AST, the predicates the designer wrote, and offers them to HARM as propositions with `origin="rtl"`:
