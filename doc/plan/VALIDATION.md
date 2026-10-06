@@ -585,15 +585,16 @@ Tests written first and committed failing in `e87b42b` (API stubs). Implemented 
   - A3: the timeout query `w64 * v64 == N ⇒ w64 != 1` was false (`w64 = 1`), so Z3 answered "no" at once; it was replaced by a true implication that needs factoring.
 - **Suites:** `ctest -j6`: **211/211**, 31 min. Baselines byte-identical. Linux: pending.
 
-## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; the Linux part is pending)
+## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; Linux: blocked by F-L1)
 Tests written first and committed failing in `917e103` (`h11_version`, `h11_readme_commands`). `--version` implemented in `7c36fa3`.
 
 | Test | Result |
 |---|---|
 | A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
 | A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
-| A2 Linux `ctest` and harm-coi pytest | **pending** (`eval/LINUX.md` §2) |
-| A3 the Docker image | **pending**: the Docker daemon is not running here (`eval/LINUX.md` §3) |
+| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | **not run**: HARM does not build on Linux (finding F-L1 below) |
+| A2 Linux `ctest` and harm-coi pytest | **fail**: HARM does not build on Linux (F-L1), so `ctest` did not run. No summary |
+| A3 the Docker image | **not run**: stopped at F-L1, as `eval/LINUX.md` asks. The image builds the same sources on Linux, so it would fail at the same line |
 | A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
 | A5 `--version` prints `HARM <git describe>` (`h11_version`) | pass |
 
@@ -637,3 +638,48 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     - `constructs`: C1 305 s, C2 over 1,800 s.
     - `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Recorded in `eval/LINUX.md` and for trivergence; making them faster is for after the release.
 - **Fix during the run: the examples manifest.** It had trace paths in `args`, relative to the repository, while HARM runs in a temporary directory, so every example failed on a missing trace. The trace arguments were moved to the `trace` field, which is resolved from the repository root, and `faults` was added for `faultCov` and `sobel`. This changes no HARM behaviour, only the evaluation's input.
+
+### Linux evaluation (2026-10-06, Ubuntu 22.04 x86_64, g++ 11.4.0, branch `ms/H11-linux` from `dev` at `1dc0609`)
+- **Environment:**
+  - The default `c++` is g++ 11.4.0, used for `third_party/install_all.sh` (Z3 4.13.4) and HARM (D-010). CMake 3.31.10.
+  - There is no system `python3.12`. The venv was made with `uv venv --python 3.12` (CPython 3.12.6) instead of `python3.12 -m venv`. pyslang 12.0.0, pytest and jsonschema are installed.
+  - The yosys cross-check is skipped: the only yosys here is 0.47, older than 0.67.
+  - Verilator 4.210 is first on `PATH`. The AssertLLM2 traces were made with trivergence's image (Verilator 5.053).
+- **`build/harm --version`:** none, because the build fails. HEAD is `v3-144-g1dc0609`.
+- **Finding F-L1: HARM does not build on Linux (g++ 11, x86_64).** This blocks A1, A2, A3 and the evaluation.
+  - The line is `src/exp/include/visitors/ExpToZ3Visitor.hh:73`, from H2 (`059d7de`), and it is the only compile error (`make -k`):
+    ```
+    ExpToZ3Visitor.hh:73:61: error: call of overloaded 'bv_val(long long unsigned int&, unsigned int&)' is ambiguous
+       73 |   z3::expr bv(unsigned long long value) { return _ctx.bv_val(value, _U); }
+    z3++.h:3806: candidate: z3::expr z3::context::bv_val(int, unsigned int)
+    z3++.h:3807: candidate: z3::expr z3::context::bv_val(unsigned int, unsigned int)
+    z3++.h:3808: candidate: z3::expr z3::context::bv_val(int64_t, unsigned int)
+    z3++.h:3809: candidate: z3::expr z3::context::bv_val(uint64_t, unsigned int)
+    ```
+  - **Cause:** on LP64 Linux, `uint64_t` is `unsigned long`, so `unsigned long long` matches no overload exactly. On macOS, `uint64_t` is `unsigned long long`, which is why the Mac builds.
+  - **Fix:** not applied here (`eval/LINUX.md`); it is a new milestone. A plausible fix is `bv(uint64_t)`, or a cast to `uint64_t` at the call.
+  - **Status of the rest:**
+    - `ctest`, the Docker image and the evaluation (§4a, §4b) did not run.
+    - The `build/harm` in the checkout is a stale binary from 2026-09-07; it was not used.
+- **AssertLLM2 (§4b): the designs are chosen and the manifest is written (`eval/manifests/assertllm2.json`); the run is blocked by F-L1.**
+  - **Source:** AssertLLM2 at `f66fd20` (trivergence's pin), from `~/triad/data/assertllm2`.
+  - **Traces, made with trivergence's flow without changing it.** trivergence was mounted read-only in `triad-toolchain:t3`.
+    - The design was loaded with `triad_bench.m0_loader.load_design`, from loader YAMLs written outside trivergence.
+    - The traces come from `triad_sim.verilator.VerilatorSimulator.run`: random stimulus, seed 1, 2,000 cycles, reset held for 2 cycles, scope `triad_tb::dut`.
+    - Faults are the AssertLLM2 single-bug mutants (`buggy_artifacts/single_bug_mutants`), simulated with the same testbench and seed: 5 per design.
+    - The traces are in `build/assertllm2/traces` (not committed), and the RTL paths in the manifest are absolute (`~/triad/data`).
+  - **Screening:**
+    - harm-coi (pyslang) elaborates 35 of the 83 designs with one inferred clock. The others have elaboration errors, several clocks or a timeout over 180 s.
+    - From the small and medium ones, 15 were simulated, and 13 simulate with the golden RTL and all 5 mutants.
+  - **Chosen (10):** `aes_cipher`, `uart`, `uart_to_bus`, `ethernet_smii_txrx`, `srdy-drdy-library` (`sd_scoreboard`), `ima_adpcm_encoder`, `ima_adpcm_decoder`, `sha3` (`keccak`), `gaussian_noise_generator` (`gng`), `video_stream_scaler`.
+    - harm-coi runs on each with its trace.
+    - Signals marked `unknown`: `sha3` 300, `gng` 62, `video_stream_scaler` 32. The rest have none.
+  - **Excluded, and why:**
+    - `rs_5_3_gf256`: Verilator rejects the RTL ("Duplicate declaration of signal: 'y'").
+    - `spi_core`: the golden RTL fails its `full_case parallel_case` check under random stimulus (`simple_spi_top.v:235`).
+    - `versatile_counter`: harm-coi needs `--include` for `` `include "versatile_counter_defines.v" ``, and the manifest format (`run_eval.py`) has no include directories.
+    - `gost28147-89` and `present_cipher_encryption_core` simulate but were left out to keep 10. Both are crypto datapaths with 256/512-bit or 80-bit random inputs.
+    - `i2c_slave`: its file set does not elaborate in pyslang (3 errors).
+  - **AssertLLM2 table:** pending until F-L1 is fixed.
+  - **Differences from the Mac:** F-L1. None are measured beyond it.
+- **GoldMine (§4c):** not run.
