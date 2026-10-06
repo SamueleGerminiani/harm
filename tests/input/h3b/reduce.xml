@@ -1,0 +1,14 @@
+<harm>
+    <!-- H3b (A4, A5): on reduce.csv, a holds exactly when cnt > 8 (cnt runs through all 16 values).
+         HARM mines G(cnt > 8 -> a), G(cnt > 9 -> a) and G(cnt == 9 -> a). With --reduce implies
+         alone all three are kept (unrelated atoms for H3); with --atom-premises only
+         G(cnt > 4'd8 -> a) is kept, since cnt > 9 and cnt == 9 imply cnt > 8. -->
+    <context name="default">
+        <prop exp="a" loc="c"/>
+        <prop exp="cnt &gt; 4'd8" loc="a"/>
+        <prop exp="cnt &gt; 4'd9" loc="a"/>
+        <prop exp="cnt == 4'd9" loc="a"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

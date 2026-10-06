@@ -324,3 +324,16 @@ if(PYTHON3_FOUND)
                 ${CMAKE_SOURCE_DIR}/tests/input/h1b/x_values.csv ${CMAKE_SOURCE_DIR}/tests/input/h1b/x_values.xml)
     set_tests_properties(h1b_x_semantics PROPERTIES LABELS regression)
 endif()
+
+# ---- H3b: atom premises (A4, A5 at the command line; A1-A3 are AtomPremiseTest) -------------------
+set(H3B ${CMAKE_SOURCE_DIR}/tests/input/h3b)
+add_test(NAME h3b_needs_reduce_implies
+    COMMAND $<TARGET_FILE:harm> --csv ${H3B}/reduce.csv --conf ${H3B}/reduce.xml --atom-premises --psilent)
+set_tests_properties(h3b_needs_reduce_implies PROPERTIES LABELS regression
+    PASS_REGULAR_EXPRESSION "--atom-premises needs --reduce implies")
+if(PYTHON3_FOUND)
+    add_test(NAME h3b_atom_premises
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_atom_premises.py $<TARGET_FILE:harm>
+                ${H3B}/reduce.csv ${H3B}/reduce.xml)
+    set_tests_properties(h3b_atom_premises PROPERTIES LABELS regression)
+endif()

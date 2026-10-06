@@ -38,6 +38,7 @@ addTest("CoiFilterTest" ./coiFilterTests.cc )
 addTest("CoiDepthTest" ./coiDepthTests.cc )
 addTest("PrintingTest" ./printingTests.cc )
 addTest("CoiPredicateTest" ./coiPredicateTests.cc )
+addTest("AtomPremiseTest" ./atomPremiseTests.cc )
 
 
 add_subdirectory(regression)

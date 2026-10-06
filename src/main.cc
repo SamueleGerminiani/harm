@@ -316,6 +316,14 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(clc::reduce != "implies",
                    "--dump-implications needs --reduce implies");
   }
+  if (result.count("atom-premises")) {
+    clc::atomPremises = true;
+    messageErrorIf(clc::reduce != "implies", "--atom-premises needs --reduce implies");
+  }
+  if (result.count("atom-premises-max")) {
+    clc::atomPremisesMax = result["atom-premises-max"].as<size_t>();
+    messageErrorIf(!clc::atomPremises, "--atom-premises-max needs --atom-premises");
+  }
 
   if (result.count("dump-trace-as-csv")) {
     clc::dumpTraceAsCSV =

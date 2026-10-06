@@ -359,7 +359,10 @@ void applyImplicationReduction(const Context &context,
   std::vector<ImplicationRecord> dropped;
   size_t before = assertions.size(), pairs = 0;
   auto start = std::chrono::steady_clock::now();
-  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs);
+  AtomPremises premises;
+  premises.enabled = clc::atomPremises;
+  premises.maxQueries = clc::atomPremisesMax;
+  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs, premises);
   double seconds = std::chrono::duration<double>(
                        std::chrono::steady_clock::now() - start)
                        .count();
@@ -385,7 +388,21 @@ void applyImplicationReduction(const Context &context,
     for (size_t i = 0; i < kept.size(); i++) {
       r += (i ? ", " : "") + kept[i];
     }
-    records.push_back(r + "], \"relation\": " + jsonString(d.relation) + "}");
+    r += "], \"relation\": " + jsonString(d.relation);
+    if (!d.premises.empty()) {
+      // H3b: the facts between atoms the claim needed (an optional field)
+      std::vector<std::string> ps;
+      for (const auto &p : d.premises) {
+        ps.push_back(jsonString(p));
+      }
+      std::sort(ps.begin(), ps.end());
+      r += ", \"premises\": [";
+      for (size_t i = 0; i < ps.size(); i++) {
+        r += (i ? ", " : "") + ps[i];
+      }
+      r += "]";
+    }
+    records.push_back(r + "}");
   }
   std::ofstream out(clc::dumpImplications);
   messageErrorIf(!out.good(), "Cannot write '" + clc::dumpImplications + "'");

@@ -290,3 +290,17 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - `--generate-config`'s template and sorts.
 
   Filter mode (H7, H8) gives the per-target restriction on that one context.
+
+## D-025: atom-implication premises (2026-10-06, H3b, approved after the measurement)
+- **`--atom-premises`** (needs `--reduce implies`) and **`--atom-premises-max <N>`** (default 2000). Opt-in: `--reduce implies` alone is H3, unchanged.
+- **The facts:** for every pair of canonical atoms (H2 tokens) over a common variable, Z3 is asked whether `p → q`, `q → p` and `p → ¬q` are valid. The encoding is `checkEquivalence`'s, so x/z are included (D-011).
+  - Only a proof gives a fact. A timeout, an unknown result or opaque constructs give none.
+  - The queries are capped: beyond the cap they are skipped, with a message. The result stays sound.
+- **The facts become premises of both of H3's checks:**
+  - Spot: `G(facts) ∧ A ⊆ B`;
+  - HARM's finite-trace model: only atom valuations that satisfy the facts.
+
+  Premises can only add implications, never remove one. Pairs of assertions linked only by a fact become candidates too.
+- **Soundness:** the facts hold on every cycle of every trace HARM evaluates, and over 2-valued values (formal tools). SystemVerilog's own x semantics remain the documented gap of D-011.
+- **`--dump-implications`:** a record whose claim needed facts gets an optional `"premises"` list (texts `p -> q`). The format version stays "1", because the field is additive.
+- **Measurement before approval** (`H3b_PLAN.md`): on outputs with numeric ranges or FSM states, at least 16–22% of the survivors of `--reduce implies` are redundant; on Boolean-only outputs, none.

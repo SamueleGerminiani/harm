@@ -684,12 +684,22 @@ Harm produces three main types of textual outputs:
       * Propositions keep their boolean structure (`&&`, `||`, `!`); the comparisons inside them are compared with Z3, as in `equiv`.
       * An implication is claimed only if it holds both over infinite words (proved with Spot, which is what SVA and formal tools need) and on every finite trace as HARM evaluates it, where an assertion still pending at the end of the trace holds.
       * Only **safety** assertions of the form `G(antecedent -> consequent)` with a fixed-length antecedent are reduced; the others (`F`, `[*]`, `##[m:n]`, …) are always kept.
-      * Only assertions sharing a proposition are compared.
+      * Only assertions sharing a proposition are compared (or, with `--atom-premises`, linked by a fact).
+* **`--atom-premises`** (with `--reduce implies`), **`--atom-premises-max <N>`** (default 2000)
+    Also use facts between the comparisons inside propositions, proved with Z3 under HARM's semantics (x/z included):
+    - implications, e.g. `cnt > 9` implies `cnt > 8`;
+    - exclusions, e.g. `state == 1` excludes `state == 2`.
+
+    So `G(cnt > 4'd8 -> b)` drops `G(cnt > 4'd9 -> b)`, and `G(a -> state == 2'd1)` drops `G(a -> !(state == 2'd2))`.
+    - **The facts are assumed by both checks** (Spot, and HARM's finite-trace model). They hold on every trace HARM evaluates.
+    - **They respect HARM's x/z rule:** `cnt != 1` implies `!(cnt == 1)`, but not the converse.
+    - **Which pairs are asked:** only comparisons over a common variable, at most `N` Z3 queries per reduction. Beyond that, HARM prints a message and the reduction stays sound, only weaker.
+    - **Where it helps:** outputs with numeric ranges or FSM states. It removed at least 16–22% of the survivors of `--reduce implies` on such examples (H3b measurement). See D-025.
 * **`--keep <stronger|weaker|ranked>`** (with `--reduce implies`)
     Which side of an implication is kept: `stronger` (default) keeps the implying assertion, `weaker` keeps the implied one, and `ranked` keeps the better ranked. Equivalent assertions keep the smallest text.
 
 * **`--dump-implications <FILE>`** (with `--reduce implies`)
-    Write a JSON record for every dropped assertion, all contexts in one file: `{"version": "1", "implications": [{"context", "dropped", "kept": [...], "relation"}]}`, where `kept` lists the kept assertions that imply it (or that it implies, with `--keep weaker`), and `relation` is `implied`, `implies` or `equivalent`.
+    Write a JSON record for every dropped assertion, all contexts in one file: `{"version": "1", "implications": [{"context", "dropped", "kept": [...], "relation"}]}`, where `kept` lists the kept assertions that imply it (or that it implies, with `--keep weaker`), and `relation` is `implied`, `implies` or `equivalent`. With `--atom-premises`, a record whose claim needed facts between atoms also has `"premises": ["cnt > 4'b1001 -> cnt > 4'b1000", ...]`.
 
 * **`--min-frank <float>`**
     Minimum final ranking score (0.0 to 1.0). All assertions below this level are discarded.

@@ -59,9 +59,50 @@ Equivalence checkEquivalence(const PropositionPtr &p1,
   return Equivalence::Unknown;
 }
 
+Entails checkImplication(const PropositionPtr &p, const PropositionPtr &q,
+                         unsigned timeoutMs) {
+  // as checkEquivalence: p implies q iff p && !q has no model (x/z encoded, D-011)
+  unsigned U = 64;
+  for (int attempt = 0; attempt < 2; attempt++) {
+    try {
+      z3::context ctx;
+      ExpToZ3Visitor enc(ctx, U);
+      z3::expr e1 = enc.encode(p);
+      z3::expr e2 = enc.encode(q);
+      if (enc.maxWidth() > U) {
+        U = enc.maxWidth();
+        continue;
+      }
+      z3::solver s(ctx);
+      z3::params params(ctx);
+      params.set("timeout", timeoutMs);
+      s.set(params);
+      for (const auto &a : enc.assumptions()) {
+        s.add(a);
+      }
+      s.add(e1 && !e2);
+      switch (s.check()) {
+      case z3::unsat:
+        return Entails::Yes;
+      case z3::sat:
+        return enc.usedOpaque() ? Entails::Unknown : Entails::No;
+      default:
+        return Entails::Unknown;
+      }
+    } catch (const z3::exception &) {
+      return Entails::Unknown;
+    }
+  }
+  return Entails::Unknown;
+}
+
 #else
 
 bool available() { return false; }
+
+Entails checkImplication(const PropositionPtr &, const PropositionPtr &, unsigned) {
+  return Entails::Unknown;
+}
 
 Equivalence checkEquivalence(const PropositionPtr &, const PropositionPtr &,
                              unsigned, Counterexample *) {

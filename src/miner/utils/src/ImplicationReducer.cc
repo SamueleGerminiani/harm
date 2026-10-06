@@ -23,6 +23,7 @@
 #include "Assertion.hh"
 #include "CoiInfo.hh"
 #include "PropositionCanonicalizer.hh"
+#include "expUtils/smtEquivalence.hh"
 #include "expUtils/expUtils.hh"
 #include "formula/atom/Constant.hh"
 #include "formula/expression/GenericExpression.hh"
@@ -489,9 +490,10 @@ std::optional<Instance> stepInstance(const HarmModel &m, Instance i,
 /// traces, tracking every pending instance of x and one chosen instance of y; it gives up
 /// (answers false: never sound to drop) beyond 'maxStates' explored states
 bool harmImplies(const HarmModel &x, const HarmModel &y,
-                 size_t maxStates = 20000) {
-  // letters: the classes of atom valuations that no condition of x or y separates
-  std::vector<bdd> letters{bddtrue};
+                 size_t maxStates = 20000, const bdd &constraint = bddtrue) {
+  // letters: the classes of atom valuations that no condition of x or y separates; with atom
+  // premises (H3b), only valuations that satisfy them occur on a real trace
+  std::vector<bdd> letters{constraint};
   auto refine = [&](const bdd &b) {
     std::vector<bdd> out;
     for (const auto &l : letters) {
@@ -574,6 +576,98 @@ atomTokens(const std::vector<TemporalExpressionPtr> &formulas,
   return canon.tokens();
 }
 
+// ---------------------------------------------------------------- atom facts (H3b, D-025)
+/// p -> q, or p -> !q (an exclusion), between canonical atoms, proved with Z3 under HARM's
+/// semantics (x/z included, D-011): it holds on every cycle of every trace HARM evaluates
+struct Fact {
+  std::string p, q;
+  bool negated;
+  std::string text;
+};
+
+struct Facts {
+  std::vector<Fact> list;
+  /// the facts whose two atoms are in 'atoms', as a Spot Boolean formula ("" if none), and their
+  /// texts
+  std::string constraint(const std::set<std::string> &atoms,
+                         std::vector<std::string> *texts = nullptr) const {
+    std::string c;
+    for (const auto &f : list) {
+      if (atoms.count(f.p) && atoms.count(f.q)) {
+        c += (c.empty() ? "" : " & ") + std::string("(!") + f.p + " | " +
+             (f.negated ? "!" : "") + f.q + ")";
+        if (texts != nullptr) {
+          texts->push_back(f.text);
+        }
+      }
+    }
+    return c;
+  }
+};
+
+Facts proveFacts(const std::vector<TemporalExpressionPtr> &formulas,
+                 const std::unordered_map<const Proposition *, std::string> &tokens,
+                 const AtomPremises &opt, unsigned z3TimeoutMs) {
+  Facts facts;
+  if (!opt.enabled) {
+    return facts;
+  }
+  // one proposition per canonical atom, with its variables
+  std::map<std::string, PropositionPtr> rep;
+  for (const auto &te : formulas) {
+    for (const auto &leaf : leafPropositions(te)) {
+      std::vector<PropositionPtr> atoms;
+      collectAtoms(leaf, atoms);
+      for (const auto &at : atoms) {
+        rep.emplace(tokens.at(at.get()), at);
+      }
+    }
+  }
+  std::vector<std::pair<std::string, PropositionPtr>> atoms(rep.begin(), rep.end());
+  std::vector<std::set<std::string>> vars;
+  for (const auto &[t, p] : atoms) {
+    std::set<std::string> v;
+    for (const auto &[name, type] : getVars(p)) {
+      v.insert(name);
+    }
+    vars.push_back(v);
+  }
+  size_t queries = 0, skipped = 0;
+  auto ask = [&](size_t i, size_t j, bool negated) {
+    if (queries >= opt.maxQueries) {
+      skipped++;
+      return;
+    }
+    queries++;
+    PropositionPtr q = atoms[j].second;
+    if (negated) {
+      q = makeGenericExpression<PropositionNot>(q);
+    }
+    if (smt::checkImplication(atoms[i].second, q, z3TimeoutMs) == smt::Entails::Yes) {
+      facts.list.push_back({atoms[i].first, atoms[j].first, negated,
+                            prop2String(atoms[i].second) + " -> " + prop2String(q)});
+    }
+  };
+  for (size_t i = 0; i < atoms.size(); i++) {
+    for (size_t j = i + 1; j < atoms.size(); j++) {
+      bool shared = std::any_of(vars[i].begin(), vars[i].end(),
+                                [&](const std::string &v) { return vars[j].count(v) > 0; });
+      if (!shared) {
+        continue; // only atoms over a common variable are queried
+      }
+      ask(i, j, false);
+      ask(j, i, false);
+      ask(i, j, true); // i -> !j, i.e. j -> !i
+    }
+  }
+  if (skipped > 0) {
+    messageInfo("atom premises: query cap (" + std::to_string(opt.maxQueries) +
+                ") reached, " + std::to_string(skipped) +
+                " queries skipped; the reduction stays sound, only weaker");
+  }
+  return facts;
+}
+
 Abstracted abstractFormula(
     const TemporalExpressionPtr &te,
     const std::unordered_map<const Proposition *, std::string> &tokens,
@@ -622,46 +716,85 @@ void translate(Abstracted &a, Context &ctx) {
 
 /// x implies y both on infinite words (SVA, formal tools) and on finite traces as HARM
 /// evaluates them (D-004 as amended)
-bool implies(Abstracted &x, Abstracted &y, Context &ctx) {
+bool implies(Abstracted &x, Abstracted &y, Context &ctx,
+             const std::string &premises = "") {
   translate(x, ctx);
   translate(y, ctx);
-  return !x.aut->intersects(y.negAut) && harmImplies(x.harm, y.harm);
+  if (premises.empty()) {
+    return !x.aut->intersects(y.negAut) && harmImplies(x.harm, y.harm);
+  }
+  // H3b: every trace satisfies G(premises), so it is assumed in both checks. HARM's finite model
+  // first: it is cheap and rejects most pairs, before a Spot translation
+  spot::parsed_formula pc = spot::parse_infix_boolean(premises);
+  bdd constraint = spot::formula_to_bdd(pc.f, ctx.dict, &ctx.owner);
+  if (!harmImplies(x.harm, y.harm, 20000, constraint)) {
+    return false;
+  }
+  auto withPremises =
+      ctx.trans.run(spot::formula::And({spot::formula::G(pc.f), x.f}));
+  return !withPremises->intersects(y.negAut);
 }
 
-Implication relation(Abstracted &a, Abstracted &b, Context &ctx) {
+Implication relation(Abstracted &a, Abstracted &b, Context &ctx,
+                     const Facts *facts = nullptr,
+                     std::vector<std::string> *used = nullptr) {
   if (!a.ok || !b.ok || !a.safety || !b.safety) {
     return Implication::Skipped;
   }
-  bool ab = implies(a, b, ctx), ba = implies(b, a, ctx);
-  return ab && ba ? Implication::Equivalent
-         : ab     ? Implication::AImpliesB
-         : ba     ? Implication::BImpliesA
-                  : Implication::None;
+  auto label = [](bool ab, bool ba) {
+    return ab && ba ? Implication::Equivalent
+           : ab     ? Implication::AImpliesB
+           : ba     ? Implication::BImpliesA
+                    : Implication::None;
+  };
+  bool ab0 = implies(a, b, ctx), ba0 = implies(b, a, ctx);
+  Implication without = label(ab0, ba0);
+  if (facts == nullptr || facts->list.empty()) {
+    return without;
+  }
+  std::set<std::string> atoms = a.atoms;
+  atoms.insert(b.atoms.begin(), b.atoms.end());
+  std::vector<std::string> texts;
+  std::string premises = facts->constraint(atoms, &texts);
+  if (premises.empty()) {
+    return without;
+  }
+  // premises only remove traces, so they can only add implications: a direction that holds
+  // without them is not checked again
+  Implication with = label(ab0 || implies(a, b, ctx, premises),
+                           ba0 || implies(b, a, ctx, premises));
+  if (with != without && used != nullptr) {
+    *used = texts;
+  }
+  return with;
 }
 
 } // namespace
 
 Implication implicationBetween(const TemporalExpressionPtr &a,
                                const TemporalExpressionPtr &b,
-                               unsigned z3TimeoutMs) {
+                               unsigned z3TimeoutMs, const AtomPremises &premises) {
   auto tokens = atomTokens({a, b}, z3TimeoutMs);
+  Facts facts = proveFacts({a, b}, tokens, premises, z3TimeoutMs);
   Context ctx;
   Abstracted x = abstractFormula(a, tokens, ctx),
              y = abstractFormula(b, tokens, ctx);
-  return relation(x, y, ctx);
+  return relation(x, y, ctx, &facts);
 }
 
 std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records,
-                    unsigned z3TimeoutMs, size_t *pairsChecked) {
+                    unsigned z3TimeoutMs, size_t *pairsChecked,
+                    const AtomPremises &premises) {
   const size_t n = in.size();
   std::vector<TemporalExpressionPtr> formulas;
   for (const auto &a : in) {
     formulas.push_back(a->_formula);
   }
   auto tokens = atomTokens(formulas, z3TimeoutMs);
+  Facts facts = proveFacts(formulas, tokens, premises, z3TimeoutMs);
   Context ctx;
   std::vector<Abstracted> abs;
   std::vector<std::string> text;
@@ -687,12 +820,31 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
       }
     }
   }
+  // H3b: also the pairs linked only by a fact between their atoms
+  for (const auto &f : facts.list) {
+    auto pi = byAtom.find(f.p), qi = byAtom.find(f.q);
+    if (pi == byAtom.end() || qi == byAtom.end()) {
+      continue;
+    }
+    for (size_t x : pi->second) {
+      for (size_t y : qi->second) {
+        if (x != y) {
+          candidates.emplace(std::min(x, y), std::max(x, y));
+        }
+      }
+    }
+  }
   if (pairsChecked != nullptr) {
     *pairsChecked = candidates.size();
   }
   std::vector<std::vector<bool>> imp(n, std::vector<bool>(n, false));
+  std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
   for (const auto &[i, j] : candidates) {
-    Implication r = relation(abs[i], abs[j], ctx);
+    std::vector<std::string> used;
+    Implication r = relation(abs[i], abs[j], ctx, &facts, &used);
+    if (!used.empty()) {
+      usedFacts[{i, j}] = used;
+    }
     imp[i][j] = r == Implication::AImpliesB || r == Implication::Equivalent;
     imp[j][i] = r == Implication::BImpliesA || r == Implication::Equivalent;
   }
@@ -788,6 +940,14 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
                                               : imp[i][k];
         if (related) {
           r.kept.push_back(in[k]);
+          auto u = usedFacts.find({std::min(i, k), std::max(i, k)});
+          if (u != usedFacts.end()) {
+            for (const auto &t : u->second) {
+              if (std::find(r.premises.begin(), r.premises.end(), t) == r.premises.end()) {
+                r.premises.push_back(t);
+              }
+            }
+          }
         }
       }
       records->push_back(r);

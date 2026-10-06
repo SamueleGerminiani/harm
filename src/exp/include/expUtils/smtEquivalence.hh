@@ -21,6 +21,14 @@ bool available();
 /// "0"/"1" or decimal value
 using Counterexample = std::map<std::string, std::string>;
 
+/// result of an implication query (H3b): Unknown (timeout, unsupported) must be treated as "no fact"
+enum class Entails { Yes, No, Unknown };
+
+/// @brief Decide whether p implies q under HARM's semantics (D-011): for every value of the
+/// variables, x and z included, q holds wherever p holds
+Entails checkImplication(const PropositionPtr &p, const PropositionPtr &q,
+                         unsigned timeoutMs = 1000);
+
 Equivalence checkEquivalence(const PropositionPtr &p1,
                              const PropositionPtr &p2,
                              unsigned timeoutMs = 1000,
