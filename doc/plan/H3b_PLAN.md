@@ -11,6 +11,31 @@ H3b proves facts between atoms with Z3 (H2), under HARM's semantics including x/
 - **`p ⇒ q`**, e.g. `cnt > 9 ⇒ cnt > 8`;
 - **`p ⇒ ¬q`** (exclusion), e.g. `state == 2'd1 ⇒ ¬(state == 2'd2)`, which matters for FSM states.
 
+## Measurement (2026-10-06, asked for by the user before deciding)
+- **How:** how many assertions that survive `--reduce implies` would atom facts remove? Code in `doc/plan/h3b_measure/` (a spike, not a test).
+  - **The rule:** two survivors of the same shape (the text with each proposition blanked) where, position by position, each antecedent proposition of B implies A's and each consequent proposition of A implies B's.
+  - **Implications between propositions** are decided exactly for one-variable ranges and (in)equalities with `&&`/`||`/`!`, the forms numeric clustering and H10 produce, under HARM's x/z rule (D-011).
+  - This is a sufficient condition, so the counts are **lower bounds** for H3b: Spot can also relate assertions of different shapes.
+- **Results:** every regression example (as in `cases.cmake`), plus H10's `--emit-config` on the fixtures:
+
+  | Case | `syntactic` | `implies` | + atom facts (lower bound) |
+  |---|---|---|---|
+  | `sub_platform1k` (numerics) | 91 | 89 | **−20 (22%)** |
+  | H10 `fsm` (FSM states) | 46 | 38 | **−6 (16%)** |
+  | `sobel` (numerics) | 30 | 17 | −1 |
+  | H10 `constructs` | 101 | 99 | −3 (3%) |
+  | H10 `counter`, `arbiter` | 9, 36 | 8, 31 | 0 |
+  | `bl_master1k`/`10k`, `svaFunctions`, `fsm`, `vendingMachine`, `ex3`, … | 1–112 | same | 0 |
+
+- **Examples, checked by hand:**
+  - `G({!(state ∈ [5,12])} \|-> X …)` implies `G({state ∈ [0,4]} \|-> X …)` (`sub_platform1k`);
+  - `G({!(state == 1) ##1 …} \|-> …)` implies `G({state == 0 ##1 …} \|-> …)` (FSM exclusion);
+  - `G({!(p5 >= 136) ##1 …} \|-> …)` implies `G({p5 <= 135 ##1 …} \|-> …)` but not the converse, because `!(p5 >= 136)` is also true on x cycles.
+- **Reading:**
+  - the gain is real where propositions come from numeric clustering or FSM states: 16–22% of the survivors;
+  - it is close to zero on Boolean-only configurations, like trivergence's LLM hints so far;
+  - most regression examples produce few assertions (`--min-frank`, `--max-ass`), so they say little.
+
 ## How
 1. **Facts:** for each pair of canonical atoms (H2 tokens) of the assertions being reduced that share a variable, ask Z3 whether `p → q` and `p → ¬q` are valid.
    - A new `smt::checkImplication`, beside `checkEquivalence`, with the same encoding: 4-valued variables with x/z, so a fact holds on every trace HARM can read.
