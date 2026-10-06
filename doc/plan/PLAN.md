@@ -302,7 +302,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H3 | Semantic redundancy reduction | done |
 | H3b | Atom-implication premises | todo (optional) |
 | H4 | COI contract and RTL fixtures | done |
-| H5 | `harm-coi` generator | plan (awaiting approval) |
+| H5 | `harm-coi` generator | in-progress (H5a spike) |
 | H6 | COI rank mode | done |
 | H7 | COI filter mode, signal level | done |
 | H8 | Depth-aware COI filter | todo |
