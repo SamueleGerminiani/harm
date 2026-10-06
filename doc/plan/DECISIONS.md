@@ -50,7 +50,7 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
 - **The outer `always (…)`:** kept in `--sva` (valid, and backward compatible). Dropped in `--sva-assert`, which prints `assert property (@(posedge <clk>) …);`.
 - **Validation:** Verilator replay of printed assertions against HARM's own evaluation. Verilator is installed on the development Mac with Homebrew.
 
-## D-011: x/z semantics of propositions (2026-10-05, H1). **Decided: option (b), milestone H1b**
+## D-011: x/z semantics of propositions (2026-10-05, H1). **Decided: option (a), documented in H1b (2026-10-06); option (b) not adopted**
 - **Finding (H1 oracle, A2):** HARM's propositions do not follow SystemVerilog when values contain x/z.
   - **HARM's rule:** a relational or equality comparison (`== != < <= > >=`) is **false** if either operand contains an x or z bit. Boolean operators (`! && ||`) then work on 2-valued results.
   - **SV's rule:** the comparison yields x, or a known 0/1 when known bits already decide it (e.g. `!=` with a known differing bit is 1). `!`, `&&`, `||` propagate x (Kleene logic). An assertion treats a final x as false.
@@ -58,7 +58,7 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
     - `!(a == b)` is **true** in HARM but x (false) in SV when `a` has x bits;
     - `4'bx10x != q4` is always false in HARM, but 1 in SV when a known bit differs.
   - **Evidence:** iverilog oracle over 32 random 4-valued rows. Of 300 random pre-H1 expressions, 78 differ from SV on at least one row. All 300 match the rule above exactly, which confirms it describes HARM's behaviour precisely.
-- **Impact:** a HARM-mined assertion with a negated proposition can hold on a trace in HARM but fail in an SV simulator on the same trace when x/z values are present. This explains HARM/Verilator disagreements like trivergence M0 #33.
+- **Impact:** a HARM-mined assertion with a negated proposition can hold on a trace in HARM but fail in an SV simulator on the same trace when x/z values are present. It *may* explain HARM/Verilator disagreements like trivergence M0 #33 (`!(sda == 1'b0) |=> !writeEn` on an inout net, where the VCD can record `z`). Trivergence's M0 report attributes #33 to how the inout net is sampled (#24), so the link is unproven.
 - **Status:** H1 keeps the current semantics, as its plan states. The oracle checks new operators against HARM's rule (the "HARM model" column) and reports the SV gap.
 - **Options:**
   - (a) keep it and document it in the README;
@@ -71,6 +71,19 @@ One entry per decision: context, decision, alternatives, consequences. Numbering
   - **Edit rules keep matching the pre-D-002 printing.** `<edit>` rules are matched against the printed SVA text, with spaces removed. With `1'b1`, a rule such as `##@(N,b) @(P,c)` with `c=="true"` would silently stop matching: `##2 1'b1` becomes `##21'b1`. While edit rules are matched and applied, HARM prints SVA as before (`clc::legacySvaPrinting`), so existing users' edit rules keep working. The output still follows D-002.
   - **Updated test expectations:** `svaParserPrinterTests` (parse_print3, parse_print7, parse_print8) now expect `|=>`, `##9` and `s_eventually`.
   - **Regression:** the `process` baseline was re-captured. Its new output equals the old one with the D-002 rewrites applied mechanically (checked as sets; same count, 138 assertions in 4 contexts). `edit` is unchanged.
+
+- **Decision (2026-10-06, H1b, by the user): option (a).**
+  - **Why not (b):** in HARM a proposition is true or false, and a proposition and its negation are complementary. The decision trees' negated candidates, negated consequents and the H2/H3 reductions rely on that.
+  - **SystemVerilog's semantics would break it:** `!(a == b)` needs the inner comparison to carry x to the `!`. That means three-valued evaluation, or an equivalent "definitely 1 / definitely 0" pair of Boolean evaluations, and with either one both `a == b` and `!(a == b)` are false on x cycles.
+  - The plan for (b) (D-024) is withdrawn.
+- **HARM's rule, measured precisely** (H1b; pinned by `tests/input/h1b`):
+  - wherever a 4-valued value becomes a truth value, x/z counts as false;
+  - comparisons are false if any operand bit is x/z;
+  - a value used as a condition is true only with a known 1 bit;
+  - `!`/`&&`/`||` are then two-valued; `===`/`!==` are exact.
+
+  The SystemVerilog values of the pinned cases were checked against IEEE 1800-2017 (§11.4.4, §11.4.5, §11.4.7, §16.6) and with iverilog 12.0. They differ on 9 of 23 cases, in both directions.
+- **Documented** in the README ("x and z values"), with what to do: mine after reset, use `===`/`!==` when x/z matter, and treat the disagreement as known in triage.
 
 ## D-012: fixes stay on `dev` until the final merge (2026-10-05)
 - **Context:** H1 found bugs that also affect the stable `main` used by other people, notably F10 (bit selections evaluated and printed with swapped bounds) and F9 (variable names corrupting literals).

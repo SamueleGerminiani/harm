@@ -1,7 +1,22 @@
-# H1b plan: SystemVerilog x/z semantics as an option (D-011 option b)
+# H1b plan: x/z semantics of propositions (D-011)
 
-*Status: plan, awaiting approval. Branch: `ms/H1b-x-semantics` (from `dev` @ H10). Effort: 2–3 d.*
+*Status: revised 2026-10-06 by the user: **option (a), document the difference**; done, awaiting review. Branch: `ms/H1b-x-semantics` (from `dev` @ H10).*
 
+## Revision (2026-10-06): documentation instead of an option
+- **Why the option was dropped:**
+  - in HARM a proposition is true or false, and it is complementary to its negation;
+  - SystemVerilog's semantics needs the inner comparison of `!(a == b)` to pass x to the `!`. That is three-valued evaluation, or an equivalent pair of Boolean evaluations ("definitely 1", "definitely 0").
+  - Either way, a proposition and its negation can both be false on x cycles, which the decision trees, negated consequents and H2/H3 reductions do not allow.
+  - **D-024 below is withdrawn.**
+- **What H1b delivers instead:**
+  - **The precise rule, measured** (F5): wherever a 4-valued value becomes a truth value, x/z counts as false. This covers comparisons and values used as conditions (true only with a known 1 bit). `!`/`&&`/`||` are then two-valued; `===`/`!==` are exact.
+  - **The README section "x and z values":** the rule; a table of disagreements with a simulator in both directions; when it matters; what to do (mine after reset, `===`/`!==`, triage).
+  - **D-011 decided as (a),** with the reason; the claim about trivergence M0 #33 corrected to "may explain".
+  - **TRIVERGENCE_IMPACT guidance** updated.
+  - **`h1b_x_semantics`:** 23 propositions on a trace with x values. HARM's value of each is pinned (the test fails if HARM changes); the SV value of each is documented and checked with iverilog 12.0.
+- **F5 (measured 2026-10-06):** D-011 described the rule for comparisons only. A value used as a condition follows it too: `p` = x is false and `!p` true; `4'b01x0` is true; `4'b00x0` false and its negation true.
+
+## Original plan (option b, withdrawn)
 ## Goal
 An option under which HARM's propositions are evaluated as SystemVerilog evaluates them on 4-valued (x/z) values, so that a mined assertion holds in HARM exactly where it holds in a simulator. The default stays HARM's current semantics.
 

@@ -259,7 +259,28 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 
 Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (where `{...}` is a SERE).
 
-> **x/z semantics:** in HARM, a relational or equality comparison (`== != < <= > >=`) is **false** if an operand contains an `x` or `z` bit. `!`, `&&` and `||` then work on true/false values. This differs from SystemVerilog, where the comparison yields `x`, which an assertion treats as false, and `!x` is still `x`. For example, `!(a == b)` is true in HARM but false in an SV simulator when `a` has `x` bits. `===` and `!==` behave as in SystemVerilog. See `doc/plan/DECISIONS.md` (D-011).
+> **x and z values (D-011).** HARM's propositions are always true or false, and a proposition and its negation are always complementary. Wherever a 4-valued value becomes a truth value, `x`/`z` counts as **false**:
+> - a comparison (`== != < <= > >=`) is false if any bit of an operand is `x` or `z`;
+> - a value used as a condition (`v`, `a[1]`) is true only if it has a known 1 bit;
+> - `!`, `&&` and `||` then work on true/false values;
+> - `===` and `!==` compare `x`/`z` exactly, as in SystemVerilog.
+>
+> **A SystemVerilog simulator differs** (IEEE 1800-2017 §11.4.4, §11.4.5, §11.4.7, §16.6). A comparison or condition can be `x`, `!`/`&&`/`||` propagate `x`, and an assertion treats a final `x` as false. On cycles where a signal has `x`/`z` bits, HARM and a simulator can therefore disagree, in both directions. With `a = 4'b10x1`, `b = 4'b1001`, `c = 4'b0001`, `p = 1'bx`, `w = 4'b00x0`:
+>
+> | Proposition | HARM | Simulator | Consequence |
+> |---|---|---|---|
+> | `!(a == b)`, `!(a < c)`, `!p`, `!w`, `p \|\| !p` | true | false (x) | HARM can mine an assertion that a simulator then sees fail on those cycles |
+> | `a != c` (a known bit differs), `v != 4'b0` with `v = 4'b01x0` | false | true | HARM can miss an assertion that holds in simulation |
+> | `a == b`, `a === b`, `a !== b`, `v` with `v = 4'b01x0` | same | same | — |
+>
+> **When it matters:** only on traces with `x`/`z` values, e.g. 4-state simulators (Icarus, commercial tools) before reset, uninitialised memories, or tri-state and inout nets (`z`). Verilator traces are 2-state, except possibly for such nets.
+>
+> **What to do:**
+> - mine from cycles after reset;
+> - write propositions with `===`/`!==` where `x`/`z` must be told apart (`sda !== 1'b0` instead of `!(sda == 1'b0)`): those agree with a simulator;
+> - treat a "HARM holds, simulator fails" disagreement on an `x`/`z` cycle as this known difference.
+>
+> `tests/input/h1b` pins these values. An option with SystemVerilog's semantics was considered and not adopted (H1b): it would make a proposition and its negation both false on `x` cycles, which HARM's decision trees and reductions assume never happens.
 
 ### Invalid propositions
 By default, a proposition that cannot be parsed stops HARM. With **`--skip-invalid-props`**, it is skipped with a warning (`Invalid proposition skipped`) and mining continues with the others.
