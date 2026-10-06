@@ -298,6 +298,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H1 | Proposition and SVA language fixes | done |
 | H1b | SystemVerilog x/z semantics as an option (D-011) | todo |
 | H1c | End-of-trace strength (D-015, D-016) | done |
+| H1d | Printing fixes F7 (SVA `->`), F8 (Spot parentheses) | in-progress |
 | H2 | Z3 back end and canonicalisation | done |
 | H3 | Semantic redundancy reduction | done |
 | H3b | Atom-implication premises | todo (optional) |
