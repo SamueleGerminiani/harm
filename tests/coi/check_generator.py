@@ -6,6 +6,8 @@
   A2  the direct edges (--edges) equal the fixture's edges.txt.
 
 The generator's arguments come from the edges.txt header (top, vcd_scope, vcd_recursion, max_depth).
+A design without hand-written cones has a meta.txt with the same header instead: then only the
+validity of the output is checked (A1 and A2 need edges.txt and expected_coi.json).
 
 Usage: check_generator.py <fixture dir> --python <python with pyslang> [--harm <bin>] [--out <dir>]
 """
@@ -53,7 +55,8 @@ def main():
     fx = Path(a.fixture).resolve()
     out = Path(a.out or tempfile.mkdtemp())
     out.mkdir(parents=True, exist_ok=True)
-    meta, hand_edges = read_edges(fx / "edges.txt")
+    hand = (fx / "edges.txt").exists()
+    meta, hand_edges = read_edges(fx / ("edges.txt" if hand else "meta.txt"))
     coi_path, edges_path = out / f"{fx.name}_coi.json", out / f"{fx.name}_edges.txt"
     cmd = [a.python, "-m", "harm_coi", "--top", meta["top"],
            "--files", *[str(p) for p in sorted((fx / "rtl").glob("*.sv"))],
@@ -69,7 +72,7 @@ def main():
 
     # A2: direct edges
     _, mine = read_edges(edges_path)
-    if mine != hand_edges:
+    if hand and mine != hand_edges:
         ok = False
         print(f"[{fx.name}] A2 edges differ:")
         for x in sorted(hand_edges - mine):
@@ -79,7 +82,7 @@ def main():
 
     # A1: the closed cones
     got = json.loads(coi_path.read_text())
-    want = json.loads((fx / "expected_coi.json").read_text())
+    want = json.loads((fx / "expected_coi.json").read_text()) if hand else got
     g, w = normalise(got), normalise(want)
     if g != w:
         ok = False

@@ -146,13 +146,13 @@ endif()
 set_tests_properties(regression_h7_small_domain PROPERTIES TIMEOUT 60)
 
 # ---- H5: harm-coi generator (A1-A4) ----------------------------------------------------------------
-# harm-coi needs Python >= 3.11 with pyslang (and pytest for A4). Set HARM_COI_PYTHON to such an
+# harm-coi needs Python >= 3.11 with pyslang (and pytest and jsonschema for the tests). Set HARM_COI_PYTHON to such an
 # interpreter (e.g. a venv: python3.12 -m venv v && v/bin/pip install -e 'tools/harm-coi[test]');
 # by default python3 is tried. Without it, the H5 tests are skipped with a message.
 set(HARM_COI_PYTHON "${PYTHON3_FOUND}" CACHE FILEPATH "Python interpreter with pyslang and pytest, for harm-coi")
 set(HARM_COI_OK FALSE)
 if(HARM_COI_PYTHON)
-    execute_process(COMMAND ${HARM_COI_PYTHON} -c "import pyslang, pytest"
+    execute_process(COMMAND ${HARM_COI_PYTHON} -c "import pyslang, pytest, jsonschema"
                     RESULT_VARIABLE harm_coi_probe OUTPUT_QUIET ERROR_QUIET)
     if(harm_coi_probe EQUAL 0)
         set(HARM_COI_OK TRUE)
@@ -164,8 +164,30 @@ if(HARM_COI_OK)
     add_test(NAME h5_unit
         COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/tools/harm-coi/tests)
     set_tests_properties(h5_unit PROPERTIES LABELS coi)
-    foreach(design counter arbiter fsm hier structs multipath)
-        set(F ${CMAKE_SOURCE_DIR}/tests/input/coi/${design})
+    # yosys with read_slang (>= 0.67, e.g. OSS CAD Suite) for the optional validation cross-check
+    find_program(HARM_COI_YOSYS yosys)
+    set(HARM_COI_XCHECK FALSE)
+    if(HARM_COI_YOSYS)
+        execute_process(COMMAND ${HARM_COI_YOSYS} -p "help read_slang"
+                        RESULT_VARIABLE harm_coi_yosys_probe OUTPUT_QUIET ERROR_QUIET)
+        if(harm_coi_yosys_probe EQUAL 0)
+            set(HARM_COI_XCHECK TRUE)
+        endif()
+    endif()
+    if(NOT HARM_COI_XCHECK)
+        message(STATUS "HARM_COI_YOSYS (${HARM_COI_YOSYS}) has no read_slang: the H5 yosys cross-check is skipped")
+    endif()
+    # the H4 fixtures, and the H5 validation design (no hand-written cones: simulation and yosys only)
+    foreach(design counter arbiter fsm hier structs multipath h5/constructs)
+        if(design STREQUAL "h5/constructs")
+            set(F ${CMAKE_SOURCE_DIR}/tests/input/h5/constructs)
+            set(design constructs)
+            set(R 1)
+        else()
+            set(F ${CMAKE_SOURCE_DIR}/tests/input/coi/${design})
+            file(STRINGS ${F}/edges.txt R REGEX "^vcd_recursion")
+            string(REGEX REPLACE "[^0-9]" "" R "${R}")
+        endif()
         # A1 + A2: equal to the hand-written expected_coi.json and edges.txt; valid for the trace
         add_test(NAME h5_generator_${design}
             COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_generator.py ${F}
@@ -179,7 +201,23 @@ if(HARM_COI_OK)
             set_tests_properties(h5_influence_${design} PROPERTIES LABELS "coi;slow"
                                  FIXTURES_REQUIRED h5_coi_${design})
         endif()
+        # validation: signal-level cross-check against yosys' netlist
+        if(HARM_COI_XCHECK)
+            file(GLOB rtl ${F}/rtl/*.sv)
+            add_test(NAME h5_xcheck_yosys_${design}
+                COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/xcheck_yosys.py
+                        --yosys ${HARM_COI_YOSYS} --edges ${H5_OUT}/${design}_edges.txt
+                        --top ${design} --recursion ${R} ${rtl})
+            set_tests_properties(h5_xcheck_yosys_${design} PROPERTIES LABELS "coi;xcheck"
+                                 FIXTURES_REQUIRED h5_coi_${design})
+        endif()
     endforeach()
+    if(VERILATOR_FOUND)
+        add_test(NAME h5_reproduce_constructs
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py reproduce
+                    ${CMAKE_SOURCE_DIR}/tests/input/h5/constructs)
+        set_tests_properties(h5_reproduce_constructs PROPERTIES LABELS "coi;slow")
+    endif()
 else()
-    message(STATUS "HARM_COI_PYTHON (${HARM_COI_PYTHON}) lacks pyslang or pytest: the H5 harm-coi tests are skipped")
+    message(STATUS "HARM_COI_PYTHON (${HARM_COI_PYTHON}) lacks pyslang, pytest or jsonschema: the H5 harm-coi tests are skipped")
 endif()

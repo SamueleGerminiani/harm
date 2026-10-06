@@ -193,10 +193,31 @@ def cones(coi):
     return {t: {s["sig"]: s for s in c["sources"]} for t, c in coi["targets"].items()}
 
 
+def vcd_ids(path, scope):
+    """{harm name: VCD identifier} under 'scope'. Names sharing an identifier are one net in the
+    simulator (e.g. a port and the signal connected to it): forcing one forces the other."""
+    want, stack, ids = scope.split("::") if scope else [], [], {}
+    for line in Path(path).read_text().split("\n"):
+        tok = line.split()
+        if not tok:
+            continue
+        if tok[0] == "$scope":
+            stack.append(tok[2])
+        elif tok[0] == "$upscope":
+            stack.pop()
+        elif tok[0] == "$var" and stack[:len(want)] == want:
+            ids["::".join(stack[len(want):] + [tok[4]])] = tok[3]
+        elif tok[0] == "$enddefinitions":
+            break
+    return ids
+
+
 def influence(fixture, work, coi):
     meta = coi["meta"]
     cone = cones(coi)
     w = widths(fixture, coi)
+    ids = vcd_ids(fixture / "trace.vcd", meta["vcd_scope"])
+    same_net = lambda a, b: ids.get(a) is not None and ids.get(a) == ids.get(b)
     # every visible signal is a target: a signal coi.json does not list has an empty cone
     for name in w:
         if name != meta["clock"] and name not in cone:
@@ -205,9 +226,14 @@ def influence(fixture, work, coi):
     base = build(fixture, work, "base")
     run(base, [], "base.vcd")
     ref = read_vcd(base / "base.vcd", meta["vcd_scope"], meta["clock"])
-    ok, skipped, checked = True, [], 0
+    ok, skipped, checked, aliased = True, [], 0, []
     for s in sorted(cone):
+        if same_net(s, meta["clock"]):
+            aliased.append(f"{s} (the clock)")
+            continue                        # the clock is never a source (D-013)
         excluded = [t for t in cone if t != s and s not in cone[t]]
+        aliased += [f"{s}/{t}" for t in excluded if same_net(s, t)]
+        excluded = [t for t in excluded if not same_net(s, t)]
         if not excluded:
             continue
         b = build(fixture, work, "p_" + re.sub(r"\W", "_", s), force_code(sv_path(s), w[s]))
@@ -226,6 +252,8 @@ def influence(fixture, work, coi):
                 print(f"  INFLUENCE: forcing {s} changed {t} (cycle {first}), but {s} is not in its cone")
     if skipped:
         print(f"  not forceable (e.g. parameters), skipped: {', '.join(skipped)}")
+    if aliased:
+        print(f"  one net in the simulator, not testable by forcing: {', '.join(aliased)}")
     print(f"non-influence: {'ok' if ok else 'FAIL'} ({checked} (source, excluded target) pairs checked)")
     return ok
 
@@ -276,7 +304,7 @@ def main():
     ap.add_argument("--coi", help="the coi.json to check (default: the fixture's expected_coi.json)")
     a = ap.parse_args()
     fixture = Path(a.fixture).resolve()
-    coi = json.loads(Path(a.coi or fixture / "expected_coi.json").read_text())
+    coi = json.loads(Path(a.coi or fixture / "expected_coi.json").read_text()) if a.mode != "reproduce" else None
     work = Path(a.work) if a.work else Path(tempfile.mkdtemp())
     work.mkdir(parents=True, exist_ok=True)
     print(f"[{fixture.name}] {a.mode}")

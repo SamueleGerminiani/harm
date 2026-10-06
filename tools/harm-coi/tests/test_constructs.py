@@ -117,7 +117,8 @@ def test_function_reads_arguments_and_module_signals(tmp_path):
 
 
 def test_blocking_temporary(tmp_path):
-    # y reads t's new value, a & b: y depends on a, b and k, not on t
+    # y reads t's new value, a & b. t is a visible signal assigned once, so y depends on t itself
+    # (forcing t changes y) and, through the substitution, directly on a and b
     assert edges(tmp_path, """
         module m(input logic clk, a, b, k, output logic y);
           logic t;
@@ -132,6 +133,27 @@ def test_blocking_temporary(tmp_path):
         target k
         t <- a @0
         t <- b @0
+        y <- a @0
+        y <- b @0
+        y <- k @0
+        y <- t @0
+    """)
+
+
+def test_local_temporary_is_substituted(tmp_path):
+    # a variable local to the process is not a signal: y depends on its sources only
+    assert edges(tmp_path, """
+        module m(input logic clk, a, b, k, output logic y);
+          always_comb begin
+            logic t;
+            t = a & b;
+            y = t | k;
+          end
+        endmodule
+    """) == E("""
+        target a
+        target b
+        target k
         y <- a @0
         y <- b @0
         y <- k @0
@@ -315,6 +337,109 @@ def test_no_clock_found_is_an_error(tmp_path):
 def test_elaboration_error_is_an_error(tmp_path):
     src = tmp_path / "m.sv"
     src.write_text("module m(input logic clk, output logic y); assign y = nosuch; endmodule\n")
+    rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut",
+                   "--vcd-recursion", "0", "-o", str(tmp_path / "coi.json")])
+    assert rc != 0
+
+
+# ---- added during implementation (not in the approved A4 list) -------------------------------------
+
+def test_case_completeness(tmp_path):
+    # y: constant items cover all 4 values (complete); z: 3 of 4 (a latch); u: unique is not
+    # trusted, since an uncovered value would make u hold its value
+    assert edges(tmp_path, """
+        module m(input logic clk, a, b, c, d, input logic [1:0] sel, output logic y, z, u);
+          always_comb case (sel)
+            2'd0: y = a; 2'd1: y = b; 2'd2: y = c; 2'd3: y = d;
+          endcase
+          always_comb case (sel)
+            2'd0: z = a; 2'd1: z = b; 2'd2: z = c;
+          endcase
+          always_comb unique case (sel)
+            2'd0: u = a; 2'd1: u = b; 2'd2: u = c;
+          endcase
+        endmodule
+    """) == E("""
+        target a
+        target b
+        target c
+        target d
+        target sel
+        y <- a @0
+        y <- b @0
+        y <- c @0
+        y <- d @0
+        y <- sel @0
+        unknown z
+        unknown u
+    """)
+
+
+def test_negedge_register(tmp_path):
+    # updated half a cycle before the sample: d's value at the negedge is its sample at the same
+    # or at the previous rising edge, so both depths are claimed
+    assert edges(tmp_path, """
+        module m(input logic clk, d, output logic q);
+          always_ff @(negedge clk) q <= d;
+        endmodule
+    """) == E("""
+        target d
+        q <- d @0
+        q <- d @1
+    """)
+
+
+def test_register_on_another_clock_is_unknown(tmp_path):
+    assert edges(tmp_path, """
+        module m(input logic clk, clk2, d, output logic q, r);
+          always_ff @(posedge clk2) q <= d;
+          always_ff @(posedge clk) r <= d;
+        endmodule
+    """) == E("""
+        target clk2
+        target d
+        r <- d @1
+        unknown q
+    """)
+
+
+def test_interface_through_modport_port(tmp_path):
+    # u's port b is an interface: b.valid and b.data are the bus signals. u::clk is an alias of
+    # the clock: a target with no sources, never a source
+    assert edges(tmp_path, """
+        interface bif;
+          logic [2:0] data;
+          logic valid;
+          modport slv(input data, valid);
+        endinterface
+        module sub(input logic clk, bif.slv b, output logic o);
+          always_ff @(posedge clk) o <= b.valid & b.data[0];
+        endmodule
+        module m(input logic clk, a, input logic [2:0] x, output logic o);
+          bif bus();
+          assign bus.data = x;
+          assign bus.valid = a;
+          sub u(.clk(clk), .b(bus.slv), .o(o));
+        endmodule
+    """, recursion=1) == E("""
+        target a
+        target x
+        target u::clk
+        bus::data <- x @0
+        bus::valid <- a @0
+        u::o <- bus::data @1
+        u::o <- bus::valid @1
+        o <- u::o @0
+    """)
+
+
+def test_several_clocks_need_the_clock_option(tmp_path):
+    src = tmp_path / "m.sv"
+    src.write_text("""module m(input logic c1, c2, d, output logic q, r);
+      always_ff @(posedge c1) q <= d;
+      always_ff @(posedge c2) r <= d;
+    endmodule
+    """)
     rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut",
                    "--vcd-recursion", "0", "-o", str(tmp_path / "coi.json")])
     assert rc != 0
