@@ -1,0 +1,92 @@
+[
+ {
+  "name": "counter",
+  "trace": {
+   "vcd": "tests/input/coi/counter/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 0
+  },
+  "rtl": {
+   "files": [
+    "tests/input/coi/counter/rtl/counter.sv"
+   ],
+   "top": "counter"
+  }
+ },
+ {
+  "name": "arbiter",
+  "trace": {
+   "vcd": "tests/input/coi/arbiter/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 0
+  },
+  "rtl": {
+   "files": [
+    "tests/input/coi/arbiter/rtl/arbiter.sv"
+   ],
+   "top": "arbiter"
+  }
+ },
+ {
+  "name": "fsm",
+  "trace": {
+   "vcd": "tests/input/coi/fsm/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 0
+  },
+  "rtl": {
+   "files": [
+    "tests/input/coi/fsm/rtl/fsm.sv"
+   ],
+   "top": "fsm"
+  }
+ },
+ {
+  "name": "multipath",
+  "trace": {
+   "vcd": "tests/input/coi/multipath/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 0
+  },
+  "rtl": {
+   "files": [
+    "tests/input/coi/multipath/rtl/multipath.sv"
+   ],
+   "top": "multipath"
+  }
+ },
+ {
+  "name": "structs",
+  "trace": {
+   "vcd": "tests/input/coi/structs/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 1
+  },
+  "rtl": {
+   "files": [
+    "tests/input/coi/structs/rtl/structs.sv"
+   ],
+   "top": "structs"
+  }
+ },
+ {
+  "name": "constructs",
+  "trace": {
+   "vcd": "tests/input/h5/constructs/trace.vcd",
+   "clk": "clk",
+   "scope": "tb::dut",
+   "recursion": 1
+  },
+  "rtl": {
+   "files": [
+    "tests/input/h5/constructs/rtl/constructs.sv"
+   ],
+   "top": "constructs"
+  }
+ }
+]
