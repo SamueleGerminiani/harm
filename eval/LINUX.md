@@ -64,5 +64,5 @@ python3 eval/run_eval.py eval/manifests/examples.json eval/results/linux-example
 
 ## 5. What to watch for
 - **A `timeout` in the table** (default 30 minutes per run) is a measurement, not a failure.
-  - Large outputs make `--reduce implies` and `--atom-premises` slow: their work grows with the square of the number of assertions. On the Mac, the generated configuration of `structs` gives 1,560 assertions, and `--reduce implies` alone takes 64 s.
+  - Large outputs make `--reduce implies` and `--atom-premises` slow: their work grows with the square of the number of assertions. On the Mac (`eval/results/macos-fixtures`), `structs` mines 1,526 assertions in 43 s; C1 takes 148 s and C2 1,214 s. `constructs` (4,438 assertions) C2 times out.
 - **harm-coi's `unknown` signals** (inout nets, other clocks, latches) make COI configurations keep everything for them: see harm-coi's README.

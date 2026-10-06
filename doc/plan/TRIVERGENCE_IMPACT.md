@@ -224,8 +224,17 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - With `--reduce equiv`, LLM and RTL propositions that are equivalent are merged (H2).
 - **[optional] B4:** a spec proposition that matches no RTL predicate is not evidence of a bug by itself. Predicates on invisible signals are dropped.
 
-### H11: evaluation (planned)
-- HARM-side results on about 10 AssertLLM2 designs will run on the Linux machine, and can reuse trivergence's benchmark loaders (F4) if available.
+### H11: evaluation, `--version`, Docker (on `ms/H11-release`; release to `main` deferred)
+- **`harm --version`** prints `HARM <git describe>` (e.g. `v3-140-g1234abc`). trivergence can record it with every mining run, to know which HARM produced a result.
+- **The Linux checklist `eval/LINUX.md`** is run on trivergence's machine:
+  - the full `ctest`;
+  - the Docker image;
+  - the evaluation on about 10 AssertLLM2 designs, through `eval/run_eval.py` with a manifest written from `eval/manifests/assertllm2.template.json`. It can reuse trivergence's benchmark loaders (F4) and its Verilator traces (`triad_sim`).
+- **The Docker image** (`docker/build.sh [ref]`, default `dev`) contains HARM with Z3, harm-coi, Verilator and Icarus. It can be trivergence's way to pin a HARM build.
+- **Measured costs that matter for the pipeline** (macOS, `eval/results/macos-fixtures`):
+  - `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. On 1,500–4,400 assertions they take minutes (`structs` C2 1,214 s; `constructs` C2 over 30 minutes).
+  - trivergence's top-50 selection (M0 #31) keeps the inputs small. If trivergence reduces whole mining outputs, it should budget for this, or reduce after the selection.
+- **`main` is unchanged** until the user releases: trivergence should pin `dev` (or a commit) meanwhile.
 
 ---
 
