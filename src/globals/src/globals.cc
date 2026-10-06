@@ -43,6 +43,7 @@ std::string keep = "stronger";
 std::string dumpImplications = "";
 std::string traceEnd = "harm";
 std::string dumpAssertionInfo = "";
+std::string dumpCoiReport = "";
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;

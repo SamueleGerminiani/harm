@@ -12,7 +12,7 @@
         <prop exp="c::val == 3'b0" loc="a, c, dt" origin="llm"/>
         <prop exp="xv &amp;&amp; m == 2'b0" loc="a, c, dt" origin="spec"/>
         <prop exp="bus::valid || x == 3'b0" loc="a, c, dt"/>
-        <numeric clustering="K,0.01WCSS,==" exp="x" loc="dt" origin="spec"/>
+        <numeric clustering="K,0.01WCSS,==" exp="x" loc="[dt]" origin="spec"/>
         <coi file="../coi/structs/expected_coi.json" mode="filter"/>
         <template exp="G(P0 -&gt; X P1)"/>
         <sort name="frequency" exp="atct/traceLength"/>

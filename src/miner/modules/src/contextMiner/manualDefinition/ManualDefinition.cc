@@ -633,6 +633,9 @@ void ManualDefinition::mineContexts(
         nn->_clsConfig = cf;
 
         std::string nnStr = num2String(nn);
+        if (!origin.empty()) {
+          context->_origin[nnStr] = origin; // as printed, like propositions (H9)
+        }
 
         //get the domains
         std::vector<int> expandedDomains;
@@ -708,6 +711,10 @@ void ManualDefinition::mineContexts(
       external_context = *pc;
     }
     addAssertionsFromFile(clc::includeAss, trace, external_context);
+  }
+
+  if (!clc::dumpCoiReport.empty()) {
+    writeCoiReport(contexts, clc::dumpCoiReport); // H9, D-022
   }
 }
 
