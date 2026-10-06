@@ -29,3 +29,5 @@ examples/sobel/ass.txt
 
 # ctest output when run from the source tree
 Testing/
+tools/harm-coi/src/*.egg-info/
+__pycache__/

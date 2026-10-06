@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-05 (H0, H1, H2, H4, H6 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 awaiting review on `ms/H5-harm-coi`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -148,6 +148,26 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - `--dump-assertion-info` reports the search space under `coiFilter`.
 - **[optional] Use it only as a baseline** (GoldMine-style) in Paper A, never in the method's triage: it assumes the RTL is correct, and HARM warns about this.
 - **Not "rank mode minus out-of-cone assertions"** for decision-tree templates (D-018). If Paper A compares rank and filter, it should state this. Filter mode's guarantee is the output of rank mode on per-consequent restricted configurations.
+
+### H5: `harm-coi` generator (on `ms/H5-harm-coi`, awaiting review; not on `dev` yet)
+- **What it is:** `tools/harm-coi/`, a Python package (pyslang 12.0.0, D-006). It reads the RTL and writes the `coi.json` that rank mode (H6) and filter mode (H7) read. Until now that file was written by hand.
+  ```
+  harm-coi --top <top> --files <rtl>.sv... --vcd-scope <traces.scope> --vcd-recursion 16 \
+           --vcd <trace.vcd> [--clock clk] -o coi.json
+  ```
+- **Dependencies:**
+  - Python ≥ 3.11 and `pyslang==12.0.0`. Trivergence already pins this exact version (`code/packages/openfpv/pyproject.toml`), and its other packages accept it (`pyslang>=7`). It can be installed into the same environment: `pip install <harm>/tools/harm-coi`.
+  - No yosys, no C++ build.
+- **[required, when trivergence uses `coi.json`] Pass `--vcd` and the adapter's scope and recursion** (`--vcd-r=16`, `triad_mining/harm.py:188`).
+  - `triad_sim/verilator.py` traces with `--trace`, without `--trace-structs`, so packed structs are dumped as single vectors.
+  - With `--vcd`, harm-coi names them as the trace does, as the union of the fields (D-019). Without it, it would write field names (`c::mode`) that HARM rejects ("names signals that are not in the trace").
+- **[recommended] Read `unknown`.**
+  - Signals harm-coi cannot model go there instead of being dropped: latches, other clock domains, `inout`, unsupported statements, and trace signals without an RTL source, such as loop variables Verilator dumps.
+  - So does everything whose cone reaches one of them within `max_depth`.
+  - HARM treats `unknown` as in every cone (D-017), so a design with many unknowns gets little pruning in filter mode and neutral `coiUnknown` metrics in rank mode. `-v` prints the reason for each.
+- **[recommended] Clock:** pass `--clock` for designs with several clocks; harm-coi refuses to guess. Registers on another clock are `unknown`.
+- **[optional] T9 cross-check:** `tests/coi/xcheck_yosys.py` compares harm-coi's signal-level cones with a yosys netlist (`read_slang`, yosys ≥ 0.67). It could be pointed at OpenFPV's AIGER-level COI on shared designs.
+- **Answer to §4, "where should the generator run":** it needs only the RTL file list, top, scope and a trace. It can run once per design in the benchmark loaders (F4), or in stage 3 next to the simulation that produces the trace. It takes well under a second on the fixtures; large designs are untested.
 
 ### H8–H9: depth-aware filter and out-of-cone report (planned)
 - **[optional] Depth-aware filter (H8):** the same baseline caveat as H7.

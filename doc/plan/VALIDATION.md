@@ -306,3 +306,79 @@ The fixtures are small, so the times only show the trend. There is no `coi.json`
 
 ### Suites
 - `ctest -j6 -LE slow`: 113/113 on the final code.
+
+## H5: `harm-coi` generator (2026-10-06, macOS arm64, Python 3.12, pyslang 12.0.0)
+
+### H5a spike and D-006
+Results in `H5_PLAN.md`, section "H5a results"; code in `doc/plan/h5a_spike/`.
+- **pyslang:** the throwaway extractor reproduced all 6 fixtures exactly.
+- **yosys + yosys-slang:**
+  - yosys-slang is now "sv-elab", and Homebrew's yosys 0.51 is too old for it;
+  - with the OSS CAD Suite's yosys 0.69 it works, but it loses struct fields and parameters.
+- **D-006 = pyslang**, decided by the user.
+
+### Acceptance tests
+Written first and committed failing in `e43c091`, against a stub that raised `NotImplementedError`. Implemented in `c3f11eb`.
+
+| Test | Result |
+|---|---|
+| A1 `coi.json` = hand-written `expected_coi.json` (order-insensitive, `meta.generator` aside), and `check_coi.py` accepts it against the trace with HARM | pass, 6/6 exact (`hier` included: `check_coi.py` reads its names from the VCD) |
+| A2 direct edges (`--edges`) = hand-written `edges.txt` | pass, 6/6 exact |
+| A3 `perturb.py influence` on the generator's output | pass, 6/6 fixtures (for these it equals the H4 check, since the output is identical) and the new `constructs` design: 606 pairs |
+| A4 constructs, hand-written edges (pytest) | pass, 22/22. 16 were committed failing with the other tests: the planned constructs plus async reset, `for` loop, struct/trace naming and error cases. One of their expectations was changed (F2). 6 were added during implementation: `case` completeness, falling-edge register, another clock, interface through a modport port (F3), several clocks, process-local temporary |
+| A5 Linux | **pending**, like the other Linux checks |
+
+### Independent validation
+- **yosys cross-check** (`tests/coi/xcheck_yosys.py`, yosys 0.69 from OSS CAD Suite):
+  - bit-level reachability after `proc; flatten; techmap`, aliases resolved;
+  - **0 unsound on all 7 designs**. One over-approximation is reported: `constructs` `rp <- rp`, the hold of a partially written register (`rp[0] <= a` keeps bits that are in fact never driven).
+  - **Its own mutation test:** removing one true edge from harm-coi's output was caught in 3 of 4 cases. The miss, counter `wrap <- en @0`, keeps the signal-level reachability through `cnt`, and only depths can show it (A1/A2).
+- **Simulation on the new design `tests/input/h5/constructs/`** (testbench, trace; the A4 constructs in one design):
+  - `perturb.py reproduce` and `influence` pass;
+  - `perturb.py depths` (report only): 50 of 53 claimed (source, target, depth) observed. Not observed: `rp <- a @2`, `rp <- a @3`, both through the over-approximate hold above, and `r <- c @3`.
+
+### Mutation test of the oracles (bugs planted in harm-coi, each oracle run on its own)
+| Planted bug | A4 | A1/A2 (6 fixtures) | A3 simulation (7) | yosys (7) |
+|---|---|---|---|---|
+| M1: no control dependencies | caught | counter, arbiter, fsm, structs | counter, arbiter, fsm, structs, constructs | counter, arbiter, fsm, structs, constructs |
+| M2: a register not assigned on every path does not hold | caught | arbiter, structs | — | — |
+| M3: no `y <- t @0` for a once-assigned visible signal | caught | — | constructs | constructs |
+| M4: register delay 0 instead of 1 | caught | all 6 | — | — |
+| M5: output port connections ignored | caught | hier | hier, constructs (\*) | — (\*\*) |
+| M6: asynchronous reset without depth 0 | caught | — | — | — |
+
+- **What only one family can see:**
+  - the simulation and yosys checks cannot see self-dependencies (M2) or depths (M4, M6): they are signal-level checks of non-influence;
+  - A1/A2 cannot see constructs that are not in the fixtures (M3).
+  - A4 caught all six.
+- \* run before the oracle change in F4c, which counted unknown signals as having an empty cone.
+- \*\* **The safety net worked:** with M5, slang still reports drivers for the signals the walk missed. They became `unknown`, so harm-coi claimed nothing wrong, and yosys had nothing to refute.
+
+### Findings
+- **F1 (spike):** the front-end comparison is in `H5_PLAN.md`. Practical consequences:
+  - pyslang needs Python ≥ 3.11 (macOS' system Python 3.9 has no wheel);
+  - Homebrew's yosys 0.51 cannot run the cross-check; it is skipped with a message.
+- **F2, test change after the first implementation: A4 "blocking temporary".**
+  - **The case:** `logic t; always_comb begin t = a & b; y = t | k; end`, where `t` is a module-level signal.
+  - **First expectation:** `y <- a, b, k`, "not t".
+  - **Found by:** the yosys cross-check on `constructs` (`y_tmp` reaches `t`). The simulation oracle agrees: forcing `t` changes `y`.
+  - **Why the old expectation was wrong:** filter mode would have pruned the genuine assertion `G(t -> y)`.
+  - **Expectation now:** `y <- a, b, k, t`, with `t` at depth 0. A new test keeps the old expectation for a process-local `t`, which is substituted.
+  - **What changes:** only harm-coi's direct edges. The cones are the same, because the closure through `t` gives `a` and `b` at depth 0 anyway. HARM is not changed.
+- **F3, test change: A4 "interface through modport port"**, added during implementation. It gained `target u::clk` after the decision that a visible alias of the clock is a target with no sources (D-019). `check_coi.py` requires every visible name to be a target or unknown.
+- **F4, oracle changes in `tests/coi/perturb.py`** (H4's simulation check):
+  - (a) `--coi <file>`, so that it can check generator output. The default is unchanged.
+  - (b) a pair whose two names share a VCD identifier (one net in the simulator) is not checked, and the clock's net is never forced. Both are printed. **On the H4 fixtures this drops 2 pairs** (`hier` dout/g[2]::w, `multipath` z/rb), which passed before.
+  - (c) unknown signals are still forced as sources, but are not checked as targets: `unknown` makes no claim. This has no effect on the H4 fixtures, which have no unknowns.
+- **F5, conservative choices recorded in D-019:**
+  - a `unique`/`priority` `case` is not trusted to be complete;
+  - registers on another clock, latches, `inout`, tasks and the like are `unknown`;
+  - a target that reaches an unknown is unknown.
+- **F6:** `check_coi.py` needs `jsonschema`, so the harm-coi test extras include it.
+
+### Suites
+- `ctest -j6` (all labels, slow included), on the final code: **162/162**, 31 min.
+  - The regression baselines are unchanged; H5 does not touch HARM's C++.
+  - The suite includes the 23 H5 tests: `h5_unit`, `h5_generator_*` ×7, `h5_influence_*` ×7, `h5_xcheck_yosys_*` ×7 and `h5_reproduce_constructs`.
+- **The yosys cross-check ran with OSS CAD Suite's yosys** (`-DHARM_COI_YOSYS=…`). Without a yosys that has `read_slang`, those 7 tests are skipped with a message.
+- **Linux: pending** (A5).
