@@ -463,6 +463,7 @@ On mined `counter` assertions, one or more per operator and implication, the dis
 
 ### Suites
 - `ctest -j6` (all labels): **178/178**, 31 min. Baselines byte-identical.
+- **After merging `dev` (H1d) into the H8 branch:** `ctest -j6` gives **180/180**. H8's depth checks pass with H1d's Spot printing (`X(...)`), which the A4 parser reads with the same rule.
 - **Linux: pending.**
 
 ## H1d: printing fixes F7 and F8 (2026-10-06, macOS arm64, g++-13)
