@@ -1,0 +1,18 @@
+<harm>
+    <!-- H9 (acceptance A1, A4): out-of-cone report on the H4 fixture "multipath" (H7's propositions,
+         two with an origin). Expected report: expected_multipath.json, written by hand. -->
+    <context name="default">
+        <prop exp="a" loc="a, c, dt"/>
+        <prop exp="b" loc="a, c, dt"/>
+        <prop exp="y" loc="a, c, dt" origin="llm"/>
+        <prop exp="z" loc="a, c, dt"/>
+        <prop exp="r1" loc="a, c, dt"/>
+        <prop exp="r2" loc="a, c, dt"/>
+        <prop exp="rb" loc="a, c, dt"/>
+        <prop exp="a &amp;&amp; b" loc="a, c, dt" origin="spec"/>
+        <prop exp="r1 || rb" loc="a, c, dt"/>
+        <coi file="../coi/multipath/expected_coi.json" mode="rank"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

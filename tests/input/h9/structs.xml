@@ -1,0 +1,20 @@
+<harm>
+    <!-- H9 (acceptance A1): out-of-cone report on the H4 fixture "structs" (scoped names, recursion
+         1) with a numeric decision-tree candidate. Literals are written as HARM prints them.
+         Expected report: expected_structs.json, written by hand. -->
+    <context name="default">
+        <prop exp="xv" loc="a, c, dt"/>
+        <prop exp="m == 2'b0" loc="a, c, dt"/>
+        <prop exp="x == 3'b0" loc="a, c, dt"/>
+        <prop exp="bus::valid" loc="a, c, dt"/>
+        <prop exp="bus::data == 3'b0" loc="a, c, dt"/>
+        <prop exp="c::mode == 2'b1" loc="a, c, dt"/>
+        <prop exp="c::val == 3'b0" loc="a, c, dt" origin="llm"/>
+        <prop exp="xv &amp;&amp; m == 2'b0" loc="a, c, dt" origin="spec"/>
+        <prop exp="bus::valid || x == 3'b0" loc="a, c, dt"/>
+        <numeric clustering="K,0.01WCSS,==" exp="x" loc="[dt]" origin="spec"/>
+        <coi file="../coi/structs/expected_coi.json" mode="filter"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

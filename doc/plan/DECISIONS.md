@@ -245,3 +245,15 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - `G(…)` already prints its brackets. SVA and PSL are unchanged: there, Boolean operators bind tighter than property operators.
 - **Baseline change:** `sub_platform1k` only. In 46 of its 91 assertions, `|-> X<a && b>` becomes `|-> X(<a && b>)`. Nothing else changes: same assertions, same order (checked by applying the rewrite to the old baseline).
 - **Validation:** `tests/oracle/h1d_spot_equivalence.py`. Spot (`ltlfilt`) checks that the new texts mean HARM's formulas and that the old ones do not.
+
+## D-022: the out-of-cone report (2026-10-06, H9, approved)
+- **`--dump-coi-report <file>`** pairs each consequent proposition with each antecedent proposition or numeric of the same context. It is computed when the configuration is loaded, and mining is unchanged.
+- **Consequents** are propositions in the `c` and `ac` domains. **Antecedents** are propositions in every other domain (`a`, `ac`, `dt`, local ids) and numerics not only in `c`. A proposition is not paired with itself.
+- **The rule is D-017's, variable by variable:**
+  - an antecedent is **out of the cone** if a known variable of it is a source of no consequent variable (listed in `outside`), even if it also has unknown variables;
+  - otherwise it is **unknown** if it has a variable `coi.json` does not know (`unknownVariables`);
+  - if a consequent variable is unknown, the consequent's cone is unknown (`coneUnknown`) and every antecedent is listed as unknown;
+  - in-cone pairs are not listed.
+- **Format `coi-report` v1:** `{"version": "1", "contexts": [{"name", "coi": <path> | null, "consequents": [{"text", "origin", "variables", "coneUnknown", "outOfCone": [{"text", "origin", "numeric", "variables", "outside"}], "unknown": [{…, "unknownVariables"}]}]}]}`. Texts are HARM's printing; lists are sorted by text.
+- **Origins** are looked up by the printed text. For numerics, the printed text is now also a key, besides the configuration text. Propositions expanded from a numeric (`loc="dt"`) carry no origin; that is unchanged from H6.
+- **Signal level only.** Depths ("in the cone, but not at the spec's delay") are a possible extension.

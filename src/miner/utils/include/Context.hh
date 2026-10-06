@@ -83,4 +83,9 @@ public:
 };
 //using shared pointer for the context
 using ContextPtr = std::shared_ptr<Context>;
+
+/// @brief --dump-coi-report (H9, D-022): for each consequent proposition of each context with a
+/// <coi>, the antecedent propositions and numerics outside its cone (D-017's rule), with origin.
+/// Defined in CoiInfo.cc
+void writeCoiReport(const std::vector<ContextPtr> &contexts, const std::string &file);
 } // namespace harm

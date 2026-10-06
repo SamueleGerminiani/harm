@@ -1,0 +1,572 @@
+{
+ "contexts": {
+  "default": {
+   "coi": true,
+   "consequents": {
+    "bus::data == 3'b0": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "xv": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "xv"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m",
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "bus::valid": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "bus::valid || x == 3'b0": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "c::mode == 2'b1": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "xv"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "c::val == 3'b0": {
+     "coneUnknown": false,
+     "origin": "llm",
+     "outOfCone": {
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "m == 2'b0": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "xv"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m",
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "x == 3'b0": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "xv": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "xv"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m",
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "xv": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv && m == 2'b0": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "m",
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "xv && m == 2'b0": {
+     "coneUnknown": false,
+     "origin": "spec",
+     "outOfCone": {
+      "bus::data == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::data"
+       ]
+      },
+      "bus::valid": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid"
+       ]
+      },
+      "bus::valid || x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "bus::valid",
+        "x"
+       ]
+      },
+      "c::mode == 2'b1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "c::mode"
+       ]
+      },
+      "c::val == 3'b0": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "c::val"
+       ]
+      },
+      "m == 2'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "m"
+       ]
+      },
+      "x": {
+       "numeric": true,
+       "origin": "spec",
+       "outside": [
+        "x"
+       ]
+      },
+      "x == 3'b0": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "x"
+       ]
+      },
+      "xv": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "xv"
+       ]
+      }
+     },
+     "unknown": {}
+    }
+   }
+  }
+ }
+}

@@ -7,7 +7,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include "Context.hh"
 #include "DTOperator.hh"
+#include "Location.hh"
 #include "PointerUtils.hh"
 #include "TemplateImplication.hh"
 #include "Trace.hh"
@@ -326,6 +328,154 @@ dtIndexDistances(const TemplateImplicationPtr &t) {
     }
   }
   return out;
+}
+
+// ---------------------------------------------------------------- out-of-cone report (H9)
+namespace {
+std::string jsonStr(const std::string &s) {
+  std::string out = "\"";
+  for (char c : s) {
+    if (c == '"' || c == '\\') {
+      out += '\\';
+    }
+    out += c == '\n' ? ' ' : c;
+  }
+  return out + "\"";
+}
+
+std::string jsonList(const std::vector<std::string> &v) {
+  std::string out = "[";
+  for (size_t i = 0; i < v.size(); i++) {
+    out += (i ? ", " : "") + jsonStr(v[i]);
+  }
+  return out + "]";
+}
+
+template <typename Vars> std::vector<std::string> names(const Vars &vars) {
+  std::vector<std::string> out;
+  for (const auto &[name, type] : vars) {
+    out.push_back(name);
+  }
+  std::sort(out.begin(), out.end());
+  out.erase(std::unique(out.begin(), out.end()), out.end());
+  return out;
+}
+
+std::vector<std::string> numericVariables(const NumericExpressionPtr &n) {
+  switch (n->getType().first) {
+  case ExpType::Float:
+    return names(getVars(n->get<FloatExpression>()));
+  case ExpType::SInt:
+  case ExpType::UInt:
+    return names(getVars(n->get<IntExpression>()));
+  default:
+    return names(getVars(n->get<LogicExpression>()));
+  }
+}
+
+struct ReportItem {
+  std::string text;
+  std::string origin; // empty: none
+  bool numeric;
+  std::vector<std::string> vars;
+};
+} // namespace
+
+void writeCoiReport(const std::vector<ContextPtr> &contexts,
+                    const std::string &file) {
+  std::string out = "{\"version\": \"1\", \"contexts\": [";
+  for (size_t ci = 0; ci < contexts.size(); ci++) {
+    const Context &ctx = *contexts[ci];
+    out += std::string(ci ? "," : "") + "\n  {\"name\": " + jsonStr(ctx._name) + ", \"coi\": ";
+    if (ctx._coi == nullptr) {
+      messageInfo("COI report: context '" + ctx._name +
+                  "' has no <coi>: it is listed without consequents");
+      out += "null, \"consequents\": []}";
+      continue;
+    }
+    const CoiInfo &coi = *ctx._coi;
+    out += jsonStr(coi._file) + ", \"consequents\": [";
+    auto originOf = [&](const std::string &text) {
+      auto o = ctx._origin.find(text);
+      return o == ctx._origin.end() ? std::string() : o->second;
+    };
+    // D-022: consequents are the propositions of the c and ac domains; antecedents are the
+    // propositions and numerics of every other domain (a, ac, dt, local ids)
+    std::map<std::string, ReportItem> cons, ants;
+    for (const auto &[id, props] : ctx._domainIdToProps) {
+      bool isCon = id == (int)Location::Con || id == (int)Location::AntCon;
+      bool isAnt = id != (int)Location::Con;
+      for (const auto &p : props) {
+        std::string t = prop2String(p);
+        ReportItem item{t, originOf(t), false, variablesOf(p)};
+        if (isCon) {
+          cons.emplace(t, item);
+        }
+        if (isAnt) {
+          ants.emplace(t, item);
+        }
+      }
+    }
+    std::map<std::string, ReportItem> numerics; // printed apart: a numeric may print like a prop
+    for (const auto &[id, nums] : ctx._domainIdToNumerics) {
+      if (id == (int)Location::Con) {
+        continue;
+      }
+      for (const auto &n : nums) {
+        std::string t = num2String(n);
+        numerics.emplace(t, ReportItem{t, originOf(t), true, numericVariables(n)});
+      }
+    }
+    std::vector<const ReportItem *> antecedents;
+    for (const auto &[t, a] : ants) {
+      antecedents.push_back(&a);
+    }
+    for (const auto &[t, a] : numerics) {
+      antecedents.push_back(&a);
+    }
+
+    auto origin = [](const ReportItem &i) {
+      return i.origin.empty() ? std::string("null") : jsonStr(i.origin);
+    };
+    size_t k = 0;
+    for (const auto &[ct, c] : cons) {
+      bool coneUnknown = std::any_of(c.vars.begin(), c.vars.end(),
+                                     [&](const std::string &v) { return !coi.knows(v); });
+      std::string outOfCone, unknown;
+      for (const ReportItem *a : antecedents) {
+        if (!a->numeric && a->text == ct) {
+          continue; // not paired with itself
+        }
+        std::vector<std::string> unk, outside;
+        for (const auto &v : a->vars) {
+          if (!coi.knows(v)) {
+            unk.push_back(v);
+          } else if (!coneUnknown && !coi.inCone({v}, c.vars)) {
+            outside.push_back(v); // D-017, variable by variable
+          }
+        }
+        std::string head = "{\"text\": " + jsonStr(a->text) + ", \"origin\": " + origin(*a) +
+                           ", \"numeric\": " + (a->numeric ? "true" : "false") +
+                           ", \"variables\": " + jsonList(a->vars);
+        if (!outside.empty()) {
+          outOfCone += std::string(outOfCone.empty() ? "" : ", ") + head +
+                       ", \"outside\": " + jsonList(outside) + "}";
+        } else if (coneUnknown || !unk.empty()) {
+          unknown += std::string(unknown.empty() ? "" : ", ") + head +
+                     ", \"unknownVariables\": " + jsonList(unk) + "}";
+        }
+      }
+      out += std::string(k++ ? "," : "") + "\n    {\"text\": " + jsonStr(ct) +
+             ", \"origin\": " + origin(c) + ", \"variables\": " + jsonList(c.vars) +
+             ", \"coneUnknown\": " + (coneUnknown ? "true" : "false") +
+             ",\n     \"outOfCone\": [" + outOfCone + "],\n     \"unknown\": [" + unknown + "]}";
+    }
+    out += "]}";
+  }
+  out += "\n]}\n";
+  std::ofstream ofs(file);
+  messageErrorIf(!ofs.good(), "Cannot write the COI report '" + file + "'");
+  ofs << out;
 }
 
 // ---------------------------------------------------------------- metrics (D-014)

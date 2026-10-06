@@ -73,6 +73,8 @@ extern std::string dumpImplications;
 extern std::string traceEnd;
 ///--dump-assertion-info
 extern std::string dumpAssertionInfo;
+///--dump-coi-report (H9, D-022)
+extern std::string dumpCoiReport;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass

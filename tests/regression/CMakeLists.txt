@@ -258,3 +258,41 @@ if(PYTHON3_FOUND AND EXISTS ${H1D_LTLFILT})
         COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/h1d_spot_equivalence.py ${H1D_LTLFILT})
     set_tests_properties(h1d_spot_equivalence PROPERTIES LABELS regression)
 endif()
+
+# ---- H9: out-of-cone report (A1-A4) --------------------------------------------------------------
+if(PYTHON3_FOUND)
+    set(H9 ${CMAKE_SOURCE_DIR}/tests/input/h9)
+    set(CHECK_H9 ${CMAKE_SOURCE_DIR}/tests/coi/check_coi_report.py)
+    set(COIF ${CMAKE_SOURCE_DIR}/tests/input/coi)
+    set(CONS_VCD ${CMAKE_SOURCE_DIR}/tests/input/h5/constructs/trace.vcd)
+    # A1, A2: hand-written expected reports
+    add_test(NAME h9_expected_multipath COMMAND ${PYTHON3_FOUND} ${CHECK_H9} expected $<TARGET_FILE:harm>
+             ${H9}/multipath.xml ${H9}/expected_multipath.json --vcd ${COIF}/multipath/trace.vcd --clk clk --vcd-ss tb::dut)
+    add_test(NAME h9_expected_structs COMMAND ${PYTHON3_FOUND} ${CHECK_H9} expected $<TARGET_FILE:harm>
+             ${H9}/structs.xml ${H9}/expected_structs.json --vcd ${COIF}/structs/trace.vcd --clk clk --vcd-ss tb::dut --vcd-r 1)
+    add_test(NAME h9_expected_constructs COMMAND ${PYTHON3_FOUND} ${CHECK_H9} expected $<TARGET_FILE:harm>
+             ${H9}/constructs.xml ${H9}/expected_constructs.json --vcd ${CONS_VCD} --clk clk --vcd-ss tb::dut --vcd-r 1)
+    # A3: cross-check with the rule computed in Python, on H7's and H8's configurations
+    foreach(design counter arbiter fsm multipath structs)
+        set(R 0)
+        if(design STREQUAL "structs")
+            set(R 1)
+        endif()
+        add_test(NAME h9_crosscheck_${design} COMMAND ${PYTHON3_FOUND} ${CHECK_H9} crosscheck $<TARGET_FILE:harm>
+                 ${CMAKE_SOURCE_DIR}/tests/input/h7/${design}.xml --vcd ${COIF}/${design}/trace.vcd --clk clk
+                 --vcd-ss tb::dut --vcd-r ${R})
+    endforeach()
+    add_test(NAME h9_crosscheck_constructs COMMAND ${PYTHON3_FOUND} ${CHECK_H9} crosscheck $<TARGET_FILE:harm>
+             ${CMAKE_SOURCE_DIR}/tests/input/h8/constructs.xml --vcd ${CONS_VCD} --clk clk --vcd-ss tb::dut --vcd-r 1)
+    # A4: no effect on mining; a context without <coi>
+    add_test(NAME h9_noeffect_multipath_rank COMMAND ${PYTHON3_FOUND} ${CHECK_H9} noeffect $<TARGET_FILE:harm>
+             ${H9}/multipath.xml --vcd ${COIF}/multipath/trace.vcd --clk clk --vcd-ss tb::dut)
+    add_test(NAME h9_noeffect_multipath_filter COMMAND ${PYTHON3_FOUND} ${CHECK_H9} noeffect $<TARGET_FILE:harm>
+             ${CMAKE_SOURCE_DIR}/tests/input/h7/multipath.xml --vcd ${COIF}/multipath/trace.vcd --clk clk --vcd-ss tb::dut)
+    add_test(NAME h9_noeffect_nocoi COMMAND ${PYTHON3_FOUND} ${CHECK_H9} noeffect $<TARGET_FILE:harm>
+             ${H9}/nocoi.xml --vcd ${COIF}/multipath/trace.vcd --clk clk --vcd-ss tb::dut)
+    set_tests_properties(h9_expected_multipath h9_expected_structs h9_expected_constructs
+        h9_crosscheck_counter h9_crosscheck_arbiter h9_crosscheck_fsm h9_crosscheck_multipath
+        h9_crosscheck_structs h9_crosscheck_constructs h9_noeffect_multipath_rank
+        h9_noeffect_multipath_filter h9_noeffect_nocoi PROPERTIES LABELS "regression;coi")
+endif()
