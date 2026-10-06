@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8 and H9 on `dev`; H10 awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8, H9 and H10 on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -32,6 +32,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H1d | `dev` @ `b608a90046d630c8e9ff30d2b3a51c8290dd4db4` | yes | — |
 | H8 | `dev` @ `366374a06511672e5c3405cd3ea64e8beb6793f3` | yes | — |
 | H9 | `dev` @ `28e606d4dacf5f73a76cd3a1dea7379196e912f2` | yes | — |
+| H10 | `dev` @ `63b5ff84ea3b987bc848222ef2dc174f03dd0dd2` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -198,7 +199,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - `unknown` entries are not disagreements: the cone file could not decide them (e.g. signals harm-coi marked unknown).
 - **[none required]** Without the option, nothing changes.
 
-### H10: RTL predicate harvesting (on `ms/H10-predicates`, awaiting review; not on `dev` yet)
+### H10: RTL predicate harvesting (on `dev`)
 - **`harm-coi --predicates`** adds the RTL's own predicates to `coi.json`, in HARM's syntax with `origin: "rtl"` (D-023):
   - conditions, case labels, FSM (enum) states, comparisons with constants, reset values;
   - e.g. `state == 2'd1`, `cnt == 4'd9`, `!prio`.
