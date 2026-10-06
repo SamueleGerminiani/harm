@@ -1,0 +1,9 @@
+[
+ {
+  "name": "<design>",
+  "trace": {"vcd": "<path/to/trace.vcd>", "clk": "<clock>", "scope": "<tb::dut scope>", "recursion": 16},
+  "rtl": {"files": ["<path/to/golden/a.sv>", "<path/to/golden/b.sv>"], "top": "<top module>"},
+  "faults": "<directory with the mutants' traces, for --fd (optional)>",
+  "args": []
+ }
+]

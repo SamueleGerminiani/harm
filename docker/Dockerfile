@@ -1,41 +1,41 @@
+# HARM with its optional tools (H11, D-027): Z3 (--reduce equiv/implies, --atom-premises), harm-coi
+# (RTL cones and predicates, Python + pyslang), Verilator and Icarus (the simulation oracles).
+# HARM_REF selects what is built: "dev" until the release (the merge into main and the tag v4 are
+# deferred), then a tag.
 FROM ubuntu:24.04
 
-# Update Ubuntu Software repository
-RUN apt update
-
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt install -y git
-RUN git clone https://github.com/SamueleGerminiani/harm.git
-RUN apt-get install -y uuid-dev pkg-config
-RUN apt install -y build-essential
-
-RUN apt install -y wget unzip python3 python3-dev
+RUN apt-get update && apt-get install -y \
+        git build-essential uuid-dev pkg-config wget unzip \
+        python3 python3-dev python3-venv \
+        verilator iverilog \
+    && rm -rf /var/lib/apt/lists/*
 ENV PYTHON=python3
-
-#no cache from here
-ARG CACHE_DATE=not_a_date
 
 RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.31.1/cmake-3.31.1-linux-x86_64.sh -O cmake.sh \
     && chmod +x cmake.sh \
     && ./cmake.sh --prefix=/usr/local --exclude-subdir --skip-license \
     && rm cmake.sh
 
-WORKDIR "/harm/third_party"
+ARG HARM_REPO=https://github.com/SamueleGerminiani/harm.git
+ARG HARM_REF=dev
+# no cache from here, so that the ref is fetched again
+ARG CACHE_DATE=not_a_date
+RUN git clone ${HARM_REPO} /harm && cd /harm && git checkout ${HARM_REF}
+
+# third-party libraries (antlr4, Spot, Boost, Z3), built with the same compiler as HARM (D-010)
+WORKDIR /harm/third_party
 RUN sh ./install_all.sh
 
+# harm-coi in its own virtual environment (Python >= 3.11; Ubuntu 24.04 has 3.12)
+RUN python3 -m venv /opt/harm-coi && /opt/harm-coi/bin/pip install --no-cache-dir -e "/harm/tools/harm-coi[test]"
+ENV PATH="/opt/harm-coi/bin:${PATH}"
 
-WORKDIR "/harm"
-RUN git reset --hard
-RUN git pull
-RUN mkdir build
-WORKDIR "/harm/build"
-RUN cmake -DCMAKE_BUILD_TYPE=Release ..
-RUN make -j16
+WORKDIR /harm/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DHARM_COI_PYTHON=/opt/harm-coi/bin/python .. \
+    && make -j"$(nproc)"
+# the fast tests at build time (the slow ones: ctest -L slow)
+RUN ctest -j"$(nproc)" -LE slow --output-on-failure
 
-
-
-
-
-# run the command
+ENV PATH="/harm/build:${PATH}"
 CMD ["bash"]
-

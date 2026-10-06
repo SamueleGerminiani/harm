@@ -66,4 +66,8 @@ The semantics of the generated assertions might change once they are printed, le
 The semantics of the generated assertions might change once they are printed, leading to hard-to-understand errors. Do not ignore this.
 			In formula: G({«a,bool» ##1 «b,bool»} -> X P0)
 "}
+,
+{
+"time" : "20:53:52",
+"message" : "No templates defined in context 'default'"}
 ]

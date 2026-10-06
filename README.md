@@ -25,7 +25,9 @@ The official repo of the Hint-Based AsseRtion Miner
     - [Decision Tree Operators](#decision-tree-operators-dtos)
     - [SystemVerilog features](#systemverilog-features)
     - [Metric](#metric)
+  - [Cone of influence (`<coi>`)](#cone-of-influence-coi)
   - [Editing Rules Configuration](#editing-rules-configuration)
+- [harm-coi: cones and predicates from the RTL](#harm-coi-cones-and-predicates-from-the-rtl)
 - [How to check an assertion](#how-to-check-an-assertion)
 - [Optional Arguments](#optional-arguments)
   - [Logging Flags](#logging-flags)
@@ -52,7 +54,8 @@ For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clan
 * [spotLTL](https://spot.lrde.epita.fr/install.html)
 * [antlr4-runtime](https://www.antlr.org)
 * [boost 1.83+](https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/)
-* [Z3 4.13](https://github.com/Z3Prover/z3) (optional, for `--reduce equiv`; build with `-DHARM_WITH_Z3=OFF` to do without)
+* [Z3 4.13](https://github.com/Z3Prover/z3) (optional, for `--reduce equiv`/`implies` and `--atom-premises`; build with `-DHARM_WITH_Z3=OFF` to do without)
+* Python ≥ 3.11 with [pyslang](https://pypi.org/project/pyslang/) (optional, only for `harm-coi`, see below)
 
   
 
@@ -606,6 +609,18 @@ The following example demonstrates a rule that rewrites an assertion based on sp
 
 - If the above rewrite rule is applied to assertion G({p1 ##1 p2 ##1 true} |-> {##3 p3}), the resulting assertion becomes G({p1 ##1 p2} |-> {##4 p3}).
 
+# harm-coi: cones and predicates from the RTL
+`tools/harm-coi` reads SystemVerilog RTL and writes the `coi.json` that `<coi>` reads: for every signal, the signals that can influence it, and through how many registers.
+- **`--predicates`** adds the RTL's own predicates (conditions, case labels, FSM states, comparisons, reset values) as propositions with `origin="rtl"`.
+- **`--emit-config`** writes a ready-to-run HARM configuration from them.
+
+```
+pip install -e tools/harm-coi          # Python >= 3.11
+harm-coi --top <module> --files <rtl.sv>... --vcd-scope tb::dut --vcd-recursion 1 \
+         --vcd trace.vcd -o coi.json [--predicates] [--emit-config config.xml]
+```
+See `tools/harm-coi/README.md` for what a cone means, which signals are reported as unknown, and the predicate rules.
+
 #  How to check an assertion
 The template expression has an additional parameter "check", if it is set to "1" then the miner analyses the corresponding assertion on the given trace, if the assertion does not hold on the input traces, it reports the cause of failure. Example:
 ```
@@ -802,6 +817,8 @@ Run it:
 ```
 docker run -it samger/harm:latest
 ```
+
+Build it yourself from a branch or tag (`dev` by default): `docker/build.sh [ref]`. The image contains Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
 
 # Citations
 If you need to reference HARM in an academic publication, refer to the following paper:

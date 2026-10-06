@@ -48,8 +48,14 @@ int main(int arg, char *argv[]) {
   //enforce deterministic rand
   srand(1);
 
-  //print welcome message
-  std::cout << getIcon() << "\n";
+  //print welcome message (not with --version, which prints one line, H11)
+  bool versionOnly = false;
+  for (int i = 1; i < arg; i++) {
+    versionOnly |= std::string(argv[i]) == "--version";
+  }
+  if (!versionOnly) {
+    std::cout << getIcon() << "\n";
+  }
 
   //it holds the employed modules
   Miner::ModulesConfig config;

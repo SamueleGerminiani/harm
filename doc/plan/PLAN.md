@@ -309,4 +309,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H8 | Depth-aware COI filter | done |
 | H9 | Out-of-cone report | done |
 | H10 | RTL predicate harvesting | done |
-| H11 | Evaluation, docs and release | todo |
+| H11 | Evaluation, docs and release | macOS part done, awaiting review (`ms/H11-release`); Linux checklist `eval/LINUX.md` pending; release to `main` deferred by the user |

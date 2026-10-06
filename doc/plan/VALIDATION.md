@@ -584,3 +584,56 @@ Tests written first and committed failing in `e87b42b` (API stubs). Implemented 
   - A3: `i` is a 64-bit int (the Z3 encoding is exact only at 64 bits; with 32 bits the "no" case is "unknown", soundly);
   - A3: the timeout query `w64 * v64 == N ⇒ w64 != 1` was false (`w64 = 1`), so Z3 answered "no" at once; it was replaced by a true implication that needs factoring.
 - **Suites:** `ctest -j6`: **211/211**, 31 min. Baselines byte-identical. Linux: pending.
+
+## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; the Linux part is pending)
+Tests written first and committed failing in `917e103` (`h11_version`, `h11_readme_commands`). `--version` implemented in `7c36fa3`.
+
+| Test | Result |
+|---|---|
+| A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
+| A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
+| A2 Linux `ctest` and harm-coi pytest | **pending** (`eval/LINUX.md` §2) |
+| A3 the Docker image | **pending**: the Docker daemon is not running here (`eval/LINUX.md` §3) |
+| A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
+| A5 `--version` prints `HARM <git describe>` (`h11_version`) | pass |
+
+- **The tables:** `eval/results/macos-fixtures` (6 designs × C0–C7) and `eval/results/macos-examples` (17 examples × C0–C2).
+  - The fixtures ran on `v3-131-g917e103 (dirty)`. The uncommitted part was the `--version` code (`7c36fa3`), the only source change since; A1's re-run on HEAD gives the same counts.
+  - Assertions per configuration, fixtures:
+
+    | Design | C0 | C1 | C2 | C3 | C4 | C5 | C6 | C7 |
+    |---|---|---|---|---|---|---|---|---|
+    | counter | 80 | 80 | 72 | 80 | 65 | 51 | 9 | 5 |
+    | arbiter | 75 | 68 | 53 | 75 | 31 | 32 | 36 | 23 |
+    | fsm | 96 | 85 | 71 | 96 | 73 | 61 | 46 | 27 |
+    | multipath | 94 | 94 | 94 | 94 | 8 | 9 | — | — |
+    | structs | 1,526 | 1,522 | 1,491 | 1,526 | 730 | 322 | 0 | 0 |
+    | constructs | 4,438 | 4,388 | timeout | 4,438 | 2,135 | 1,862 | 101 | 2 |
+
+  - **Examples, C0 → C1 → C2:** most are unchanged. The changes:
+    - `sub_platform1k` 91 → 89 → 69;
+    - `sobel` 30 → 17 → 9, fault coverage 100% in all three;
+    - `process` 138 → 135 → 135;
+    - `process_trace_end_sva` 76 → 73 → 73.
+- **Cross-check with earlier milestones:**
+  - **H3b:** `sub_platform1k` 89 → 69 with `--atom-premises`, as measured there.
+  - **The regression baselines:** the examples' C0 counts equal them. Examples: `process` 138, `svaFunctions` 112, `sub_platform1k` 91, `sobel` 30 (plus its coverage section), `csvCheck` 0 (a check-mode example whose template fails).
+  - **H10's predicate counts** explain C6:
+    - `multipath` has no predicates, so it has no C6/C7 rows;
+    - `structs` has one (`bus::valid`), so its only candidate is `G(x -> x)`, discarded as trivial: 0 assertions.
+  - **H7/H8's search-space numbers** came from the fixtures' own configurations, with fixed-placeholder templates such as `G(P0 -> X P1)`.
+    - The evaluation starts from `--generate-config`, which has decision-tree templates only. A permutation there is just the choice of a consequent, and a consequent is always in its own cone. So the permutation counts never drop (e.g. 34 → 34), and the filter acts on the decision-tree pairs instead (`structs` 11,965 → 7,411; `constructs` 65,858 → 56,892).
+    - The direction matches H7/H8: the filter shrinks the search in every design.
+- **Findings, checked by hand:**
+  - **C5 (`exact`) gives more assertions than C4 on `arbiter` (32 vs 31) and `multipath` (9 vs 8).** On `multipath`, C4's two antecedents for `y` are 5 cycles long (`r2 ##1 !r2 ##1 r2 ##1 !a ##1 a`). C5 removes the candidates at the wrong distance, so the greedy tree finds three short ones (`!r2 && a`, `!r1 ##1 a`, `!a ##2 a`). This is not a bug: fewer candidates change which tree HARM builds.
+  - **`constructs` C6's mean `coiFrac` is 0.022.** This is correct, not a bug:
+    - the RTL's predicates are its conditions, and nearly all are on inputs (`sel` case labels, `a`, `b`, `s`, `rst`);
+    - an input's cone is empty, and `q`'s cone is `{d, rst}`;
+    - so 98 of the 101 assertions have no antecedent leaf in their consequent's cone (inputs predicting inputs, or `sel` predicting `q`): stimulus correlations, which rank mode scores 0;
+    - C7's filter keeps the 2 structural ones (`rst |-> !q`).
+    - For Paper A: on a small design, the RTL's predicates alone (C6) mostly give stimulus correlations; C7 is the intended combination.
+  - **Cost of the reductions on large outputs:**
+    - `structs`: mining 43 s, C1 148 s, C2 1,214 s;
+    - `constructs`: C1 305 s, C2 over 1,800 s.
+    - `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Recorded in `eval/LINUX.md` and for trivergence; making them faster is for after the release.
+- **Fix during the run: the examples manifest.** It had trace paths in `args`, relative to the repository, while HARM runs in a temporary directory, so every example failed on a missing trace. The trace arguments were moved to the `trace` field, which is resolved from the repository root, and `faults` was added for `faultCov` and `sobel`. This changes no HARM behaviour, only the evaluation's input.

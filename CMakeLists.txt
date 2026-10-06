@@ -206,8 +206,16 @@ link_libraries(ddd)
 SET(NAME harm)
 add_executable(${NAME} src/main.cc)
 
+#HARM's version (git describe), refreshed at every build (H11)
+add_custom_target(harm_version ALL
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DOUT=${CMAKE_BINARY_DIR}/generated/harmVersion.hh
+            -P ${CMAKE_SOURCE_DIR}/cmake/version.cmake
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/harmVersion.hh)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
 #Command line parser
 add_subdirectory(src/commandLineParser)
+add_dependencies(commandLineParser harm_version)
 target_link_libraries(${NAME} commandLineParser)
 
 #c++17 filesystem
