@@ -390,7 +390,7 @@ Written first and committed failing in `7b52d80`, against stubs. Implemented in 
 
 | Test | Result |
 |---|---|
-| A1 `CoiDepthTest`: D-007 table (12 template shapes), `insertionIndex`, D-020 `fits` (21 hand cases on `multipath` and `counter`), `->` offsets (F6) | pass. The expectations were written before the implementation; none changed |
+| A1 `CoiDepthTest`: D-007 table (12 template shapes), `insertionIndex`, D-020 `fits` (13 hand cases × 3 modes on `multipath`, 7 checks on `counter`), `->` offsets (F6) | pass. The expectations were written before the implementation; none changed |
 | A2 plain templates: filter (`exact`/`bounded`) = rank post-filtered by the Python D-020 rule on the printed text; for `exact`, HARM's `coiDepthFit == 1` selects the same set | pass, 6 designs × 2 modes |
 | A3 single-index decision trees: filter = union of per-(consequent, template) restricted rank runs | pass, 6 × 2 (e.g. multipath `exact` 9 = 9 from 8 runs) |
 | A4 soundness on every template, multi-index trees included, offsets parsed from the text | pass, 0 violations on 6 × 2 |
