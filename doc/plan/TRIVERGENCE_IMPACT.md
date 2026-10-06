@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H5 on `dev`; H1d awaiting review).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d on `dev`).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -29,6 +29,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H1c | `dev` @ `745bc9f0a852027fb1f42160354aaabfc7544b8f` | yes | — |
 | H7 | `dev` @ `942b583a15eb4b55c4674127a41c331102dc216f` | yes | — |
 | H5 | `dev` @ `927b856e7a9639627a026ab4530363e40f954804` | yes | — |
+| H1d | `dev` @ `b608a90046d630c8e9ff30d2b3a51c8290dd4db4` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -170,7 +171,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **[optional] T9 cross-check:** `tests/coi/xcheck_yosys.py` compares harm-coi's signal-level cones with a yosys netlist (`read_slang`, yosys ≥ 0.67). It could be pointed at OpenFPV's AIGER-level COI on shared designs.
 - **Answer to §4, "where should the generator run":** it needs only the RTL file list, top, scope and a trace. It can run once per design in the benchmark loaders (F4), or in stage 3 next to the simulation that produces the trace. It takes well under a second on the fixtures; large designs are untested.
 
-### H1d: printing fixes (on `ms/H1d-printing`, awaiting review; not on `dev` yet)
+### H1d: printing fixes (on `dev`)
 - **SVA (`--sva`, `--sva-assert`):** HARM's `->` with an antecedent longer than one cycle is now printed with the meaning HARM mined (D-021):
   - `G({a ##1 b} -> X c)` → `a ##1 b |-> c`. It was `a ##1 b |=> c`, which puts `c` a cycle late.
   - Other forms: `$past(c, k)`, or `(…) implies …`.
