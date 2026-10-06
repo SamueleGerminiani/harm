@@ -62,7 +62,7 @@ def _part(text, start, leaves, ant):
     text = _strip(text)
     if re.search(r"\[\*|\[->|\[=|\bF\b|\bU\b|\bR\b|\bW\b|##\[", text):
         raise ValueError(f"offsets not fixed: {text}")
-    items, seps = _split_top(text, r"##\d+|;|:")
+    items, seps = _split_top(text, r"##\d+|;|(?<!:):(?!:)")  # ':' is fusion, '::' a scope
     if len(items) > 1:
         t = start
         for k, item in enumerate(items):

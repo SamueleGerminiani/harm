@@ -2,8 +2,8 @@
 """H8, acceptance A2-A4 and the A6 report, for one configuration and one depth mode.
 
 A2  plain templates: filter output (depth=<mode>) == rank output post-filtered with coiFrac == 1
-    and, for exact, coiDepthFit == 1 (HARM's metric); for bounded, the D-020 rule computed here
-    (sva_offsets.py) on the printed assertions (Spot LTL: the SVA text loses '->', finding F7)
+    and the D-020 rule computed here (sva_offsets.py) on the printed assertions; for exact, HARM's
+    coiDepthFit == 1 must select the same set (Spot LTL: the SVA text loses '->', finding F7)
 A3  single-index decision trees: filter output == union of rank runs on per-(consequent, template)
     restricted configurations (restrict_config.py --depth, offsets and cones computed in Python)
 A4  every template: every filter-mode antecedent leaf fits under the mode, with offsets parsed
@@ -98,10 +98,14 @@ with tempfile.TemporaryDirectory() as d:
     # A2: plain templates
     pf, _, _ = run(variant(d, "pf.xml", "filter", mode, ("plain",)), d, "pf")
     pr, _, _ = run(variant(d, "pr.xml", "rank", None, ("plain",)), d, "pr")
+    # the D-020 rule computed here, on offsets parsed from the text (independent of HARM)
+    want = {r["text"] for r in pr if one(r["metrics"]["coiFrac"]) and not violations(coi, r["text"], mode)}
     if mode == "exact":
-        want = {r["text"] for r in pr if one(r["metrics"]["coiFrac"]) and one(r["metrics"]["coiDepthFit"])}
-    else:
-        want = {r["text"] for r in pr if one(r["metrics"]["coiFrac"]) and not violations(coi, r["text"], mode)}
+        # and HARM's own metric agrees (coiDepthFit shares the rule with the filter, D-020)
+        metric = {r["text"] for r in pr if one(r["metrics"]["coiFrac"]) and one(r["metrics"]["coiDepthFit"])}
+        for t in sorted(metric ^ want):
+            print(f"  A2: coiDepthFit and the Python rule disagree on: {t}")
+        ok &= metric == want
     print(f"A2: plain filter {len(texts(pf))}, plain rank post-filtered {len(want)} (of {len(pr)})")
     for t in sorted(texts(pf) ^ want):
         print(f"  differs: {t}")

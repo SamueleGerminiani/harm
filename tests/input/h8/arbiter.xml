@@ -16,6 +16,9 @@
         <template exp="G(P0 -&gt; X P1)"/>
         <template exp="G(P0 -&gt; X X P1)"/>
         <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <!-- added after the oracle mutation test (H8 VALIDATION): |=> and a distance beyond max_depth -->
+        <template exp="G({P0 ##1 P1} |=&gt; P2)"/>
+        <template exp="G(P0 -&gt; X X X X P1)"/>
         <!-- single index (A3) -->
         <template dtLimits="3A" exp="G({..&amp;&amp;..}|-&gt; X P0)"/>
         <template dtLimits="3A,1D" exp="G({..#1&amp;..}|-&gt; P0)"/>
