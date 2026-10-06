@@ -13,7 +13,7 @@ python3.12 -m venv .venv
 ```
 harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include DIR]...
          --vcd-scope <tb::dut> --vcd-recursion <r> [--vcd <trace.vcd>] [--clock <clk>]
-         [--max-depth 3] [--edges edges.txt] [-v] -o coi.json
+         [--max-depth 3] [--edges edges.txt] [--predicates] [--emit-config cfg.xml] [-v] -o coi.json
 ```
 - `--vcd-scope` and `--vcd-recursion` are HARM's `--vcd-ss` and `--vcd-r`. Names are HARM's: relative to the scope, `::` between sub-scopes (`g[1]::w`, `bus::valid`, `c::mode`), D-013.
 - **`--vcd` (recommended): the trace decides which signals are visible.**
@@ -22,7 +22,9 @@ harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include 
   - Without `--vcd`, every signal and declared parameter at most `r` sub-scopes deep is visible, with struct fields as Verilator `--trace-structs` names them.
 - `--clock`: the sampling clock. By default it is inferred: the one signal that every register's clock comes from, through wires and ports. Several clocks are an error.
 - `--edges`: also writes the direct edges in the `edges.txt` format of the H4 fixtures (`target <- source @delay`, `target x`, `unknown x`).
-- `-v`: prints why each signal is unknown.
+- `--predicates`: also harvests the RTL's predicates into `coi.json → predicates` (below).
+- `--emit-config <file.xml>`: writes a starter HARM configuration from them (implies `--predicates`).
+- `-v`: prints why each signal is unknown, and why each predicate was dropped.
 
 As a library: `harm_coi.cli.main(argv)` returns the exit code.
 
@@ -42,6 +44,34 @@ As a library: `harm_coi.cli.main(argv)` returns the exit code.
 - **Bit and part selects** are signal-level: a write to `r[0]` keeps the other bits (`r <- r @1`), and the index is a source.
 - **The clock is never a source** (D-013). A visible alias of it (e.g. a submodule's clock port) is a target with no sources.
 - **Parameters** are targets with no sources.
+
+## RTL predicates (`--predicates`, D-023)
+- **What is harvested:**
+
+  | Kind | From | Predicate |
+  |---|---|---|
+  | Condition | `if (c)`, `c ? x : y` | `c`; for a compound `c` (`&&`, `\|\|`, `!`), also each atom (comparison or 1-bit signal, without `!`) |
+  | Case label | `case (s) L:` | `s == L` (not `default`) |
+  | Enum (FSM) value | a variable of an enum type | `v == C` for every value `C` |
+  | Comparison | `==`, `!=`, `<`, `<=`, `>`, `>=` with a constant side, anywhere | the comparison |
+  | Reset value | the first `if` of a clocked process whose branch assigns only constants | `reg == value` |
+
+  The reset rule is structural, so a data condition of the same shape (`if (x) y <= 1'b1; else y <= 1'b0;`) also yields `y`.
+- **Written in HARM's syntax and names:**
+  - the signal on the left; constants (enum values and parameters included) as sized decimal literals with the signal's width (`state == 2'd1`, `cnt == 4'd9`);
+  - a 1-bit comparison as the signal or its negation (`prio == 1'b0` is `!prio`).
+- **Each record** has `origin: "rtl"`, `src` (`file:line`, comma-separated if harvested more than once) and `targets`:
+  - for conditions and labels, the signals assigned under them;
+  - for comparisons, the signal assigned from the expression;
+  - for enum values and reset values, the variable.
+- **Dropped (counted, listed with `-v`):** predicates on signals that are not visible, on local variables (e.g. a `for` loop's condition), comparisons whose constant does not fit the signal, and expressions that cannot be translated.
+- **Not seen:** elaboration-time conditions (`if` in a `generate`).
+- **`--emit-config`** writes one context:
+  - the predicates with `loc="a, c, dt"` and `origin="rtl"`;
+  - `<coi file="…" mode="rank"/>` pointing at the written `coi.json`;
+  - `--generate-config`'s template and sorts.
+
+  For GoldMine-style mining, change the mode to `filter` (and `depth`, H8).
 
 ## Unknown, never dropped
 A signal goes to `unknown` (HARM treats it as in every cone, D-017) when:

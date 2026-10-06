@@ -296,3 +296,23 @@ if(PYTHON3_FOUND)
         h9_crosscheck_structs h9_crosscheck_constructs h9_noeffect_multipath_rank
         h9_noeffect_multipath_filter h9_noeffect_nocoi PROPERTIES LABELS "regression;coi")
 endif()
+
+# ---- H10: RTL predicate harvesting (A1, A2, A4; A3 is in h5_unit's pytest) ------------------------
+if(HARM_COI_OK)
+    foreach(design counter arbiter fsm multipath hier structs h5/constructs)
+        if(design STREQUAL "h5/constructs")
+            set(F ${CMAKE_SOURCE_DIR}/tests/input/h5/constructs)
+            set(design constructs)
+        else()
+            set(F ${CMAKE_SOURCE_DIR}/tests/input/coi/${design})
+        endif()
+        add_test(NAME h10_predicates_${design}
+            COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_predicates.py expected ${F}
+                    ${CMAKE_SOURCE_DIR}/tests/input/h10/${design}_predicates.json
+                    --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
+        add_test(NAME h10_emit_config_${design}
+            COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_predicates.py harm ${F}
+                    --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
+        set_tests_properties(h10_predicates_${design} h10_emit_config_${design} PROPERTIES LABELS coi)
+    endforeach()
+endif()

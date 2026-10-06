@@ -196,6 +196,8 @@ For csv:
 
  HARM will create the configuration file on the path given as an argument.
 
+From the RTL, `harm-coi --emit-config` (tools/harm-coi, D-023) writes a configuration whose propositions are the conditions, case labels, FSM states, comparisons and reset values of the design, with `origin="rtl"` and a `<coi>` element.
+
 # The configuration file
 
 > **Recommendation:** Always start from an automatically generated configuration file using the `--generate-config` option.

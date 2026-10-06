@@ -506,3 +506,30 @@ Tests written first and committed failing in `e574590` (all 12 failed: the optio
   A3's configurations have no origins and no unknown propositions, so only A1/A2 catch those two bugs.
 - **Test change:** `structs.xml` declared its numeric with `loc="dt"`, which HARM expands into propositions at load. It was corrected to `loc="[dt]"` (a numeric candidate, as intended) before the first implementation run. The expected report did not change.
 - **Suites:** `ctest -j6` gives **192/192**, 31 min. Baselines byte-identical. Linux: pending.
+
+## H10: RTL predicate harvesting (2026-10-06, macOS arm64, Python 3.12, pyslang 12.0.0)
+Tests written first and committed failing in `60f3f10` (15 of 15 failed: `--predicates` did not exist). Implemented in `7c54f99`.
+
+| Test | Result |
+|---|---|
+| A1 hand-labelled predicates (`expr` → `targets`), 6 H4 fixtures + `constructs` | pass, all equal on the first full run: counter 4, arbiter 6, fsm 6, structs 1, constructs 9, multipath 0, hier 0 (its `generate if` is not harvested) |
+| A2 HARM loads the emitted configuration on each fixture's trace and mines, without `--skip-invalid-props` | pass on the 5 fixtures with predicates; `multipath` and `hier` have nothing to load |
+| A3 translation unit tests (pytest) | pass, 13: enum, parameter, constant on the left, `'0`, `!=`/`<`, 1-bit comparisons, bit select, async reset value, compound condition and atoms, case labels, struct field and interface, invisible signal dropped, elaboration-time `if` and loop variable, the reset rule on a non-reset condition |
+| A4 `coi.json` with predicates passes `check_coi.py` | pass on all 7 |
+
+- **Z3 duplicates** (`CoiPredicateTest`, HARM's H2 canonicaliser on the labelled predicates): every label parses as a HARM proposition, with 0 duplicates (counter 4/4 classes, arbiter 6/6, fsm 6/6, structs 1/1, constructs 9/9).
+- **Trace sanity** (report): no harvested predicate is constant on its fixture's trace (0 of 26). A planted constant, `cnt == 4'd15` on `counter`, is flagged, so the check works.
+- **Mutation test** (bugs planted in `predicates.py`):
+
+  | Planted bug | Caught by |
+  |---|---|
+  | enum value off by one | A1 `fsm`, A3 |
+  | an invisible signal kept (named by its path) | A3 only: no fixture has a condition on an invisible signal |
+  | literal width + 1 | A1 counter, arbiter, fsm, constructs; A3 |
+  | reset-value rule removed | A1 counter, arbiter, constructs; A3 |
+
+  A2 catches none of these, as expected: wrong values still parse.
+- **Test adjustments before the first implementation run:**
+  - two A3 tests switched to non-constant assignments, and one test added for the reset rule's side effect;
+  - A2 skips HARM when nothing is harvested.
+- **Suites:** `ctest -j6` gives **207/207**, 32 min. Baselines byte-identical. Linux: pending.
