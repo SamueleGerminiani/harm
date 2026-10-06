@@ -28,6 +28,13 @@ So, today, `G(!(a == b) -> c)` can be mined from a trace where a simulator would
 
   So a reduction proven under HARM's semantics is not sound under SV's when 4-valued signals are involved.
 
+- **F4. Checked against IEEE 1800-2017** (the user's copy; quotes in the user's review on 2026-10-06), and with iverilog 12.0:
+  - **§11.4.4:** a relational operator with an x or z bit in either operand gives a 1-bit x;
+  - **§11.4.5:** `==`/`!=` give x only "if, due to unknown or high-impedance bits in the operands, the relation is ambiguous". A known differing bit decides it. `===`/`!==` "shall always be a known value";
+  - **§11.4.7:** a logical operation gives 1, 0, or x "if the result is ambiguous". `!` leaves x as x;
+  - **§16.6** (Boolean expressions in concurrent assertions; also §16.3): "if the expression evaluates to X, Z, or 0, then it is interpreted as being false", as in an `if` condition (§12.4: "tested for being zero"), hence "holds only where 1";
+  - **iverilog**, on the cases of D-024: `if`/`assert` on `4'b01x0` pass (a known 1 bit) and on `4'b00x0` fail. `p || !p` with `p` = x gives x; `p && 0` gives 0 and `p || 1` gives 1.
+
 ## Decisions to approve
 ### D-024: the option and its scope
 - **`--x-semantics harm|sv`** (default `harm`, unchanged), named like `--trace-end harm|sva` (D-016).
