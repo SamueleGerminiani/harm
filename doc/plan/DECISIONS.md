@@ -153,3 +153,12 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
 ## D-018: COI metrics in filter mode (2026-10-05, H7, approved)
 - Filter mode still computes `coiFrac`, `coiDepthFit` and `coiUnknown`, so the same `<sort>` works in both modes. After filtering, `coiFrac` is 1 for every assertion.
 - **Filter mode is not "rank mode minus out-of-cone assertions"** for decision-tree templates. Pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses (H7 F2). Its guarantee is the output of rank mode on a configuration restricted, by hand, to each consequent's cone.
+
+## D-006: `harm-coi` front end (2026-10-06, H5a). **Pending: to be decided by the user**
+- **Options:**
+  - (a) the **pyslang** elaborated AST, with our own dataflow and control-dependency walk;
+  - (b) the **yosys + sv-elab** (formerly yosys-slang) JSON netlist.
+- **Spike results:** `H5_PLAN.md`, section "H5a results".
+  - pyslang reproduces all 6 H4 fixtures exactly.
+  - yosys needs yosys ≥ 0.67 (OSS CAD Suite on macOS), loses struct fields and parameters, and lowers the conditions that H10 needs.
+- **Recommended:** (a), with yosys kept as an optional signal-level cross-check.
