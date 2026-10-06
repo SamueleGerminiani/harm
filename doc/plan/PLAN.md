@@ -305,7 +305,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H5 | `harm-coi` generator | done |
 | H6 | COI rank mode | done |
 | H7 | COI filter mode, signal level | done |
-| H8 | Depth-aware COI filter | awaiting-review |
+| H8 | Depth-aware COI filter | done |
 | H9 | Out-of-cone report | todo |
 | H10 | RTL predicate harvesting | todo |
 | H11 | Evaluation, docs and release | todo |
