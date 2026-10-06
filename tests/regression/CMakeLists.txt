@@ -337,3 +337,8 @@ if(PYTHON3_FOUND)
                 ${H3B}/reduce.csv ${H3B}/reduce.xml)
     set_tests_properties(h3b_atom_premises PROPERTIES LABELS regression)
 endif()
+
+# ---- H11: --version (A5) --------------------------------------------------------------------------
+add_test(NAME h11_version COMMAND $<TARGET_FILE:harm> --version)
+set_tests_properties(h11_version PROPERTIES LABELS regression
+    PASS_REGULAR_EXPRESSION "^HARM (v[0-9][^ ]*|[0-9a-f]{7,})( \\(dirty\\))?\n")
