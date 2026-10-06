@@ -14,9 +14,8 @@ Everything here runs on the Linux machine (trivergence's), by the user or a Clau
   - A test failure or a count that differs from the Mac is a finding: write it in VALIDATION with the output, push, and stop.
   - A fix is a new milestone, with the usual workflow (plan, approval, failing tests first).
   - Only the evaluation's own inputs (manifests, paths) may be corrected on the branch, and noted as such.
-- **Keep the rules of `doc/plan/PLAN.md`:**
-  - D-010: one compiler for HARM and its libraries;
-  - trivergence's repository is only read, never changed, from this work.
+- **D-010 applies:** one compiler for HARM and its libraries.
+- **This work needs no change to trivergence:** it only uses its designs, traces and loaders.
 
 
 Use `dev` (H11 is merged). Write down `build/harm --version`.
