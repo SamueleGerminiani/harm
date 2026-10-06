@@ -1,6 +1,6 @@
 # H1d plan: printing fixes F7 and F8 (found in H8)
 
-*Status: requested by the user on 2026-10-06 ("fix F7 and F8 now"); done, awaiting review. Branch: `ms/H1d-printing` (from `dev` @ H5; independent of H8). Effort: 0.5 d.*
+*Status: requested by the user on 2026-10-06 ("fix F7 and F8 now"); done, approved 2026-10-06 and merged into `dev`. Branch: `ms/H1d-printing` (from `dev` @ H5; independent of H8). Effort: 0.5 d.*
 
 ## The bugs (H8 VALIDATION, checked with Spot's `ltlfilt`)
 - **F7 (SVA):** HARM's `->` starts the consequent with the antecedent; SVA's `|->`/`|=>` start it at the antecedent's end. HARM prints every `->` as `|->`/`|=>`, which is wrong when the antecedent lasts more than one cycle.
