@@ -307,6 +307,6 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H6 | COI rank mode | done |
 | H7 | COI filter mode, signal level | done |
 | H8 | Depth-aware COI filter | done |
-| H9 | Out-of-cone report | todo |
+| H9 | Out-of-cone report | plan (awaiting approval) |
 | H10 | RTL predicate harvesting | todo |
 | H11 | Evaluation, docs and release | todo |
