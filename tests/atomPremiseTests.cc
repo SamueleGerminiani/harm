@@ -40,7 +40,7 @@ TracePtr traceOf(size_t length) {
   }
   decls.emplace_back("cnt", ExpType::ULogic, 4);
   decls.emplace_back("st", ExpType::ULogic, 2);
-  decls.emplace_back("i", ExpType::SInt, 32);
+  decls.emplace_back("i", ExpType::SInt, 64); // the Z3 encoding is exact for 64-bit ints
   decls.emplace_back("w64", ExpType::ULogic, 64);
   decls.emplace_back("v64", ExpType::ULogic, 64);
   return generatePtr<Trace>(decls, length);
@@ -216,10 +216,13 @@ TEST(AtomPremiseTest, factsBetweenAtoms) {
     auto q = hparser::parseProposition(c.q, tr);
     EXPECT_EQ((int)smt::checkImplication(p, q, 2000), (int)c.want) << c.p << "  =>  " << c.q;
   }
-  // a query that cannot be decided in 1 ms (64-bit factoring) gives no fact
+  // a true implication whose proof needs factoring N = P * Q (two primes below 2^31): it cannot
+  // be decided in 1 ms, so it gives no fact
   hlog::ScopedThrowOnError throwOnError;
-  auto p = hparser::parseProposition("w64 * v64 == 64'd12658759574012456147", tr);
-  auto q = hparser::parseProposition("w64 != 64'd1", tr);
+  auto p = hparser::parseProposition(
+      "w64 * v64 == 64'd4611685975477714963 && w64 < 64'd4294967296 && v64 < 64'd4294967296 && "
+      "w64 != 64'd1 && v64 != 64'd1", tr);
+  auto q = hparser::parseProposition("w64 == 64'd2147483647 || w64 == 64'd2147483629", tr);
   EXPECT_EQ((int)smt::checkImplication(p, q, 1), (int)Entails::Unknown);
 }
 

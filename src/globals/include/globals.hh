@@ -73,6 +73,9 @@ extern std::string dumpImplications;
 extern std::string traceEnd;
 ///--dump-assertion-info
 extern std::string dumpAssertionInfo;
+///--atom-premises, --atom-premises-max (H3b, D-025)
+extern bool atomPremises;
+extern size_t atomPremisesMax;
 ///--dump-coi-report (H9, D-022)
 extern std::string dumpCoiReport;
 ///--dump-vac-ass
