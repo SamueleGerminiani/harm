@@ -1,6 +1,6 @@
 # H5 plan: `harm-coi`, the cone-of-influence generator
 
-*Status: approved 2026-10-06; H5a done, D-006 decided (pyslang); H5b in progress. Branch: `ms/H5-harm-coi` (from `dev` @ H7). Effort: 0.5 d spike + 3–4 d.*
+*Status: approved 2026-10-06; H5a done, D-006 decided (pyslang); H5b done, awaiting review. Branch: `ms/H5-harm-coi` (from `dev` @ H7). Effort: 0.5 d spike + 3–4 d.*
 
 ## Goal
 `harm-coi` reads the RTL and writes the `coi.json` that HARM's rank and filter modes use (H6, H7). Until now that file was written by hand for the H4 fixtures. It must run on Linux (trivergence) and on macOS.
@@ -107,6 +107,19 @@ The expectation is confirmed:
 - **Output:** `coi.v1` JSON, validated by `tests/coi/check_coi.py`.
   - `meta.generator` records `{"name": "harm-coi", "version": …, "frontend": …}`.
   - Signals the tool cannot analyse (e.g. driven by unsupported constructs) go to `unknown`, never silently dropped.
+
+## H5b as built (2026-10-06): differences from the plan above
+- **CLI:** as planned, plus:
+  - `--clock` (the default is inferred; several clocks are an error);
+  - `--edges <file>` (direct edges in `edges.txt` format: A2 needs them);
+  - `-v` (why each signal is unknown).
+- **`meta.generator`:** the front end is in the version string, `"0.1.0 (pyslang 12.0.0)"`, not a separate `frontend` field. The coi.v1 schema forbids extra fields (D-019).
+- **The closure** reimplements `tests/coi/closure.py`'s rule in `cone.py`: the package cannot import from `tests/`. A1 checks that the two agree on all 6 fixtures.
+- **`--vcd` decides the visible names,** and also decides struct granularity (D-019). Trivergence's traces dump structs as vectors, so this was needed beyond the fixtures.
+- **Conventions not settled by D-005/D-013:** D-019 (clock aliases, other clocks, falling-edge registers, async controls, blocking reads, latches, propagation of unknown).
+- **A4 grew** from the planned list to 22 tests, adding async reset, a `for` loop, `case` completeness, a falling-edge register, another clock, an interface through a modport port, struct vs. vector traces, a trace-only signal, and error cases. One planned expectation was changed after the first implementation (VALIDATION, H5, F2).
+- **Validation design `tests/input/h5/constructs/`:** the A4 constructs in one simulated design (testbench, trace). Without hand-written cones, it is checked by simulation (A3) and against yosys.
+- **yosys cross-check** (`tests/coi/xcheck_yosys.py`): bit-level reachability after `techmap`. A source that yosys finds and harm-coi lacks is a failure; the reverse is reported. It runs in ctest when `HARM_COI_YOSYS` has `read_slang`.
 
 ## Acceptance tests (written first)
 | # | Test | Kind |

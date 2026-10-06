@@ -162,3 +162,29 @@ For a mined assertion `G(antecedent -> consequent)`, with leaves = its atomic pr
   - pyslang reproduces all 6 H4 fixtures exactly.
   - yosys needs yosys ≥ 0.67 (OSS CAD Suite on macOS), loses struct fields and parameters, and lowers the conditions that H10 needs.
 - **Decided (user, 2026-10-06): (a) pyslang 12.0.0**, pinned. yosys stays an optional signal-level cross-check: it runs only when a yosys with `read_slang` is found, and is not a dependency.
+
+## D-019: `harm-coi` conventions (2026-10-06, H5). **Proposed, for approval with H5**
+These complete D-005 (depth) and D-013 (sources and targets) for what the H4 fixtures did not settle. The guiding rule: a cone may be too large, never too small. Where the RTL leaves a doubt, the signal goes to `unknown`, which HARM treats as in every cone (D-017).
+- **Visible names come from the trace when `--vcd` is given.**
+  - A packed struct dumped as one vector is one signal, the union of its fields. Icarus does this, and so does Verilator without `--trace-structs`, as trivergence runs it.
+  - A trace signal that the RTL does not produce is `unknown` (e.g. a `for` variable dumped as `unnamedblk1::i`).
+  - Without `--vcd`: depth ≤ recursion, with Verilator `--trace-structs` field names.
+- **Clock:**
+  - `--clock`, or the single root that every register's clock comes from through wires and ports; several roots are an error.
+  - A visible alias of the clock (a submodule's clock port) is a target with no sources, and is never a source.
+  - A register on another clock or on both edges is `unknown`.
+  - A register on the falling edge of the sampling clock: depths 0 and 1.
+- **Asynchronous controls** (event-list signals the body reads, e.g. `posedge rst`): depths 0 and 1.
+- **Blocking assignments:**
+  - a process-local variable is replaced by its sources;
+  - a visible signal assigned exactly once in a process (outside loops) and read later in it is also a source at the reader's own sample (`y <- t @0`). Forcing `t` changes `y`, and `G(t -> y)` is a real assertion that filter mode must not prune (H5 finding F2).
+- **Combinational latches** (`always_latch`, or an `always_comb` output not assigned on every path) are `unknown`.
+  - `unique` and `priority` are not trusted to make a `case` complete: if the uncovered value occurs, the output holds its value.
+  - A `case` is complete only with a `default`, or with constant items covering every selector value.
+- **`unknown` propagates:** a target whose cone reaches an unknown signal within `max_depth` is unknown.
+- **`meta.generator.version`** is `"<harm-coi version> (pyslang <version>)"`.
+  - The plan had a separate `frontend` field, but the coi.v1 schema allows only `name` and `version` (`additionalProperties: false`), and a schema change would need a new contract version.
+- **Oracle (`tests/coi/perturb.py influence`):**
+  - a (source, target) pair whose two names are one net in the simulator (same VCD identifier: a port and the signal connected to it, or `assign y = x` merged by Verilator) is not checked, because forcing one forces the other;
+  - a name on the clock's net is never forced (D-013);
+  - the skipped pairs are printed. On the H4 fixtures this removes 2 pairs (`hier` dout/g[2]::w, `multipath` z/rb), which passed before.

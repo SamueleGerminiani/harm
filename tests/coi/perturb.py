@@ -219,15 +219,21 @@ def influence(fixture, work, coi):
     ids = vcd_ids(fixture / "trace.vcd", meta["vcd_scope"])
     same_net = lambda a, b: ids.get(a) is not None and ids.get(a) == ids.get(b)
     # every visible signal is a target: a signal coi.json does not list has an empty cone
+    unknown = set(coi.get("unknown", []))
     for name in w:
         if name != meta["clock"] and name not in cone:
+            if name in unknown:
+                continue                    # no claim about an unknown signal as a target
             print(f"  note: '{name}' is not a target in coi.json: checked as having an empty cone")
             cone[name] = {}
+    if unknown:
+        print(f"  unknown in coi.json, not checked as targets: {', '.join(sorted(unknown))}")
     base = build(fixture, work, "base")
     run(base, [], "base.vcd")
     ref = read_vcd(base / "base.vcd", meta["vcd_scope"], meta["clock"])
     ok, skipped, checked, aliased = True, [], 0, []
-    for s in sorted(cone):
+    # every visible signal is forced, unknown ones included: a known cone that omits it is a claim
+    for s in sorted(set(cone) | (unknown & set(w))):
         if same_net(s, meta["clock"]):
             aliased.append(f"{s} (the clock)")
             continue                        # the clock is never a source (D-013)
