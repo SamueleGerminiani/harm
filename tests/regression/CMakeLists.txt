@@ -221,3 +221,32 @@ if(HARM_COI_OK)
 else()
     message(STATUS "HARM_COI_PYTHON (${HARM_COI_PYTHON}) lacks pyslang, pytest or jsonschema: the H5 harm-coi tests are skipped")
 endif()
+
+# ---- H8: depth-aware COI filter (A2-A4, A6 report; A5 errors) -------------------------------------
+set(H8 ${CMAKE_SOURCE_DIR}/tests/input/h8)
+foreach(case "rank_depth;depth applies only to mode=\"filter\"" "depth_value;Unknown <coi> depth")
+    list(GET case 0 name)
+    list(GET case 1 message)
+    add_test(NAME h8_error_${name}
+        COMMAND $<TARGET_FILE:harm> --vcd ${MP} --clk clk --vcd-ss tb::dut --conf ${H8}/error_${name}.xml
+                --psilent --max-threads 1)
+    set_tests_properties(h8_error_${name} PROPERTIES LABELS regression PASS_REGULAR_EXPRESSION "${message}")
+endforeach()
+if(PYTHON3_FOUND)
+    foreach(design counter arbiter fsm multipath structs constructs)
+        set(R 0)
+        set(VCD ${CMAKE_SOURCE_DIR}/tests/input/coi/${design}/trace.vcd)
+        if(design STREQUAL "structs")
+            set(R 1)
+        elseif(design STREQUAL "constructs")
+            set(R 1)
+            set(VCD ${CMAKE_SOURCE_DIR}/tests/input/h5/constructs/trace.vcd)
+        endif()
+        foreach(mode exact bounded)
+            add_test(NAME h8_depth_${design}_${mode}
+                COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/check_depth.py $<TARGET_FILE:harm>
+                        ${H8}/${design}.xml ${mode} --vcd ${VCD} --clk clk --vcd-ss tb::dut --vcd-r ${R})
+            set_tests_properties(h8_depth_${design}_${mode} PROPERTIES LABELS "regression;coi")
+        endforeach()
+    endforeach()
+endif()

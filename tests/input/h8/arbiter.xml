@@ -1,0 +1,28 @@
+<harm>
+    <!-- H8 (acceptance A2-A4, A6): depth-aware COI filter on the H4 fixture "arbiter". The propositions and the
+         cone are H7's; the templates add X X (depth 2), single-index decision trees (A3) and
+         multi-index ones, including '->', whose later indices come after the consequent. -->
+    <context name="default">
+        <prop exp="rst" loc="a, c, dt"/>
+        <prop exp="prio" loc="a, c, dt"/>
+        <prop exp="req[0]" loc="a, c, dt"/>
+        <prop exp="req[1]" loc="a, c, dt"/>
+        <prop exp="gnt[0]" loc="a, c, dt"/>
+        <prop exp="gnt[1]" loc="a, c, dt"/>
+        <prop exp="prio &amp;&amp; gnt[0]" loc="a, c, dt"/>
+        <prop exp="rst || req[1]" loc="a, c, dt"/>
+        <coi file="../coi/arbiter/expected_coi.json" mode="filter" depth="exact"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <template exp="G(P0 -&gt; X X P1)"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <!-- single index (A3) -->
+        <template dtLimits="3A" exp="G({..&amp;&amp;..}|-&gt; X P0)"/>
+        <template dtLimits="3A,1D" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <!-- several indices (A4) -->
+        <template dtLimits="3A,3D" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <template dtLimits="3A,3D" exp="G({..##1..}|=&gt; P0)"/>
+        <template dtLimits="3A,3D" exp="G({..##1..} -&gt; X P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

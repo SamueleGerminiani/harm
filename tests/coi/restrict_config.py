@@ -10,7 +10,12 @@ propositions are those in c's cone, computed here from coi.json (not by HARM):
   are kept.
 A consequent with no proposition in its cone gets no configuration (filter mode must mine
 nothing for it).
-Usage: restrict_config.py <config.xml> <out-dir>   (prints the written files)
+With --depth exact|bounded (H8, acceptance A3), one configuration per (consequent, decision-tree
+template), only for templates whose operator has a single index (..&&.., or 1D): the tree's
+domain is the propositions that also fit, under D-020, the one distance between that index and
+the consequent, computed here from the template text (single_index_distance). Plain templates are
+dropped (A2 covers them).
+Usage: restrict_config.py <config.xml> <out-dir> [--depth exact|bounded]   (prints the files)
 """
 import json
 import re
@@ -30,7 +35,19 @@ def variables(expr):
     return sorted({n for n in names if n not in KEYWORDS})
 
 
-def main(config, out_dir):
+def single_index_distance(exp, dt_limits):
+    """cycles from the only index of a decision-tree operator to the consequent placeholder, for
+    G({<op>} |-> | |=> [X ...] P0); None if the template is not of that shape"""
+    m = re.fullmatch(r"G\(\{\s*\.\.(&&|##\d+|#\d+&)\.\.\s*\}\s*(\|->|\|=>)\s*((?:X\s*)*)P\d+\s*\)",
+                     exp.replace(" ", ""))
+    if not m:
+        return None
+    if m.group(1) != "&&" and not re.search(r"(^|,)1D(,|$)", dt_limits or ""):
+        return None  # several indices
+    return (m.group(2) == "|=>") + m.group(3).count("X")
+
+
+def main(config, out_dir, depth=None):
     config, out_dir = Path(config).resolve(), Path(out_dir)
     tree = ET.parse(config)
     ctx = tree.getroot().find("context")
@@ -48,6 +65,35 @@ def main(config, out_dir):
 
     props = [(p.get("exp"), {l.strip() for l in p.get("loc").split(",")}) for p in ctx.findall("prop")]
     written = []
+    if depth is not None:
+        from sva_offsets import fits
+        for k, (c, locs) in enumerate(props):
+            if "c" not in locs:
+                continue
+            for j, t in enumerate(ctx.findall("template")):
+                d = single_index_distance(t.get("exp"), t.get("dtLimits"))
+                if d is None:
+                    continue
+                root = ET.Element("harm")
+                new = ET.SubElement(root, "context", {"name": "default"})
+                cand = [p for p, plocs in props
+                        if "dt" in plocs and fits(coi, variables(p), [(variables(c), d)], depth)]
+                if not cand:
+                    continue  # no candidate fits: filter mode must mine nothing here
+                for p, plocs in props:
+                    loc = (["c"] if p == c else []) + (["dt"] if p in cand else [])
+                    if loc:
+                        ET.SubElement(new, "prop", {"exp": p, "loc": ", ".join(loc)})
+                ET.SubElement(new, "coi", {"file": str(coi_file), "mode": "rank"})
+                new.append(t)
+                for srt in ctx.findall("sort"):
+                    new.append(srt)
+                out = out_dir / f"consequent{k}_template{j}.xml"
+                ET.ElementTree(root).write(out)
+                written.append(out)
+        for w in written:
+            print(w)
+        return
     for k, (c, locs) in enumerate(props):
         if "c" not in locs:
             continue
@@ -78,6 +124,12 @@ def main(config, out_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    depth = None
+    if "--depth" in args:
+        i = args.index("--depth")
+        depth = args[i + 1]
+        del args[i:i + 2]
+    if len(args) != 2:
         sys.exit(__doc__)
-    main(*sys.argv[1:])
+    main(*args, depth=depth)

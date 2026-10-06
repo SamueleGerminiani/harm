@@ -1,0 +1,401 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "constructs",
+    "top": "constructs",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 1,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "harm-coi",
+      "version": "0.1.0 (pyslang 12.0.0)"
+    }
+  },
+  "targets": {
+    "a": {
+      "sources": []
+    },
+    "b": {
+      "sources": []
+    },
+    "bus::data": {
+      "sources": [
+        {
+          "sig": "v",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "bus::valid": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "c": {
+      "sources": []
+    },
+    "d": {
+      "sources": []
+    },
+    "g": {
+      "sources": [
+        {
+          "sig": "k",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "k": {
+      "sources": []
+    },
+    "o": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "bus::data",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "bus::valid",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "u::o",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "v",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "q": {
+      "sources": [
+        {
+          "sig": "d",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    "r": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "b",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "c",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "d",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "r",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "rp": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rp",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "rst": {
+      "sources": []
+    },
+    "s": {
+      "sources": []
+    },
+    "sel": {
+      "sources": []
+    },
+    "t": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "b",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "u::clk": {
+      "sources": []
+    },
+    "u::o": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "bus::data",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "bus::valid",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "v",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "v": {
+      "sources": []
+    },
+    "y_bit": {
+      "sources": [
+        {
+          "sig": "sel",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "v",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_case": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "b",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "sel",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_cond": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "b",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "s",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_fn": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "g",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "k",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_full": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "b",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "c",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "d",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "sel",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_loop": {
+      "sources": [
+        {
+          "sig": "v",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "y_tmp": {
+      "sources": [
+        {
+          "sig": "a",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "b",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "k",
+          "depths": [
+            0
+          ]
+        },
+        {
+          "sig": "t",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    }
+  },
+  "unknown": [
+    "unnamedblk1::i"
+  ],
+  "predicates": []
+}

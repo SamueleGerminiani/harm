@@ -121,6 +121,16 @@ bool CoiInfo::inCone(const std::vector<std::string> &propVars,
   return true;
 }
 
+bool CoiInfo::fits(const std::vector<std::string> &, const std::vector<ConsequentLeaf> &,
+                   CoiDepth) const {
+  return false; // H8: not implemented yet
+}
+
+std::vector<std::vector<std::optional<int>>>
+dtIndexDistances(const TemplateImplicationPtr &) {
+  return {}; // H8: not implemented yet
+}
+
 const CoiInfo::Source *CoiInfo::source(const std::string &target,
                                        const std::string &source) const {
   auto t = _targets.find(target);
