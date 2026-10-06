@@ -224,7 +224,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - With `--reduce equiv`, LLM and RTL propositions that are equivalent are merged (H2).
 - **[optional] B4:** a spec proposition that matches no RTL predicate is not evidence of a bug by itself. Predicates on invisible signals are dropped.
 
-### H11: evaluation, `--version`, Docker (on `ms/H11-release`; release to `main` deferred)
+### H11: evaluation, `--version`, Docker (on `dev`; release to `main` deferred)
 - **`harm --version`** prints `HARM <git describe>` (e.g. `v3-140-g1234abc`). trivergence can record it with every mining run, to know which HARM produced a result.
 - **The Linux checklist `eval/LINUX.md`** is run on trivergence's machine:
   - the full `ctest`;

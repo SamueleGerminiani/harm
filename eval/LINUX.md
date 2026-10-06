@@ -2,7 +2,7 @@
 
 Everything here runs on the Linux machine (trivergence's). The results come back to be recorded in `doc/plan/VALIDATION.md` (H11). The release (merge into `main`, tag `v4`) waits for them and for the user's decision.
 
-Use the HARM commit being validated: `dev` after H11 is merged, or `ms/H11-release` before. Write down `build/harm --version`.
+Use `dev` (H11 is merged). Write down `build/harm --version`.
 
 ## 1. Build (D-010: one compiler for HARM and its libraries)
 ```
