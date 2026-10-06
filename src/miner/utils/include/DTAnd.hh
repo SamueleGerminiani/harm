@@ -23,6 +23,8 @@ public:
 
   bool isMultiDimensional() override;
   bool canInsertAtDepth(int depth) override;
+  size_t insertionIndex(int) override { return 0; }
+  size_t getNumIndices() override { return 1; }
   bool isUnordered() override;
   bool isTaken(size_t id, bool negated, int depth) override;
   size_t getNChoices() override;

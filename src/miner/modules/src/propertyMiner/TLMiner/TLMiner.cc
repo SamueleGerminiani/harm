@@ -73,14 +73,39 @@ std::vector<std::string> consequentVariables(const TemplateImplicationPtr &t) {
 
 /// the loaded permutation of t has no antecedent proposition outside the cone; placeholders
 /// shared by antecedent and consequent are not filtered (D-017)
-bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi) {
-  std::vector<std::string> con = consequentVariables(t);
+bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi,
+                       CoiDepth depth) {
   std::unordered_set<const Proposition *> shared;
   for (const auto &[ph, pp] : t->get_acphToPP()) {
     shared.insert(pp->get());
   }
-  for (const auto &p : t->getLoadedPropositionsAnt()) {
-    if (!shared.count(p.get()) && !coi.inCone(variablesOf(p), con)) {
+  if (depth == CoiDepth::Any) {
+    std::vector<std::string> con = consequentVariables(t);
+    for (const auto &p : t->getLoadedPropositionsAnt()) {
+      if (!shared.count(p.get()) && !coi.inCone(variablesOf(p), con)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  // depth filter (H8, D-020): every antecedent leaf at its distance from each consequent leaf;
+  // leafOffsets reads the loaded propositions through the placeholders of the template
+  auto leaves = leafOffsets(t->getTemplateFormula());
+  for (const auto &l : leaves) {
+    if (!l.inAntecedent || shared.count(l.prop.get())) {
+      continue;
+    }
+    std::vector<ConsequentLeaf> con;
+    for (const auto &q : leaves) {
+      if (!q.inAntecedent) {
+        std::optional<int> d;
+        if (l.offset && q.offset) {
+          d = *q.offset - *l.offset;
+        }
+        con.push_back({variablesOf(q.prop), d});
+      }
+    }
+    if (!coi.fits(variablesOf(l.prop), con, depth)) {
       return false;
     }
   }
@@ -217,7 +242,9 @@ void TLMiner::l2Handler(
                        _context->_domainIdToNumerics);
     if (_context->_coi != nullptr && _context->_coiMode == "filter") {
       size_t before = t->getNumberOfPermutations();
-      t->keepPermutations([&]() { return permutationInCone(t, *_context->_coi); });
+      t->keepPermutations([&]() {
+        return permutationInCone(t, *_context->_coi, _context->_coiDepth);
+      });
       size_t after = t->getNumberOfPermutations();
       {
         std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
@@ -376,7 +403,35 @@ void TLMiner::l1Handler(
 
     AntecedentGenerator antGen;
     antGen._saveOffset = t->getDT()->getLimits()._saveOffset;
+    // COI depth filter (H8, D-020): which candidate may go at which index of the operator
+    std::vector<std::vector<char>> propFits, numericFits;
+    const bool depthFilter = _context->_coi != nullptr &&
+                             _context->_coiMode == "filter" &&
+                             _context->_coiDepth != CoiDepth::Any;
+    if (depthFilter) {
+      for (const auto &con : dtIndexConsequents(t)) {
+        propFits.emplace_back();
+        for (const auto &p : propsDT) {
+          propFits.back().push_back(
+              _context->_coi->fits(variablesOf(p), con, _context->_coiDepth));
+        }
+        numericFits.emplace_back();
+        for (const auto &n : numericsDT) {
+          numericFits.back().push_back(
+              _context->_coi->fits(variablesOf(n), con, _context->_coiDepth));
+        }
+      }
+      antGen._admissible = [&](size_t id, bool numeric, size_t index) {
+        const auto &table = numeric ? numericFits : propFits;
+        return index >= table.size() || table[index][id];
+      };
+    }
     antGen.makeAntecedents(t, candidateVariables, numericCandidates);
+    if (depthFilter) {
+      std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+      _context->_coiFilterStats.dtPairsBefore += antGen._pairsBefore;
+      _context->_coiFilterStats.dtPairsAfter += antGen._pairsAfter;
+    }
 
     //onset
     handleDTSolutions(t, antGen._onSets, assp, false);

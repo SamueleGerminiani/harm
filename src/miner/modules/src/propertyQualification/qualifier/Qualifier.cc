@@ -279,7 +279,14 @@ void dumpAssertionInfo(const Context &context,
         "{\"permutationsBefore\": " + std::to_string(st.permutationsBefore) +
         ", \"permutationsAfter\": " + std::to_string(st.permutationsAfter) +
         ", \"dtCandidatesBefore\": " + std::to_string(st.dtCandidatesBefore) +
-        ", \"dtCandidatesAfter\": " + std::to_string(st.dtCandidatesAfter) + "}";
+        ", \"dtCandidatesAfter\": " + std::to_string(st.dtCandidatesAfter) +
+        (context._coiDepth == CoiDepth::Any
+             ? std::string()
+             : ", \"depth\": \"" +
+                   std::string(context._coiDepth == CoiDepth::Exact ? "exact" : "bounded") +
+                   "\", \"dtPairsBefore\": " + std::to_string(st.dtPairsBefore) +
+                   ", \"dtPairsAfter\": " + std::to_string(st.dtPairsAfter)) +
+        "}";
   }
   const char *ct[3] = {"t", "f", "u"};
   for (const auto &a : assertions) {
@@ -411,7 +418,15 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
                 std::to_string(st.permutationsAfter) +
                 ", decision-tree candidates (summed over consequents) " +
                 std::to_string(st.dtCandidatesBefore) + " -> " +
-                std::to_string(st.dtCandidatesAfter));
+                std::to_string(st.dtCandidatesAfter) +
+                (context._coiDepth == CoiDepth::Any
+                     ? std::string()
+                     : ", depth " +
+                           std::string(context._coiDepth == CoiDepth::Exact ? "exact"
+                                                                            : "bounded") +
+                           ": (candidate, index) pairs tried " +
+                           std::to_string(st.dtPairsBefore) + " -> " +
+                           std::to_string(st.dtPairsAfter)));
   }
 
   messageInfo("Qualifying " + std::to_string(assertions.size()) +

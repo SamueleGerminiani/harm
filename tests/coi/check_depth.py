@@ -3,11 +3,11 @@
 
 A2  plain templates: filter output (depth=<mode>) == rank output post-filtered with coiFrac == 1
     and, for exact, coiDepthFit == 1 (HARM's metric); for bounded, the D-020 rule computed here
-    (sva_offsets.py) on the printed assertions
+    (sva_offsets.py) on the printed assertions (Spot LTL: the SVA text loses '->', finding F7)
 A3  single-index decision trees: filter output == union of rank runs on per-(consequent, template)
     restricted configurations (restrict_config.py --depth, offsets and cones computed in Python)
 A4  every template: every filter-mode antecedent leaf fits under the mode, with offsets parsed
-    from the SVA text (sva_offsets.py), not from HARM; for exact also coiDepthFit == 1
+    from the printed assertion (sva_offsets.py), not from HARM; for exact also coiDepthFit == 1
 A6  report: assertions, search space and time for depth any / bounded / exact
 Usage: check_depth.py <harm> <config.xml> <exact|bounded> <harm trace args...>
 """
@@ -33,7 +33,7 @@ def run(conf, d, tag):
     info = Path(d) / f"{tag}.json"
     t0 = time.time()
     r = subprocess.run([harm, *trace_args, "--conf", str(conf), "--max-threads", "1", "--psilent",
-                        "--sva", "--dump-assertion-info", str(info)], cwd=d, capture_output=True,
+                        "--dump-assertion-info", str(info)], cwd=d, capture_output=True,
                        text=True)
     dt = time.time() - t0
     out = r.stdout + r.stderr
@@ -127,12 +127,16 @@ with tempfile.TemporaryDirectory() as d:
         print(f"  only in restricted rank: {t}")
     ok &= texts(sf) == union
 
-    # A6: report
-    print("A6: depth   assertions  time    search space")
+    # A6: report (totals over the context, from the dump's coiFilter record)
+    print("A6: depth    assertions  permutations  dt candidates  (candidate, index) pairs  time")
     for depth in ("any", "bounded", "exact"):
-        recs, out, dt = run(variant(d, f"rep_{depth}.xml", "filter", depth, ALL), d, f"rep_{depth}")
-        stats = [l.split("COI filter:")[-1].strip() for l in out.splitlines() if "COI filter:" in l]
-        print(f"    {depth:8} {len(recs):10}  {dt:6.3f}s {' | '.join(stats)}")
+        conf = variant(d, f"rep_{depth}.xml", "filter", depth, ALL)
+        recs, out, dt = run(conf, d, f"rep_{depth}")
+        info = Path(d) / f"rep_{depth}.json"
+        st = json.loads(info.read_text()).get("coiFilter", {}).get("default", {}) if info.exists() else {}
+        pairs = (f"{st['dtPairsBefore']} -> {st['dtPairsAfter']}" if "dtPairsBefore" in st else "(not filtered)")
+        print(f"    {depth:8} {len(recs):10}  {st.get('permutationsBefore')} -> {st.get('permutationsAfter'):<6} "
+              f"{st.get('dtCandidatesBefore')} -> {st.get('dtCandidatesAfter'):<8} {pairs:24} {dt:.3f}s")
 
 print("ok" if ok else "FAIL")
 sys.exit(0 if ok else 1)

@@ -84,6 +84,9 @@ leafOffsets(const expression::TemporalExpressionPtr &formula);
 /// Empty if t has no decision-tree operator
 std::vector<std::vector<std::optional<int>>>
 dtIndexDistances(const TemplateImplicationPtr &t);
+/// @brief as dtIndexDistances, with the variables of each consequent leaf
+std::vector<std::vector<ConsequentLeaf>>
+dtIndexConsequents(const TemplateImplicationPtr &t);
 
 /// @brief the COI rank metrics of an assertion (D-014)
 struct CoiMetrics {

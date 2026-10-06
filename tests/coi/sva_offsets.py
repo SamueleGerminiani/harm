@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""H8, acceptance A4: cycle offsets of the leaves of a mined assertion, parsed from the SVA text HARM
-prints (--sva), independently of HARM's leafOffsets; and the D-020 depth rule, from coi.json.
+"""H8, acceptance A4: cycle offsets of the leaves of a mined assertion, parsed from the text HARM
+prints by default (Spot LTL), independently of HARM's leafOffsets; and the D-020 depth rule, from
+coi.json. The SVA text (--sva) cannot be used: it prints {s} -> X c as s |=> c, which anchors c at
+the end of s instead of its start (H8 finding F7).
 
-Supported: always (<sequence> |-> | |=> | -> <consequent>), where a sequence is items joined by
-##k, and 'intersect'/'and' join sequences that start together; the consequent may start with
-nexttime / nexttime[k] / ##k. Offsets count from the first cycle of the antecedent:
+Supported: G(<antecedent> (|-> | |=> | ->) <consequent>) and G(<consequent>), where an antecedent
+or consequent is a SERE {..} of items joined by ##k, ';' (##1) or ':' (##0), or Boolean items
+joined by '&&', each possibly prefixed by X (one cycle each). A leading X applies to the rest of
+the operand, as HARM prints it ("Xen && wrap" is X(en && wrap), finding F8); so a template like
+G(X P0 && P1 -> ...) is not supported. Offsets count from the first cycle
+of the antecedent:
   |->  the consequent starts at the antecedent's last cycle;  |=>  one cycle later;
   ->   the consequent starts with the antecedent (HARM's semantics, H8 finding F6).
 Anything else raises ValueError, so an unexpected output shape fails loudly.
@@ -13,20 +18,22 @@ import re
 
 from restrict_config import variables
 
+OPEN, CLOSE = "({", ")}"
+
 
 def _split_top(text, pattern):
-    """split on a regex at parenthesis depth 0; returns (parts, separators)"""
+    """split on a regex outside () and {}; returns (parts, separators)"""
     parts, seps, depth, last, i = [], [], 0, 0, 0
     rx = re.compile(pattern)
     while i < len(text):
         ch = text[i]
-        if ch == "(":
+        if ch in OPEN:
             depth += 1
-        elif ch == ")":
+        elif ch in CLOSE:
             depth -= 1
         elif depth == 0:
             m = rx.match(text, i)
-            if m:
+            if m and m.end() > i:
                 parts.append(text[last:i])
                 seps.append(m.group(0))
                 i = last = m.end()
@@ -36,74 +43,62 @@ def _split_top(text, pattern):
     return [p.strip() for p in parts], [s.strip() for s in seps]
 
 
-def _strip_parens(t):
+def _strip(t):
+    """remove enclosing () or {} pairs that span the whole text"""
     t = t.strip()
-    while t.startswith("(") and t.endswith(")"):
+    while len(t) >= 2 and t[0] in OPEN and t[-1] == CLOSE[OPEN.index(t[0])]:
         depth = 0
         for i, ch in enumerate(t):
-            depth += ch == "("
-            depth -= ch == ")"
+            depth += ch in OPEN
+            depth -= ch in CLOSE
             if depth == 0 and i < len(t) - 1:
                 return t
         t = t[1:-1].strip()
     return t
 
 
-def _sequence(text, start, leaves, ant):
-    """leaves of a sequence starting at 'start'; returns its last cycle"""
-    text = _strip_parens(text)
-    par, _ = _split_top(text, r"\s(?:intersect|and)\s")
-    if len(par) > 1:
-        ends = [_sequence(p, start, leaves, ant) for p in par]
-        if len(set(ends)) != 1:
-            raise ValueError(f"intersect of different lengths: {text}")
-        return ends[0]
-    items, seps = _split_top(text, r"##\d+")
-    t = start
-    for k, item in enumerate(items):
-        if k > 0:
-            t += int(seps[k - 1][2:])
-        if not item:
-            if k == 0:
-                continue  # a leading ##k
-            raise ValueError(f"empty item in {text}")
-        if re.search(r"##|\bnexttime\b|\b(s_)?eventually\b|\buntil\b|\[\*|\[->|\[=", item):
-            raise ValueError(f"unsupported item '{item}' in {text}")
-        leaves.append((item, ant, t))
-    return t
+def _part(text, start, leaves, ant):
+    """leaves of a SERE or Boolean/X expression starting at 'start'; returns its last cycle"""
+    text = _strip(text)
+    if re.search(r"\[\*|\[->|\[=|\bF\b|\bU\b|\bR\b|\bW\b|##\[", text):
+        raise ValueError(f"offsets not fixed: {text}")
+    items, seps = _split_top(text, r"##\d+|;|:")
+    if len(items) > 1:
+        t = start
+        for k, item in enumerate(items):
+            if k > 0:
+                sep = seps[k - 1]
+                t += 1 if sep == ";" else 0 if sep == ":" else int(sep[2:])
+            if item:
+                t = _part(item, t, leaves, ant)
+        return t
+    # HARM prints X(p) without parentheses ("Xen && wrap" is X(en && wrap), finding F8): a
+    # leading X applies to the rest of the operand; otherwise a conjunction with an X in a later
+    # conjunct ("a && Xb") is split
+    xm = re.match(r"X(?=[\s({A-Za-z!])\s*", text)
+    if xm:
+        return _part(text[xm.end():], start + 1, leaves, ant)
+    conj, _ = _split_top(text, r"&&")
+    if len(conj) > 1 and any(re.match(r"X(?=[\s({A-Za-z!])", c) for c in conj):
+        return max(_part(c, start, leaves, ant) for c in conj)
+    leaves.append((text, ant, start))
+    return start
 
 
 def leaves(text):
-    """[(leaf text, in antecedent, offset)] of 'always (A op C)'"""
-    m = re.fullmatch(r"\s*always\s*\((.*)\)\s*", text)
+    """[(leaf text, in antecedent, offset)] of 'G(A op C)' or 'G(C)'"""
+    m = re.fullmatch(r"\s*G\((.*)\)\s*", text)
     if not m:
-        raise ValueError(f"not 'always (...)': {text}")
-    body = m.group(1)
-    parts, ops = _split_top(body, r"\|->|\|=>|(?<![|<])->")
+        raise ValueError(f"not 'G(...)': {text}")
+    parts, ops = _split_top(m.group(1), r"\|->|\|=>|(?<![|\]])->")
+    out = []
     if len(parts) == 1:
-        out = []
-        _sequence(body, 0, out, False)  # an invariant
+        _part(parts[0], 0, out, False)  # an invariant
         return out
     if len(parts) != 2:
         raise ValueError(f"more than one implication: {text}")
-    out = []
-    end = _sequence(parts[0], 0, out, True)
-    con = parts[1]
-    start = {"|->": end, "|=>": end + 1, "->": 0}[ops[0]]
-    while True:
-        con = _strip_parens(con)
-        nm = re.match(r"nexttime(?:\s*\[(\d+)\])?\s*", con)
-        if nm:
-            start += int(nm.group(1) or 1)
-            con = con[nm.end():]
-            continue
-        dm = re.match(r"##(\d+)\s*", con)
-        if dm:
-            start += int(dm.group(1))
-            con = con[dm.end():]
-            continue
-        break
-    _sequence(con, start, out, False)
+    end = _part(parts[0], 0, out, True)
+    _part(parts[1], {"|->": end, "|=>": end + 1, "->": 0}[ops[0]], out, False)
     return out
 
 

@@ -129,7 +129,13 @@ public:
   /** \brief The index an item inserted with addItem(p, depth) takes (depth -1: the next free
    * index of an ordered operator). H8, D-007
    */
-  virtual size_t insertionIndex(int depth) { return 999; }
+  virtual size_t insertionIndex(int depth) {
+    return depth == -1 ? (getNChoices() == 0 ? 0 : getCurrentDepth() + 1)
+                       : (size_t)depth;
+  }
+  /** \brief The number of indices (temporal positions) of the operator. H8, D-007
+   */
+  virtual size_t getNumIndices() { return getLimits()._maxDepth; }
   /** \brief substitute an operand with proposition 'sub'
    */
   virtual void substitute(int depth, int width,
