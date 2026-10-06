@@ -1,6 +1,6 @@
 # H10 plan: RTL predicate harvesting
 
-*Status: approved 2026-10-06 (D-023); in progress. Branch: `ms/H10-predicates` (from `dev` @ H9). Effort: 3–4 d.*
+*Status: approved 2026-10-06 (D-023); done, awaiting review. Branch: `ms/H10-predicates` (from `dev` @ H9). Effort: 3–4 d.*
 
 ## Goal
 `harm-coi` (H5) also reads, from the same pyslang AST, the predicates the designer wrote, and offers them to HARM as propositions with `origin="rtl"`:
@@ -40,6 +40,17 @@ gives, in HARM's syntax and names: `rst`, `go`, `stop`, `state == 2'd0`, `state 
 
   One context per target would duplicate filter mode (H7/H8): the same restriction is `mode="filter"` on one context, a one-word change. And it would multiply the number of contexts by the number of signals.
 - **The written `coi.json` keeps the predicates,** so the configuration and the cone file stay together.
+
+## As built (2026-10-06): differences from the plan above
+- **The reset rule's side effect is pinned by a test:**
+  - with `if (x) y <= 1'b1; else y <= 1'b0;`, the rule also yields `y`, which is harmless (the register's value);
+  - two A3 tests (bit select, struct and interface) assign non-constant values, so that they test only what they are named for.
+
+  These choices were made while writing the tests, before the first run.
+- **A `for` loop's stop condition** is treated as a condition; on a local loop variable it is dropped, as planned.
+- **`src`** lists every place a predicate was found, comma-separated: deduplication keeps all of them.
+- **The A2 check skips HARM when nothing is harvested** (`multipath`, `hier`): a configuration without propositions has nothing to load. Adjusted before the first implementation run.
+- **The Z3 duplicate check reads the hand labels,** which A1 requires the output to equal, and builds the trace's signals from the VCD.
 
 ## Acceptance tests (written first)
 | # | Test | Kind |

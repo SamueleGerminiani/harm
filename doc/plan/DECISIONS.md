@@ -257,3 +257,23 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
 - **Format `coi-report` v1:** `{"version": "1", "contexts": [{"name", "coi": <path> | null, "consequents": [{"text", "origin", "variables", "coneUnknown", "outOfCone": [{"text", "origin", "numeric", "variables", "outside"}], "unknown": [{…, "unknownVariables"}]}]}]}`. Texts are HARM's printing; lists are sorted by text.
 - **Origins** are looked up by the printed text. For numerics, the printed text is now also a key, besides the configuration text. Propositions expanded from a numeric (`loc="dt"`) carry no origin; that is unchanged from H6.
 - **Signal level only.** Depths ("in the cone, but not at the spec's delay") are a possible extension.
+
+## D-023: RTL predicate harvesting (2026-10-06, H10, approved)
+- **Harvested** (`harm-coi --predicates`, into `coi.json → predicates`; schema unchanged):
+  - conditions of `if` and `?:`, with each atom of a compound condition;
+  - `s == L` for each case label;
+  - `v == C` for every value of an enum-typed variable;
+  - comparisons with a constant side anywhere;
+  - reset values: the first `if` of a clocked process whose branch assigns only constants. The rule is structural; a data condition of that shape also yields the register's value.
+- **Translation into HARM propositions:**
+  - visible names only (H5's mapping); the others are dropped and counted;
+  - the signal on the left, constants as sized decimal literals of the signal's width;
+  - a 1-bit comparison as the signal or `!signal`;
+  - syntactic deduplication: one record per text, with `src` joined and `targets` united.
+  - Elaboration-time conditions and conditions on local variables are not harvested.
+- **`--emit-config`:** one context (not one per target, as PLAN §H10 said):
+  - the predicates with `loc="a, c, dt"` and `origin="rtl"`;
+  - `<coi mode="rank">`;
+  - `--generate-config`'s template and sorts.
+
+  Filter mode (H7, H8) gives the per-target restriction on that one context.

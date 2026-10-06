@@ -1,6 +1,6 @@
 # HARM → trivergence: impact on trivergence's plan and code
 
-*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8 and H9 on `dev`).*
+*Maintained in the HARM repo, updated whenever a HARM milestone changes something trivergence uses or could use. Last update: 2026-10-06 (H1d, H8 and H9 on `dev`; H10 awaiting review).*
 
 **Who reads this:** whoever develops trivergence (on the Linux machine). Trivergence is never modified from the HARM development machine; this file is the hand-off.
 
@@ -198,8 +198,16 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - `unknown` entries are not disagreements: the cone file could not decide them (e.g. signals harm-coi marked unknown).
 - **[none required]** Without the option, nothing changes.
 
-### H10: RTL predicate harvesting (planned)
-- **[optional]** `harm-coi --emit-config` gives a hint set built from the RTL alone. Useful as the "no LLM" arm of the B3 ablation.
+### H10: RTL predicate harvesting (on `ms/H10-predicates`, awaiting review; not on `dev` yet)
+- **`harm-coi --predicates`** adds the RTL's own predicates to `coi.json`, in HARM's syntax with `origin: "rtl"` (D-023):
+  - conditions, case labels, FSM (enum) states, comparisons with constants, reset values;
+  - e.g. `state == 2'd1`, `cnt == 4'd9`, `!prio`.
+- **`harm-coi --emit-config <cfg.xml>`** writes a ready-to-run HARM configuration from them.
+- **[optional] B3, the "RTL hints" arm of the ablation** (vanilla / LLM hints / RTL hints / both):
+  - run `--emit-config` per design;
+  - for the "both" arm, append the predicates to `hints_to_xml`'s propositions; their `origin` keeps the two sources apart in `--dump-assertion-info`.
+  - With `--reduce equiv`, LLM and RTL propositions that are equivalent are merged (H2).
+- **[optional] B4:** a spec proposition that matches no RTL predicate is not evidence of a bug by itself. Predicates on invisible signals are dropped.
 
 ### H11: evaluation (planned)
 - HARM-side results on about 10 AssertLLM2 designs will run on the Linux machine, and can reuse trivergence's benchmark loaders (F4) if available.
