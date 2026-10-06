@@ -30,6 +30,7 @@ Trivergence references below are as of trivergence commit `37b10e2` (2026-10-05)
 | H7 | `dev` @ `942b583a15eb4b55c4674127a41c331102dc216f` | yes | — |
 | H5 | `dev` @ `927b856e7a9639627a026ab4530363e40f954804` | yes | — |
 | H1d | `dev` @ `b608a90046d630c8e9ff30d2b3a51c8290dd4db4` | yes | — |
+| H8 | `dev` @ `366374a06511672e5c3405cd3ea64e8beb6793f3` | yes | — |
 
 **Branches:**
 - HARM `main` stays the stable public version until the whole HARM plan is done (after H11).
@@ -180,7 +181,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **Spot-LTL text** (the default output and the `text` field of `--dump-assertion-info`): `X(a && b)` keeps its brackets. It was printed `Xa && b`.
   - **[optional]** Only relevant if trivergence parses the Spot text; it reads `--sva`.
 
-### H8: depth-aware COI filter (on `ms/H8-depth-filter`, awaiting review; not on `dev` yet)
+### H8: depth-aware COI filter (on `dev`)
 - `<coi … mode="filter" depth="bounded|exact"/>` also uses the depths of the cone (D-020).
   - **Example:** `y` gets `a` at depths 0 and 2. `G(a -> X y)` is kept by `bounded` and pruned by `exact`; `G(a -> X X X y)` is pruned by both.
   - On the fixtures, `exact` cuts the output by a further 26–46% below H7's filter mode (`depth="any"`), and `bounded` by 5–25% (VALIDATION, H8).
