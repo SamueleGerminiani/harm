@@ -301,7 +301,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H1d | Printing fixes F7 (SVA `->`), F8 (Spot parentheses) | done |
 | H2 | Z3 back end and canonicalisation | done |
 | H3 | Semantic redundancy reduction | done |
-| H3b | Atom-implication premises | todo (optional) |
+| H3b | Atom-implication premises | plan (awaiting approval) |
 | H4 | COI contract and RTL fixtures | done |
 | H5 | `harm-coi` generator | done |
 | H6 | COI rank mode | done |
