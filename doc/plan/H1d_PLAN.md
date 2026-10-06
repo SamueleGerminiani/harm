@@ -1,6 +1,6 @@
 # H1d plan: printing fixes F7 and F8 (found in H8)
 
-*Status: requested by the user on 2026-10-06 ("fix F7 and F8 now"). Branch: `ms/H1d-printing` (from `dev` @ H5; independent of H8). Effort: 0.5 d.*
+*Status: requested by the user on 2026-10-06 ("fix F7 and F8 now"); done, awaiting review. Branch: `ms/H1d-printing` (from `dev` @ H5; independent of H8). Effort: 0.5 d.*
 
 ## The bugs (H8 VALIDATION, checked with Spot's `ltlfilt`)
 - **F7 (SVA):** HARM's `->` starts the consequent with the antecedent; SVA's `|->`/`|=>` start it at the antecedent's end. HARM prints every `->` as `|->`/`|=>`, which is wrong when the antecedent lasts more than one cycle.
@@ -17,7 +17,7 @@
   - `j > 1`: `s |-> ##j c`;
   - `j < 0`: `s |-> $past(c, −j)`.
 
-  These are forms that Verilator and EBMC accept. Otherwise (not a fixed-length sequence, or a non-Boolean consequent) print `(s) implies <consequent>`: IEEE 1800 `implies` starts both sides at the same cycle. A single-cycle antecedent is printed as before. `--legacy-sva` keeps the old printing.
+  These are forms that Verilator and EBMC accept. Otherwise (not a fixed-length sequence, or a non-Boolean consequent) print `(s) implies <consequent>`: IEEE 1800 `implies` starts both sides at the same cycle. A single-cycle antecedent is printed as before, and so is the legacy SVA printing that `<edit>` rules match against.
 - **F8:** in Spot LTL, a proposition whose top operator is a Boolean connective (`&&` with more than one item, `||`, `^`, `==`/`!=` between propositions) is parenthesized directly under `X`, `F`, `G`, `!`, `U`/`W`, `R`, and an `||`/`^` one under a property `&&`.
 
 ## Tests (written first)
