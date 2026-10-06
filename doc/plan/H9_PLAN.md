@@ -1,6 +1,6 @@
 # H9 plan: out-of-cone report
 
-*Status: approved 2026-10-06 (D-022); done, awaiting review. Branch: `ms/H9-coi-report` (from `dev` @ H8). Effort: 1 d.*
+*Status: approved 2026-10-06 (D-022); done, approved 2026-10-06 and merged into `dev`. Branch: `ms/H9-coi-report` (from `dev` @ H8). Effort: 1 d.*
 
 ## Goal
 `--dump-coi-report <file.json>` writes, for each context with a `<coi>`, which antecedent propositions are structurally unable to influence each consequent proposition.
