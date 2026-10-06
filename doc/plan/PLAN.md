@@ -264,7 +264,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | D-003 | X/Z in Z3 canonicalisation | never merge propositions with x/z or `===` |
 | D-004 | Finite vs infinite semantics in implication | decide in H3 after testing templates with `F`/`U` |
 | D-005 | COI depth definition | register crossings; 0 = combinational |
-| D-006 | Generator back end | pending; H5a recommends pyslang |
+| D-006 | Generator back end | pyslang (decided after H5a) |
 | D-007 | DT depth ↔ cycle offset mapping | characterised in H8 |
 | D-008 | Default `--keep` policy for implications | `stronger` |
 | D-009 | Z3 as a hard or optional dependency | optional (`HARM_WITH_Z3`, default ON) |
@@ -302,7 +302,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H3 | Semantic redundancy reduction | done |
 | H3b | Atom-implication premises | todo (optional) |
 | H4 | COI contract and RTL fixtures | done |
-| H5 | `harm-coi` generator | in-progress (H5a done; D-006 pending) |
+| H5 | `harm-coi` generator | in-progress (H5b) |
 | H6 | COI rank mode | done |
 | H7 | COI filter mode, signal level | done |
 | H8 | Depth-aware COI filter | todo |

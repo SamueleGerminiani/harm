@@ -1,6 +1,6 @@
 # H5 plan: `harm-coi`, the cone-of-influence generator
 
-*Status: approved 2026-10-06; H5a spike done, D-006 pending. Branch: `ms/H5-harm-coi` (from `dev` @ H7). Effort: 0.5 d spike + 3–4 d.*
+*Status: approved 2026-10-06; H5a done, D-006 decided (pyslang); H5b in progress. Branch: `ms/H5-harm-coi` (from `dev` @ H7). Effort: 0.5 d spike + 3–4 d.*
 
 ## Goal
 `harm-coi` reads the RTL and writes the `coi.json` that HARM's rank and filter modes use (H6, H7). Until now that file was written by hand for the H4 fixtures. It must run on Linux (trivergence) and on macOS.
