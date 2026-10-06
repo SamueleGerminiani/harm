@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "commandLineParser.hh"
+#include "harmVersion.hh"
 
 // HARM
 cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
@@ -68,6 +69,7 @@ options.add_options()
 ( "isilent", "disable all infos")
 ("psilent", "disable all progress bars")
 ( "name", "name of this execution (used when dumping statistics)", cxxopts::value<std::string>(), "<String>")
+("version", "print HARM's version (git describe: tag, commits since, commit) and exit")
 ("help", "Show options");
     // clang-format on
 
@@ -75,6 +77,10 @@ options.add_options()
 
     if (result.count("help")) {
       std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+    if (result.count("version")) {
+      std::cout << "HARM " << HARM_VERSION << std::endl;
       exit(0);
     }
 
