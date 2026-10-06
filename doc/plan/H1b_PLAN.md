@@ -1,6 +1,6 @@
 # H1b plan: x/z semantics of propositions (D-011)
 
-*Status: revised 2026-10-06 by the user: **option (a), document the difference**; done, awaiting review. Branch: `ms/H1b-x-semantics` (from `dev` @ H10).*
+*Status: revised 2026-10-06 by the user: **option (a), document the difference**; done, approved 2026-10-06 and merged into `dev`. Branch: `ms/H1b-x-semantics` (from `dev` @ H10).*
 
 ## Revision (2026-10-06): documentation instead of an option
 - **Why the option was dropped:**
