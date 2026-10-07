@@ -683,3 +683,32 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
   - **AssertLLM2 table:** pending until F-L1 is fixed.
   - **Differences from the Mac:** F-L1. None are measured beyond it.
 - **GoldMine (§4c):** not run.
+
+## H11b: HARM builds on Linux (F-L1) (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0, Z3 4.13.4)
+The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (plus `#include <cstdint>`). On macOS the two are the same type. Before the fix, the failing evidence is the Linux build log in H11's "Linux evaluation" (F-L1).
+
+| Test | Result |
+|---|---|
+| A1 `make` on Linux, all targets | pass. No other compile error appeared behind F-L1. `build/harm --version`: `HARM v3-145-g4c5bc7c (dirty)` (dirty = this fix, uncommitted at the time) |
+| A2 `Z3EquivalenceTest` on Linux | pass (39.5 s) |
+| A3 Linux `ctest`, all labels | 205 of 206 pass. The exception, `ImplicationTest`, passes but exceeds ctest's timeout (F-L2 below). Details below |
+| A4 macOS build and `ctest` | **pending**: to be run by the user on the Mac (the type is identical there) |
+| A5 H0 regression baselines on Linux | pass: all 25 `regression_*` tests and the `determinism` label (29 tests) |
+
+- **A3 in detail (`ctest -j32`; 2,067 s):**
+  - **First full run: 175 of 206 pass.**
+    - 30 failures are the Verilator oracles (`verilator_replay_*`, `coi_{reproduce,influence,depths}_*`, `h5_{influence,reproduce}_*`).
+    - The Verilator first on `PATH` here is 4.210, which has no `--binary` ("%Error: Invalid option: --binary").
+  - **Verilator re-run: all 37 Verilator-dependent tests pass.** This is the 30 plus 7 that already passed, with Verilator 5.031 (OSS CAD Suite, `-DVERILATOR_FOUND` and `PATH`). This was an environment problem, not HARM.
+  - **`ImplicationTest`:** see F-L2.
+  - **The yosys cross-check (7 tests) is not registered:** the yosys here is 0.47, without `read_slang`, which is optional (`eval/LINUX.md`). This makes 206 tests, against 213 on the Mac.
+  - **`h5_*` (16 tests) and `h5_unit` (harm-coi's pytest) run:** the Python is 3.12.6 from `uv`, with pyslang 12.0.0.
+- **Finding F-L2: `ImplicationTest` exceeds ctest's default 1,500 s timeout on Linux.**
+  - Alone (`ctest -R ImplicationTest --timeout 7200`), it passes in 1,598 s. Inside the full parallel run it hit the timeout.
+  - `generatedPairsAreSoundOnAllShortTraces` alone takes 369 s.
+  - On the Mac, the whole suite passed in 1,931 s, so the test runs well under the limit there. Linux (g++ 11, this machine) is slower.
+  - **Not fixed (out of H11b's scope).** The options are the user's:
+    - a `TIMEOUT` property on the test;
+    - a `slow` label;
+    - or a smaller exhaustive bound.
+- **Environment note for `eval/LINUX.md`:** the simulation oracles need Verilator ≥ 5 (`--binary --timing`). On this machine the default `verilator` is 4.210, so Verilator 5 must be first on `PATH` and set with `-DVERILATOR_FOUND`.
