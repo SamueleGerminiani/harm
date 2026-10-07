@@ -770,3 +770,22 @@ A2 was written first and committed failing in `9cdf233`. A1, A3 and A4 were exis
   - **`structs` C2 now times out at 1,800 s:** it has 1,839 assertions instead of 1,526, and `--reduce implies` and `--atom-premises` grow with the square of that number (H11's note).
   - **Same patterns as before:** C5 (`exact`) can still exceed C4 (`arbiter` 74 against 56, `multipath` 9 against 6): fewer candidates change the tree HARM builds (H11's analysis). C7 stays the smallest everywhere.
 
+## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
+Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
+
+| Test | Result |
+|---|---|
+| A1 `LogTest.deleteLastLineOnAnEmptyFile` | pass; before the fix it crashed with SIGSEGV, deterministically |
+| A2 `LogTest.concurrentProcessesKeepOneValidLog`: 8 processes × 200 warnings in one directory | pass: all writers exit normally, and `warning.log` is one JSON array of 1,600 records. Before the fix, writers died with signal 11 |
+| A3 `LogTest.concurrentThreadsKeepOneValidLog`: 8 threads × 200 warnings | pass, with the same checks; before the fix it crashed with SIGSEGV |
+| A4 Linux `ctest`, all labels (Verilator 5.031, as for `dev`) | pass, 211 of 211 (2,314 s) |
+| A4 the Docker image's fast tests on repeated `ctest -j` runs (the H11d symptom) | pass: the image built from `ms/H11f-log-race` (Ubuntu 24.04, g++ 13) passed its fast tests 4 times in parallel (`ctest -j -LE slow`), 177 of 177 each, with no crash. Before the fix, every parallel run crashed (3 of 3). A fifth run printed no result (the check did not record its exit status), so it is not counted; the run that replaced it recorded `ctest exit=0` |
+
+- **The bug:** `deleteLastLine` (`misc.hh`) computed `lines.size() - 1` on a `size_t`, which underflows on an empty file.
+  - A concurrent writer's truncation can empty the file between another writer's `isFileEmpty` and its read.
+  - The gtests share `build/` as their working directory, so `ctest -j` (seen in the Docker image: `PropositionOracleTest` once, `Z3EquivalenceTest` twice, and `Z3EquivalenceTest` on Linux on H11e's branch) and HARM's own threads could crash.
+- **The fix:**
+  - `deleteLastLine` returns on an empty file.
+  - `dumpWarningToFile`/`dumpErrorToFile` hold `flock(LOCK_EX)` on the log file and a mutex for the whole read-modify-write.
+  - A nested log write from inside a failing log write is skipped (the message is still printed), so it cannot wait for its own lock.
+- **Cost:** A2/A3 take 6–8 s for 1,600 warnings. Every record re-reads the whole file, which was already so before; the lock orders the writers but does not add work.
