@@ -166,3 +166,26 @@ def test_reset_rule_on_a_non_reset_condition(tmp_path):
             if (x) y <= 1'b1; else y <= 1'b0;
         endmodule
     """) == {"x": ["y"], "y": ["y"]}
+
+
+def test_predicates_wider_than_harm_are_dropped(tmp_path, capsys):
+    # H11c, F-L5: HARM keeps at most 511 bits of a logic signal (it truncates wider ones), so a
+    # predicate with an operand or constant wider than that is dropped, with the reason
+    src = tmp_path / "m.sv"
+    src.write_text(textwrap.dedent("""
+        module m(input logic clk, input logic [1599:0] wide, input logic [510:0] edge511,
+                 input logic [511:0] edge512, input logic [7:0] narrow, output logic a, b, c, d);
+          assign a = (wide == 0);
+          assign b = (edge511 == 0);
+          assign c = (edge512 == 0);
+          assign d = (narrow == 8'd3);
+        endmodule
+    """))
+    out = tmp_path / "coi.json"
+    rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut", "--vcd-recursion", "0",
+                   "--clock", "clk", "--predicates", "-v", "-o", str(out)])
+    assert rc == 0
+    exprs = {p["expr"] for p in json.loads(out.read_text())["predicates"]}
+    assert exprs == {"edge511 == 511'd0", "narrow == 8'd3"}
+    err = capsys.readouterr().err
+    assert err.count("wider than HARM's 511-bit limit") == 2

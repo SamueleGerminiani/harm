@@ -166,14 +166,8 @@ if(HARM_COI_OK)
     set_tests_properties(h5_unit PROPERTIES LABELS coi)
     # yosys with read_slang (>= 0.67, e.g. OSS CAD Suite) for the optional validation cross-check
     find_program(HARM_COI_YOSYS yosys)
-    set(HARM_COI_XCHECK FALSE)
-    if(HARM_COI_YOSYS)
-        execute_process(COMMAND ${HARM_COI_YOSYS} -p "help read_slang"
-                        RESULT_VARIABLE harm_coi_yosys_probe OUTPUT_QUIET ERROR_QUIET)
-        if(harm_coi_yosys_probe EQUAL 0)
-            set(HARM_COI_XCHECK TRUE)
-        endif()
-    endif()
+    include(${CMAKE_SOURCE_DIR}/cmake/HarmYosysProbe.cmake)
+    harm_yosys_has_read_slang("${HARM_COI_YOSYS}" ${CMAKE_CURRENT_BINARY_DIR} HARM_COI_XCHECK)
     if(NOT HARM_COI_XCHECK)
         message(STATUS "HARM_COI_YOSYS (${HARM_COI_YOSYS}) has no read_slang: the H5 yosys cross-check is skipped")
     endif()
@@ -348,4 +342,23 @@ if(PYTHON3_FOUND)
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_readme_commands.py $<TARGET_FILE:harm>
                 ${CMAKE_SOURCE_DIR}/README.md)
     set_tests_properties(h11_readme_commands PROPERTIES LABELS regression)
+endif()
+
+# ---- H11c: the Linux findings F-L3, F-L4, F-L5 ------------------------------------------------------
+# A1 (F-L3): the yosys probe accepts only a yosys that can run read_slang
+add_test(NAME h11c_yosys_probe
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_SOURCE_DIR}/tests/regression/check_yosys_probe.cmake)
+# A2 (F-L4): a [1:10] vector mines the same assertions as the same values declared [9:0]
+if(PYTHON3_FOUND)
+    add_test(NAME h11c_vcd_ranges
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/regression/check_vcd_ranges.py
+                $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR}/tests/input/h11c/ranges.vcd)
+endif()
+# A6 (F-L5): the configuration harm-coi emits next to a 1600-bit register is accepted by HARM
+if(HARM_COI_OK)
+    add_test(NAME h11c_emit_config_wide
+        COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_predicates.py harm
+                ${CMAKE_SOURCE_DIR}/tests/input/h11c/wide --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
+    set_tests_properties(h11c_emit_config_wide PROPERTIES LABELS coi)
 endif()

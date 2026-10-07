@@ -570,14 +570,27 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
 
         // logic & bool
         if (s->size > 1) {
-          // intact bit vector
-          vars.push_back(toVarDeclaration(n_ss.first, type, s->size,
-                                          _config._forceInt));
+          // intact bit vector, with its declared range in either direction (D-028)
+          VarDeclaration vd = toVarDeclaration(n_ss.first, type, s->size,
+                                               _config._forceInt);
+          if (s->lindex >= 0 && s->rindex >= 0) {
+            vd.setRange(s->lindex, s->rindex);
+          }
+          vars.push_back(vd);
         } else if (n_ss.second.size() > 1) {
-          // splitted bit vector
-          vars.push_back(toVarDeclaration(n_ss.first, type,
-                                          n_ss.second.size(),
-                                          _config._forceInt));
+          // splitted bit vector: the bits are sorted by index, highest first, so the highest
+          // index is taken as the MSB (the VCD does not give the declared direction, D-028)
+          VarDeclaration vd = toVarDeclaration(n_ss.first, type,
+                                               n_ss.second.size(),
+                                               _config._forceInt);
+          if ((size_t)(n_ss.second.front()->lindex -
+                       n_ss.second.back()->lindex) +
+                  1 ==
+              n_ss.second.size()) {
+            vd.setRange(n_ss.second.front()->lindex,
+                        n_ss.second.back()->lindex);
+          }
+          vars.push_back(vd);
           break;
         } else {
           // boolean: logic of size 1

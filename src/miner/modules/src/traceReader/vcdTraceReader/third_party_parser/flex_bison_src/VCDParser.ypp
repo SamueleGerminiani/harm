@@ -37,6 +37,8 @@
 
 %code{
 
+#include <cstdlib>
+
 #include "VCDFileParser.hpp"
 
 //! Current time while parsing the VCD file.
@@ -195,19 +197,9 @@ declaration_command :
                 assert(0);
                 exit(1);
               }
-              if (new_signal->lindex < new_signal->rindex) {
-                std::cout
-                    << "Reverse bit direction not supported, vectors must "
-                       "be defined like this: [MSB:LSB] with MSB > LSB"
-                    << "\n";
-                std::cout << "Hash:" << new_signal->hash << "\n";
-                std::cout << "MSB:" << new_signal->lindex << "\n";
-                std::cout << "LSB:" << new_signal->rindex << "\n";
-                std::cout << "Size:" << new_signal->size << "\n";
-                assert(0);
-                exit(1);
-              }
-              if ((new_signal->lindex - new_signal->rindex) + 1 !=
+              // [MSB:LSB] in either direction (H11c, D-028): the value is written with the
+              // left declared index first, so an ascending range [1:10] is read as is
+              if (std::abs(new_signal->lindex - new_signal->rindex) + 1 !=
                   new_signal->size) {
                 std::cout << "Size does not match vector declaration"
                           << "\n";

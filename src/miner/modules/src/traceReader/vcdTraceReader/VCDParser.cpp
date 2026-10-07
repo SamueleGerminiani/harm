@@ -47,13 +47,15 @@
 #line 38 "flex_bison_src/VCDParser.ypp"
 
 
+#include <cstdlib>
+
 #include "VCDFileParser.hpp"
 
 //! Current time while parsing the VCD file.
 VCDTime current_time = 0;
 
 
-#line 57 "..//VCDParser.cpp"
+#line 59 "..//VCDParser.cpp"
 
 
 #ifndef YY_
@@ -145,7 +147,7 @@ VCDTime current_time = 0;
 #define YYRECOVERING()  (!!yyerrstatus_)
 
 namespace VCDParser {
-#line 149 "..//VCDParser.cpp"
+#line 151 "..//VCDParser.cpp"
 
   /// Build a parser object.
   parser::parser (VCDFileParser & driver_yyarg)
@@ -598,7 +600,7 @@ namespace VCDParser {
     yyla.location.begin.filename = yyla.location.end.filename = &driver.filepath;
 }
 
-#line 602 "..//VCDParser.cpp"
+#line 604 "..//VCDParser.cpp"
 
 
     /* Initialize the stack.  The initial state will be set in
@@ -781,23 +783,23 @@ namespace VCDParser {
           switch (yyn)
             {
   case 10: // declaration_command: TOK_KW_COMMENT comment_text TOK_KW_END
-#line 115 "flex_bison_src/VCDParser.ypp"
+#line 117 "flex_bison_src/VCDParser.ypp"
                                                 {
     driver.fh -> comment = yystack_[1].value.as < std::string > ();
 }
-#line 789 "..//VCDParser.cpp"
+#line 791 "..//VCDParser.cpp"
     break;
 
   case 11: // declaration_command: TOK_KW_DATE date_text TOK_KW_END
-#line 118 "flex_bison_src/VCDParser.ypp"
+#line 120 "flex_bison_src/VCDParser.ypp"
                                                 {
     driver.fh -> date = yystack_[1].value.as < std::string > ();
 }
-#line 797 "..//VCDParser.cpp"
+#line 799 "..//VCDParser.cpp"
     break;
 
   case 13: // declaration_command: TOK_KW_SCOPE scope_type TOK_IDENTIFIER TOK_KW_END
-#line 122 "flex_bison_src/VCDParser.ypp"
+#line 124 "flex_bison_src/VCDParser.ypp"
                                                          {
     // PUSH the current scope stack.
     
@@ -814,31 +816,31 @@ namespace VCDParser {
     driver.scopes.push(new_scope);
 
 }
-#line 818 "..//VCDParser.cpp"
+#line 820 "..//VCDParser.cpp"
     break;
 
   case 14: // declaration_command: TOK_KW_TIMESCALE TOK_TIME_NUMBER TOK_TIME_UNIT TOK_KW_END
-#line 138 "flex_bison_src/VCDParser.ypp"
+#line 140 "flex_bison_src/VCDParser.ypp"
                                                               {
     driver.fh -> time_resolution = yystack_[2].value.as < VCDTimeRes > ();
     driver.fh -> time_units      = yystack_[1].value.as < VCDTimeUnit > ();
 }
-#line 827 "..//VCDParser.cpp"
+#line 829 "..//VCDParser.cpp"
     break;
 
   case 15: // declaration_command: TOK_KW_UPSCOPE TOK_KW_END
-#line 142 "flex_bison_src/VCDParser.ypp"
+#line 144 "flex_bison_src/VCDParser.ypp"
                                {
     // POP the current scope stack.
 
     driver.scopes.pop();
 
 }
-#line 838 "..//VCDParser.cpp"
+#line 840 "..//VCDParser.cpp"
     break;
 
   case 16: // declaration_command: TOK_KW_VAR TOK_VAR_TYPE TOK_DECIMAL_NUM TOK_IDENTIFIER reference TOK_KW_END
-#line 149 "flex_bison_src/VCDParser.ypp"
+#line 151 "flex_bison_src/VCDParser.ypp"
                {
     // Add this variable to the current scope.
 
@@ -888,19 +890,9 @@ namespace VCDParser {
                 assert(0);
                 exit(1);
               }
-              if (new_signal->lindex < new_signal->rindex) {
-                std::cout
-                    << "Reverse bit direction not supported, vectors must "
-                       "be defined like this: [MSB:LSB] with MSB > LSB"
-                    << "\n";
-                std::cout << "Hash:" << new_signal->hash << "\n";
-                std::cout << "MSB:" << new_signal->lindex << "\n";
-                std::cout << "LSB:" << new_signal->rindex << "\n";
-                std::cout << "Size:" << new_signal->size << "\n";
-                assert(0);
-                exit(1);
-              }
-              if ((new_signal->lindex - new_signal->rindex) + 1 !=
+              // [MSB:LSB] in either direction (H11c, D-028): the value is written with the
+              // left declared index first, so an ascending range [1:10] is read as is
+              if (std::abs(new_signal->lindex - new_signal->rindex) + 1 !=
                   new_signal->size) {
                 std::cout << "Size does not match vector declaration"
                           << "\n";
@@ -922,61 +914,61 @@ namespace VCDParser {
 
 
 }
-#line 926 "..//VCDParser.cpp"
+#line 918 "..//VCDParser.cpp"
     break;
 
   case 17: // declaration_command: TOK_KW_VERSION version_text TOK_KW_END
-#line 232 "flex_bison_src/VCDParser.ypp"
+#line 224 "flex_bison_src/VCDParser.ypp"
                                             {
     driver.fh -> version = yystack_[1].value.as < std::string > ();
 }
-#line 934 "..//VCDParser.cpp"
+#line 926 "..//VCDParser.cpp"
     break;
 
   case 25: // scope_type: TOK_KW_BEGIN
-#line 248 "flex_bison_src/VCDParser.ypp"
+#line 240 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 940 "..//VCDParser.cpp"
+#line 932 "..//VCDParser.cpp"
     break;
 
   case 26: // scope_type: TOK_KW_FORK
-#line 249 "flex_bison_src/VCDParser.ypp"
+#line 241 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 946 "..//VCDParser.cpp"
+#line 938 "..//VCDParser.cpp"
     break;
 
   case 27: // scope_type: TOK_KW_FUNCTION
-#line 250 "flex_bison_src/VCDParser.ypp"
+#line 242 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 952 "..//VCDParser.cpp"
+#line 944 "..//VCDParser.cpp"
     break;
 
   case 28: // scope_type: TOK_KW_MODULE
-#line 251 "flex_bison_src/VCDParser.ypp"
+#line 243 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 958 "..//VCDParser.cpp"
+#line 950 "..//VCDParser.cpp"
     break;
 
   case 29: // scope_type: TOK_KW_STRUCT
-#line 252 "flex_bison_src/VCDParser.ypp"
+#line 244 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 964 "..//VCDParser.cpp"
+#line 956 "..//VCDParser.cpp"
     break;
 
   case 30: // scope_type: TOK_KW_INTERFACE
-#line 253 "flex_bison_src/VCDParser.ypp"
+#line 245 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 970 "..//VCDParser.cpp"
+#line 962 "..//VCDParser.cpp"
     break;
 
   case 31: // scope_type: TOK_KW_TASK
-#line 254 "flex_bison_src/VCDParser.ypp"
+#line 246 "flex_bison_src/VCDParser.ypp"
     { yylhs.value.as < VCDScopeType > () = yystack_[0].value.as < VCDScopeType > (); }
-#line 976 "..//VCDParser.cpp"
+#line 968 "..//VCDParser.cpp"
     break;
 
   case 32: // simulation_time: TOK_HASH TOK_DECIMAL_NUM
-#line 257 "flex_bison_src/VCDParser.ypp"
+#line 249 "flex_bison_src/VCDParser.ypp"
                                            {
     current_time =  yystack_[0].value.as < size_t > ();
     if (current_time > driver.end_time)
@@ -984,11 +976,11 @@ namespace VCDParser {
     if (current_time > driver.start_time)
         driver.fh    -> add_timestamp(yystack_[0].value.as < size_t > ());
 }
-#line 988 "..//VCDParser.cpp"
+#line 980 "..//VCDParser.cpp"
     break;
 
   case 37: // scalar_value_change: TOK_VALUE TOK_IDENTIFIER
-#line 273 "flex_bison_src/VCDParser.ypp"
+#line 265 "flex_bison_src/VCDParser.ypp"
                                                {
 
     VCDSignalHash   hash  = yystack_[0].value.as < std::string > ();
@@ -1002,11 +994,11 @@ namespace VCDParser {
     }
 
 }
-#line 1006 "..//VCDParser.cpp"
+#line 998 "..//VCDParser.cpp"
     break;
 
   case 38: // vector_value_change: TOK_BIN_NUM TOK_IDENTIFIER
-#line 289 "flex_bison_src/VCDParser.ypp"
+#line 281 "flex_bison_src/VCDParser.ypp"
                                    {
 
     VCDSignalHash   hash  = yystack_[0].value.as < std::string > ();
@@ -1044,11 +1036,11 @@ namespace VCDParser {
     driver.fh -> add_signal_value(toadd, hash);
 
 }
-#line 1048 "..//VCDParser.cpp"
+#line 1040 "..//VCDParser.cpp"
     break;
 
   case 39: // vector_value_change: TOK_REAL_NUM TOK_IDENTIFIER
-#line 326 "flex_bison_src/VCDParser.ypp"
+#line 318 "flex_bison_src/VCDParser.ypp"
                                    {
 
     VCDSignalHash   hash  = yystack_[0].value.as < std::string > ();
@@ -1070,33 +1062,33 @@ namespace VCDParser {
     toadd -> value = new VCDValue(real_value);
     driver.fh -> add_signal_value(toadd, hash);
 }
-#line 1074 "..//VCDParser.cpp"
+#line 1066 "..//VCDParser.cpp"
     break;
 
   case 40: // reference: TOK_IDENTIFIER
-#line 349 "flex_bison_src/VCDParser.ypp"
+#line 341 "flex_bison_src/VCDParser.ypp"
                    {
     yylhs.value.as < VCDSignal* > ()  = new VCDSignal();
     yylhs.value.as < VCDSignal* > () -> reference = yystack_[0].value.as < std::string > ();
     yylhs.value.as < VCDSignal* > () -> lindex = -1;
     yylhs.value.as < VCDSignal* > () -> rindex = -1;
 }
-#line 1085 "..//VCDParser.cpp"
+#line 1077 "..//VCDParser.cpp"
     break;
 
   case 41: // reference: TOK_IDENTIFIER TOK_BRACKET_O TOK_DECIMAL_NUM TOK_BRACKET_C
-#line 355 "flex_bison_src/VCDParser.ypp"
+#line 347 "flex_bison_src/VCDParser.ypp"
                                                               {
     yylhs.value.as < VCDSignal* > ()  = new VCDSignal();
     yylhs.value.as < VCDSignal* > () -> reference = yystack_[3].value.as < std::string > ();
     yylhs.value.as < VCDSignal* > () -> lindex = yystack_[1].value.as < size_t > ();
     yylhs.value.as < VCDSignal* > () -> rindex = -1;
 }
-#line 1096 "..//VCDParser.cpp"
+#line 1088 "..//VCDParser.cpp"
     break;
 
   case 42: // reference: TOK_IDENTIFIER TOK_BRACKET_O TOK_DECIMAL_NUM TOK_COLON TOK_DECIMAL_NUM TOK_BRACKET_C
-#line 362 "flex_bison_src/VCDParser.ypp"
+#line 354 "flex_bison_src/VCDParser.ypp"
                  {
     yylhs.value.as < VCDSignal* > ()  = new VCDSignal();
     yylhs.value.as < VCDSignal* > () -> reference = yystack_[5].value.as < std::string > ();
@@ -1108,59 +1100,59 @@ namespace VCDParser {
         yylhs.value.as < VCDSignal* > () -> rindex = yystack_[1].value.as < size_t > ();
     }
 }
-#line 1112 "..//VCDParser.cpp"
+#line 1104 "..//VCDParser.cpp"
     break;
 
   case 43: // comment_text: %empty
-#line 375 "flex_bison_src/VCDParser.ypp"
+#line 367 "flex_bison_src/VCDParser.ypp"
             {
     yylhs.value.as < std::string > () = std::string();
+}
+#line 1112 "..//VCDParser.cpp"
+    break;
+
+  case 44: // comment_text: TOK_COMMENT_TEXT
+#line 370 "flex_bison_src/VCDParser.ypp"
+                     {
+    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
 }
 #line 1120 "..//VCDParser.cpp"
     break;
 
-  case 44: // comment_text: TOK_COMMENT_TEXT
-#line 378 "flex_bison_src/VCDParser.ypp"
-                     {
-    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
+  case 45: // version_text: %empty
+#line 375 "flex_bison_src/VCDParser.ypp"
+          {
+    yylhs.value.as < std::string > () = std::string();
 }
 #line 1128 "..//VCDParser.cpp"
     break;
 
-  case 45: // version_text: %empty
-#line 383 "flex_bison_src/VCDParser.ypp"
-          {
-    yylhs.value.as < std::string > () = std::string();
+  case 46: // version_text: TOK_VERSION_TEXT
+#line 378 "flex_bison_src/VCDParser.ypp"
+                     {
+    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
 }
 #line 1136 "..//VCDParser.cpp"
     break;
 
-  case 46: // version_text: TOK_VERSION_TEXT
-#line 386 "flex_bison_src/VCDParser.ypp"
-                     {
-    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
+  case 47: // date_text: %empty
+#line 384 "flex_bison_src/VCDParser.ypp"
+          {
+    yylhs.value.as < std::string > () = std::string();
 }
 #line 1144 "..//VCDParser.cpp"
     break;
 
-  case 47: // date_text: %empty
-#line 392 "flex_bison_src/VCDParser.ypp"
-          {
-    yylhs.value.as < std::string > () = std::string();
+  case 48: // date_text: TOK_DATE_TEXT
+#line 387 "flex_bison_src/VCDParser.ypp"
+                  {
+    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
 }
 #line 1152 "..//VCDParser.cpp"
     break;
 
-  case 48: // date_text: TOK_DATE_TEXT
-#line 395 "flex_bison_src/VCDParser.ypp"
-                  {
-    yylhs.value.as < std::string > () = std::string(yystack_[0].value.as < std::string > ());
-}
-#line 1160 "..//VCDParser.cpp"
-    break;
 
-
-#line 1164 "..//VCDParser.cpp"
+#line 1156 "..//VCDParser.cpp"
 
             default:
               break;
@@ -1654,11 +1646,11 @@ namespace VCDParser {
   const short
   parser::yyrline_[] =
   {
-       0,    98,    98,    99,   100,   101,   105,   106,   110,   111,
-     115,   118,   121,   122,   138,   142,   148,   232,   238,   239,
-     240,   241,   242,   243,   244,   248,   249,   250,   251,   252,
-     253,   254,   257,   266,   267,   270,   271,   273,   289,   326,
-     349,   355,   361,   375,   378,   383,   386,   392,   395
+       0,   100,   100,   101,   102,   103,   107,   108,   112,   113,
+     117,   120,   123,   124,   140,   144,   150,   224,   230,   231,
+     232,   233,   234,   235,   236,   240,   241,   242,   243,   244,
+     245,   246,   249,   258,   259,   262,   263,   265,   281,   318,
+     341,   347,   353,   367,   370,   375,   378,   384,   387
   };
 
   void
@@ -1690,9 +1682,9 @@ namespace VCDParser {
 
 
 } // VCDParser
-#line 1694 "..//VCDParser.cpp"
+#line 1686 "..//VCDParser.cpp"
 
-#line 399 "flex_bison_src/VCDParser.ypp"
+#line 391 "flex_bison_src/VCDParser.ypp"
 
 
 

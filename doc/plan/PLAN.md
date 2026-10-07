@@ -311,3 +311,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H10 | RTL predicate harvesting | done |
 | H11 | Evaluation, docs and release | merged into `dev`; Linux checklist run on `ms/H11-linux` (awaiting review; findings F-L3, F-L4, F-L5 open); release to `main` deferred by the user |
 | H11b | HARM builds on Linux (F-L1) | done (A4 on the Mac open) |
+| H11c | Linux findings F-L3 (yosys probe), F-L4 (VCD ranges, SystemVerilog indexing, D-028), F-L5 (wide predicates) | done (A4 on the Mac open) |

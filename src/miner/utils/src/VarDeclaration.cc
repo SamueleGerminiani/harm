@@ -40,4 +40,12 @@ size_t VarDeclaration::getInputBase() const {
 void VarDeclaration::setInputBase(size_t input_base) {
   _input_base = input_base;
 }
+
+void VarDeclaration::setRange(long left, long right) {
+  _left = left;
+  _right = right;
+}
+bool VarDeclaration::hasRange() const { return _left >= 0 && _right >= 0; }
+long VarDeclaration::getLeft() const { return _left; }
+long VarDeclaration::getRight() const { return _right; }
 } // namespace harm
