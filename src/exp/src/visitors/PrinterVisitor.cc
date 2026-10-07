@@ -156,7 +156,19 @@ std::string PrinterVisitor::get() {
 
 #define EXP_OPE_BIT_SELECTION(NODE)                                  \
   void PrinterVisitor::visit(expression::NODE &o) {                  \
-    if (o.getLowerBound() == o.getUpperBound()) {                    \
+    if (o.getSourceLeft() >= 0) {                                    \
+      /* the SystemVerilog indices as written (D-028) */             \
+      o.getItem()->acceptVisitor(*this);                             \
+      _ss << selCol("[", BOOL("["));                                 \
+      _ss << selCol(std::to_string(o.getSourceLeft()),               \
+                    VAR(std::to_string(o.getSourceLeft())));         \
+      if (o.getSourceRight() != o.getSourceLeft()) {                 \
+        _ss << selCol(":", BOOL(":"));                               \
+        _ss << selCol(std::to_string(o.getSourceRight()),            \
+                      VAR(std::to_string(o.getSourceRight())));      \
+      }                                                              \
+      _ss << selCol("]", BOOL("]"));                                 \
+    } else if (o.getLowerBound() == o.getUpperBound()) {             \
       o.getItem()->acceptVisitor(*this);                             \
       _ss << selCol("[", BOOL("["));                                 \
       _ss << selCol(std::to_string(o.getLowerBound()),               \

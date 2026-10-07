@@ -304,3 +304,23 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
 - **Soundness:** the facts hold on every cycle of every trace HARM evaluates, and over 2-valued values (formal tools). SystemVerilog's own x semantics remain the documented gap of D-011.
 - **`--dump-implications`:** a record whose claim needed facts gets an optional `"premises"` list (texts `p -> q`). The format version stays "1", because the field is additive.
 - **Measurement before approval** (`H3b_PLAN.md`): on outputs with numeric ranges or FSM states, at least 16–22% of the survivors of `--reduce implies` are redundant; on Boolean-only outputs, none.
+
+## D-028: vector indexing follows SystemVerilog (2026-10-07, H11c, approved by the user; fixes finding F-L4)
+- **Ranges from the VCD:** HARM keeps each vector's declared range `[l:r]`.
+  - Ascending ranges (`[1:10]`) are accepted. Before, the VCD parser stopped on them.
+  - A VCD writes the value with the left declared index first, so the bits are read as before.
+- **Selects:** on a variable with a declared range, `x[i]` and `x[a:b]` use SystemVerilog indices.
+  - Index `i` is the bit `|i − r|` from the right.
+  - An index outside the range is an error.
+  - So is a part-select against the declared direction (`x[a:b]` needs `a ≥ b` when `l ≥ r`, and `a ≤ b` when `l < r`).
+- **Unchanged:**
+  - **Vectors declared `[n:0]`** behave as before, except that a reversed part-select (`x[0:3]`) is now an error, as in SystemVerilog. No test, example or baseline uses one.
+  - **Variables without a declared range** (CSV traces, variables built in code) keep the old meaning: positions counted from the right from 0, in either order (`opeTests` pins this).
+  - **A select on an expression** (not a variable) keeps positions.
+- **Output:** a select keeps the indices it was written with (`BitSelector` source indices). SVA, PSL and Spot print them, so a mined assertion reads as the RTL.
+- **Limits, documented (README):**
+  - Packed multi-dimensional vectors are seen flattened by the VCD.
+  - Bit-blasted vectors (one `$var` per bit) give no direction, so the highest index is taken as the MSB (as before). They get a declared range only when their indices are contiguous.
+  - Verilator's unpacked-array elements (`mem[0] [7:0]`) are separate variables, as before.
+- **Why:** H10's harm-coi writes SystemVerilog indices (the RTL's), so before D-028 its bit-select predicates on vectors not declared `[n:0]` were misread. AssertLLM2's `ethernet_smii_txrx` declares `[1:10]`.
+- **Validation:** `VectorIndexTest` compares every select, every cycle, with the values Verilator prints for the same trace (`tests/input/h11c/gen.sh`). `h11c_vcd_ranges` checks that `[1:10]` and `[9:0]` mine the same assertions.
