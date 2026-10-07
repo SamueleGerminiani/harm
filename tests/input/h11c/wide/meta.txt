@@ -1,0 +1,7 @@
+# harm-coi arguments for the F-L5 fixture (H11c): a 1600-bit register next to narrow signals
+design = wide
+top = wide
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3

@@ -349,3 +349,22 @@ if(PYTHON3_FOUND)
                 ${CMAKE_SOURCE_DIR}/README.md)
     set_tests_properties(h11_readme_commands PROPERTIES LABELS regression)
 endif()
+
+# ---- H11c: the Linux findings F-L3, F-L4, F-L5 ------------------------------------------------------
+# A1 (F-L3): the yosys probe accepts only a yosys that can run read_slang
+add_test(NAME h11c_yosys_probe
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_SOURCE_DIR}/tests/regression/check_yosys_probe.cmake)
+# A2 (F-L4): a [1:10] vector mines the same assertions as the same values declared [9:0]
+if(PYTHON3_FOUND)
+    add_test(NAME h11c_vcd_ranges
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/regression/check_vcd_ranges.py
+                $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR}/tests/input/h11c/ranges.vcd)
+endif()
+# A6 (F-L5): the configuration harm-coi emits next to a 1600-bit register is accepted by HARM
+if(HARM_COI_OK)
+    add_test(NAME h11c_emit_config_wide
+        COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_predicates.py harm
+                ${CMAKE_SOURCE_DIR}/tests/input/h11c/wide --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
+    set_tests_properties(h11c_emit_config_wide PROPERTIES LABELS coi)
+endif()
