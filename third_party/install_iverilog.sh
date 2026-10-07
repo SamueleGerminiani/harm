@@ -17,4 +17,6 @@ sh autoconf.sh
 make -j"$NThreads"
 make install
 cd / && rm -rf "$work"
-"$installPrefix/bin/iverilog" -V 2>&1 | head -1 | tee "$installPrefix/.harm_version"
+# not 'iverilog -V | head -1': with pipefail, iverilog killed by SIGPIPE would fail the script
+version="$("$installPrefix/bin/iverilog" -V 2>&1 || true)"
+echo "${version%%$'\n'*}" | tee "$installPrefix/.harm_version"
