@@ -47,6 +47,11 @@ endif()
 if(NOT HARM_IVERILOG STREQUAL "${W}/path/iverilog")
     string(APPEND errors "\n  without third_party: HARM_IVERILOG = '${HARM_IVERILOG}', want the PATH one")
 endif()
+# a tool found on PATH is already there: only third_party directories are put first on the tests'
+# PATH (prepending e.g. /usr/bin would shadow the user's other tools)
+if(HARM_TOOLS_PATH)
+    string(APPEND errors "\n  without third_party: HARM_TOOLS_PATH = '${HARM_TOOLS_PATH}', want empty")
+endif()
 
 if(errors)
     message(FATAL_ERROR "tool lookup:${errors}")

@@ -8,7 +8,7 @@
 # harm_find_tools(<third_party dir> <work dir>) sets, in the caller's scope:
 #   HARM_VERILATOR, HARM_IVERILOG, HARM_YOSYS   the programs ("" if missing or unusable)
 #   HARM_VERILATOR_VERSION, HARM_IVERILOG_VERSION, HARM_YOSYS_VERSION
-#   HARM_TOOLS_PATH                             their directories, to put first on each test's PATH
+#   HARM_TOOLS_PATH                             the third_party ones' directories, put first on each test's PATH
 include(${CMAKE_CURRENT_LIST_DIR}/HarmYosysProbe.cmake)
 
 function(_harm_find_one name tp out)
@@ -57,10 +57,15 @@ function(harm_find_tools tp work)
         endif()
     endif()
 
+    # only third_party directories: a tool found on PATH is already there, and prepending e.g.
+    # /usr/bin would shadow the user's other tools
     foreach(p vprog iprog yprog)
         if(${p})
             get_filename_component(d ${${p}} DIRECTORY)
-            list(APPEND path ${d})
+            string(FIND "${d}/" "${tp}/" at)
+            if(at EQUAL 0)
+                list(APPEND path ${d})
+            endif()
         endif()
     endforeach()
     list(REMOVE_DUPLICATES path)
