@@ -1,6 +1,6 @@
 # H11e plan: fixtures and oracles independent of the Verilator version (findings F-L6, F-L7, F-L8)
 
-*Status: approved 2026-10-07 by the user (F-L7 option (a); fix F-L6 and F-L8); in progress. Branch: `ms/H11e-fixtures`, from `ms/H11d-tools` @ `57ccff9`: the findings show only with H11d's Verilator 5.052, so H11e is merged after H11d. Effort: 1 d.*
+*Status: approved 2026-10-07 by the user (F-L7 option (a); fix F-L6 and F-L8; F-L10 option (a); H9 option (b)); reviewed and merged into `dev` 2026-10-08. Open: the macOS fixture table on the new traces, and macOS `ctest` (the user). Branch: `ms/H11e-fixtures`, from `ms/H11d-tools` @ `57ccff9`: the findings show only with H11d's Verilator 5.052, so H11e is merged after H11d. Effort: 1 d.*
 
 The findings are in H11d's VALIDATION entry. All are test machinery; HARM is not changed.
 
