@@ -394,8 +394,6 @@
       ]
     }
   },
-  "unknown": [
-    "unnamedblk1::i"
-  ],
+  "unknown": [],
   "predicates": []
 }

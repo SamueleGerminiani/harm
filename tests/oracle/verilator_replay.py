@@ -200,7 +200,9 @@ def main():
     for i in supported:
         props.append((f"a{i}", checked[i]))
         imp = split_implication(checked[i])
-        neg = f"{imp[0]} {imp[1]} !({imp[2]})" if imp else f"!({checked[i]})"
+        # 'not', the property negation (IEEE 1800): '!' is Boolean and invalid on a sequence or a
+        # property consequent (##1 b, s_eventually, until), which Verilator >= 5.052 rejects (F-L6)
+        neg = f"{imp[0]} {imp[1]} not ({imp[2]})" if imp else f"not ({checked[i]})"
         controls.append((f"a{i}", neg))
     fails = simulate(sigs, rows, props, work, "sim") if props else {}
     control_fails = simulate(sigs, rows, controls, work, "ctl") if controls else {}

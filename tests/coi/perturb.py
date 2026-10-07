@@ -232,12 +232,18 @@ def influence(fixture, work, coi):
     run(base, [], "base.vcd")
     ref = read_vcd(base / "base.vcd", meta["vcd_scope"], meta["clock"])
     ok, skipped, checked, aliased = True, [], 0, []
+    # H11e (F-L8): the reference and perturbed traces come from this run's simulator, which may dump
+    # other signals than the one that made the committed trace (e.g. an unnamed block's loop
+    # variable): only signals both of them have are compared
+    absent = sorted(n for n in set(cone) | (unknown & set(w)) if n not in ref)
+    if absent:
+        print(f"  not in this simulator's trace, not checked: {', '.join(absent)}")
     # every visible signal is forced, unknown ones included: a known cone that omits it is a claim
-    for s in sorted(set(cone) | (unknown & set(w))):
+    for s in sorted((set(cone) | (unknown & set(w))) - set(absent)):
         if same_net(s, meta["clock"]):
             aliased.append(f"{s} (the clock)")
             continue                        # the clock is never a source (D-013)
-        excluded = [t for t in cone if t != s and s not in cone[t]]
+        excluded = [t for t in cone if t != s and s not in cone[t] and t in ref]
         aliased += [f"{s}/{t}" for t in excluded if same_net(s, t)]
         excluded = [t for t in excluded if not same_net(s, t)]
         if not excluded:
