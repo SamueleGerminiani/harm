@@ -1,4 +1,6 @@
 #!/bin/bash
+# stop at the first failure: a broken clone (network) used to go on and install a wrong tree (H11d)
+set -euo pipefail
 
 NThreads=1
 
@@ -12,7 +14,7 @@ fi
 if [ $# -eq 0 ]
 then
     installPrefix="$(pwd)/antlr4"
-    mkdir antlr4
+    mkdir -p antlr4
 else
     installPrefix="$1"
 fi
@@ -29,6 +31,7 @@ echo "Building with CC=$CC CXX=$CXX ($("$CXX" --version | head -1))${SDKROOT:+ S
 
 echo "Installing ANTLR4 C++ runtime to: $installPrefix"
 
+rm -rf antlr4_tmp   # left by an interrupted run
 git clone https://github.com/antlr/antlr4 --depth 1 antlr4_tmp
 cd antlr4_tmp/runtime/Cpp
 mkdir build && cd build
