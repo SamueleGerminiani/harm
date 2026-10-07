@@ -11,6 +11,8 @@ uart,C6,1209,12.15,,,,0.51,0.421,60,True,
 uart,C7,410,5.98,51,23->23,7683->5604,1.0,1.0,60,True,
 uart_to_bus,C6,34466,277.55,,,,0.574,0.375,60,True,
 uart_to_bus,C7,,600,,,,,,,False,timeout (600 s)
+ethernet_smii_txrx,C6,344,10.08,,,,0.483,0.459,60,True,
+ethernet_smii_txrx,C7,84,3.62,2,27->27,13379->9989,1.0,1.0,40,True,
 srdy-drdy-library,C6,507,5.92,,,,0.811,0.591,60,True,
 srdy-drdy-library,C7,277,6.77,39,19->19,12104->9582,1.0,1.0,60,True,
 ima_adpcm_encoder,C6,3259,57.06,,,,0.737,0.582,80,True,
@@ -18,8 +20,8 @@ ima_adpcm_encoder,C7,809,169.38,631,111->111,184148->121429,1.0,1.0,80,True,
 ima_adpcm_decoder,C6,2670,70.93,,,,0.551,0.386,60,True,
 ima_adpcm_decoder,C7,790,131.92,9,110->110,488253->350870,1.0,1.0,60,True,
 sha3,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
-sha3,C6,0,0.8,,,,,,,False,"Message: Constant ''d0' is wider than 511 bits			In formula: «f_permutation_::out,logic» == 1600'd0"
-sha3,C7,0,0.8,,,,,,,False,"Message: Constant ''d0' is wider than 511 bits			In formula: «f_permutation_::out,logic» == 1600'd0"
+sha3,C6,1547,24.21,,,,0.382,0.271,60,True,
+sha3,C7,398,12.74,4,29->29,9992->6495,1.0,1.0,60,True,
 gaussian_noise_generator,C6,17096,272.77,,,,0.195,0.089,60,True,
 gaussian_noise_generator,C7,902,85.59,2,313->313,124167->27728,1.0,1.0,40,True,
 video_stream_scaler,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)

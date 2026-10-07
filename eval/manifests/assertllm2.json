@@ -62,6 +62,23 @@
   "args": []
  },
  {
+  "name": "ethernet_smii_txrx",
+  "trace": {
+   "vcd": "build/assertllm2/traces/ethernet_smii_txrx/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/ethernet_smii_txrx/smii_txrx.v"
+   ],
+   "top": "smii_txrx"
+  },
+  "faults": "build/assertllm2/traces/ethernet_smii_txrx/faults",
+  "args": []
+ },
+ {
   "name": "srdy-drdy-library",
   "trace": {
    "vcd": "build/assertllm2/traces/srdy-drdy-library/golden/golden_seed1.vcd",

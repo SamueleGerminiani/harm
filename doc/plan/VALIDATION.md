@@ -669,7 +669,7 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     yosys failed on counter
     ```
   - The cross-check is optional, and no yosys ≥ 0.67 is installed here.
-  - **Not fixed here:** it is a new milestone, and the user decides. A plausible fix is to run `read_slang --help` and test the exit code, or to check `yosys -V` ≥ 0.67.
+  - **Fixed in H11c:** the probe runs `read_slang` on a one-line module (`cmake/HarmYosysProbe.cmake`).
 - **Finding F-L1: HARM does not build on Linux (g++ 11, x86_64).** This blocks A1, A2, A3 and the evaluation.
   - The line is `src/exp/include/visitors/ExpToZ3Visitor.hh:73`, from H2 (`059d7de`), and it is the only compile error (`make -k`):
     ```
@@ -704,7 +704,10 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     - `versatile_counter`: harm-coi needs `--include` for `` `include "versatile_counter_defines.v" ``, and the manifest format (`run_eval.py`) has no include directories.
     - `gost28147-89` and `present_cipher_encryption_core` simulate but were left out to keep 10. Both are crypto datapaths with 256/512-bit or 80-bit random inputs.
     - `i2c_slave`: its file set does not elaborate in pyslang (3 errors).
-  - **AssertLLM2 table (after H11b; `eval/results/assertllm2`), 9 designs:** `ethernet_smii_txrx` was removed from the manifest after F-L4 (an evaluation-input correction).
+  - **AssertLLM2 table (after H11b and H11c; `eval/results/assertllm2`), 10 designs:**
+    - `ethernet_smii_txrx` was removed from the manifest after F-L4 (an evaluation-input correction), then restored after H11c fixed it.
+    - Its rows and `sha3`'s C6/C7 were re-run on `v3-168-g73b214f` (H11c merged).
+    - The other rows cannot change with H11c: no other design has a vector not declared `[n:0]` or a signal over 511 bits.
     - **C0 (`--generate-config`) times out on every design tried,** even under the user's 10-minute cap (`--timeout 600`): `aes_cipher` C0–C4, and C0 of `uart`, `sha3` and `video_stream_scaler`.
       - The generated configuration has one template, `G({..#1&..} |-> P0)`, with `dtLimits="5D,3W,15A"`, over every Boolean signal (26 for `uart`). On random-stimulus traces the decision tree explores its whole space.
       - Checked by hand: `uart` C0 without `--fd` does not finish in 300 s, so the cost is mining, not fault coverage.
@@ -719,18 +722,19 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     | `srdy-drdy-library` | 507 | 6 | 60% | 277 | 7 | 60% |
     | `ima_adpcm_encoder` | 3,259 | 57 | 80% | 809 | 169 | 80% |
     | `ima_adpcm_decoder` | 2,670 | 71 | 60% | 790 | 132 | 60% |
-    | `sha3` | error (F-L5) | | | error (F-L5) | | |
+    | `ethernet_smii_txrx` (after H11c) | 344 | 10 | 60% | 84 | 4 | 40% |
+    | `sha3` (after H11c) | 1,547 | 24 | 60% | 398 | 13 | 60% |
     | `gaussian_noise_generator` | 17,096 | 273 | 60% | 902 | 86 | 40% |
     | `video_stream_scaler` | 13,392 | 157 | 20% | 3,327 | 154 | 20% |
 
     - Coverage is the share of the 5 single-bug mutants that the mined assertions detect (`--fd`).
     - C7 reduces C6's output by 1.8–19× (filter `exact` plus the reductions), and its mean `coiFrac` and `coiDepthFit` are 1.0. Coverage is unchanged except on `gaussian_noise_generator` (60% → 40%).
-  - **Finding F-L4: HARM rejects ascending vector ranges in a VCD.** `ethernet_smii_txrx` declares `input [1:10] state`, and HARM stops on it: "Reverse bit direction not supported, vectors must be defined like this: [MSB:LSB] with MSB > LSB". This is a HARM limitation, not fixed here.
-  - **Finding F-L5: harm-coi emits predicates that HARM cannot parse.** On `sha3`, the H10 predicates include `f_permutation_::out == 1600'd0`, and HARM rejects the configuration: "Constant ''d0' is wider than 511 bits". Not fixed here. A fix could be in harm-coi (skip predicates on signals wider than HARM's limit) or in HARM.
+  - **Finding F-L4: HARM rejects ascending vector ranges in a VCD.** `ethernet_smii_txrx` declares `input [1:10] state`, and HARM stops on it: "Reverse bit direction not supported, vectors must be defined like this: [MSB:LSB] with MSB > LSB". **Fixed in H11c (D-028)**, together with SystemVerilog vector indexing.
+  - **Finding F-L5: harm-coi emits predicates that HARM cannot parse.** On `sha3`, the H10 predicates include `f_permutation_::out == 1600'd0`, and HARM rejects the configuration: "Constant ''d0' is wider than 511 bits". **Fixed in H11c:** harm-coi drops predicates wider than 511 bits, with the reason.
   - **Differences from the Mac:** the counts are equal on every local design (A1). Linux is 1.2–1.4× slower on the longer runs.
     - F-L1 (fixed in H11b).
     - F-L2 (`ImplicationTest` timeout, fixed in H11b).
-    - F-L3, F-L4 and F-L5 (open).
+    - F-L3, F-L4 and F-L5 (fixed in H11c).
     - The environment needs Verilator ≥ 5 first on `PATH`.
 - **GoldMine (§4c):** not run (optional).
 
@@ -790,4 +794,4 @@ Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed
   | `ethernet_smii_txrx` (`input [1:10] state`) | F-L4 | 344 | 10 | 60% | 84 | 4 | 40% |
   | `sha3` (1600-bit `f_permutation_::out`) | F-L5 | 1,547 | 25 | 60% | 398 | 13 | 60% |
 
-  Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. To be added to the H11 AssertLLM2 table on `ms/H11-linux` (and `ethernet_smii_txrx` restored to its manifest) after H11c is merged.
+  Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. Added to the H11 AssertLLM2 table on `ms/H11-linux` after the merge, and `ethernet_smii_txrx` restored to its manifest. Re-run there on `v3-168-g73b214f`, with the same counts.
