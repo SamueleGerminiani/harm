@@ -73,6 +73,10 @@ if(VERILATOR_FOUND AND PYTHON3_FOUND)
     verilator_replay(temporal2v ${H1}/temporal2v.csv ${H1}/temporal2v.xml)
     verilator_replay(edit ${CMAKE_SOURCE_DIR}/examples/edit/edit.csv ${CMAKE_SOURCE_DIR}/examples/edit/edit.xml)
     verilator_replay(ex3 ${CMAKE_SOURCE_DIR}/examples/ex3/ex3.csv ${CMAKE_SOURCE_DIR}/examples/ex3/ex3Config.xml)
+    # H11e: the s_eventually control monitor against hand-labelled traces
+    add_test(NAME verilator_replay_monitor_selftest
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/verilator_replay.py --self-test)
+    set_tests_properties(verilator_replay_monitor_selftest PROPERTIES LABELS verilator)
 else()
     message(STATUS "Verilator or python3 not found: the verilator_replay validation tests are skipped")
 endif()

@@ -107,6 +107,46 @@ def past_encoding(body):
     return " && ".join(conds) + f" |-> ({q})"
 
 
+def boolean_antecedent(ant):
+    """a Boolean expression true at the cycle where the antecedent 'b0 ##1 ... ##1 bk' (Boolean
+    steps) ends a match: 'cyc >= k && $past(b0, k) && ... && (bk)'; None for other antecedents"""
+    steps = split_top(ant, "##1")
+    if not all(delay_free(x) for x in steps):
+        return None
+    k = len(steps) - 1
+    conds = [f"cyc >= {k}"] if k else []
+    for j, b in enumerate(steps):
+        d = k - j
+        conds.append(f"({b})" if d == 0 else f"$past({b}, {d})")
+    return " && ".join(conds)
+
+
+def eventually_monitor(label, body):
+    """H11e (F-L10): the control of 'A |-> s_eventually P' / 'A |=> s_eventually P' is
+    'A |-> not (s_eventually P)' = 'A |-> always !P' (IEEE 1800), which Verilator 5.052 compiles but
+    never fails. For Boolean A (or a '##1' chain of Boolean steps) and Boolean P it is checked by a
+    monitor instead: armed once A matches, it fails at every later cycle where P holds (from the
+    same cycle for |->, which includes the present; from the next one for |=>). Returns the
+    monitor's SystemVerilog, or None if the assertion is not of this form."""
+    imp = split_implication(body)
+    if imp is None:
+        return None
+    ant, op, cons = imp
+    m = re.match(r"^s_eventually\s+(.*)$", cons.strip())
+    if not m or not delay_free(m.group(1)):
+        return None
+    a = boolean_antecedent(ant)
+    if a is None:
+        return None
+    q = m.group(1)
+    now = f"(arm_{label} || ({a}))" if op == "|->" else f"arm_{label}"
+    return (f"  logic arm_{label} = 0;\n"
+            f"  always @(posedge clk) begin\n"
+            f"    if ({now} && ({q})) $display(\"FAIL {label} %0t\", $time);\n"
+            f"    if ({a}) arm_{label} <= 1;\n"
+            f"  end\n")
+
+
 def property_body(line):
     m = re.match(r"^assert property \(@\(posedge clk\) \((.*)\)\)$", line.strip())
     if not m:
@@ -114,8 +154,8 @@ def property_body(line):
     return m.group(1)
 
 
-def testbench(sigs, rows, props):
-    """props: list of (label, property body)."""
+def testbench(sigs, rows, props, monitors=()):
+    """props: list of (label, property body); monitors: SystemVerilog blocks (eventually_monitor)."""
     decl = "\n".join(f"  logic [{w - 1}:0] {n};" if w > 1 else f"  logic {n};" for n, w in sigs)
     drive = []
     for r in rows:
@@ -125,7 +165,8 @@ def testbench(sigs, rows, props):
         f'  {label}: assert property (@(posedge clk) ({body})) else $display("FAIL {label} %0t", $time);'
         for label, body in props)
     counter = "  logic [31:0] cyc = 0;\n  always @(posedge clk) cyc <= cyc + 1;\n"
-    return (f"module tb;\n  logic clk = 0;\n{decl}\n{counter}{checks}\n  initial begin\n" + "\n".join(drive) +
+    return (f"module tb;\n  logic clk = 0;\n{decl}\n{counter}{checks}\n" + "".join(monitors) +
+            "  initial begin\n" + "\n".join(drive) +
             "\n    #1 $finish;\n  end\nendmodule\n")
 
 
@@ -146,8 +187,8 @@ def classify(sigs, rows, body, work):
     return "error: " + errors[0]
 
 
-def simulate(sigs, rows, props, work, name):
-    (work / f"{name}.sv").write_text(testbench(sigs, rows, props))
+def simulate(sigs, rows, props, work, name, monitors=()):
+    (work / f"{name}.sv").write_text(testbench(sigs, rows, props, monitors))
     r = verilator(["--binary", "--timing", "--assert", "-Wno-fatal", "-Wno-lint", "--top-module", "tb",
                    "-o", name, "--Mdir", f"obj_{name}", f"{name}.sv"], work)
     if r.returncode != 0:
@@ -161,13 +202,43 @@ def simulate(sigs, rows, props, work, name):
     return fails
 
 
+def self_test():
+    """H11e: the s_eventually control monitor against hand-labelled traces (IEEE 1800:
+    'A |-> not (s_eventually P)' fails iff P holds at or after a match of A; for |=>, after it)."""
+    sigs = [("a", 1), ("b", 1), ("p", 1)]
+    #        rows: (a, b, p) per cycle                              assertion            fires
+    cases = [([("1", "0", "0"), ("0", "0", "0"), ("0", "0", "1")], "a |-> s_eventually p", True),
+             ([("0", "0", "1"), ("1", "0", "0"), ("0", "0", "0")], "a |-> s_eventually p", False),
+             ([("0", "0", "0"), ("1", "0", "1"), ("0", "0", "0")], "a |-> s_eventually p", True),
+             ([("0", "0", "0"), ("1", "0", "1"), ("0", "0", "0")], "a |=> s_eventually p", False),
+             ([("1", "0", "0"), ("0", "1", "0"), ("0", "0", "1")], "a ##1 b |-> s_eventually p", True),
+             ([("1", "0", "0"), ("0", "0", "0"), ("0", "1", "0"), ("0", "0", "0")],
+              "a ##1 b |-> s_eventually b", False)]
+    ok = True
+    with tempfile.TemporaryDirectory() as t:
+        work = Path(t)
+        for n, (rows, body, want) in enumerate(cases):
+            mon = eventually_monitor("c", body)
+            assert mon is not None, body
+            got = "c" in simulate(sigs, rows, [], work, f"self{n}", [mon])
+            print(f"  {'ok  ' if got == want else 'FAIL'} {body} on {rows}: fires={got}, expected {want}")
+            ok &= got == want
+    print("self-test:", "PASS" if ok else "FAIL")
+    sys.exit(0 if ok else 1)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--harm", required=True)
-    ap.add_argument("--csv", required=True)
-    ap.add_argument("--conf", required=True)
+    ap.add_argument("--self-test", action="store_true", help="check the s_eventually control monitor")
+    ap.add_argument("--harm")
+    ap.add_argument("--csv")
+    ap.add_argument("--conf")
     ap.add_argument("--keep", help="keep the generated files in this directory")
     a = ap.parse_args()
+    if a.self_test:
+        self_test()
+    if not (a.harm and a.csv and a.conf):
+        ap.error("--harm, --csv and --conf are required")
 
     sigs, rows = read_csv(a.csv)
     work = Path(a.keep) if a.keep else Path(tempfile.mkdtemp())
@@ -200,23 +271,28 @@ def main():
                 checked[i] = enc
     supported = sorted(checked)
 
-    props, controls = [], []
+    props, controls, monitors = [], [], []
     for i in supported:
         props.append((f"a{i}", checked[i]))
+        mon = eventually_monitor(f"a{i}", checked[i])
+        if mon is not None:
+            monitors.append(mon)
+            continue
         imp = split_implication(checked[i])
         # 'not', the property negation (IEEE 1800): '!' is Boolean and invalid on a sequence or a
         # property consequent (##1 b, s_eventually, until), which Verilator >= 5.052 rejects (F-L6)
         neg = f"{imp[0]} {imp[1]} not ({imp[2]})" if imp else f"not ({checked[i]})"
         controls.append((f"a{i}", neg))
     fails = simulate(sigs, rows, props, work, "sim") if props else {}
-    control_fails = simulate(sigs, rows, controls, work, "ctl") if controls else {}
+    control_fails = simulate(sigs, rows, controls, work, "ctl", monitors) if controls or monitors else {}
 
     ok = True
     print(f"{a.conf}: {len(bodies)} assertions; Verilator: "
           f"{sum(s == 'ok' for s in status.values())} checked as printed, "
           f"{sum(s == 'encoded' for s in status.values())} checked through the $past encoding, "
           f"{sum(s == 'unsupported' for s in status.values())} unsupported, "
-          f"{sum(s.startswith('error') for s in status.values())} lint errors")
+          f"{sum(s.startswith('error') for s in status.values())} lint errors; "
+          f"{len(monitors)} controls by monitor (s_eventually)")
     for i, s in status.items():
         if s.startswith("error"):
             ok = False
