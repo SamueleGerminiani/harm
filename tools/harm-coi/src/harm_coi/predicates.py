@@ -19,6 +19,9 @@ BO = ast.BinaryOperator
 COMPARISONS = {BO.Equality: "==", BO.Inequality: "!=", BO.CaseEquality: "==", BO.CaseInequality: "!=",
                BO.LessThan: "<", BO.LessThanEqual: "<=", BO.GreaterThan: ">", BO.GreaterThanEqual: ">="}
 MIRROR = {"==": "==", "!=": "!=", "<": ">", "<=": ">=", ">": "<", ">=": "<="}
+# HARM keeps at most this many bits of a logic signal (it truncates wider ones when reading the
+# trace, minerUtils.cc toVarDeclaration), so a predicate on a wider signal is dropped (H11c, F-L5)
+HARM_MAX_LOGIC_BITS = 511
 
 
 # ---- predicate trees: ("sig", atom) | ("bit", atom, i) | ("cmp", op, operand, value, width)
@@ -27,6 +30,7 @@ MIRROR = {"==": "==", "!=": "!=", "<": ">", "<=": ">=", ">": "<", ">=": "<="}
 class Harvest:
     preds: dict = field(default_factory=lambda: defaultdict(lambda: {"targets": set(), "src": set()}))
     dropped: list = field(default_factory=list)   # (reason, src)
+    widths: dict = field(default_factory=dict)    # atom -> width of the signal it reads
 
 
 class Harvester:
@@ -69,11 +73,13 @@ class Harvester:
             e = e.operand
         r = self.x.resolve(e)
         if r is not None and r[0] == "sig" and r[2].canonicalType.kind not in STRUCTS:
+            self.out.widths[r[1]] = r[2].bitWidth
             return ("sig", r[1], r[2].bitWidth)
         if e.kind == EK.ElementSelect:
             r = self.x.resolve(e.value)
             i = self.constant(e.selector)
             if r is not None and r[0] == "sig" and i is not None:
+                self.out.widths[r[1]] = r[2].bitWidth
                 return ("bit", r[1], i)
         return None
 
@@ -118,6 +124,16 @@ class Harvester:
             return atom if positive else ("not", atom)
         return ("cmp", op, atom, v, w)
 
+    def width(self, p):
+        """the widest signal or constant a predicate tree reads"""
+        if p[0] in ("sig", "bit"):
+            return self.out.widths.get(p[1], 1)
+        if p[0] == "cmp":
+            return max(p[4], self.width(p[2]))
+        if p[0] == "not":
+            return self.width(p[1])
+        return max(self.width(i) for i in p[1])
+
     # ------------------------------------------------------------------ rendering
     def name(self, atom):
         n = self.vis.get(atom)
@@ -158,6 +174,9 @@ class Harvester:
         """record p (a tree, or None if not translatable) with the target atoms"""
         if p is None:
             self.out.dropped.append((f"{kind}: not translatable", where))
+            return
+        if self.width(p) > HARM_MAX_LOGIC_BITS:
+            self.out.dropped.append((f"{kind}: wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit", where))
             return
         try:
             text = self.render(p)

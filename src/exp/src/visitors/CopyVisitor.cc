@@ -220,8 +220,10 @@ UNARY_FUNCTION(IntRose, _proposition)
 void CopyVisitor::visit(IntBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
   //the constructor takes (lower bound, upper bound)
-  _int = generatePtr<IntBitSelector>(_int, o.getLowerBound(),
-                                     o.getUpperBound());
+  auto sel = generatePtr<IntBitSelector>(_int, o.getLowerBound(),
+                                       o.getUpperBound());
+  sel->setSourceIndices(o.getSourceLeft(), o.getSourceRight());
+  _int = sel;
 }
 
 void CopyVisitor::visit(IntSetMembership &o) {
@@ -278,8 +280,10 @@ TERNARY(FloatTernary, _float)
 void CopyVisitor::visit(LogicBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
   //the constructor takes (lower bound, upper bound)
-  _logic = generatePtr<LogicBitSelector>(_logic, o.getLowerBound(),
-                                         o.getUpperBound());
+  auto sel = generatePtr<LogicBitSelector>(_logic, o.getLowerBound(),
+                                       o.getUpperBound());
+  sel->setSourceIndices(o.getSourceLeft(), o.getSourceRight());
+  _logic = sel;
 }
 
 void CopyVisitor::visit(LogicSetMembership &o) {

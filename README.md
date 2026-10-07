@@ -259,6 +259,7 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 | Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
 | Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
 | Hierarchical names | `u_core.state` | The same as `u_core::state` (the name used in VCD traces). |
+| Bit and part selects | `asc[2]`, `off[6:3] == 4'd9` | On a vector with a declared range in the VCD (`[1:10]`, `[10:3]`, `[7:0]`), the indices are SystemVerilog's: inside the range and in its direction, otherwise an error. Assertions print them as written. Without a declared range (CSV traces), an index is a bit position counted from the right, from 0. Packed multi-dimensional vectors are seen flattened (`[1:0][3:0]` is `[7:0]`). Bit-blasted vectors (one VCD `$var` per bit) take the highest index as the MSB. See D-028. |
 
 Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (where `{...}` is a SERE).
 

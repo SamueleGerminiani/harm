@@ -1178,6 +1178,44 @@ void PropositionParserHandler::exitNumeric(
         right = left;
       }
 
+      // D-028: on a variable with a declared range [l:r] (from the VCD), the indices are
+      // SystemVerilog's: inside the range, in its direction, at bit position |i - r| from the
+      // right. Otherwise they are bit positions counted from the right, as before H11c.
+      std::string varName;
+      if (_numericExpressions.isTopLogic()) {
+        if (auto v = std::dynamic_pointer_cast<LogicVariable>(
+                _numericExpressions.topLogic())) {
+          varName = v->getName();
+        }
+      } else if (_numericExpressions.isTopInt()) {
+        if (auto v = std::dynamic_pointer_cast<IntVariable>(
+                _numericExpressions.topInt())) {
+          varName = v->getName();
+        }
+      }
+      long dl = -1, dr = -1;
+      bool declared = !varName.empty() && _trace != nullptr &&
+                      _trace->getDeclaredRange(varName, dl, dr);
+      size_t srcLeft = left, srcRight = right;
+      if (declared) {
+        long lo = std::min(dl, dr), hi = std::max(dl, dr);
+        for (size_t i : {left, right}) {
+          messageErrorIf((long)i < lo || (long)i > hi,
+                         "Index " + std::to_string(i) +
+                             " is outside the declared range [" +
+                             std::to_string(dl) + ":" + std::to_string(dr) +
+                             "] of '" + varName + "'" + printErrorMessage());
+        }
+        messageErrorIf(left != right && ((dl >= dr) != (left >= right)),
+                       "Part-select [" + std::to_string(left) + ":" +
+                           std::to_string(right) +
+                           "] is against the direction of the declared range [" +
+                           std::to_string(dl) + ":" + std::to_string(dr) +
+                           "] of '" + varName + "'" + printErrorMessage());
+        left = (size_t)std::labs((long)left - dr);
+        right = (size_t)std::labs((long)right - dr);
+      }
+
       size_t lower_bound = left < right ? left : right;
       size_t upper_bound = left > right ? left : right;
       messageErrorIf(upper_bound >= type.second,
@@ -1185,16 +1223,22 @@ void PropositionParserHandler::exitNumeric(
                          printErrorMessage());
 
       if (_numericExpressions.isTopInt()) {
-        IntExpressionPtr le_r = nullptr;
-        le_r = generatePtr<IntBitSelector>(
+        auto sel = generatePtr<IntBitSelector>(
             _numericExpressions.topInt(), lower_bound, upper_bound);
+        if (declared) {
+          sel->setSourceIndices(srcLeft, srcRight);
+        }
+        IntExpressionPtr le_r = sel;
         _numericExpressions.pop();
         _numericExpressions.push(le_r);
         return;
       } else if (_numericExpressions.isTopLogic()) {
-        LogicExpressionPtr le_r = nullptr;
-        le_r = generatePtr<LogicBitSelector>(
+        auto sel = generatePtr<LogicBitSelector>(
             _numericExpressions.topLogic(), lower_bound, upper_bound);
+        if (declared) {
+          sel->setSourceIndices(srcLeft, srcRight);
+        }
+        LogicExpressionPtr le_r = sel;
         _numericExpressions.pop();
         _numericExpressions.push(le_r);
         return;

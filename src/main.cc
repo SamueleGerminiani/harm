@@ -487,6 +487,17 @@ void parseCommandLineArguments(int argc, char *args[]) {
                        clc::checkDumpEvalDirectory + "'");
   }
 }
+/// @brief the declared index of bit position pos (from the right) of a variable: with a declared
+/// range [l:r] (D-028) it is r + pos (descending) or r - pos (ascending); otherwise pos
+static long declaredIndex(const harm::TracePtr &trace, const std::string &name,
+                          size_t pos) {
+  long l, r;
+  if (trace->getDeclaredRange(name, l, r)) {
+    return l >= r ? r + (long)pos : r - (long)pos;
+  }
+  return (long)pos;
+}
+
 void genConfigFile(std::string &configFile,
                    const TraceReaderPtr &tr) {
   messageErrorIf(tr == nullptr,
@@ -525,7 +536,7 @@ void genConfigFile(std::string &configFile,
         if (clc::splitLogic && isLogic(type)) {
           for (size_t i = 0; i < size; i++) {
             ofs << "\t\t<prop exp=\"";
-            ofs << name + "[" + std::to_string(i) + "]";
+            ofs << name + "[" + std::to_string(declaredIndex(trace, name, i)) + "]";
             ofs << "\"";
             ofs << " loc=\"c,dt\"/>"
                 << "\n";
@@ -571,7 +582,7 @@ void genConfigFile(std::string &configFile,
       if (clc::splitLogic && isLogic(type)) {
         for (size_t i = 0; i < size; i++) {
           ofs << "\t\t<prop exp=\"";
-          ofs << name + "[" + std::to_string(i) + "]";
+          ofs << name + "[" + std::to_string(declaredIndex(trace, name, i)) + "]";
           ofs << "\"";
           ofs << " loc=\"c,dt\"/>"
               << "\n";
