@@ -661,8 +661,6 @@ The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (
   - Alone (`ctest -R ImplicationTest --timeout 7200`), it passes in 1,598 s. Inside the full parallel run it hit the timeout.
   - `generatedPairsAreSoundOnAllShortTraces` alone takes 369 s.
   - On the Mac, the whole suite passed in 1,931 s, so the test runs well under the limit there. Linux (g++ 11, this machine) is slower.
-  - **Not fixed (out of H11b's scope).** The options are the user's:
-    - a `TIMEOUT` property on the test;
-    - a `slow` label;
-    - or a smaller exhaustive bound.
+  - **Resolved, by the user's choice (2026-10-07):** `ImplicationTest` gets a `TIMEOUT` of 3,600 s (`tests/CMakeLists.txt`). The test itself is unchanged.
+    - The `slow` label was considered: it only lets `ctest -LE slow` skip the test, and does not change the timeout.
 - **Environment note for `eval/LINUX.md`:** the simulation oracles need Verilator ≥ 5 (`--binary --timing`). On this machine the default `verilator` is 4.210, so Verilator 5 must be first on `PATH` and set with `-DVERILATOR_FOUND`.
