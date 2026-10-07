@@ -23,6 +23,9 @@ third_party/spot
 third_party/antlr4
 third_party/boost
 third_party/z3
+third_party/verilator
+third_party/iverilog
+third_party/yosys
 tests/bl_master/bl_master100k.vcd
 .DS_Store
 examples/sobel/ass.txt

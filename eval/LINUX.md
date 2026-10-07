@@ -30,8 +30,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DHARM_COI_PYTHON=$PWD/build/harm
 make -C build -j$(nproc)
 build/harm --version
 ```
-- **Optional, the yosys cross-check (H5):** a yosys ≥ 0.67 with `read_slang`, e.g. OSS CAD Suite; add `-DHARM_COI_YOSYS=<path>/yosys`.
-- **Verilator and Icarus** are needed by the simulation oracles (H1, H4, H5, H1b).
+- **Verilator, Icarus and yosys** (the simulation oracles and the H5 cross-check) are built by `install_all.sh` into `third_party` (H11d). It needs the system packages in the README ("Dependencies"). CMake prints which tools it uses.
 
 ## 2. The pending Linux checks (A2): every milestone's "A5 Linux"
 ```

@@ -46,7 +46,20 @@ add_test(NAME h1_skip_invalid_props
 set_tests_properties(h1_skip_invalid_props PROPERTIES LABELS regression)
 
 # ---- H1 validation: Verilator replay of HARM's SVA output (only if Verilator and Python exist) -----
-find_program(VERILATOR_FOUND verilator)
+# H11d: Verilator, Icarus and yosys from third_party (install_{verilator,iverilog,yosys}.sh), else
+# from PATH; unusable versions are treated as missing (cmake/HarmTools.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/HarmTools.cmake)
+unset(VERILATOR_FOUND CACHE)   # cached by find_program before H11d
+unset(HARM_COI_YOSYS CACHE)
+harm_find_tools(${CMAKE_SOURCE_DIR}/third_party ${CMAKE_CURRENT_BINARY_DIR})
+foreach(t VERILATOR IVERILOG YOSYS)
+    if(HARM_${t})
+        message(STATUS "${t}: ${HARM_${t}} (${HARM_${t}_VERSION})")
+    else()
+        message(STATUS "${t}: not found (third_party/install_all.sh installs it)")
+    endif()
+endforeach()
+set(VERILATOR_FOUND ${HARM_VERILATOR})
 find_program(PYTHON3_FOUND python3)
 if(VERILATOR_FOUND AND PYTHON3_FOUND)
     function(verilator_replay name csv conf)
@@ -164,12 +177,14 @@ if(HARM_COI_OK)
     add_test(NAME h5_unit
         COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/tools/harm-coi/tests)
     set_tests_properties(h5_unit PROPERTIES LABELS coi)
-    # yosys with read_slang (>= 0.67, e.g. OSS CAD Suite) for the optional validation cross-check
-    find_program(HARM_COI_YOSYS yosys)
-    include(${CMAKE_SOURCE_DIR}/cmake/HarmYosysProbe.cmake)
-    harm_yosys_has_read_slang("${HARM_COI_YOSYS}" ${CMAKE_CURRENT_BINARY_DIR} HARM_COI_XCHECK)
+    # yosys with read_slang (>= 0.67; third_party/install_yosys.sh) for the validation cross-check
+    set(HARM_COI_YOSYS ${HARM_YOSYS})
+    set(HARM_COI_XCHECK FALSE)
+    if(HARM_YOSYS)
+        set(HARM_COI_XCHECK TRUE)
+    endif()
     if(NOT HARM_COI_XCHECK)
-        message(STATUS "HARM_COI_YOSYS (${HARM_COI_YOSYS}) has no read_slang: the H5 yosys cross-check is skipped")
+        message(STATUS "no yosys with read_slang: the H5 yosys cross-check is skipped")
     endif()
     # the H4 fixtures, and the H5 validation design (no hand-written cones: simulation and yosys only)
     foreach(design counter arbiter fsm hier structs multipath h5/constructs)
@@ -369,3 +384,14 @@ endif()
 add_test(NAME h11d_tool_lookup
     COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
+
+# H11d: every test here runs with the chosen tools first on PATH (the fixture scripts call
+# verilator and iverilog by name), whatever the user's PATH is
+if(HARM_TOOLS_PATH)
+    set(_harm_env "")
+    foreach(d ${HARM_TOOLS_PATH})
+        list(APPEND _harm_env "PATH=path_list_prepend:${d}")
+    endforeach()
+    get_property(_harm_tests DIRECTORY PROPERTY TESTS)
+    set_tests_properties(${_harm_tests} PROPERTIES ENVIRONMENT_MODIFICATION "${_harm_env}")
+endif()

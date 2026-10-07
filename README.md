@@ -56,6 +56,7 @@ For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clan
 * [boost 1.83+](https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/)
 * [Z3 4.13](https://github.com/Z3Prover/z3) (optional, for `--reduce equiv`/`implies` and `--atom-premises`; build with `-DHARM_WITH_Z3=OFF` to do without)
 * Python ≥ 3.11 with [pyslang](https://pypi.org/project/pyslang/) (optional, only for `harm-coi`, see below)
+* For the tests only (optional; built by `install_all.sh` unless `--no-tools`): [Verilator 5.052](https://github.com/verilator/verilator) (the simulation oracles), [Icarus Verilog 13.0](https://github.com/steveicarus/iverilog) (a fixture generator) and [yosys 0.69](https://github.com/YosysHQ/yosys) with `read_slang` (the harm-coi cross-check). CMake prefers the ones in `third_party`, then those on `PATH`; a Verilator older than 5, or a yosys without `read_slang`, is treated as missing and its tests are skipped
 
   
 
@@ -65,6 +66,17 @@ For now, we support only Linux and Mac OS (both x86 and arm64) with gcc and clan
 ```
 sudo apt-get install -y uuid-dev pkg-config
 ```
+For the tools (Verilator, Icarus, yosys), also:
+```
+sudo apt-get install -y autoconf flex bison help2man gperf perl gawk libfl-dev zlib1g-dev libreadline-dev tcl-dev libffi-dev python3
+```
+yosys needs CMake ≥ 3.28 (HARM needs 3.30) and a C++20 compiler (GCC ≥ 11, Clang ≥ 17 or Xcode ≥ 16.4).
+
+### macOS
+For the tools (Verilator, Icarus, yosys), with Homebrew (the scripts use Homebrew's bison and flex, since macOS's bison is too old):
+```
+brew install autoconf bison flex gperf help2man gawk readline tcl-tk libffi pkg-config cmake
+```
 
 ### Third party
 * Install all dependencies. All these dependencies will be compiled from source.
@@ -72,8 +84,10 @@ sudo apt-get install -y uuid-dev pkg-config
 
 ```
 cd third_party
-bash install_all.sh
+bash install_all.sh              # libraries and tools
+bash install_all.sh --no-tools   # libraries only (enough to build and run HARM)
 ```
+Each tool can also be installed alone: `install_verilator.sh`, `install_iverilog.sh`, `install_yosys.sh`.
 
 > **Use one compiler for everything.** The dependencies and HARM must be built with the same C++ compiler. Mixing C++ runtimes (e.g. two `libstdc++` versions, or `libstdc++` and `libc++`) makes HARM crash at start-up. The install scripts use `CC`/`CXX` (default `cc`/`c++`) and record the compiler in `third_party/<dep>/.harm_toolchain`. CMake warns if HARM is configured with a different one. Example:
 > ```

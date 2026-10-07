@@ -1,6 +1,6 @@
 # H11d plan: the simulation and synthesis tools in `third_party` (Linux and macOS)
 
-*Status: planned 2026-10-07, awaiting approval. Branch: `ms/H11d-tools` (from `dev` @ `e429f47`). Effort: 1–2 d, plus long tool builds and the user's run on the Mac.*
+*Status: approved 2026-10-07 (build from source); in progress. Branch: `ms/H11d-tools` (from `dev` @ `e429f47`). Effort: 1–2 d, plus long tool builds and the user's run on the Mac.*
 
 ## Why
 The H11 Linux checklist needed tools that were not where HARM's build expects them:
@@ -27,8 +27,8 @@ The user asked for the most recent versions, installed locally like the other de
   - slang (in yosys) needs C++20: GCC ≥ 11, Clang ≥ 17 or Xcode ≥ 16.4. The script checks this and stops with a clear message.
 - **`install_all.sh`:** gains a `tools` part, run by default, with `--no-tools` to build only HARM's libraries. The tools are needed only for tests and validation, not to build or run HARM.
 - **Prerequisites, system packages listed in the README, not installed by the scripts:**
-  - **Linux (apt):** `autoconf flex bison help2man gperf libfl-dev zlib1g-dev libreadline-dev tcl-dev libffi-dev pkg-config python3`.
-  - **macOS (Homebrew):** `autoconf bison flex gperf help2man readline tcl-tk libffi pkg-config`.
+  - **Linux (apt):** `autoconf flex bison help2man gperf perl gawk libfl-dev zlib1g-dev libreadline-dev tcl-dev libffi-dev pkg-config python3`, and CMake ≥ 3.28 for yosys (HARM needs 3.30).
+  - **macOS (Homebrew):** `autoconf bison flex gperf help2man gawk readline tcl-tk libffi pkg-config cmake`.
   - macOS's own bison 2.3 is too old, so the scripts put Homebrew's bison and flex first on `PATH`.
 - **Alternative, not recommended:** OSS CAD Suite's prebuilt bundle (`oss-cad-suite-<os>-<arch>-<date>.tgz`, 500–750 MB, Linux and macOS, x64 and arm64).
   - It is faster to install and has all three tools.
