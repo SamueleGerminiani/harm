@@ -585,16 +585,16 @@ Tests written first and committed failing in `e87b42b` (API stubs). Implemented 
   - A3: the timeout query `w64 * v64 == N ⇒ w64 != 1` was false (`w64 = 1`), so Z3 answered "no" at once; it was replaced by a true implication that needs factoring.
 - **Suites:** `ctest -j6`: **211/211**, 31 min. Baselines byte-identical. Linux: pending.
 
-## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; Linux: blocked by F-L1)
+## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; Linux 2026-10-07, Ubuntu 22.04, g++ 11.4.0, after H11b)
 Tests written first and committed failing in `917e103` (`h11_version`, `h11_readme_commands`). `--version` implemented in `7c36fa3`.
 
 | Test | Result |
 |---|---|
 | A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
 | A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
-| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | **not run**: HARM does not build on Linux (finding F-L1 below) |
-| A2 Linux `ctest` and harm-coi pytest | **fail**: HARM does not build on Linux (F-L1), so `ctest` did not run. No summary |
-| A3 the Docker image | **not run**: stopped at F-L1, as `eval/LINUX.md` asks. The image builds the same sources on Linux, so it would fail at the same line |
+| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | first run: **not run**, HARM did not build (F-L1). After H11b: pass. All 97 runs (46 fixtures, 51 examples) have the Mac's counts in every column, `constructs` C2's timeout included (`eval/results/linux-*`) |
+| A2 Linux `ctest` and harm-coi pytest | first run: **fail**, HARM did not build (F-L1). After H11b, on `v3-154-gc1735ca`: 206 of 213 pass (2,263 s, `ctest -j32`, Verilator 5.031). The 7 failures are the yosys cross-check (F-L3 below) |
+| A3 the Docker image | pass (after H11b): `docker/build.sh dev` builds HARM, Z3, harm-coi, Verilator and Icarus from `dev` @ `3b0a9ee`. Its fast tests pass, 172 of 172 (`ctest -LE slow`, 1,677 s) |
 | A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
 | A5 `--version` prints `HARM <git describe>` (`h11_version`) | pass |
 
@@ -646,6 +646,30 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
   - The yosys cross-check is skipped: the only yosys here is 0.47, older than 0.67.
   - Verilator 4.210 is first on `PATH`. The AssertLLM2 traces were made with trivergence's image (Verilator 5.053).
 - **`build/harm --version`:** none, because the build fails. HEAD is `v3-144-g1dc0609`.
+- **After H11b (merged into this branch from `dev`):**
+  - `build/harm --version`: `HARM v3-154-gc1735ca`.
+  - The simulation oracles need Verilator ≥ 5. The checks above were run with OSS CAD Suite's Verilator 5.031, first on `PATH` and set with `-DVERILATOR_FOUND`.
+- **`ctest` (A2) in detail:**
+  ```
+  97% tests passed, 7 tests failed out of 213
+  Total Test time (real) = 2263.35 sec
+  The following tests FAILED:
+    h5_xcheck_yosys_{counter,arbiter,fsm,hier,structs,multipath,constructs} (Failed)  coi xcheck
+  ```
+  - Every Verilator oracle, `h5_unit` and the `h5_*` tests pass.
+  - `ImplicationTest` passes in 1,688 s, under its 3,600 s timeout (F-L2, H11b).
+- **The local designs (§4a, A1):** the counts are equal to the Mac's.
+  - **Times:** Linux is slower on the runs over 5 s, by 1.2–1.4× (`structs` C2 1,505 s against 1,214 s), and 2.3× on `sub_platform1k` C2 (21.6 s against 9.4 s).
+  - **Totals:** fixtures 4,146 s against 3,662 s; examples 139 s against 87 s.
+- **Finding F-L3: the yosys probe accepts any yosys.** `tests/regression/CMakeLists.txt` (H5) registers the cross-check when `yosys -p "help read_slang"` exits with 0.
+  - yosys exits with 0 even for an unknown command: it prints "No such command or cell type: read_slang".
+  - With OSS CAD Suite's yosys 0.47 first on `PATH`, the 7 `h5_xcheck_yosys_*` tests are registered and fail:
+    ```
+    ERROR: No such command: read_slang (type 'help' for a command overview)
+    yosys failed on counter
+    ```
+  - The cross-check is optional, and no yosys ≥ 0.67 is installed here.
+  - **Not fixed here:** it is a new milestone, and the user decides. A plausible fix is to run `read_slang --help` and test the exit code, or to check `yosys -V` ≥ 0.67.
 - **Finding F-L1: HARM does not build on Linux (g++ 11, x86_64).** This blocks A1, A2, A3 and the evaluation.
   - The line is `src/exp/include/visitors/ExpToZ3Visitor.hh:73`, from H2 (`059d7de`), and it is the only compile error (`make -k`):
     ```
