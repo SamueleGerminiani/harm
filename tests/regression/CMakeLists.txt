@@ -73,6 +73,10 @@ if(VERILATOR_FOUND AND PYTHON3_FOUND)
     verilator_replay(temporal2v ${H1}/temporal2v.csv ${H1}/temporal2v.xml)
     verilator_replay(edit ${CMAKE_SOURCE_DIR}/examples/edit/edit.csv ${CMAKE_SOURCE_DIR}/examples/edit/edit.xml)
     verilator_replay(ex3 ${CMAKE_SOURCE_DIR}/examples/ex3/ex3.csv ${CMAKE_SOURCE_DIR}/examples/ex3/ex3Config.xml)
+    # H11e: the s_eventually control monitor against hand-labelled traces
+    add_test(NAME verilator_replay_monitor_selftest
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/verilator_replay.py --self-test)
+    set_tests_properties(verilator_replay_monitor_selftest PROPERTIES LABELS verilator)
 else()
     message(STATUS "Verilator or python3 not found: the verilator_replay validation tests are skipped")
 endif()
@@ -384,6 +388,18 @@ endif()
 add_test(NAME h11d_tool_lookup
     COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
+
+# ---- H11e: fixtures independent of the simulator ----------------------------------------------------
+# A2: a fixture testbench gives the same stimulus under Verilator and Icarus (tests/input/stim.svh,
+# finding F-L7). h5/constructs is not included: Icarus does not parse its RTL.
+if(HARM_VERILATOR AND HARM_IVERILOG AND PYTHON3_FOUND)
+    foreach(design counter arbiter fsm hier structs multipath)
+        add_test(NAME h11e_stim_${design}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/regression/check_stim.py
+                    ${CMAKE_SOURCE_DIR}/tests/input/coi/${design} --iverilog ${HARM_IVERILOG})
+        set_tests_properties(h11e_stim_${design} PROPERTIES LABELS coi)
+    endforeach()
+endif()
 
 # H11d: every test here runs with the chosen tools first on PATH (the fixture scripts call
 # verilator and iverilog by name), whatever the user's PATH is

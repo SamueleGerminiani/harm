@@ -36,10 +36,10 @@
         "t"
        ]
       },
-      "unnamedblk1::i != 32'b0": {
+      "y_loop != 1'b0": {
        "origin": null,
        "unknownVariables": [
-        "unnamedblk1::i"
+        "y_loop"
        ]
       }
      }
@@ -77,10 +77,10 @@
         "t"
        ]
       },
-      "unnamedblk1::i != 32'b0": {
+      "y_loop != 1'b0": {
        "origin": null,
        "unknownVariables": [
-        "unnamedblk1::i"
+        "y_loop"
        ]
       }
      }
@@ -104,10 +104,10 @@
         "t"
        ]
       },
-      "unnamedblk1::i != 32'b0": {
+      "y_loop != 1'b0": {
        "origin": null,
        "unknownVariables": [
-        "unnamedblk1::i"
+        "y_loop"
        ]
       },
       "y_tmp": {
@@ -135,10 +135,10 @@
         "t"
        ]
       },
-      "unnamedblk1::i != 32'b0": {
+      "y_loop != 1'b0": {
        "origin": null,
        "unknownVariables": [
-        "unnamedblk1::i"
+        "y_loop"
        ]
       },
       "y_tmp": {
@@ -147,7 +147,7 @@
       }
      }
     },
-    "unnamedblk1::i != 32'b0": {
+    "y_loop != 1'b0": {
      "coneUnknown": true,
      "origin": null,
      "outOfCone": {},
@@ -195,10 +195,10 @@
         "t"
        ]
       },
-      "unnamedblk1::i != 32'b0": {
+      "y_loop != 1'b0": {
        "origin": null,
        "unknownVariables": [
-        "unnamedblk1::i"
+        "y_loop"
        ]
       }
      }

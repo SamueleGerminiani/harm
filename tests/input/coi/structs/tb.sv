@@ -3,6 +3,7 @@
 `define VCD "trace.vcd"
 `endif
 module tb;
+  `include "stim.svh"   // the stimulus generator (H11e, D-029)
   logic clk = 1'b0;
   logic [2:0] x;
   logic xv;
@@ -20,11 +21,11 @@ module tb;
     $dumpfile(vcd);
     $dumpvars(0, tb);
     if (!$value$plusargs("seed=%d", seed)) seed = 1;
-    void'($urandom(seed));
+    stim_seed(seed);
     x = '0; xv = '0; m = '0;
     repeat (200) begin
       @(negedge clk);
-      x = 3'($urandom); xv = 1'($urandom); m = 2'($urandom);
+      x = 3'(stim_next()); xv = 1'(stim_next()); m = 2'(stim_next());
     end
     $finish;
   end
