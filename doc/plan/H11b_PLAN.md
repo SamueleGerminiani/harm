@@ -1,6 +1,6 @@
 # H11b plan: HARM builds on Linux (finding F-L1, found in H11's Linux checklist)
 
-*Status: approved 2026-10-06; awaiting review (A4 on the Mac pending; finding F-L2 for the user). Branch: `ms/H11b-linux-build` (from `dev` @ `1dc0609`). Effort: 0.5 d, plus the Linux checklist re-run (~1 h of machine time).*
+*Status: approved 2026-10-06; reviewed and merged into `dev` 2026-10-07. Open: A4 (the Mac, after the Linux part) and finding F-L2 (the user decides). Branch: `ms/H11b-linux-build` (from `dev` @ `1dc0609`). Effort: 0.5 d, plus the Linux checklist re-run (~1 h of machine time).*
 
 ## The bug (H11 VALIDATION, branch `ms/H11-linux`)
 - **F-L1:** HARM does not compile on Linux x86_64 (Ubuntu 22.04, g++ 11.4.0, Z3 4.13.4 from `third_party/install_z3.sh`).
