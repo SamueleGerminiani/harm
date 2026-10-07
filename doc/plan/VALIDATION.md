@@ -664,3 +664,34 @@ The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (
   - **Resolved, by the user's choice (2026-10-07):** `ImplicationTest` gets a `TIMEOUT` of 3,600 s (`tests/CMakeLists.txt`). The test itself is unchanged.
     - The `slow` label was considered: it only lets `ctest -LE slow` skip the test, and does not change the timeout.
 - **Environment note for `eval/LINUX.md`:** the simulation oracles need Verilator ≥ 5 (`--binary --timing`). On this machine the default `verilator` is 4.210, so Verilator 5 must be first on `PATH` and set with `-DVERILATOR_FOUND`.
+
+## H11c: the Linux findings F-L3, F-L4 (D-028), F-L5 (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0, Verilator 5.031)
+Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed in `d20dfdd`, F-L4/D-028 in `1885f94`, and `--split-logic` in `02ac25b`.
+
+| Test | Result |
+|---|---|
+| A1 `h11c_yosys_probe` (F-L3): a fake yosys that exits 0 for `help` but cannot run `read_slang` is refused; one that can is accepted | pass. With the real yosys 0.47 here, the 7 `h5_xcheck_yosys_*` tests are no longer registered ("has no read_slang: … skipped") |
+| A2 `h11c_vcd_ranges` (F-L4): `[1:10]` and the same values declared `[9:0]` mine the same assertions (2,436 each); `--split-logic` writes `asc[1]`…`asc[10]`, `off[3]`…`off[10]`, and HARM loads it | pass |
+| A3/A3b/A3c `VectorIndexTest` (D-028) | pass, 4 of 4 |
+| A5 harm-coi pytest (F-L5): a 1600-bit and a 512-bit comparison are dropped with the reason, while a 511-bit one and an 8-bit one are kept | pass (36 of 36) |
+| A6 `h11c_emit_config_wide` (F-L5): HARM accepts the configuration emitted next to a 1600-bit register | pass |
+| A7 Linux `ctest`, all labels | 209 of 210 on `1885f94` (2,184 s). The one failure was `h11c_vcd_ranges`, extended mid-run for `--split-logic` (see below). After `02ac25b`, all 31 affected tests pass (`h11c_*`, `VectorIndexTest`, the 25 `regression_*`, `h11_readme_commands`, `h11_version`) |
+| H0 regression baselines | pass, byte-identical: D-028 changes nothing for `[n:0]` vectors and for variables without a declared range |
+
+- **A3b is the independent check.**
+  - A Verilator testbench (`tests/input/h11c/tb.sv`, `gen.sh`) declares `asc [1:10]`, `off [10:3]`, `d [7:0]` and `one [0:0]`, and drives random values.
+  - Every cycle, it prints 14 selects: single bits, part-selects and whole-range selects.
+  - HARM evaluates the same selects on the dumped VCD, and all 41 × 14 values are equal.
+  - The fixture records the Verilator version (`generated_with.txt`).
+- **A3:** out-of-range indices (`asc[0]`, `asc[11]`, `off[2]`, `off[11]`) and selects against the declared direction (`asc[6:3]`, `off[3:6]`, `d[2:5]`) are errors.
+- **A3c:** printing and copying keep the source indices (`asc[3:6]`, `off[6:3]`, …).
+- **Found during the implementation: `--generate-config --split-logic`** wrote `x[0]`…`x[size−1]`, out of range under D-028 for `[1:10]` or `[10:3]`. It now writes the declared indices (`main.cc`, `declaredIndex`). A2 was extended first and failed: "misses asc[10], off[8], off[9], off[10]".
+- **The VCD parser was regenerated with bison 3.8.2,** the version that made the committed `VCDParser.cpp`. Its diff is the edited action plus `#line` numbers. The scanner, unchanged, was not regenerated: this machine's flex gives a different output.
+- **Real designs (AssertLLM2, the H11 Linux traces, C6/C7, 10-minute cap, 8 threads, two runs in parallel):**
+
+  | Design | Finding | C6 assertions | C6 s | C6 coverage | C7 assertions | C7 s | C7 coverage |
+  |---|---|---|---|---|---|---|---|
+  | `ethernet_smii_txrx` (`input [1:10] state`) | F-L4 | 344 | 10 | 60% | 84 | 4 | 40% |
+  | `sha3` (1600-bit `f_permutation_::out`) | F-L5 | 1,547 | 25 | 60% | 398 | 13 | 60% |
+
+  Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. To be added to the H11 AssertLLM2 table on `ms/H11-linux` (and `ethernet_smii_txrx` restored to its manifest) after H11c is merged.
