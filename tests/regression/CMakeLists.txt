@@ -385,6 +385,18 @@ add_test(NAME h11d_tool_lookup
     COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
 
+# ---- H11e: fixtures independent of the simulator ----------------------------------------------------
+# A2: a fixture testbench gives the same stimulus under Verilator and Icarus (tests/input/stim.svh,
+# finding F-L7). h5/constructs is not included: Icarus does not parse its RTL.
+if(HARM_VERILATOR AND HARM_IVERILOG AND PYTHON3_FOUND)
+    foreach(design counter arbiter fsm hier structs multipath)
+        add_test(NAME h11e_stim_${design}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/regression/check_stim.py
+                    ${CMAKE_SOURCE_DIR}/tests/input/coi/${design} --iverilog ${HARM_IVERILOG})
+        set_tests_properties(h11e_stim_${design} PROPERTIES LABELS coi)
+    endforeach()
+endif()
+
 # H11d: every test here runs with the chosen tools first on PATH (the fixture scripts call
 # verilator and iverilog by name), whatever the user's PATH is
 if(HARM_TOOLS_PATH)
