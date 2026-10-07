@@ -705,7 +705,7 @@ Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
 | A2 `LogTest.concurrentProcessesKeepOneValidLog`: 8 processes × 200 warnings in one directory | pass: all writers exit normally, and `warning.log` is one JSON array of 1,600 records. Before the fix, writers died with signal 11 |
 | A3 `LogTest.concurrentThreadsKeepOneValidLog`: 8 threads × 200 warnings | pass, with the same checks; before the fix it crashed with SIGSEGV |
 | A4 Linux `ctest`, all labels (Verilator 5.031, as for `dev`) | pass, 211 of 211 (2,314 s) |
-| A4 the Docker image's fast tests on repeated `ctest -j` runs (the H11d symptom) | **pending** |
+| A4 the Docker image's fast tests on repeated `ctest -j` runs (the H11d symptom) | pass: the image built from `ms/H11f-log-race` (Ubuntu 24.04, g++ 13) passed its fast tests 4 times in parallel (`ctest -j -LE slow`), 177 of 177 each, with no crash. Before the fix, every parallel run crashed (3 of 3). A fifth run printed no result (the check did not record its exit status), so it is not counted; the run that replaced it recorded `ctest exit=0` |
 
 - **The bug:** `deleteLastLine` (`misc.hh`) computed `lines.size() - 1` on a `size_t`, which underflows on an empty file.
   - A concurrent writer's truncation can empty the file between another writer's `isFileEmpty` and its read.

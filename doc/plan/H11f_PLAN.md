@@ -1,6 +1,6 @@
 # H11f plan: the log files under concurrent writers (finding F-L9)
 
-*Status: approved 2026-10-07 by the user ("fix F-L9"); awaiting review (A4 Docker pending). Branch: `ms/H11f-log-race` (from `dev` @ `e429f47`). Effort: 0.5 d.*
+*Status: approved 2026-10-07 by the user ("fix F-L9"); awaiting review. Branch: `ms/H11f-log-race` (from `dev` @ `e429f47`). Effort: 0.5 d.*
 
 ## The bug (found in H11d's Docker check)
 - **Symptom:** in the Docker image, the fast tests crash intermittently with SIGSEGV under `ctest -j`: `PropositionOracleTest` once, `Z3EquivalenceTest` twice. None crashed in 40 runs alone.
