@@ -9,7 +9,7 @@
     "max_depth": 3,
     "generator": {
       "name": "hand-edited",
-      "version": "H9: h8/constructs_coi.json without the target t"
+      "version": "H9: h8/constructs_coi.json without the target t; y_loop listed as unknown (H11e: Verilator 5.052 no longer dumps unnamedblk1::i)"
     }
   },
   "targets": {
@@ -339,16 +339,6 @@
         }
       ]
     },
-    "y_loop": {
-      "sources": [
-        {
-          "sig": "v",
-          "depths": [
-            0
-          ]
-        }
-      ]
-    },
     "y_tmp": {
       "sources": [
         {
@@ -378,6 +368,8 @@
       ]
     }
   },
-  "unknown": [],
+  "unknown": [
+    "y_loop"
+  ],
   "predicates": []
 }

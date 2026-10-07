@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Independent check of HARM's SystemVerilog output (H1 validation, D-002).
 
-HARM mines assertions on a 2-valued CSV trace and prints them with --sva --sva-assert. A generated
+HARM mines assertions on a 2-valued CSV trace, with IEEE 1800's end-of-simulation semantics
+(--trace-end sva, D-016), and prints them with --sva --sva-assert. A generated
 testbench replays the same trace and checks every printed assertion in Verilator:
   1. lint: each assertion must be valid SystemVerilog for Verilator; constructs Verilator reports
      as unsupported are counted separately (not errors of HARM's printer);
@@ -174,6 +175,9 @@ def main():
         shutil.rmtree(work, ignore_errors=True)
     (work / "dump").mkdir(parents=True)
     r = subprocess.run([str(Path(a.harm).resolve()), "--csv", str(Path(a.csv).resolve()), "--conf", str(Path(a.conf).resolve()),
+                        # IEEE 1800's end of simulation (D-016 'sva': a pending s_eventually fails), which
+                        # Verilator >= 5.052 implements; HARM's default counts it as holding (F-L10)
+                        "--trace-end", "sva",
                         "--clk", "clk", "--sva", "--sva-assert", "--max-threads", "1", "--isilent", "--psilent",
                         "--dump-to", str(work / "dump") + "/"], cwd=work, capture_output=True, text=True)
     if r.returncode != 0:
