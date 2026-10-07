@@ -725,3 +725,33 @@ A2 was written first and committed failing in `62dfed3`.
   - 5.052 also drops the empty `$rootio` scope and renumbers the VCD identifiers (form only).
 - **Finding F-L8: `perturb.py influence` assumes both traces have the same signals** (`h5_influence_constructs`).
   - It stops with `KeyError: 'unnamedblk1::i'`. The loop variable of an unnamed block is in the committed trace (Verilator 5.031) and not in 5.052's.
+
+## H11e: fixtures and oracles independent of the Verilator version (2026-10-07, Ubuntu 22.04, Verilator 5.052, Icarus 13.0, yosys 0.69 from `third_party`; D-029)
+A2 was written first and committed failing in `9cdf233`. A1, A3 and A4 were existing tests failing with Verilator 5.052 (H11d's findings).
+
+| Test | Result |
+|---|---|
+| A1 the 7 `*_reproduce_*` tests with Verilator 5.052 | pass |
+| A2 `h11e_stim_{counter,arbiter,fsm,hier,structs,multipath}`: the same stimulus under Verilator and Icarus | pass; it failed before (Verilator's and Icarus' `$urandom` differ from the 4th edge). `h5/constructs` is not included, because Icarus 13 does not parse its RTL ("Errors in port declarations") |
+| A3 `verilator_replay_{newops,temporal2v,edit,ex3}` | pass. `temporal2v`: 635 assertions, all checked as printed; 45 controls by monitor |
+| A3b `verilator_replay_monitor_selftest`: the `s_eventually` control monitor on 6 hand-labelled traces (`\|->`, `\|=>`, same cycle, a `##1` antecedent) | pass |
+| A4 `h5_influence_constructs` | pass |
+| A5 full Linux `ctest`, 225 tests | 224 pass (2,275 s). The one failure is `Z3EquivalenceTest` (SIGSEGV), finding F-L9, fixed in H11f (not on this branch) |
+| A6 the fixture evaluation re-run | see below |
+
+- **Findings handled (D-029):**
+  - **F-L6:** the replay controls use `not`.
+  - **F-L7:** stimulus from `tests/input/stim.svh`, traces regenerated.
+  - **F-L8:** `perturb.py` compares only shared signals.
+  - **F-L10 (option (a)):** the oracle mines with `--trace-end sva`. With HARM's default, the mined assertions with an `s_eventually` still pending at the end failed in Verilator at `$finish` (IEEE 1800). With `sva` they are not mined (`temporal2v`: 653 assertions before, 635 after).
+- **The `s_eventually` controls:** Verilator 5.052 compiles `a |-> not (s_eventually p)` and `a |-> always (!p)` but never fails them, with no warning. The minimal repro:
+  - `a` at cycle 1 and `p` at cycle 4 must fail at 45 ps;
+  - a plain `assert property (!p)` in the same testbench does fail at 45.
+
+  These controls are checked by a monitor instead (option (a), by the user), validated by A3b.
+- **Expectations that changed with the traces, and why:**
+  - `h8/constructs_coi.json` and `h9/constructs_partial_coi.json`: `unnamedblk1::i` removed from `unknown`. Verilator 5.052 does not dump this loop variable, and harm-coi on the new trace gives the same file (checked).
+  - **H9 A2 (option (b), by the user):** `y_loop` (an output no cone uses) is the signal listed as unknown. The proposition is `y_loop != 1'b0`. HARM's report equals the hand-written `expected_constructs.json` with the name changed and nothing else.
+- **No other expectation changed:**
+  - The H4–H10 regressions on the new traces pass as they are: they check properties (soundness, filter invariants, simulation non-influence), not stored values.
+  - `h6/multipath_rank_expected.txt` passes unchanged.

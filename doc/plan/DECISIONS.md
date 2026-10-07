@@ -325,3 +325,17 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - Verilator's unpacked-array elements (`mem[0] [7:0]`) are separate variables, as before.
 - **Why:** H10's harm-coi writes SystemVerilog indices (the RTL's), so before D-028 its bit-select predicates on vectors not declared `[n:0]` were misread. AssertLLM2's `ethernet_smii_txrx` declares `[1:10]`.
 - **Validation:** `VectorIndexTest` compares every select, every cycle, with the values Verilator prints for the same trace (`tests/input/h11c/gen.sh`). `h11c_vcd_ranges` checks that `[1:10]` and `[9:0]` mine the same assertions.
+
+## D-029: fixtures and oracles independent of the Verilator version (2026-10-07, H11e, approved by the user; findings F-L6, F-L7, F-L8, F-L10)
+- **Fixture stimulus:** the 7 fixture testbenches (`tests/input/coi/*`, `tests/input/h5/constructs`) draw their stimulus from `tests/input/stim.svh`, a xorshift32 written in SystemVerilog, instead of a simulator's `$urandom`.
+  - Verilator 5.052's `$urandom` gives a different sequence from 5.031's for the same seed, so the committed traces could not be reproduced (F-L7).
+  - The traces were regenerated once (Verilator 5.052) and now reproduce on any simulator. `h11e_stim_*` checks that Verilator and Icarus give the same stimulus.
+- **The replay oracle** (`tests/oracle/verilator_replay.py`):
+  - **Negation:** it negates a property consequent with `not`, not `!` (F-L6).
+  - **End-of-simulation semantics:** it mines with `--trace-end sva` (D-016), the semantics a simulator uses at the end of a simulation, which Verilator 5.052 implements for `s_eventually` (F-L10).
+  - **`s_eventually` controls:** Verilator 5.052 never fails `A |-> not (s_eventually P)`. These controls are checked by a monitor, validated on hand-labelled traces (`verilator_replay_monitor_selftest`).
+- **The influence check** (`tests/coi/perturb.py`) compares only signals both traces have (F-L8).
+- **What changed with the traces:**
+  - Verilator 5.052 no longer dumps the loop variable `unnamedblk1::i`. It was removed from `h8/constructs_coi.json`'s unknown list (the same as harm-coi's output on the new trace).
+  - H9's acceptance A2 needed a signal listed as unknown: `y_loop` (an output no cone uses) took that role in the hand-edited `h9/constructs_partial_coi.json`. The expected report is unchanged except for the name.
+- **HARM is not changed.**
