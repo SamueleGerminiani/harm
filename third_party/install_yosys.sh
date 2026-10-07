@@ -8,6 +8,14 @@ YOSYS_VERSION=0.69
 
 tools_setup yosys "${1:-}"
 tools_require cmake make flex bison gawk pkg-config python3
+# slang's code generators need Python >= 3.9; pass it explicitly, so that CMake does not pick an
+# older pythonX.Y found first on PATH
+PY="$(command -v "${PYTHON:-python3}" || true)"   # an absolute path: CMake ignores a bare name
+[ -n "$PY" ] || { echo "yosys (slang) needs Python >= 3.9: ${PYTHON:-python3} not found" >&2; exit 1; }
+"$PY" -c 'import sys; sys.exit(sys.version_info < (3, 9))' || {
+    echo "yosys (slang) needs Python >= 3.9; $PY is $("$PY" --version 2>&1). Set PYTHON=<python3.9+>" >&2
+    exit 1
+}
 work="$(mktemp -d)"
 cd "$work"
 tools_fetch "https://github.com/YosysHQ/yosys/releases/download/v${YOSYS_VERSION}/yosys.tar.gz" y.tar.gz
@@ -15,7 +23,8 @@ mkdir yosys && tar -xf y.tar.gz -C yosys && rm y.tar.gz
 cd yosys
 cmake -B build . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$installPrefix" \
       -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" \
-      -DYOSYS_ENABLE_UNIT_TESTS=OFF -DYOSYS_USE_BUNDLED_LIBS=ON
+      -DYOSYS_ENABLE_UNIT_TESTS=OFF -DYOSYS_USE_BUNDLED_LIBS=ON \
+      -DPython_EXECUTABLE="$PY" -DPython3_EXECUTABLE="$PY"
 cmake --build build -j"$NThreads"
 cmake --install build
 cd / && rm -rf "$work"
