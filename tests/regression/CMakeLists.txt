@@ -362,3 +362,10 @@ if(HARM_COI_OK)
                 ${CMAKE_SOURCE_DIR}/tests/input/h11c/wide --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
     set_tests_properties(h11c_emit_config_wide PROPERTIES LABELS coi)
 endif()
+
+# ---- H11d: Verilator, Icarus and yosys from third_party ---------------------------------------------
+# A2: the third_party tools are preferred over PATH; Verilator < 5 and yosys without read_slang are
+# treated as missing
+add_test(NAME h11d_tool_lookup
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
