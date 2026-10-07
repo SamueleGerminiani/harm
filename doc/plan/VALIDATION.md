@@ -704,9 +704,35 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     - `versatile_counter`: harm-coi needs `--include` for `` `include "versatile_counter_defines.v" ``, and the manifest format (`run_eval.py`) has no include directories.
     - `gost28147-89` and `present_cipher_encryption_core` simulate but were left out to keep 10. Both are crypto datapaths with 256/512-bit or 80-bit random inputs.
     - `i2c_slave`: its file set does not elaborate in pyslang (3 errors).
-  - **AssertLLM2 table:** pending until F-L1 is fixed.
-  - **Differences from the Mac:** F-L1. None are measured beyond it.
-- **GoldMine (§4c):** not run.
+  - **AssertLLM2 table (after H11b; `eval/results/assertllm2`), 9 designs:** `ethernet_smii_txrx` was removed from the manifest after F-L4 (an evaluation-input correction).
+    - **C0 (`--generate-config`) times out on every design tried,** even under the user's 10-minute cap (`--timeout 600`): `aes_cipher` C0–C4, and C0 of `uart`, `sha3` and `video_stream_scaler`.
+      - The generated configuration has one template, `G({..#1&..} |-> P0)`, with `dtLimits="5D,3W,15A"`, over every Boolean signal (26 for `uart`). On random-stimulus traces the decision tree explores its whole space.
+      - Checked by hand: `uart` C0 without `--fd` does not finish in 300 s, so the cost is mining, not fault coverage.
+    - **So, by the user's choice, only C6/C7 (the RTL predicates) ran on every design.** The C0–C5 rows in the table are the measured timeouts, taken from the logs of the stopped runs.
+    - For speed (the user's choice), the C6/C7 runs were split into 4 parallel `run_eval.py` processes of 8 threads each on the 32 cores. The times are therefore under load.
+
+    | Design | C6 assertions | C6 s | C6 coverage | C7 assertions | C7 s | C7 coverage |
+    |---|---|---|---|---|---|---|
+    | `aes_cipher` | timeout | 600 | | timeout | 600 | |
+    | `uart` | 1,209 | 12 | 60% | 410 | 6 | 60% |
+    | `uart_to_bus` | 34,466 | 278 | 60% | timeout | 600 | |
+    | `srdy-drdy-library` | 507 | 6 | 60% | 277 | 7 | 60% |
+    | `ima_adpcm_encoder` | 3,259 | 57 | 80% | 809 | 169 | 80% |
+    | `ima_adpcm_decoder` | 2,670 | 71 | 60% | 790 | 132 | 60% |
+    | `sha3` | error (F-L5) | | | error (F-L5) | | |
+    | `gaussian_noise_generator` | 17,096 | 273 | 60% | 902 | 86 | 40% |
+    | `video_stream_scaler` | 13,392 | 157 | 20% | 3,327 | 154 | 20% |
+
+    - Coverage is the share of the 5 single-bug mutants that the mined assertions detect (`--fd`).
+    - C7 reduces C6's output by 1.8–19× (filter `exact` plus the reductions), and its mean `coiFrac` and `coiDepthFit` are 1.0. Coverage is unchanged except on `gaussian_noise_generator` (60% → 40%).
+  - **Finding F-L4: HARM rejects ascending vector ranges in a VCD.** `ethernet_smii_txrx` declares `input [1:10] state`, and HARM stops on it: "Reverse bit direction not supported, vectors must be defined like this: [MSB:LSB] with MSB > LSB". This is a HARM limitation, not fixed here.
+  - **Finding F-L5: harm-coi emits predicates that HARM cannot parse.** On `sha3`, the H10 predicates include `f_permutation_::out == 1600'd0`, and HARM rejects the configuration: "Constant ''d0' is wider than 511 bits". Not fixed here. A fix could be in harm-coi (skip predicates on signals wider than HARM's limit) or in HARM.
+  - **Differences from the Mac:** the counts are equal on every local design (A1). Linux is 1.2–1.4× slower on the longer runs.
+    - F-L1 (fixed in H11b).
+    - F-L2 (`ImplicationTest` timeout, fixed in H11b).
+    - F-L3, F-L4 and F-L5 (open).
+    - The environment needs Verilator ≥ 5 first on `PATH`.
+- **GoldMine (§4c):** not run (optional).
 
 ## H11b: HARM builds on Linux (F-L1) (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0, Z3 4.13.4)
 The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (plus `#include <cstdint>`). On macOS the two are the same type. Before the fix, the failing evidence is the Linux build log in H11's "Linux evaluation" (F-L1).

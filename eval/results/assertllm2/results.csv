@@ -1,0 +1,27 @@
+design,config,assertions,wall_s,dropped,permutations,dt_pairs,coi_frac,coi_depth_fit,coverage,ok,error
+aes_cipher,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+aes_cipher,C1,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+aes_cipher,C2,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+aes_cipher,C3,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+aes_cipher,C4,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+aes_cipher,C6,,600,,,,,,,False,timeout (600 s)
+aes_cipher,C7,,600,,,,,,,False,timeout (600 s)
+uart,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+uart,C6,1209,12.15,,,,0.51,0.421,60,True,
+uart,C7,410,5.98,51,23->23,7683->5604,1.0,1.0,60,True,
+uart_to_bus,C6,34466,277.55,,,,0.574,0.375,60,True,
+uart_to_bus,C7,,600,,,,,,,False,timeout (600 s)
+srdy-drdy-library,C6,507,5.92,,,,0.811,0.591,60,True,
+srdy-drdy-library,C7,277,6.77,39,19->19,12104->9582,1.0,1.0,60,True,
+ima_adpcm_encoder,C6,3259,57.06,,,,0.737,0.582,80,True,
+ima_adpcm_encoder,C7,809,169.38,631,111->111,184148->121429,1.0,1.0,80,True,
+ima_adpcm_decoder,C6,2670,70.93,,,,0.551,0.386,60,True,
+ima_adpcm_decoder,C7,790,131.92,9,110->110,488253->350870,1.0,1.0,60,True,
+sha3,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+sha3,C6,0,0.8,,,,,,,False,"Message: Constant ''d0' is wider than 511 bits			In formula: «f_permutation_::out,logic» == 1600'd0"
+sha3,C7,0,0.8,,,,,,,False,"Message: Constant ''d0' is wider than 511 bits			In formula: «f_permutation_::out,logic» == 1600'd0"
+gaussian_noise_generator,C6,17096,272.77,,,,0.195,0.089,60,True,
+gaussian_noise_generator,C7,902,85.59,2,313->313,124167->27728,1.0,1.0,40,True,
+video_stream_scaler,C0,,600,,,,,,,False,timeout (600 s); from the run log (run stopped before writing its table)
+video_stream_scaler,C6,13392,157.48,,,,0.683,0.359,20,True,
+video_stream_scaler,C7,3327,154.44,1262,69->69,52667->23102,1.0,1.0,20,True,
