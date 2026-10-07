@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """H11c, F-L4 acceptance A2: a vector declared [1:10] in the VCD mines the same assertions as the
 same values declared [9:0] (a VCD writes the left declared index first, so the bit strings are
-identical). Usage: check_vcd_ranges.py <harm> <ranges.vcd>"""
+identical). Also: --generate-config --split-logic writes each bit with its declared index
+(D-028: [1:10] -> asc[1]..asc[10], [10:3] -> off[3]..off[10]), and HARM loads that configuration.
+Usage: check_vcd_ranges.py <harm> <ranges.vcd>"""
 import re
 import subprocess
 import sys
@@ -37,4 +39,23 @@ with tempfile.TemporaryDirectory() as t:
     if a != b or not a:
         print("FAIL: the outputs differ" if a != b else "FAIL: nothing mined")
         sys.exit(1)
+    # --split-logic: the declared indices, and a configuration HARM accepts
+    sd = d / "split"
+    sd.mkdir()
+    conf = sd / "split.xml"
+    subprocess.run([harm, "--vcd", str(vcd), "--clk", "clk", "--vcd-ss", "tb", "--conf", str(conf),
+                    "--generate-config", "--split-logic", "--psilent", "--isilent"], cwd=sd, capture_output=True)
+    if not conf.exists():
+        sys.exit("FAIL: --generate-config --split-logic failed")
+    props = set(re.findall(r'<prop exp="([^"]+)"', conf.read_text()))
+    want = {f"asc[{i}]" for i in range(1, 11)} | {f"off[{i}]" for i in range(3, 11)} | {f"d[{i}]" for i in range(8)}
+    if not want <= props:
+        print(f"FAIL: --split-logic misses {sorted(want - props)}")
+        sys.exit(1)
+    r = subprocess.run([harm, "--vcd", str(vcd), "--clk", "clk", "--vcd-ss", "tb", "--conf", str(conf),
+                        "--max-threads", "1", "--psilent", "--isilent"], cwd=sd, capture_output=True, text=True)
+    if r.returncode != 0:
+        print("FAIL: HARM rejects the --split-logic configuration:\n" + r.stdout[-600:] + r.stderr[-600:])
+        sys.exit(1)
+    print(f"--split-logic: {len(props)} single-bit propositions with declared indices")
     print("PASS")

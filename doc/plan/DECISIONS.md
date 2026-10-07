@@ -318,6 +318,7 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - **Variables without a declared range** (CSV traces, variables built in code) keep the old meaning: positions counted from the right from 0, in either order (`opeTests` pins this).
   - **A select on an expression** (not a variable) keeps positions.
 - **Output:** a select keeps the indices it was written with (`BitSelector` source indices). SVA, PSL and Spot print them, so a mined assertion reads as the RTL.
+- **`--generate-config --split-logic`** writes each bit with its declared index (`asc[1]`…`asc[10]`, `off[3]`…`off[10]`), no longer `0..size−1`.
 - **Limits, documented (README):**
   - Packed multi-dimensional vectors are seen flattened by the VCD.
   - Bit-blasted vectors (one `$var` per bit) give no direction, so the highest index is taken as the MSB (as before). They get a declared range only when their indices are contiguous.
