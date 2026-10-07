@@ -695,3 +695,33 @@ Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed
   | `sha3` (1600-bit `f_permutation_::out`) | F-L5 | 1,547 | 25 | 60% | 398 | 13 | 60% |
 
   Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. To be added to the H11 AssertLLM2 table on `ms/H11-linux` (and `ethernet_smii_txrx` restored to its manifest) after H11c is merged.
+
+## H11d: Verilator, Icarus and yosys in `third_party` (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0; macOS pending)
+A2 was written first and committed failing in `62dfed3`.
+
+| Test | Result |
+|---|---|
+| A1 the scripts install the pinned releases into `third_party` (Linux) | pass: `Verilator 5.052 2026-09-05`, `Icarus Verilog version 13.0 (stable)`, `Yosys 0.69+post`, and `read_slang` works. **macOS: pending, by the user** |
+| A2 `h11d_tool_lookup`: `third_party` is preferred over `PATH`; Verilator < 5 and yosys without `read_slang` are treated as missing; only `third_party` directories go first on the tests' `PATH` | pass |
+| A3 full `ctest` with the `third_party` tools and the user's plain `PATH` (no OSS CAD Suite) | 208 of 218 pass (2,361 s). The 7 `h5_xcheck_yosys_*` tests run on Linux for the first time and pass (`constructs`: 26 signals, 0 unsound, 1 over-approximated). The 10 failures are findings F-L6, F-L7, F-L8 below, all Verilator 5.052 against fixtures and oracles made with older versions. **macOS: pending** |
+| A4 the Docker image | **pending**: the first build failed on a network error while cloning antlr4 (see below) |
+| H0 regression baselines | pass, byte-identical (all `regression_*`, `determinism`) |
+
+- **Fixed while running the scripts:**
+  - **`install_yosys.sh`:** the environment's `PYTHON=python3.10` (a bare name) was ignored by CMake, whose own search found `/usr/local/bin/python3.6`, too old for slang's generators (`str.removesuffix`). The script now passes an absolute Python ≥ 3.9.
+  - **`install_iverilog.sh`:** the version step (`iverilog -V | head -1`) died of SIGPIPE under `pipefail`, after a good install.
+  - **`docker/build.sh`:** used the git ref as image tag, which fails for a branch with `/`.
+  - **`install_antlr.sh`:** a network error during its clone ("Connection reset by peer") let the script go on and install a wrong tree (headers in `/antlr4-runtime`). HARM's CMake then failed with "Could NOT find ANTLR4". The script now stops at the first failure (`set -euo pipefail`), and re-runs still work.
+- **Only `third_party` directories are prepended** to the tests' `PATH`. A first version also prepended `/usr/bin` (the system `iverilog`), which would shadow the user's other tools. A2 checks it.
+- **Finding F-L6: the replay oracle's control assertions are invalid SystemVerilog** (`verilator_replay_temporal2v`, `verilator_replay_edit`).
+  - `tests/oracle/verilator_replay.py:203` builds each control by negating the consequent with `!`. For a property consequent (`##3 v2`, `s_eventually …`, `… until …`), IEEE 1800 requires `not`:
+    ```
+    %Error: ctl.sv:11:49: syntax error, unexpected ##, expecting IDENTIFIER-for-type
+       11 |   a0: assert property (@(posedge clk) (v1 |-> !(##3 v2))) else $display("FAIL a0 %0t", $time);
+    ```
+  - Verilator 5.031 accepted it; 5.052 does not. HARM's own SVA (the `sim` build) is not affected.
+- **Finding F-L7: the H4/H5 fixture traces are not reproducible with another Verilator** (`coi_reproduce_{counter,arbiter,fsm,hier,structs,multipath}`, `h5_reproduce_constructs`).
+  - The testbenches draw their stimulus from seeded `$urandom`, and Verilator 5.052's generator gives a different sequence for the same seed. `clk` is identical, while the inputs (`rst`, `en`, …) and everything downstream differ.
+  - 5.052 also drops the empty `$rootio` scope and renumbers the VCD identifiers (form only).
+- **Finding F-L8: `perturb.py influence` assumes both traces have the same signals** (`h5_influence_constructs`).
+  - It stops with `KeyError: 'unnamedblk1::i'`. The loop variable of an unnamed block is in the committed trace (Verilator 5.031) and not in 5.052's.
