@@ -310,4 +310,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H9 | Out-of-cone report | done |
 | H10 | RTL predicate harvesting | done |
 | H11 | Evaluation, docs and release | merged into `dev`; Linux checklist `eval/LINUX.md` blocked(F-L1: no Linux build); release to `main` deferred by the user |
-| H11b | HARM builds on Linux (F-L1) | done (A4 on the Mac and F-L2 open) |
+| H11b | HARM builds on Linux (F-L1) | done (A4 on the Mac open) |
