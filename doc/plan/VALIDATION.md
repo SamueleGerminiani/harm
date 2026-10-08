@@ -798,6 +798,7 @@ A1 was written first and committed failing in `0f5875e`; the fix is `972b22e`. F
 | A1 `h11g_tools_common_flex`: `tools_setup` with macOS and Homebrew faked; the compiler must find the fake flex's `FlexLexer.h` | pass with `c++`, `g++-13` and `clang++`. Before the fix it fails with `g++-13` and `clang++` (checked again with the fix stashed) |
 | A2 `install_verilator.sh` on the Mac with no `CPATH` (`env -u CPATH CC=gcc-13 CXX=g++-13`) | pass: `Verilator 5.052 2026-09-05`, no `FlexLexer.h` error |
 | A3 `h11d_tool_lookup`, and the `verilator` label (5 tests) with the rebuilt Verilator | pass, 2 of 2 and 5 of 5. Linux unchanged by construction: the change is inside the `darwin` branch of `tools_setup` |
+| A1 on Linux (Ubuntu 22.04, `c++` = g++ 11.4.0, 2026-10-08) | pass: `check_tools_common.sh` prints "ok: the compiler finds Homebrew flex's FlexLexer.h"; `h11g_tools_common_flex` and `h11d_tool_lookup` pass, 2 of 2 |
 
 - **The fix:** on macOS, `tools_setup` prepends the `include/` of each Homebrew formula it already puts on `PATH` (bison, flex, gperf) to `CPATH`, keeping a user's `CPATH` after it.
 - **Note on A1:** it first set `SDKROOT` to a fake path, which made Apple's `clang++` shim fail and ask to install the command-line tools. It now uses the real SDK on a Mac (`xcrun`), and any value elsewhere, where it is unused.
