@@ -585,15 +585,16 @@ Tests written first and committed failing in `e87b42b` (API stubs). Implemented 
   - A3: the timeout query `w64 * v64 == N ⇒ w64 != 1` was false (`w64 = 1`), so Z3 answered "no" at once; it was replaced by a true implication that needs factoring.
 - **Suites:** `ctest -j6`: **211/211**, 31 min. Baselines byte-identical. Linux: pending.
 
-## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; the Linux part is pending)
+## H11: evaluation, documentation, `--version`, Docker (2026-10-06, macOS arm64, g++-13; Linux 2026-10-07, Ubuntu 22.04, g++ 11.4.0, after H11b)
 Tests written first and committed failing in `917e103` (`h11_version`, `h11_readme_commands`). `--version` implemented in `7c36fa3`.
 
 | Test | Result |
 |---|---|
 | A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
 | A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
-| A2 Linux `ctest` and harm-coi pytest | **pending** (`eval/LINUX.md` §2) |
-| A3 the Docker image | **pending**: the Docker daemon is not running here (`eval/LINUX.md` §3) |
+| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | first run: **not run**, HARM did not build (F-L1). After H11b: pass. All 97 runs (46 fixtures, 51 examples) have the Mac's counts in every column, `constructs` C2's timeout included (`eval/results/linux-*`) **Final (2026-10-08, after H11b–H11f, `v3-196-g29a0343`):** the examples (51 runs) still have the Mac's counts. The fixtures, on the new traces (H11e), equal H11e's Linux run in all 46 runs. Against the Mac's re-run: 40 of 46 equal; `structs` and `constructs` C0/C1/C3 differ (F-M2, H11e's "macOS checks") |
+| A2 Linux `ctest` and harm-coi pytest | first run: **fail**, HARM did not build (F-L1). After H11b, on `v3-154-gc1735ca`: 206 of 213 pass (2,263 s, `ctest -j32`, Verilator 5.031). The 7 failures are the yosys cross-check (F-L3 below) **Final (2026-10-08, `v3-196-g29a0343`): pass, 226 of 226** (2,282 s), with Verilator 5.052, Icarus 13.0 and yosys 0.69 from `third_party`, including the 7 yosys cross-checks |
+| A3 the Docker image | pass (after H11b): `docker/build.sh dev` builds HARM, Z3, harm-coi, Verilator and Icarus from `dev` @ `3b0a9ee`. Its fast tests pass, 172 of 172 (`ctest -LE slow`, 1,677 s) **Final (2026-10-08): pass.** `docker/build.sh ms/H11-linux` builds HARM with Verilator 5.052, Icarus 13.0 and yosys 0.69 from `third_party` (H11d), and its fast tests pass, 192 of 192 |
 | A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
 | A5 `--version` prints `HARM <git describe>` (`h11_version`) | pass |
 
@@ -637,6 +638,121 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     - `constructs`: C1 305 s, C2 over 1,800 s.
     - `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Recorded in `eval/LINUX.md` and for trivergence; making them faster is for after the release.
 - **Fix during the run: the examples manifest.** It had trace paths in `args`, relative to the repository, while HARM runs in a temporary directory, so every example failed on a missing trace. The trace arguments were moved to the `trace` field, which is resolved from the repository root, and `faults` was added for `faultCov` and `sobel`. This changes no HARM behaviour, only the evaluation's input.
+
+### Linux evaluation (2026-10-06, Ubuntu 22.04 x86_64, g++ 11.4.0, branch `ms/H11-linux` from `dev` at `1dc0609`)
+- **Environment:**
+  - The default `c++` is g++ 11.4.0, used for `third_party/install_all.sh` (Z3 4.13.4) and HARM (D-010). CMake 3.31.10.
+  - There is no system `python3.12`. The venv was made with `uv venv --python 3.12` (CPython 3.12.6) instead of `python3.12 -m venv`. pyslang 12.0.0, pytest and jsonschema are installed.
+  - The yosys cross-check is skipped: the only yosys here is 0.47, older than 0.67.
+  - Verilator 4.210 is first on `PATH`. The AssertLLM2 traces were made with trivergence's image (Verilator 5.053).
+- **`build/harm --version`:** none, because the build fails. HEAD is `v3-144-g1dc0609`.
+- **After H11b (merged into this branch from `dev`):**
+  - `build/harm --version`: `HARM v3-154-gc1735ca`.
+  - The simulation oracles need Verilator ≥ 5. The checks above were run with OSS CAD Suite's Verilator 5.031, first on `PATH` and set with `-DVERILATOR_FOUND`.
+- **`ctest` (A2) in detail:**
+  ```
+  97% tests passed, 7 tests failed out of 213
+  Total Test time (real) = 2263.35 sec
+  The following tests FAILED:
+    h5_xcheck_yosys_{counter,arbiter,fsm,hier,structs,multipath,constructs} (Failed)  coi xcheck
+  ```
+  - Every Verilator oracle, `h5_unit` and the `h5_*` tests pass.
+  - `ImplicationTest` passes in 1,688 s, under its 3,600 s timeout (F-L2, H11b).
+- **The local designs (§4a, A1):** the counts are equal to the Mac's.
+  - **Times:** Linux is slower on the runs over 5 s, by 1.2–1.4× (`structs` C2 1,505 s against 1,214 s), and 2.3× on `sub_platform1k` C2 (21.6 s against 9.4 s).
+  - **Totals:** fixtures 4,146 s against 3,662 s; examples 139 s against 87 s.
+- **Finding F-L3: the yosys probe accepts any yosys.** `tests/regression/CMakeLists.txt` (H5) registers the cross-check when `yosys -p "help read_slang"` exits with 0.
+  - yosys exits with 0 even for an unknown command: it prints "No such command or cell type: read_slang".
+  - With OSS CAD Suite's yosys 0.47 first on `PATH`, the 7 `h5_xcheck_yosys_*` tests are registered and fail:
+    ```
+    ERROR: No such command: read_slang (type 'help' for a command overview)
+    yosys failed on counter
+    ```
+  - The cross-check is optional, and no yosys ≥ 0.67 is installed here.
+  - **Fixed in H11c:** the probe runs `read_slang` on a one-line module (`cmake/HarmYosysProbe.cmake`).
+- **Finding F-L1: HARM does not build on Linux (g++ 11, x86_64).** This blocks A1, A2, A3 and the evaluation.
+  - The line is `src/exp/include/visitors/ExpToZ3Visitor.hh:73`, from H2 (`059d7de`), and it is the only compile error (`make -k`):
+    ```
+    ExpToZ3Visitor.hh:73:61: error: call of overloaded 'bv_val(long long unsigned int&, unsigned int&)' is ambiguous
+       73 |   z3::expr bv(unsigned long long value) { return _ctx.bv_val(value, _U); }
+    z3++.h:3806: candidate: z3::expr z3::context::bv_val(int, unsigned int)
+    z3++.h:3807: candidate: z3::expr z3::context::bv_val(unsigned int, unsigned int)
+    z3++.h:3808: candidate: z3::expr z3::context::bv_val(int64_t, unsigned int)
+    z3++.h:3809: candidate: z3::expr z3::context::bv_val(uint64_t, unsigned int)
+    ```
+  - **Cause:** on LP64 Linux, `uint64_t` is `unsigned long`, so `unsigned long long` matches no overload exactly. On macOS, `uint64_t` is `unsigned long long`, which is why the Mac builds.
+  - **Fix:** not applied here (`eval/LINUX.md`); it is a new milestone. A plausible fix is `bv(uint64_t)`, or a cast to `uint64_t` at the call.
+  - **Status of the rest:**
+    - `ctest`, the Docker image and the evaluation (§4a, §4b) did not run.
+    - The `build/harm` in the checkout is a stale binary from 2026-09-07; it was not used.
+- **AssertLLM2 (§4b): the designs are chosen and the manifest is written (`eval/manifests/assertllm2.json`); the run is blocked by F-L1.**
+  - **Source:** AssertLLM2 at `f66fd20` (trivergence's pin), from `~/triad/data/assertllm2`.
+  - **Traces, made with trivergence's flow without changing it.** trivergence was mounted read-only in `triad-toolchain:t3`.
+    - The design was loaded with `triad_bench.m0_loader.load_design`, from loader YAMLs written outside trivergence.
+    - The traces come from `triad_sim.verilator.VerilatorSimulator.run`: random stimulus, seed 1, 2,000 cycles, reset held for 2 cycles, scope `triad_tb::dut`.
+    - Faults are the AssertLLM2 single-bug mutants (`buggy_artifacts/single_bug_mutants`), simulated with the same testbench and seed: 5 per design.
+    - The traces are in `build/assertllm2/traces` (not committed), and the RTL paths in the manifest are absolute (`~/triad/data`).
+  - **Screening:**
+    - harm-coi (pyslang) elaborates 35 of the 83 designs with one inferred clock. The others have elaboration errors, several clocks or a timeout over 180 s.
+    - From the small and medium ones, 15 were simulated, and 13 simulate with the golden RTL and all 5 mutants.
+  - **Chosen (10):** `aes_cipher`, `uart`, `uart_to_bus`, `ethernet_smii_txrx`, `srdy-drdy-library` (`sd_scoreboard`), `ima_adpcm_encoder`, `ima_adpcm_decoder`, `sha3` (`keccak`), `gaussian_noise_generator` (`gng`), `video_stream_scaler`.
+    - harm-coi runs on each with its trace.
+    - Signals marked `unknown`: `sha3` 300, `gng` 62, `video_stream_scaler` 32. The rest have none.
+  - **Excluded, and why:**
+    - `rs_5_3_gf256`: Verilator rejects the RTL ("Duplicate declaration of signal: 'y'").
+    - `spi_core`: the golden RTL fails its `full_case parallel_case` check under random stimulus (`simple_spi_top.v:235`).
+    - `versatile_counter`: harm-coi needs `--include` for `` `include "versatile_counter_defines.v" ``, and the manifest format (`run_eval.py`) has no include directories.
+    - `gost28147-89` and `present_cipher_encryption_core` simulate but were left out to keep 10. Both are crypto datapaths with 256/512-bit or 80-bit random inputs.
+    - `i2c_slave`: its file set does not elaborate in pyslang (3 errors).
+  - **AssertLLM2 table (after H11b and H11c; `eval/results/assertllm2`), 10 designs:**
+    - `ethernet_smii_txrx` was removed from the manifest after F-L4 (an evaluation-input correction), then restored after H11c fixed it.
+    - Its rows and `sha3`'s C6/C7 were re-run on `v3-168-g73b214f` (H11c merged).
+    - The other rows cannot change with H11c: no other design has a vector not declared `[n:0]` or a signal over 511 bits.
+    - **C0 (`--generate-config`) times out on every design tried,** even under the user's 10-minute cap (`--timeout 600`): `aes_cipher` C0–C4, and C0 of `uart`, `sha3` and `video_stream_scaler`.
+      - The generated configuration has one template, `G({..#1&..} |-> P0)`, with `dtLimits="5D,3W,15A"`, over every Boolean signal (26 for `uart`). On random-stimulus traces the decision tree explores its whole space.
+      - Checked by hand: `uart` C0 without `--fd` does not finish in 300 s, so the cost is mining, not fault coverage.
+    - **So, by the user's choice, only C6/C7 (the RTL predicates) ran on every design.** The C0–C5 rows in the table are the measured timeouts, taken from the logs of the stopped runs.
+    - For speed (the user's choice), the C6/C7 runs were split into 4 parallel `run_eval.py` processes of 8 threads each on the 32 cores. The times are therefore under load.
+
+    | Design | C6 assertions | C6 s | C6 coverage | C7 assertions | C7 s | C7 coverage |
+    |---|---|---|---|---|---|---|
+    | `aes_cipher` | timeout | 600 | | timeout | 600 | |
+    | `uart` | 1,209 | 12 | 60% | 410 | 6 | 60% |
+    | `uart_to_bus` | 34,466 | 278 | 60% | timeout | 600 | |
+    | `srdy-drdy-library` | 507 | 6 | 60% | 277 | 7 | 60% |
+    | `ima_adpcm_encoder` | 3,259 | 57 | 80% | 809 | 169 | 80% |
+    | `ima_adpcm_decoder` | 2,670 | 71 | 60% | 790 | 132 | 60% |
+    | `ethernet_smii_txrx` (after H11c) | 344 | 10 | 60% | 84 | 4 | 40% |
+    | `sha3` (after H11c) | 1,547 | 24 | 60% | 398 | 13 | 60% |
+    | `gaussian_noise_generator` | 17,096 | 273 | 60% | 902 | 86 | 40% |
+    | `video_stream_scaler` | 13,392 | 157 | 20% | 3,327 | 154 | 20% |
+
+    - Coverage is the share of the 5 single-bug mutants that the mined assertions detect (`--fd`).
+    - C7 reduces C6's output by 1.8–19× (filter `exact` plus the reductions), and its mean `coiFrac` and `coiDepthFit` are 1.0. Coverage is unchanged except on `gaussian_noise_generator` (60% → 40%).
+  - **Finding F-L4: HARM rejects ascending vector ranges in a VCD.** `ethernet_smii_txrx` declares `input [1:10] state`, and HARM stops on it: "Reverse bit direction not supported, vectors must be defined like this: [MSB:LSB] with MSB > LSB". **Fixed in H11c (D-028)**, together with SystemVerilog vector indexing.
+  - **Finding F-L5: harm-coi emits predicates that HARM cannot parse.** On `sha3`, the H10 predicates include `f_permutation_::out == 1600'd0`, and HARM rejects the configuration: "Constant ''d0' is wider than 511 bits". **Fixed in H11c:** harm-coi drops predicates wider than 511 bits, with the reason.
+  - **Differences from the Mac:** the counts are equal on every local design (A1). Linux is 1.2–1.4× slower on the longer runs.
+    - F-L1 (fixed in H11b).
+    - F-L2 (`ImplicationTest` timeout, fixed in H11b).
+    - F-L3, F-L4 and F-L5 (fixed in H11c).
+    - The environment needs Verilator ≥ 5 first on `PATH`.
+- **GoldMine (§4c):** not run (optional).
+
+### Final Linux checks (2026-10-08, `ms/H11-linux` with `dev` merged at `29a0343`, after H11b–H11f)
+- **Full `ctest`:** 226 of 226 (2,282 s). The tools are from `third_party` and the user's plain `PATH` (no borrowed Verilator).
+- **Docker:** the image builds with the three tools, and its fast tests pass, 192 of 192.
+- **Local designs (§4a):**
+  - the fixtures (46 runs, new traces) give the same counts as H11e's Linux run;
+  - the examples (51 runs) give the same counts as the Mac.
+- **The Mac part (`eval/MACOS.md`), done on `ms/H11-macos`** (H11e's "macOS checks"):
+  - the Mac `ctest` with the H11d tools: 226 of 226;
+  - the Mac fixture table on the new traces, and the Mac/Linux `--check`: 40 of 46 runs equal; `structs` and `constructs` C0/C1/C3 differ (F-M2, deferred by the user);
+  - `install_verilator.sh` failed on macOS (F-M1), fixed in H11g.
+- **Findings F-L1 to F-L10 found on Linux, all fixed:**
+  - F-L1, F-L2: H11b;
+  - F-L3, F-L4, F-L5: H11c;
+  - F-L6, F-L7, F-L8, F-L10: H11e (D-029);
+  - F-L9: H11f.
 
 ## H11b: HARM builds on Linux (F-L1) (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0, Z3 4.13.4)
 The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (plus `#include <cstdint>`). On macOS the two are the same type. Before the fix, the failing evidence is the Linux build log in H11's "Linux evaluation" (F-L1).
@@ -694,7 +810,7 @@ Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed
   | `ethernet_smii_txrx` (`input [1:10] state`) | F-L4 | 344 | 10 | 60% | 84 | 4 | 40% |
   | `sha3` (1600-bit `f_permutation_::out`) | F-L5 | 1,547 | 25 | 60% | 398 | 13 | 60% |
 
-  Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. To be added to the H11 AssertLLM2 table on `ms/H11-linux` (and `ethernet_smii_txrx` restored to its manifest) after H11c is merged.
+  Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. Added to the H11 AssertLLM2 table on `ms/H11-linux` after the merge, and `ethernet_smii_txrx` restored to its manifest. Re-run there on `v3-168-g73b214f`, with the same counts.
 
 ## H11d: Verilator, Icarus and yosys in `third_party` (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0; macOS in H11e's "macOS checks")
 A2 was written first and committed failing in `62dfed3`.
@@ -788,6 +904,7 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
     ```
   - Linux is not affected: the distribution's flex installs the header in `/usr/include`.
   - All checks above use the Verilator built with `CPATH=/opt/homebrew/opt/flex/include CC=gcc-13 CXX=g++-13 bash install_verilator.sh`.
+  - **Fixed in H11g** (`ms/H11g-flex-header`, awaiting review): `tools_setup` puts the Homebrew formulas' `include/` on `CPATH`.
 - **Finding F-M2: the assertion counts of `structs` and `constructs` differ between macOS and Linux** in the configurations without a COI filter:
 
   | Design | C0 | C1 | C3 |
@@ -798,7 +915,8 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
   - C3's `coi_frac`/`coi_depth_fit` move with it (`structs` 0.465/0.345 against 0.466/0.349; `constructs` 0.422/0.374 against 0.424/0.376). C4–C7 and the other four designs are equal.
   - **Not a nondeterminism on the Mac:** `structs` C0 run again by hand gives 1,800 three times (`--max-threads 8` twice, `--max-threads 1` once), from the same generated config (`--generate-config`, SHA-1 `820b2a29ab651bc8dd4f6391c8744c387102030d`: 2 `<prop>`, 5 `<numeric>` with K-means clustering `K,10Max,0.01WCSS`).
   - C0 has no COI and no reduction, so the difference is already in the mining (or in the generated config) on these traces. The H0 baselines, byte-identical on both systems, do not cover it.
-  - **Deferred by the user (2026-10-08):** it does not block the release. The Linux table was made with HARM `v3-171-g9cdf233 (dirty)` on `ms/H11e-fixtures`, before H11f, so the two tables are not from the same commit; a Linux re-run on `ms/H11-linux` would tell a stale table from a platform difference.
+  - **Deferred by the user (2026-10-08):** it does not block the release.
+  - **A platform difference, not a stale table:** Linux's final re-run on `ms/H11-linux` (`v3-196-g29a0343`, whose HARM sources equal `dev`'s) gives the same 1,839/1,833/4,215/4,195 as H11e's Linux run. The same sources give different counts on macOS and Linux.
   - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)

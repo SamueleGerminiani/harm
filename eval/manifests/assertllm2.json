@@ -1,0 +1,198 @@
+[
+ {
+  "name": "aes_cipher",
+  "trace": {
+   "vcd": "build/assertllm2/traces/aes_cipher/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/aes_cipher_top.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_key_expand_128.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_rcon.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_sbox.v"
+   ],
+   "top": "aes_cipher_top"
+  },
+  "faults": "build/assertllm2/traces/aes_cipher/faults",
+  "args": []
+ },
+ {
+  "name": "uart",
+  "trace": {
+   "vcd": "build/assertllm2/traces/uart/golden/golden_seed1.vcd",
+   "clk": "clock",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/baud_gen.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_rx.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_tx.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/uart_top.v"
+   ],
+   "top": "uart_top"
+  },
+  "faults": "build/assertllm2/traces/uart/faults",
+  "args": []
+ },
+ {
+  "name": "uart_to_bus",
+  "trace": {
+   "vcd": "build/assertllm2/traces/uart_to_bus/golden/golden_seed1.vcd",
+   "clk": "clock",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/baud_gen.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_parser.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_rx.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_top.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_tx.v",
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/uart2bus_top.v"
+   ],
+   "top": "uart2bus_top"
+  },
+  "faults": "build/assertllm2/traces/uart_to_bus/faults",
+  "args": []
+ },
+ {
+  "name": "ethernet_smii_txrx",
+  "trace": {
+   "vcd": "build/assertllm2/traces/ethernet_smii_txrx/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/ethernet_smii_txrx/smii_txrx.v"
+   ],
+   "top": "smii_txrx"
+  },
+  "faults": "build/assertllm2/traces/ethernet_smii_txrx/faults",
+  "args": []
+ },
+ {
+  "name": "srdy-drdy-library",
+  "trace": {
+   "vcd": "build/assertllm2/traces/srdy-drdy-library/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/behave1p_mem.v",
+    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_input.v",
+    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_output.v",
+    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_scoreboard_fsm.v",
+    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/sd_scoreboard.v"
+   ],
+   "top": "sd_scoreboard"
+  },
+  "faults": "build/assertllm2/traces/srdy-drdy-library/faults",
+  "args": []
+ },
+ {
+  "name": "ima_adpcm_encoder",
+  "trace": {
+   "vcd": "build/assertllm2/traces/ima_adpcm_encoder/golden/golden_seed1.vcd",
+   "clk": "clock",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/DSP_CORE/ima_adpcm_encoder/ima_adpcm_enc.v"
+   ],
+   "top": "ima_adpcm_enc"
+  },
+  "faults": "build/assertllm2/traces/ima_adpcm_encoder/faults",
+  "args": []
+ },
+ {
+  "name": "ima_adpcm_decoder",
+  "trace": {
+   "vcd": "build/assertllm2/traces/ima_adpcm_decoder/golden/golden_seed1.vcd",
+   "clk": "clock",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/DSP_CORE/ima_adpcm_decoder/ima_adpcm_dec.v"
+   ],
+   "top": "ima_adpcm_dec"
+  },
+  "faults": "build/assertllm2/traces/ima_adpcm_decoder/faults",
+  "args": []
+ },
+ {
+  "name": "sha3",
+  "trace": {
+   "vcd": "build/assertllm2/traces/sha3/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/f_permutation.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/padder.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/padder1.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/rconst2in1.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/round2in1.v",
+    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/keccak.v"
+   ],
+   "top": "keccak"
+  },
+  "faults": "build/assertllm2/traces/sha3/faults",
+  "args": []
+ },
+ {
+  "name": "gaussian_noise_generator",
+  "trace": {
+   "vcd": "build/assertllm2/traces/gaussian_noise_generator/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/gng.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_coef.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_ctg.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_interp.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_lzd.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18.v",
+    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18_sadd_37.v"
+   ],
+   "top": "gng"
+  },
+  "faults": "build/assertllm2/traces/gaussian_noise_generator/faults",
+  "args": []
+ },
+ {
+  "name": "video_stream_scaler",
+  "trace": {
+   "vcd": "build/assertllm2/traces/video_stream_scaler/golden/golden_seed1.vcd",
+   "clk": "clk",
+   "scope": "triad_tb::dut",
+   "recursion": 16
+  },
+  "rtl": {
+   "files": [
+    "/home/sam/triad/data/assertllm2/designs/VIDEO_CONTROLLER/video_stream_scaler/streamScaler.v"
+   ],
+   "top": "streamScaler"
+  },
+  "faults": "build/assertllm2/traces/video_stream_scaler/faults",
+  "args": []
+ }
+]
