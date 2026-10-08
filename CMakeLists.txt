@@ -33,6 +33,9 @@ elseif (CMAKE_COMPILER_IS_GNUCXX)
     add_compile_options("-Wno-psabi")
     add_link_options("--profile")
 endif()
+# Every floating-point operation rounded, as on x86_64: on arm64, contracting `1 - a*b` into a fused
+# multiply-add changes the last bit of the decision-tree scores, and the mined assertions (H12, F-M2)
+add_compile_options("-ffp-contract=off")
 
 
 ### BUILD TYPE ###
