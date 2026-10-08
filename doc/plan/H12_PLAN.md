@@ -1,6 +1,6 @@
 # H12 plan: the same assertions on macOS arm64 and Linux x86_64 (finding F-M2)
 
-*Status: approved 2026-10-08 by the user (option (a)); done on the Mac (A1–A4 pass, VALIDATION) and on Linux (2026-10-08: `ctest` 229 of 229, fixtures 46 of 46 equal); awaiting the user's review. Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
+*Status: approved 2026-10-08 by the user (option (a)); done on the Mac (A1–A4 pass, VALIDATION) and on Linux (2026-10-08: `ctest` 229 of 229, fixtures 46 of 46 equal); reviewed and merged into `dev` 2026-10-08. Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
 
 ## The cause (found on the Mac; details: VALIDATION, H11e "macOS checks", F-M2)
 - **Where:** the decision-tree scores in `src/miner/modules/src/propertyMiner/TLMiner/supportMethods.cc`:
