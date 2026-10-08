@@ -19,6 +19,12 @@ public:
   /// @brief this method reads the trace from the given file(s), the actual reading is delegated to the protected method 'readTrace' that must be implemented by the derived classes
   harm::TracePtr readTrace();
 
+  /// @brief the files the trace was read from, with their lengths, in merge order (files that
+  /// read as empty are not in the trace, nor here); valid after readTrace()
+  const std::vector<std::pair<std::string, size_t>> &getReadFiles() const {
+    return _readFiles;
+  }
+
   /// @brief Unsupported constructor.
   TraceReader(const TraceReader &other) = delete;
 
@@ -44,6 +50,9 @@ protected:
 
   ///the final generated trace
   harm::TracePtr _trace = nullptr;
+
+  ///the files actually read, in merge order
+  std::vector<std::pair<std::string, size_t>> _readFiles;
 };
 
 } // namespace harm

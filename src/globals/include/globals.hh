@@ -73,6 +73,10 @@ extern std::string dumpImplications;
 extern std::string traceEnd;
 ///--dump-assertion-info
 extern std::string dumpAssertionInfo;
+///--dump-prop-table (H15)
+extern std::string dumpPropTable;
+///HARM_VERSION (git describe), for the files HARM writes
+extern std::string harmVersion;
 ///--atom-premises, --atom-premises-max (H3b, D-025)
 extern bool atomPremises;
 extern size_t atomPremisesMax;

@@ -15,6 +15,7 @@ Option & Effect (section) \\
 \opt{dump-implications} \code|<file>| & the dropped assertions and what implies them, as JSON \\
 \opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON \\
 \opt{dump-coi-report} \code|<file>| & the out-of-cone report (\cref{sec:coi}) \\
+\opt{dump-prop-table} \code|<file>| & every proposition's value at every cycle, as JSON (\code|prop-table| v1, D-031) \\
 \opt{trace-end} \code+harm|sva+ & the end-of-trace semantics (\cref{sec:traceend}) \\
 \opt{skip-invalid-props} & skip a proposition that does not parse, with a warning \\
 \opt{version} & print \code|HARM <git describe>| and exit \\
@@ -78,6 +79,7 @@ D-027 & the release: tag \texttt{v4}, \opt{version}, Docker (\file{doc/plan/H11_
 D-028 & vector indexing follows SystemVerilog & H11c \\
 D-029 & fixtures and oracles independent of the Verilator version & H11e \\
 D-030 & \opt{check-dump-eval} file names and \code|index.json| & H16 \\
+D-031 & the proposition table, \code|prop-table| v1 & H15 \\
 \bottomrule
 \end{longtable}
 
@@ -117,6 +119,7 @@ H11g & \code|install_verilator.sh| on macOS & F-M1 \\
 H12 & the same assertions on macOS and Linux & F-M2 \\
 H13 & profiling opt-in & --- \\
 H14 & this documentation and report & --- \\
+H15 & the proposition table, \opt{dump-prop-table} & --- \\
 H16 & \opt{check-dump-eval} file names & overwrites, exit on long names (trivergence) \\
 \bottomrule
 \end{longtable}

@@ -227,6 +227,7 @@ include_directories(${CMAKE_BINARY_DIR}/generated)
 #Command line parser
 add_subdirectory(src/commandLineParser)
 add_dependencies(commandLineParser harm_version)
+add_dependencies(${NAME} harm_version)
 target_link_libraries(${NAME} commandLineParser)
 
 #c++17 filesystem

@@ -43,6 +43,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 | `--dump-implications <file>` | the dropped assertions and what implies them, as JSON |
 | `--dump-assertion-info <file>` | every kept assertion with its metrics, propositions, cycle offsets and origins, as JSON |
 | `--trace-end harm\|sva` | how an obligation still pending at the end of a trace is judged: weak (default) or as a SystemVerilog simulator does (H1c, D-016) |
+| `--dump-prop-table <file>` | every context's propositions and their value at every cycle (`prop-table` v1, H15, D-031), for miners that work on propositions (the portfolio's SAT miner) |
 | `--dump-coi-report <file>` | for each consequent, the propositions outside its cone of influence (H9) |
 | `--skip-invalid-props` | see above |
 | `--version` | the version (`git describe`) |
@@ -104,4 +105,5 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H11g | `install_verilator.sh` on macOS (F-M1) |
 | H12 | the same assertions on macOS and Linux (F-M2) |
 | H13 | profiling opt-in (`HARM_PROFILE`) |
+| H15 | `--dump-prop-table` (D-031) |
 | H16 | `--check-dump-eval` file names and `index.json` (D-030) |

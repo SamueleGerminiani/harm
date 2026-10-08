@@ -188,6 +188,10 @@ if mode == "vcd":
             if not num or any((p["source"], p.get("numeric"), p["domains"], p["origin"]) != ("numeric", "cnt", ["a"], None)
                               for p in num):
                 errors.append(f"A3: the numeric's expansion {[(p['text'], p['source']) for p in num]}")
+            num2 = ctx.get("c2", {}).get("propositions", [])[2:]
+            if not num2 or any((p["source"], p.get("numeric"), p["domains"], p["origin"]) != ("numeric", "stim_state", ["ac"], None)
+                               for p in num2) or not any(">=" in p["text"] or "<=" in p["text"] for p in num2):
+                errors.append(f"A3: stim_state's expansion (ranges expected) {[(p['text'], p['source']) for p in num2]}")
             if len({p["text"] for p in num}) != len(num):
                 errors.append("A3: a numeric's expansion repeats a text")
             if ctx.get("default", {}).get("unexpanded_numerics") != [{"text": "cnt", "domains": ["dt"]}] or \
@@ -203,7 +207,9 @@ if mode == "vcd":
                     compare(f"A2 {name} {p['text']} vs the VCD reader", p["values"], mine)
             # ---- A4: the rest of HARM's output does not change
             plain = run(args + ["--conf", str(conf)], d)
-            strip = lambda s: [l for l in s.splitlines() if not re.search(r"\d\d:\d\d:\d\d|Time to mine", l)]
+            # timings differ from run to run: the clock in messages, "Time to mine", the progress bar's seconds
+            strip = lambda s: [re.sub(r"(\] +\d+%) [\d.]+s$", r"\1", l) for l in s.splitlines()
+                               if not re.search(r"\d\d:\d\d:\d\d|Time to mine", l)]
             if strip(plain.stdout) != strip(with_table.stdout):
                 errors.append("A4: stdout differs with --dump-prop-table")
 

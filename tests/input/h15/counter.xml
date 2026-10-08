@@ -1,6 +1,7 @@
 <harm>
   <!-- H15: --dump-prop-table on tests/input/coi/counter/trace.vcd (tests/regression/check_prop_table.py).
-       "en" twice: listed once, with both domains and the first origin. The [dt] numeric is not expanded. -->
+       "en" twice: listed once, with both domains and the first origin. The [dt] numeric is not expanded;
+       stim_state (32-bit, random) expands into ranges. -->
   <context name="default">
     <prop exp="en" loc="a, dt" origin="rtl"/>
     <prop exp="wrap" loc="c"/>
@@ -12,5 +13,6 @@
   <context name="c2">
     <prop exp="rst" loc="a"/>
     <prop exp="cnt == 4'd9" loc="c"/>
+    <numeric exp="stim_state" loc="ac"/>
   </context>
 </harm>

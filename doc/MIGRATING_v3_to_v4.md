@@ -73,7 +73,7 @@ All opt-in; see the README for each.
 - **Fewer, non-redundant assertions:** `--reduce equiv` (equivalent propositions, Z3), `--reduce implies` (assertions implied by another one), `--atom-premises`, `--keep`, `--dump-implications`.
 - **Simulator semantics at the end of a trace:** `--trace-end sva`, if the mined SVA will be checked by a simulator (`s_eventually` still pending at the end fails).
 - **The RTL as a hint:** `harm-coi` computes cones of influence and harvests the RTL's predicates; `<coi mode="rank">` sorts by `coiFrac`/`coiDepthFit`, `<coi mode="filter">` prunes the search, `--dump-coi-report` lists the propositions outside each cone.
-- **Machine-readable output:** `--dump-assertion-info` (metrics, propositions, cycle offsets, `origin`).
+- **Machine-readable output:** `--dump-assertion-info` (metrics, propositions, cycle offsets, `origin`); `--dump-prop-table` (every proposition's value at every cycle).
 
 ## 4. What stays the same
 - The configuration format: every v3 element and attribute keeps its meaning.

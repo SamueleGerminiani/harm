@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "CSVtraceReader.hh"
+#include "harmVersion.hh"
 #include "ManualDefinition.hh"
 #include "Miner.hh"
 #include "Qualifier.hh"
@@ -287,6 +288,11 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("skip-invalid-props")) {
     clc::skipInvalidProps = true;
   }
+  clc::harmVersion = HARM_VERSION;
+  if (result.count("dump-prop-table")) {
+    clc::dumpPropTable = result["dump-prop-table"].as<std::string>();
+  }
+
   if (result.count("dump-assertion-info")) {
     clc::dumpAssertionInfo = result["dump-assertion-info"].as<std::string>();
   }

@@ -1,6 +1,6 @@
 # H15 plan: the proposition table (`--dump-prop-table`), for the miner portfolio's SAT miner
 
-*Status: plan approved 2026-10-08 by the user (Q1 (a), Q2 (a), Q3 (a)). Branch: `ms/H15-prop-table` (rebased on `dev` @ `b8fb8dd`, with H16). Effort: 2–3 d, plus a full `ctest`.*
+*Status: plan approved 2026-10-08 by the user (Q1 (a), Q2 (a), Q3 (a)); implemented, awaiting review (VALIDATION, H15). Branch: `ms/H15-prop-table` (rebased on `dev` @ `b8fb8dd`, with H16). Effort: 2–3 d, plus a full `ctest`.*
 
 ## What the SAT miner needs
 `~/miner-portfolio` S1 mines `antecedent |-> ##d c` over **windows** of cycles. From HARM it needs, for every proposition of a context and every sampled cycle, the value HARM's evaluator gives, plus where each input trace (and each reset segment) begins and ends, so that no window spans two traces. It then needs neither a VCD reader nor a proposition evaluator, and inherits D-011 (x/z), D-028 (vector indices) and HARM's sampling.
