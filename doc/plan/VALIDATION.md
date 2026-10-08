@@ -925,7 +925,25 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
       - The difference follows the platform: macOS's libraries, or the architecture (arm64 against x86_64).
       - **Lead:** on arm64, GCC contracts multiply-adds into FMA by default (`-ffp-contract=fast`). This changes floating-point rounding, e.g. in K-means clustering at mining time.
       - The next experiments are in `eval/HANDOFF_FM2.md`.
-  - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
+  - **The Mac experiments (2026-10-08, `ms/H12-fm2` from `dev` @ `ecf9ac2`; HARM sources equal to `746e191`'s; macOS 15.3.2 arm64, g++-13 13.3.0). The cause is found: FMA contraction in the decision-tree score.**
+    - **FMA off, whole HARM** (`-DCMAKE_CXX_FLAGS=-ffp-contract=off`, `build-nofma/`): `structs` C0 **1,839** and `constructs` C0 **4,215**, Linux's counts. Same `gen.xml` as the default build (`structs` `820b2a29…`, `constructs` `aff9a6a6…`). The default build on the same Mac: 1,800 and 4,220.
+    - **Bisection by build target** (`-ffp-contract=off` added to chosen targets' `flags.make` in a scratch build, `build-cls/`; `structs` C0):
+
+      | Contraction off in | Count |
+      |---|---|
+      | `clustering` only (the K-means lead) | 1,800 |
+      | the `harm` executable and all of `src/miner` | 1,839 |
+      | `src/miner/utils`, or the `miner` library | 1,800 |
+      | all of `src/miner/modules` | 1,839 |
+      | `propertyQualification` only | 1,800 |
+      | **`propertyMiner` only** | **1,839** |
+
+    - **In `propertyMiner`, only two functions are fused** (`objdump`, default build): `getConditionalEntropy` and `getCovScore` (`TLMiner/supportMethods.cc`), one `fmsub` each. The FMA-off build has none.
+    - **The one used here is `getCovScore`:** the fixtures' template sets no heuristic, and the default is `COVERAGE` (`DTLimits.hh:99`). Its score `1 - (ATCT/CT) * (1 - ATCF/CF)` becomes a fused multiply-subtract, so the product is not rounded before the subtraction.
+    - **Why it changes the assertions:** `AntecedentGenerator` sorts the candidates by gain and, with `-0.1E` (the generated template's effort), keeps only the best (`AntecedentGenerator.cc:518–527`). Candidates whose scores are equal or nearly equal are then ordered by their last bits, which FMA changes, so a different antecedent is kept and the decision tree grows differently.
+    - **The same fragility without FMA:** a stand-alone copy of the entropy formula gives `H(p) != H(1-p)` in 7,266 of 19,900 mirrored pairs with contraction off, and in 9,626 with it on. HARM's choice among near-ties depends on rounding on every platform; x86_64 and arm64 agree only when neither contracts.
+    - **Not the cause:** the K-means clustering (its `dkm` seed is fixed at 1, `dkm.hpp:293`), the thread count, `--generate-config`, and the compiler version.
+  - **The fix:** H12 (`doc/plan/H12_PLAN.md`), awaiting the user's approval.
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
 Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.

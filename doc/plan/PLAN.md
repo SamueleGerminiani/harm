@@ -313,6 +313,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H11b | HARM builds on Linux (F-L1) | done (A4 on the Mac: pass) |
 | H11c | Linux findings F-L3 (yosys probe), F-L4 (VCD ranges, SystemVerilog indexing, D-028), F-L5 (wide predicates) | done (A4 on the Mac: pass) |
 | H11d | Verilator, Icarus and yosys in `third_party` (Linux and macOS) | done (macOS: F-M1 fixed in H11g) |
-| H11e | Fixtures and oracles independent of the Verilator version (F-L6, F-L7, F-L8, F-L10; D-029) | done (macOS: `ctest` pass; fixture counts differ from Linux, F-M2, deferred by the user) |
+| H11e | Fixtures and oracles independent of the Verilator version (F-L6, F-L7, F-L8, F-L10; D-029) | done (macOS: `ctest` pass; fixture counts differ from Linux, F-M2: cause found, fix proposed in H12) |
 | H11f | Log files under concurrent writers (F-L9) | done |
 | H11g | `install_verilator.sh` on macOS: Homebrew flex's `FlexLexer.h` (F-M1) | done |
+| H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | cause found; plan `doc/plan/H12_PLAN.md` awaiting approval |
