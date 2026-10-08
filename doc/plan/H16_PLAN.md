@@ -1,6 +1,6 @@
 # H16 plan: `--check-dump-eval` file names (trivergence T12 A5 finding)
 
-*Status: planned 2026-10-08, awaiting approval. Branch: `ms/H16-check-dump-names` (from `dev` @ `ef396e3`; local only). Effort: 0.5 d, plus a full `ctest`.*
+*Status: approved 2026-10-08 by the user (names (b), the row fix in scope). Branch: `ms/H16-check-dump-names` (from `dev` @ `ef396e3`; local only). Effort: 0.5 d, plus a full `ctest`.*
 
 ## The problem (reproduced on the Mac, HARM `ce3b5bd`)
 - **Where:** `TemplateImplication::check()` (`src/miner/utils/src/TemplateImplication.cc`, the `checkDumpEvalDirectory` block). Each `check` assertion's CSV is named `sanitizeFilename(<Spot text>) + ".csv"`; `sanitizeFilename()` (`src/utils/include/misc.hh`) deletes every character outside `[A-Za-z0-9-_.+()[]#=>|:]`.
@@ -12,8 +12,8 @@
 ## The fix (D-030, a change of an output format)
 | | Choice | Recommended |
 |---|---|---|
-| **File names** | (a) `<k>.csv`, where `k` = 0, 1, 2, … is the order in which HARM checks the assertions in the run (contexts in order, `check` templates in config order). Unique and bounded by construction | **yes** |
-| | (b) `<k>_<sanitized text truncated to 100 bytes>.csv`: still unique and bounded, readable in `ls`, but a second naming rule consumers might be tempted to parse | |
+| **File names** | (a) `<k>.csv`, where `k` = 0, 1, 2, … is the order in which HARM checks the assertions in the run (contexts in order, `check` templates in config order). Unique and bounded by construction | (recommended) |
+| | (b) `<k>_<sanitized text truncated to 100 bytes>.csv`: still unique and bounded, readable in `ls`, but a second naming rule consumers might be tempted to parse. The index is the contract; the text part is only for people | **chosen by the user** |
 | **Index** | `index.json` in the dump directory, written once at the end of the run: `{"version": "1", "assertions": [{"file": "0.csv", "context": "default", "spot": "<exact Spot text>", "sva": "<exact SVA text>"}, …]}`. `spot` is the string the old name was derived from; `sva` is what trivergence compares against. JSON-escaped, so commas, quotes and `{a, b}` concatenations are safe | |
 | **Open failure** | A file that still cannot be opened (e.g. disk full) gives a warning and `"file": null` in the index; the run continues. Never an exit | |
 | **Rows (item 4)** | Every row has the five header fields `t, Ant, Shift, Con, Ass`. For an assertion without a shift, Shift is the evaluator's shift (0); for the others nothing changes | |
