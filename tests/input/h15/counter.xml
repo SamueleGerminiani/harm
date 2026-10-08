@@ -1,0 +1,16 @@
+<harm>
+  <!-- H15: --dump-prop-table on tests/input/coi/counter/trace.vcd (tests/regression/check_prop_table.py).
+       "en" twice: listed once, with both domains and the first origin. The [dt] numeric is not expanded. -->
+  <context name="default">
+    <prop exp="en" loc="a, dt" origin="rtl"/>
+    <prop exp="wrap" loc="c"/>
+    <prop exp="en" loc="c"/>
+    <numeric exp="cnt" loc="a"/>
+    <numeric exp="cnt" loc="[dt]"/>
+    <template exp="G(P0 -> P1)"/>
+  </context>
+  <context name="c2">
+    <prop exp="rst" loc="a"/>
+    <prop exp="cnt == 4'd9" loc="c"/>
+  </context>
+</harm>

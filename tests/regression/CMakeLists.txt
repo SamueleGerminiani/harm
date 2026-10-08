@@ -462,3 +462,13 @@ if(PYTHON3_FOUND)
                 ${CMAKE_SOURCE_DIR}/tests/input/h16)
     set_tests_properties(h16_check_dump_eval PROPERTIES LABELS regression)
 endif()
+
+# ---- H15: --dump-prop-table, the proposition table (D-031) --------------------------------------------
+if(PYTHON3_FOUND)
+    foreach(mode xz vcd)
+        add_test(NAME h15_prop_table_${mode}
+            COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_prop_table.py $<TARGET_FILE:harm>
+                    ${CMAKE_SOURCE_DIR} ${mode})
+        set_tests_properties(h15_prop_table_${mode} PROPERTIES LABELS regression)
+    endforeach()
+endif()
