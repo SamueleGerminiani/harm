@@ -316,4 +316,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H11e | Fixtures and oracles independent of the Verilator version (F-L6, F-L7, F-L8, F-L10; D-029) | done (macOS: `ctest` pass; fixture counts differ from Linux, F-M2: fixed in H12) |
 | H11f | Log files under concurrent writers (F-L9) | done |
 | H11g | `install_verilator.sh` on macOS: Homebrew flex's `FlexLexer.h` (F-M1) | done |
-| H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | done on the Mac (`ms/H12-fm2`: A1–A4 pass, fixtures 46 of 46 equal to Linux); the Linux run is pending (`eval/HANDOFF_H12.md`); awaiting review |
+| H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | done on the Mac (`ms/H12-fm2`: A1–A4 pass, fixtures 46 of 46 equal to Linux); Linux: `ctest` 229 of 229, fixtures 46 of 46 unchanged; awaiting review |
