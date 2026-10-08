@@ -1,6 +1,6 @@
 # H12 plan: the same assertions on macOS arm64 and Linux x86_64 (finding F-M2)
 
-*Status: proposed 2026-10-08, awaiting the user's approval. Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
+*Status: approved 2026-10-08 by the user (option (a)). Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
 
 ## The cause (found on the Mac; details: VALIDATION, H11e "macOS checks", F-M2)
 - **Where:** the decision-tree scores in `src/miner/modules/src/propertyMiner/TLMiner/supportMethods.cc`:
@@ -26,7 +26,7 @@
 ## Tests (written first, committed failing on the Mac)
 | # | Test | Kind |
 |---|---|---|
-| A1 | `h12_structs_count`: `structs` C0 (the generated config, `--max-threads 1`) gives **1,839** assertions, Linux's count, on every platform. Fails on the Mac before the fix (1,800); passes on Linux before and after. About 40 s, label `slow` | ctest |
+| A1 | `h12_structs_count`: `structs` C0 (the generated config, `--max-threads 1`) gives **1,839** assertions, Linux's count, on every platform. Fails on the Mac before the fix (1,800); passes on Linux before and after. About 150 s with one thread, label `slow` | ctest |
 | A2 | `ScoreTest`: `getCovScore` and `getConditionalEntropy` on fixed counts, compared **bit for bit** with values computed by a version that rounds every operation (written out as `std::fma`-free steps with `volatile` temporaries, so it cannot be contracted). Fails on arm64 before the fix where the fused result differs; must pass on x86_64. The test cases are chosen so that the fused and the rounded results differ (searched once on the Mac and fixed in the test) | gtest |
 | A3 | The Mac fixture table re-run, `--check` against `eval/results/linux-fixtures`: **46 of 46 equal** | eval (Mac) |
 | A4 | Full `ctest` on the Mac and on Linux; the H0 baselines byte-identical; on Linux, the fixture table with `--check` unchanged (46 of 46) | ctest, eval (both) |

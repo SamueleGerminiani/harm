@@ -43,6 +43,7 @@ addTest("CoiDepthTest" ./coiDepthTests.cc )
 addTest("PrintingTest" ./printingTests.cc )
 addTest("CoiPredicateTest" ./coiPredicateTests.cc )
 addTest("AtomPremiseTest" ./atomPremiseTests.cc )
+addTest("ScoreTest" ./scoreTests.cc )
 
 
 add_subdirectory(regression)
