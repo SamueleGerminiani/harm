@@ -921,6 +921,10 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
     - `--generate-config` on `structs` gives a `gen.xml` with SHA-1 `820b2a29ab651bc8dd4f6391c8744c387102030d`, **the same as the Mac's**.
     - From that config, C0 mines 1,839 assertions with `--max-threads 8` and with `--max-threads 1`.
     - So the difference is in the mining (and its qualification), not in `--generate-config`. It is deterministic on each system and independent of the thread count. The K-means lead (`<numeric>` clustering) is still open: the clustering runs at mining time, not in `--generate-config`.
+    - **Not the compiler:** the Linux Docker image (`samger/harm:ms-H11-linux`: Ubuntu 24.04, x86_64, g++ 13.3, the Mac's compiler version) gives the same `gen.xml` SHA-1 and 1,839 assertions (`--max-threads 8`).
+      - The difference follows the platform: macOS's libraries, or the architecture (arm64 against x86_64).
+      - **Lead:** on arm64, GCC contracts multiply-adds into FMA by default (`-ffp-contract=fast`). This changes floating-point rounding, e.g. in K-means clustering at mining time.
+      - The next experiments are in `eval/HANDOFF_FM2.md`.
   - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
