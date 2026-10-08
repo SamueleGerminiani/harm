@@ -1,6 +1,6 @@
 # H11g plan: `install_verilator.sh` on macOS (finding F-M1)
 
-*Status: approved 2026-10-08 by the user ("fix it now"); done, awaiting review (A1–A3 pass, VALIDATION). Branch: `ms/H11g-flex-header` (from `dev` @ `746e191`). Effort: 0.5 h, plus a Verilator rebuild on the Mac.*
+*Status: approved 2026-10-08 by the user ("fix it now"); reviewed and merged into `dev` 2026-10-08 (A1–A3 pass on the Mac; A1 also on Linux). Branch: `ms/H11g-flex-header` (from `dev` @ `746e191`). Effort: 0.5 h, plus a Verilator rebuild on the Mac.*
 
 ## The bug (found by the macOS checks on `ms/H11-macos`, H11e's VALIDATION entry there)
 - **Symptom:** on macOS, `install_verilator.sh` stops at
