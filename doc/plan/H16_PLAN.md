@@ -1,6 +1,6 @@
 # H16 plan: `--check-dump-eval` file names (trivergence T12 A5 finding)
 
-*Status: approved 2026-10-08 by the user (names (b), the row fix in scope). Branch: `ms/H16-check-dump-names` (from `dev` @ `ef396e3`; local only). Effort: 0.5 d, plus a full `ctest`.*
+*Status: approved 2026-10-08 by the user (names (b), the row fix in scope); implemented, awaiting review (VALIDATION, H16). Branch: `ms/H16-check-dump-names` (from `dev` @ `ef396e3`; local only). Effort: 0.5 d, plus a full `ctest`.*
 
 ## The problem (reproduced on the Mac, HARM `ce3b5bd`)
 - **Where:** `TemplateImplication::check()` (`src/miner/utils/src/TemplateImplication.cc`, the `checkDumpEvalDirectory` block). Each `check` assertion's CSV is named `sanitizeFilename(<Spot text>) + ".csv"`; `sanitizeFilename()` (`src/utils/include/misc.hh`) deletes every character outside `[A-Za-z0-9-_.+()[]#=>|:]`.

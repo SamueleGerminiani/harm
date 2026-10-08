@@ -1034,3 +1034,19 @@ The checks were written first and committed failing in `d4c3f14` (182 coverage f
   - Release notes: they stopped at D-027 and did not cover D-028 or H11b–H13.
 - **Not changed, recorded as known limitations** in the release notes and the report: the `camellia` example's invalid XML, the reserved name `W`, and the formulas HARM cannot evaluate (all predate v4, H3 and H7 findings).
 - **The report's figures** are TikZ in the `.tex` files; there is no `figures/` directory (the plan listed one).
+
+## H16: `--check-dump-eval` file names (2026-10-08, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0)
+The test was written first and committed failing in `92de07f` (5 files for 12 assertions, exit code 1 on the long name, no index).
+
+| Test | Result |
+|---|---|
+| A1 `h16_check_dump_eval`: `x != y`/`x <= y`, `a && b`/`a & b`/signal `ab`, `!a`/`a`, and `a -> c` in two contexts give distinct files | pass: 12 assertions, 12 files, 12 index entries (before: 5 files) |
+| A2 the same test: a 20-conjunct antecedent (an 854-byte assertion) followed by another assertion | pass: exit code 0, both dumped (before: exit code 1 at the long name) |
+| A3 the same test: `index.json` names every `.csv` in the directory exactly once; each entry's `file`, `context`, `spot` and `sva` equal hand-written expected texts | pass |
+| A4 the same test: every row of every file, recomputed in Python from the CSV trace (`->`, `|->`, `|=>`), equals the file the index maps the assertion to; five fields per row | pass, 12 × 8 rows (before: rows of shift-free assertions had two fields) |
+| A5 full `ctest` on the Mac | 233 of 234; the exception, `h14_doc_coverage`, ran before the documents cited H16 and D-030 (it already failed on the branch's first commit, which added H16 to the status board). Re-run after the documents: `h14_doc_*` and the 24 `regression_*` baselines, 27 of 27. The H0 baselines are byte-identical |
+
+- **Independence of the oracle (A4):** the checker evaluates the propositions itself and shares no code with HARM. Before the fix, its `|=>` rows were compared with HARM's existing `|=>` dump (whose rows were already well-formed): equal on all 8 rows.
+- **Not tested:** the `"file": null` path (a file that cannot be opened). Nothing in the test can make the open fail once HARM has created the directory; the code path is a warning and an index entry.
+- **Found while testing, not fixed:** Boolean `^` (`G(a ^ b -> c)`) is a temporal parse error; `x ^ y == 1` on integers works. `a ^ b`, listed in PLAN §H16 as a collision, does not collide: Spot prints it with parentheses.
+- **Linux:** pending, as for the earlier milestones.

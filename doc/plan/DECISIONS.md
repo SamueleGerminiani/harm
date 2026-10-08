@@ -339,3 +339,12 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - Verilator 5.052 no longer dumps the loop variable `unnamedblk1::i`. It was removed from `h8/constructs_coi.json`'s unknown list (the same as harm-coi's output on the new trace).
   - H9's acceptance A2 needed a signal listed as unknown: `y_loop` (an output no cone uses) took that role in the hand-edited `h9/constructs_partial_coi.json`. The expected report is unchanged except for the name.
 - **HARM is not changed.**
+
+## D-030: `--check-dump-eval` file names and `index.json` (2026-10-08, H16, approved by the user; finding from trivergence's T12 A5 test)
+- **The problem:** each checked assertion's CSV was named after its Spot text with every character outside `[A-Za-z0-9-_.+()[]#=>|:]` deleted. Different assertions overwrote each other's file without a warning (`x != y` and `x <= y`; `a && b`, `a & b` and a signal `ab`; `!a` and `a`; the same assertion in two contexts). A name over 255 bytes made HARM exit with code 1. No file could be mapped back to its assertion.
+- **File names:** `<k>_<text>.csv`. `k` = 0, 1, 2, … is the order in which HARM checks the assertions in the run (contexts in order, `check` templates in configuration order); it makes the name unique. `<text>` is the old sanitized text cut to 100 bytes, only for people reading `ls`: it is not unique and not part of the contract. (The user chose this over `<k>.csv`.)
+- **`index.json`** (version `1`) in the dump directory, written at the end of the run: `{"version": "1", "assertions": [{"file": "<k>_<text>.csv", "context": "<name>", "spot": "<Spot-LTL text>", "sva": "<SVA text>"}, …]}`, in check order. It is the contract: consumers find an assertion's file through it.
+- **Never an exit:** a file that cannot be opened gives a warning and `"file": null` in the index; the run continues.
+- **Rows:** every row has the five header fields `t, Ant, Shift, Con, Ass`. v3 wrote Shift, Con, Ass and the newline only for assertions with a shift; for `G(a -> b)` the whole file was one line. For an assertion without a shift, Shift is the evaluator's shift (0). Rows of assertions with a shift are unchanged.
+- **Unchanged:** the dump directory is still removed and re-created; stdout, the mined assertions and every other output are byte-identical (the H0 baselines).
+- **Not decided here:** an SVA-style reset for check mode (`disable iff`), recorded in PLAN §H16.

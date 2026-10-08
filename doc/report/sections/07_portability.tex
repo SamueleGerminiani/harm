@@ -38,5 +38,6 @@ v4 compiles everything HARM's CMake builds with \code|-ffp-contract=off|. Linux 
 \begin{itemize}
 \item \textbf{\opt{version}} prints \code|HARM <git describe>| (\ms{H11}, D-027), so users and trivergence can tell which build they run.
 \item \textbf{Profiling is opt-in} (\ms{H13}): since v2, every GCC build was linked with \code|--profile| without compiling for profiling, so every run, even \opt{version}, wrote a useless 2.6\,MB \code|gmon.out|. \code|-DHARM_PROFILE=ON| now builds a real \code|gprof| profile.
+\item \textbf{\opt{check-dump-eval} files} (\ms{H16}, D-030): v3 named each checked assertion's CSV after its text with some characters deleted, so \code|a != b| and \code|a <= b| overwrote each other's file, and a name over 255 bytes stopped HARM. v4 writes \code|<k>_<text>.csv| and an \code|index.json| that maps each file to its exact assertion, and every row has all five columns. A test recomputes every row from the trace and compares it with the file the index names.
 \item \textbf{The Docker image} (\file{docker/build.sh}) builds a given git reference with Z3, \texttt{harm-coi}, Verilator and Icarus, and runs the fast tests while it builds.
 \end{itemize}

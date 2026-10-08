@@ -137,5 +137,7 @@ extern size_t nFaultCovSubset;
 extern size_t traceLength;
 ///Number of input fault
 extern size_t nFaults;
+/// --check-dump-eval: one index.json record per dumped assertion, in check order (D-030)
+extern std::vector<std::string> checkDumpEvalIndex;
 
 } // namespace hs

@@ -78,5 +78,6 @@ size_t nOfCovFaults = 0;
 size_t nFaults = 0;
 size_t nFaultCovSubset = 0;
 size_t traceLength = 0;
+std::vector<std::string> checkDumpEvalIndex;
 
 } // namespace hs

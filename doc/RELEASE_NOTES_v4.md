@@ -47,6 +47,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 | `--skip-invalid-props` | see above |
 | `--version` | the version (`git describe`) |
 
+**`--check-dump-eval <dir>` (a v3 option) has a new file format** (H16, D-030). v3 named each assertion's CSV after its text with some characters deleted, so different assertions could overwrite each other's file without a warning (`a != b` and `a <= b`), and a name over 255 bytes stopped HARM. v4 names the files `<k>_<text>.csv`, with `k` the order in which the assertions are checked, and writes `index.json`, which maps each file to its context and its exact Spot-LTL and SVA text. Every row now has all five columns; v3 wrote only `t` and `Ant` for an assertion without a shift (`G(a -> b)`).
+
 ## Cones of influence (`<coi>`; H4, H6–H9)
 - **`<coi file="coi.json" mode="rank"/>`:** new metric variables `coiFrac`, `coiDepthFit` and `coiUnknown`, to sort or filter assertions by structural plausibility. Nothing is pruned.
 - **`mode="filter"`:** never tries antecedents outside the consequent's cone, GoldMine-style; `depth="bounded|exact"` also uses the cone's depths (H8). Filter mode assumes the RTL is correct, and says so once.
@@ -102,3 +104,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H11g | `install_verilator.sh` on macOS (F-M1) |
 | H12 | the same assertions on macOS and Linux (F-M2) |
 | H13 | profiling opt-in (`HARM_PROFILE`) |
+| H16 | `--check-dump-eval` file names and `index.json` (D-030) |
