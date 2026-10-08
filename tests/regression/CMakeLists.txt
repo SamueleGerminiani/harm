@@ -432,3 +432,25 @@ if(NOT HARM_PROFILE)
     add_test(NAME h13_no_gmon COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_no_gmon.sh $<TARGET_FILE:harm>)
     set_tests_properties(h13_no_gmon PROPERTIES LABELS regression)
 endif()
+
+# ---- H14: the v4 documentation and report -------------------------------------------------------------
+# A1: the report builds (skipped without latexmk or pdftotext)
+add_test(NAME h14_report_builds COMMAND bash ${CMAKE_SOURCE_DIR}/doc/report/check.sh ${CMAKE_SOURCE_DIR})
+set_tests_properties(h14_report_builds PROPERTIES LABELS doc SKIP_RETURN_CODE 77)
+if(PYTHON3_FOUND)
+    # A2, A4, A5: what changed since v3 is documented; the developer guide covers the repository
+    add_test(NAME h14_doc_coverage
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/doc/report/check_coverage.py ${CMAKE_SOURCE_DIR})
+    # A3: the documents' runnable examples run (the harm-coi ones only with harm-coi)
+    set(_h14_coi "")
+    if(HARM_COI_OK)
+        get_filename_component(_h14_coi_bin ${HARM_COI_PYTHON} DIRECTORY)
+        if(EXISTS ${_h14_coi_bin}/harm-coi)
+            set(_h14_coi --harm-coi ${_h14_coi_bin}/harm-coi)
+        endif()
+    endif()
+    add_test(NAME h14_doc_examples
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/doc/report/run_examples.py ${CMAKE_SOURCE_DIR}
+                --harm $<TARGET_FILE:harm> ${_h14_coi})
+    set_tests_properties(h14_doc_coverage h14_doc_examples PROPERTIES LABELS doc)
+endif()
