@@ -798,6 +798,7 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
   - C3's `coi_frac`/`coi_depth_fit` move with it (`structs` 0.465/0.345 against 0.466/0.349; `constructs` 0.422/0.374 against 0.424/0.376). C4–C7 and the other four designs are equal.
   - **Not a nondeterminism on the Mac:** `structs` C0 run again by hand gives 1,800 three times (`--max-threads 8` twice, `--max-threads 1` once), from the same generated config (`--generate-config`, SHA-1 `820b2a29ab651bc8dd4f6391c8744c387102030d`: 2 `<prop>`, 5 `<numeric>` with K-means clustering `K,10Max,0.01WCSS`).
   - C0 has no COI and no reduction, so the difference is already in the mining (or in the generated config) on these traces. The H0 baselines, byte-identical on both systems, do not cover it.
+  - **Deferred by the user (2026-10-08):** it does not block the release. The Linux table was made with HARM `v3-171-g9cdf233 (dirty)` on `ms/H11e-fixtures`, before H11f, so the two tables are not from the same commit; a Linux re-run on `ms/H11-linux` would tell a stale table from a platform difference.
   - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
