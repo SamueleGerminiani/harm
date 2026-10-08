@@ -1,6 +1,6 @@
 # H11c plan: the Linux checklist's findings F-L3, F-L4, F-L5
 
-*Status: approved 2026-10-07, with F-L4 extended by the user: vector indexing follows SystemVerilog (D-028); reviewed and merged into `dev` 2026-10-07. Open: A4 on the Mac. Branch: `ms/H11c-linux-findings` (from `dev` @ `3b0a9ee`). Effort: 2–3 d.*
+*Status: approved 2026-10-07, with F-L4 extended by the user: vector indexing follows SystemVerilog (D-028); reviewed and merged into `dev` 2026-10-07. A4 on the Mac: pass, 226 of 226 (2026-10-08, `ms/H11-macos`). Branch: `ms/H11c-linux-findings` (from `dev` @ `3b0a9ee`). Effort: 2–3 d.*
 
 The findings are in H11's VALIDATION entry ("Linux evaluation", branch `ms/H11-linux`).
 

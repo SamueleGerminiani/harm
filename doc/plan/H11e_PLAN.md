@@ -1,6 +1,6 @@
 # H11e plan: fixtures and oracles independent of the Verilator version (findings F-L6, F-L7, F-L8)
 
-*Status: approved 2026-10-07 by the user (F-L7 option (a); fix F-L6 and F-L8; F-L10 option (a); H9 option (b)); reviewed and merged into `dev` 2026-10-08. Open: the macOS fixture table on the new traces, and macOS `ctest` (the user). Branch: `ms/H11e-fixtures`, from `ms/H11d-tools` @ `57ccff9`: the findings show only with H11d's Verilator 5.052, so H11e is merged after H11d. Effort: 1 d.*
+*Status: approved 2026-10-07 by the user (F-L7 option (a); fix F-L6 and F-L8; F-L10 option (a); H9 option (b)); reviewed and merged into `dev` 2026-10-08. macOS (2026-10-08, `ms/H11-macos`): `ctest` 226 of 226; the fixture table on the new traces differs from Linux for `structs` and `constructs` C0/C1/C3 (finding F-M2, in VALIDATION). Branch: `ms/H11e-fixtures`, from `ms/H11d-tools` @ `57ccff9`: the findings show only with H11d's Verilator 5.052, so H11e is merged after H11d. Effort: 1 d.*
 
 The findings are in H11d's VALIDATION entry. All are test machinery; HARM is not changed.
 
@@ -26,7 +26,7 @@ The findings are in H11d's VALIDATION entry. All are test machinery; HARM is not
   - If a fixture no longer exercises what it was written for (a corner case the old stimulus reached, the new one does not), the testbench's seed or stimulus is adjusted and the reason is recorded. Expectations are not edited to hide it.
   - **The evaluation tables:**
     - `eval/results/linux-fixtures` is re-run on Linux.
-    - `eval/results/macos-fixtures` must be re-run on the Mac (pending, the user). Until then the two cannot be compared with `--check`.
+    - `eval/results/macos-fixtures` re-run on the Mac (2026-10-08). `--check` against Linux: 40 of 46 runs equal; `structs` and `constructs` C0/C1/C3 differ (F-M2).
     - The examples (`eval/results/*-examples`) do not use these traces.
   - A DECISIONS entry (D-029) records the change of the fixtures' stimulus.
 

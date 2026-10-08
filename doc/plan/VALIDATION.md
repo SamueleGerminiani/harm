@@ -696,14 +696,14 @@ Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed
 
   Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. To be added to the H11 AssertLLM2 table on `ms/H11-linux` (and `ethernet_smii_txrx` restored to its manifest) after H11c is merged.
 
-## H11d: Verilator, Icarus and yosys in `third_party` (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0; macOS pending)
+## H11d: Verilator, Icarus and yosys in `third_party` (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0; macOS in H11e's "macOS checks")
 A2 was written first and committed failing in `62dfed3`.
 
 | Test | Result |
 |---|---|
-| A1 the scripts install the pinned releases into `third_party` (Linux) | pass: `Verilator 5.052 2026-09-05`, `Icarus Verilog version 13.0 (stable)`, `Yosys 0.69+post`, and `read_slang` works. **macOS: pending, by the user** |
+| A1 the scripts install the pinned releases into `third_party` (Linux) | pass: `Verilator 5.052 2026-09-05`, `Icarus Verilog version 13.0 (stable)`, `Yosys 0.69+post`, and `read_slang` works. **macOS: Icarus and yosys pass; Verilator only with `CPATH` (F-M1, H11e's "macOS checks")** |
 | A2 `h11d_tool_lookup`: `third_party` is preferred over `PATH`; Verilator < 5 and yosys without `read_slang` are treated as missing; only `third_party` directories go first on the tests' `PATH` | pass |
-| A3 full `ctest` with the `third_party` tools and the user's plain `PATH` (no OSS CAD Suite) | 208 of 218 pass (2,361 s). The 7 `h5_xcheck_yosys_*` tests run on Linux for the first time and pass (`constructs`: 26 signals, 0 unsound, 1 over-approximated). The 10 failures are findings F-L6, F-L7, F-L8 below, all Verilator 5.052 against fixtures and oracles made with older versions. **macOS: pending** |
+| A3 full `ctest` with the `third_party` tools and the user's plain `PATH` (no OSS CAD Suite) | 208 of 218 pass (2,361 s). The 7 `h5_xcheck_yosys_*` tests run on Linux for the first time and pass (`constructs`: 26 signals, 0 unsound, 1 over-approximated). The 10 failures are findings F-L6, F-L7, F-L8 below, all Verilator 5.052 against fixtures and oracles made with older versions. **macOS: 226 of 226 (H11e's "macOS checks")** |
 | A4 the Docker image | **pending**: the first build failed on a network error while cloning antlr4 (see below) |
 | H0 regression baselines | pass, byte-identical (all `regression_*`, `determinism`) |
 
@@ -737,7 +737,7 @@ A2 was written first and committed failing in `9cdf233`. A1, A3 and A4 were exis
 | A3b `verilator_replay_monitor_selftest`: the `s_eventually` control monitor on 6 hand-labelled traces (`\|->`, `\|=>`, same cycle, a `##1` antecedent) | pass |
 | A4 `h5_influence_constructs` | pass |
 | A5 full Linux `ctest`, 225 tests | 224 pass (2,275 s). The one failure is `Z3EquivalenceTest` (SIGSEGV), finding F-L9, fixed in H11f (not on this branch) |
-| A6 the fixture evaluation re-run on the new traces (`eval/results/linux-fixtures`, HARM on `ms/H11e-fixtures`) | done, 46 runs. **The Mac table (`eval/results/macos-fixtures`) is from the old traces and must be re-run on the Mac** before `--check` can compare them |
+| A6 the fixture evaluation re-run on the new traces (`eval/results/linux-fixtures`, HARM on `ms/H11e-fixtures`) | done, 46 runs. The Mac table re-run on 2026-10-08: `--check` differs for `structs` and `constructs` C0/C1/C3 (F-M2, "macOS checks" below) |
 
 - **Findings handled (D-029):**
   - **F-L6:** the replay controls use `not`.
@@ -769,6 +769,36 @@ A2 was written first and committed failing in `9cdf233`. A1, A3 and A4 were exis
   - The counts change because the stimulus changed (F-L7), not HARM.
   - **`structs` C2 now times out at 1,800 s:** it has 1,839 assertions instead of 1,526, and `--reduce implies` and `--atom-premises` grow with the square of that number (H11's note).
   - **Same patterns as before:** C5 (`exact`) can still exceed C4 (`arbiter` 74 against 56, `multipath` 9 against 6): fewer candidates change the tree HARM builds (H11's analysis). C7 stays the smallest everywhere.
+
+### macOS checks (2026-10-08, branch `ms/H11-macos` from `dev` @ `746e191`)
+macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e191`. Tools from `third_party`: `Verilator 5.052 2026-09-05`, `Icarus Verilog version 13.0 (stable)`, `Yosys 0.69+post` (`read_slang: ok`). harm-coi: Python 3.12.9, pyslang 12.0.0.
+
+| Check | Result |
+|---|---|
+| H11d A1, the three scripts | Icarus and yosys: pass. **Verilator: fails, finding F-M1** (below); it builds with `CPATH=/opt/homebrew/opt/flex/include` and nothing else changed |
+| H11b/H11c A4, H11d A3, H11e A5: full `ctest` in a fresh `build-mac/`, the three tools found in `third_party` | pass, **226 of 226** (1,902 s), the same count as Linux. `ImplicationTest` 1,480 s. The 7 `h5_xcheck_yosys_*` run (`constructs`: 26 signals, 0 unsound, 1 over-approximated, as on Linux) |
+| H11e A6, the fixtures on the new traces, `--check` against `linux-fixtures` (`eval/results/macos-fixtures`, 76 min) | **fails, finding F-M2** (below). 40 of 46 runs equal Linux; `structs` and `constructs` C2 time out at 1,800 s as on Linux |
+
+- **Finding F-M1: `install_verilator.sh` does not build on macOS.**
+  - `tools_common.sh` puts Homebrew's `flex` first on `PATH`, but Homebrew's flex is keg-only and its `FlexLexer.h` is on no include path (the SDK has none). Verilator's build stops at:
+    ```
+    In file included from ../V3ParseLex.cpp:30:
+    V3Lexer_pregen.yy.cpp:368:10: fatal error: FlexLexer.h: No such file or directory
+    make[2]: *** [V3ParseLex.o] Error 1
+    ```
+  - Linux is not affected: the distribution's flex installs the header in `/usr/include`.
+  - All checks above use the Verilator built with `CPATH=/opt/homebrew/opt/flex/include CC=gcc-13 CXX=g++-13 bash install_verilator.sh`.
+- **Finding F-M2: the assertion counts of `structs` and `constructs` differ between macOS and Linux** in the configurations without a COI filter:
+
+  | Design | C0 | C1 | C3 |
+  |---|---|---|---|
+  | structs | 1,800 (Linux 1,839) | 1,794 (1,833) | 1,800 (1,839) |
+  | constructs | 4,220 (4,215) | 4,200 (4,195) | 4,220 (4,215) |
+
+  - C3's `coi_frac`/`coi_depth_fit` move with it (`structs` 0.465/0.345 against 0.466/0.349; `constructs` 0.422/0.374 against 0.424/0.376). C4–C7 and the other four designs are equal.
+  - **Not a nondeterminism on the Mac:** `structs` C0 run again by hand gives 1,800 three times (`--max-threads 8` twice, `--max-threads 1` once), from the same generated config (`--generate-config`, SHA-1 `820b2a29ab651bc8dd4f6391c8744c387102030d`: 2 `<prop>`, 5 `<numeric>` with K-means clustering `K,10Max,0.01WCSS`).
+  - C0 has no COI and no reduction, so the difference is already in the mining (or in the generated config) on these traces. The H0 baselines, byte-identical on both systems, do not cover it.
+  - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
 Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
