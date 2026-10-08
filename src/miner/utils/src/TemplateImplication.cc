@@ -631,7 +631,7 @@ void TemplateImplication::printContingency() {
   table << "AU" << ct[2][0] << ct[2][1] << ct[2][2] << fort::endr;
   std::cout << table.to_string() << std::endl;
 }
-void TemplateImplication::check() {
+void TemplateImplication::check(const std::string &context) {
   messageErrorIf(
       !isFullyInstantiated(),
       "Checking is available only for fully instantiated templates "
@@ -772,13 +772,22 @@ void TemplateImplication::check() {
             << "\n";
 
   if (clc::checkDumpEvalDirectory != "") {
-    std::string filename =
-        clc::checkDumpEvalDirectory + "/" +
-        sanitizeFilename(getAssertionStr(Language::SpotLTL)) + ".csv";
-    std::ofstream file;
-    file.open(filename);
-    messageErrorIf(!file.is_open(), "Could not open file '" +
-                                        filename + "' for writing");
+    // D-030: <k>_<readable text>.csv, k the check order in the run; index.json maps it back
+    const std::string spot = getAssertionStr(Language::SpotLTL);
+    std::string name =
+        std::to_string(hs::checkDumpEvalIndex.size()) + "_" +
+        sanitizeFilename(spot).substr(0, 100) + ".csv";
+    std::ofstream file(clc::checkDumpEvalDirectory + "/" + name);
+    messageWarningIf(!file.is_open(), "Could not open file '" + name +
+                                          "' for writing, not dumped");
+    hs::checkDumpEvalIndex.push_back(
+        "    {\"file\": " + (file.is_open() ? jsonString(name) : "null") +
+        ", \"context\": " + jsonString(context) +
+        ", \"spot\": " + jsonString(spot) +
+        ", \"sva\": " + jsonString(getAssertionStr(Language::SVA)) + "}");
+    if (!file.is_open()) {
+      return;
+    }
 
     file << "t, Ant, Shift, Con, Ass\n";
 
@@ -796,10 +805,10 @@ void TemplateImplication::check() {
           antShift = _antDepth + _constShift;
         }
 #endif
-        file << antShift << ", ";
-        file << toString(evaluate_con(time)) << ", ";
-        file << toString(evaluate(time)) << "\n";
       }
+      file << antShift << ", ";
+      file << toString(evaluate_con(time)) << ", ";
+      file << toString(evaluate(time)) << "\n";
     }
 
     file.close();

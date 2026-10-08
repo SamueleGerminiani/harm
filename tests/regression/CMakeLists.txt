@@ -454,3 +454,11 @@ if(PYTHON3_FOUND)
                 --harm $<TARGET_FILE:harm> ${_h14_coi})
     set_tests_properties(h14_doc_coverage h14_doc_examples PROPERTIES LABELS doc)
 endif()
+
+# ---- H16: --check-dump-eval names (D-030) -------------------------------------------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h16_check_dump_eval
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_dump_eval.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h16)
+    set_tests_properties(h16_check_dump_eval PROPERTIES LABELS regression)
+endif()

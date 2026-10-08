@@ -89,8 +89,19 @@ void Miner::run() {
 
     // handle "check" templates
     for (const TemplateImplicationPtr &t : toCheck) {
-      t->check();
+      t->check(context->_name);
     }
+  }
+
+  if (clc::checkDumpEvalDirectory != "") {
+    // D-030: map every dumped file back to its assertion
+    std::ofstream out(clc::checkDumpEvalDirectory + "/index.json");
+    out << "{\n  \"version\": \"1\",\n  \"assertions\": [\n";
+    for (size_t i = 0; i < hs::checkDumpEvalIndex.size(); i++) {
+      out << hs::checkDumpEvalIndex[i]
+          << (i + 1 < hs::checkDumpEvalIndex.size() ? ",\n" : "\n");
+    }
+    out << "  ]\n}\n";
   }
 
   handleStatistics();

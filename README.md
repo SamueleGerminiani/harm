@@ -826,7 +826,7 @@ $ cat $OUT/implications.json
     Do not print the table of mined assertions (useful with `--dump-to`).
 
 * **`--check-dump-eval <DIRECTORY>`**
-    For each `check` assertion, dump the evaluation of the antecedent, consequent, and shift on input traces (each assertion gets a unique file).
+    For each `check` assertion, dump the evaluation on the input traces to `<DIRECTORY>/<k>_<text>.csv`, one row per cycle: `t, Ant, Shift, Con, Ass` (the antecedent, its shift, the consequent, and the assertion's verdict at cycle `t`). `k` is the order in which the assertions are checked (contexts in order, `check` templates in configuration order); `<text>` is a shortened, readable form of the assertion. `<DIRECTORY>/index.json` maps each file to its assertion: `{"version": "1", "assertions": [{"file", "context", "spot", "sva"}, ...]}` with the exact Spot-LTL and SVA text (D-030). Find files through the index, not by their names. An existing `<DIRECTORY>` is removed first.
 
 ---
 

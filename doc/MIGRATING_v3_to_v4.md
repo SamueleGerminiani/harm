@@ -64,6 +64,7 @@ On a vector declared in the VCD with a range other than `[n:0]` (e.g. `[1:10]` o
 | A template with more placeholders than propositions in their domain (H7) | HARM hung |
 | macOS arm64 mines the same assertions as Linux x86_64 (H12, F-M2) | among near-equal decision-tree scores, arm64 could keep a different antecedent (a fused multiply-subtract) |
 | The log files under concurrent writers (H11f, F-L9) | several HARM processes in one directory could crash |
+| `--check-dump-eval` files (H16, D-030) | files named after the assertion's text overwrote each other (`a != b` and `a <= b` both gave `G(a=b->...)`), a name over 255 bytes stopped HARM, and rows of an assertion without a shift had only `t` and `Ant`. v4 writes `<k>_<text>.csv` and `index.json`: **read the index** to find an assertion's file |
 | Determinism of `--fd` (D-001) | the faulty traces were shuffled with a random seed, so `--find-min-subset` could change between runs |
 
 ## 3. What you can now use

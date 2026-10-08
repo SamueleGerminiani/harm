@@ -514,6 +514,29 @@ splitString(const std::string &s, const std::string &delimiter) {
   return parts;
 }
 
+/// @brief s as a JSON string literal (quotes, backslashes and newlines escaped)
+inline std::string jsonString(const std::string &s) {
+  std::string out = "\"";
+  for (char c : s) {
+    switch (c) {
+    case '"':
+      out += "\\\"";
+      break;
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    default:
+      out += c;
+    }
+  }
+  return out + "\"";
+}
+
+/// @brief keep only the characters in [A-Za-z0-9-_.+()[]#=>|:]; for the readable part of
+/// --check-dump-eval names (D-030), never a whole name
 inline std::string sanitizeFilename(const std::string &input) {
   std::string output;
   output.reserve(input.size());

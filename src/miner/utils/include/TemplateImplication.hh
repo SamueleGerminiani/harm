@@ -255,8 +255,9 @@ public:
   void printContingency();
 
   /** \brief check if this (fully instantied) template holds on the input trace, it prints the reason if it does not hold
+   * \param context the name of the context, for the --check-dump-eval index
    */
-  void check();
+  void check(const std::string &context);
 
   /** \brief check if the instance at time 'timechoice is fundemental to make the ant true in the DTO
    * \param time is the time instant to check

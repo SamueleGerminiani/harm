@@ -246,26 +246,6 @@ void fillCoiMetrics(const std::vector<AssertionPtr> &assertions,
   }
 }
 
-std::string jsonString(const std::string &s) {
-  std::string out = "\"";
-  for (char c : s) {
-    switch (c) {
-    case '"':
-      out += "\\\"";
-      break;
-    case '\\':
-      out += "\\\\";
-      break;
-    case '\n':
-      out += "\\n";
-      break;
-    default:
-      out += c;
-    }
-  }
-  return out + "\"";
-}
-
 /// --dump-assertion-info: one JSON record per kept assertion, all contexts in one file
 void dumpAssertionInfo(const Context &context,
                        const std::vector<AssertionPtr> &assertions) {
