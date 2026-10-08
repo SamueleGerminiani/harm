@@ -245,6 +245,16 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Acceptance:** the report builds with no errors or undefined references; the developer guide covers every directory and `src/` module; the examples run; every new option, XML element, default-output decision and milestone is covered (scripted checks, ctest label `doc`).
 - **Validation:** the user's review of the report against the cited DECISIONS and VALIDATION entries.
 
+### H16: `--check-dump-eval` file names (finding from trivergence's T12 A5 test)
+- **Depends on:** H14 · **Effort:** 0.5–1 d · **Do before H15**, whose oracle is `--check-dump-eval`.
+- **The bug** (reported by the trivergence session on HARM `55bc66a`): each checked assertion's CSV is named after its text through `sanitizeFilename()` (`src/utils/include/misc.hh`), which deletes every character outside a small set (`!`, `&`, `<`, `~`, `^`, `*`, spaces, quotes vanish), with no uniqueness or length check (`TemplateImplication.cc`, the `checkDumpEvalDirectory` block).
+  1. **Silent overwrites:** `counter != limit` and `counter <= limit` both become `counter=limit`; four assertions gave three files, no warning. By the code, `a && b`, `a & b`, `a ^ b` and a signal `ab` collide too, and so do `~a` and `a` (not each reproduced).
+  2. **A long assertion kills the run:** a name over the 255-byte limit cannot be opened, and `messageErrorIf` exits with code 1, losing every other result (reproduced with a 20-conjunct antecedent).
+  3. **Names cannot be mapped back** to assertions (it broke trivergence's first A5 test).
+- **Scope:** unique, bounded, mappable names (e.g. an index or a hash per file plus an index file mapping each name to the assertion's exact text), never an overwrite, never an exit for a long name. The new naming is a change of an output format: it needs a decision entry and a TRIVERGENCE_IMPACT entry (trivergence's A5 test reads these files).
+- **Acceptance:** tests written first and failing: the colliding pairs above give distinct files; a 20-conjunct assertion gets its dump and the run continues; every file maps back to its exact assertion text; nothing else in HARM's output changes (baselines byte-identical).
+- **Not in scope, recorded:** HARM's `--reset` only cuts the trace after each reset interval, so check mode still evaluates attempts lying entirely inside reset, which SVA `disable iff` skips. An optional SVA-style reset for check mode would spare trivergence its post-processing. A separate decision and milestone, if the user wants it.
+
 ---
 
 ## 2. Dependencies and order
@@ -326,3 +336,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | done (macOS and Linux: `ctest` 229 of 229, fixtures 46 of 46 equal) |
 | H13 | Profiling opt-in (`HARM_PROFILE`); no `gmon.out` from a default build | done |
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
+| H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | todo (to plan; do before H15) |
