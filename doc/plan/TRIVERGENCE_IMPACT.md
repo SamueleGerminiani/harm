@@ -240,7 +240,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **No change to anything trivergence uses:** no code, option or output format changed.
 - **Useful to read:** `doc/MIGRATING_v3_to_v4.md` lists every output change since v3 (what trivergence's adapter rewrote: `true`, `::`, `nexttime`); the report (`doc/report/`, `make -C doc/report`) explains the reduction and COI semantics, with the decision behind each.
 
-### H16: `--check-dump-eval` file names (on `ms/H16-check-dump-names`; D-030)
+### H16: `--check-dump-eval` file names (on `dev`; D-030)
 - **The format changed** (trivergence's T12 A5 test reads these files):
   - files are named `<k>_<text>.csv`, `k` the order in which HARM checks the assertions; `<text>` is readable but not unique: **do not derive names from assertion text any more**;
   - `index.json` in the dump directory maps every file to its `context` and its exact `spot` and `sva` text. A5 should look an assertion up there (by its SVA text, or by its position among the `check` templates);

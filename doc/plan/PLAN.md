@@ -336,4 +336,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | done (macOS and Linux: `ctest` 229 of 229, fixtures 46 of 46 equal) |
 | H13 | Profiling opt-in (`HARM_PROFILE`); no `gmon.out` from a default build | done |
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
-| H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | awaiting-review |
+| H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
