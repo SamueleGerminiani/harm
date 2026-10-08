@@ -592,9 +592,9 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
 |---|---|
 | A1 `eval/run_eval.py` reproduces its own table: the fixtures re-run on HEAD (40 runs: all but C2, whose two runs take 20 and 30+ minutes) and the examples (51 runs), with `--check` against `eval/results/macos-*` | pass: every count is equal (assertions, dropped, permutations, DT pairs, mean `coiFrac`/`coiDepthFit`, coverage). Runs over 1 s differ by at most 2% in time; shorter ones vary more |
 | A2 the macOS full suite on `d90e39d` (`v3-138-gd90e39d`), all labels | pass, 213 of 213 (1,931 s) |
-| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | first run: **not run**, HARM did not build (F-L1). After H11b: pass. All 97 runs (46 fixtures, 51 examples) have the Mac's counts in every column, `constructs` C2's timeout included (`eval/results/linux-*`) |
-| A2 Linux `ctest` and harm-coi pytest | first run: **fail**, HARM did not build (F-L1). After H11b, on `v3-154-gc1735ca`: 206 of 213 pass (2,263 s, `ctest -j32`, Verilator 5.031). The 7 failures are the yosys cross-check (F-L3 below) |
-| A3 the Docker image | pass (after H11b): `docker/build.sh dev` builds HARM, Z3, harm-coi, Verilator and Icarus from `dev` @ `3b0a9ee`. Its fast tests pass, 172 of 172 (`ctest -LE slow`, 1,677 s) |
+| A1 Linux: the fixtures and examples with `--check` against `eval/results/macos-*` | first run: **not run**, HARM did not build (F-L1). After H11b: pass. All 97 runs (46 fixtures, 51 examples) have the Mac's counts in every column, `constructs` C2's timeout included (`eval/results/linux-*`) **Final (2026-10-08, after H11b–H11f, `v3-196-g29a0343`):** the examples (51 runs) still have the Mac's counts. The fixtures, on the new traces (H11e), equal H11e's Linux run in all 46 runs. The comparison with the Mac waits for the Mac re-run (`eval/MACOS.md`) |
+| A2 Linux `ctest` and harm-coi pytest | first run: **fail**, HARM did not build (F-L1). After H11b, on `v3-154-gc1735ca`: 206 of 213 pass (2,263 s, `ctest -j32`, Verilator 5.031). The 7 failures are the yosys cross-check (F-L3 below) **Final (2026-10-08, `v3-196-g29a0343`): pass, 226 of 226** (2,282 s), with Verilator 5.052, Icarus 13.0 and yosys 0.69 from `third_party`, including the 7 yosys cross-checks |
+| A3 the Docker image | pass (after H11b): `docker/build.sh dev` builds HARM, Z3, harm-coi, Verilator and Icarus from `dev` @ `3b0a9ee`. Its fast tests pass, 172 of 172 (`ctest -LE slow`, 1,677 s) **Final (2026-10-08): pass.** `docker/build.sh ms/H11-linux` builds HARM with Verilator 5.052, Icarus 13.0 and yosys 0.69 from `third_party` (H11d), and its fast tests pass, 192 of 192 |
 | A4 every `./harm` command in the README runs on a shipped example (`h11_readme_commands`) | pass |
 | A5 `--version` prints `HARM <git describe>` (`h11_version`) | pass |
 
@@ -737,6 +737,22 @@ Tests written first and committed failing in `917e103` (`h11_version`, `h11_read
     - F-L3, F-L4 and F-L5 (fixed in H11c).
     - The environment needs Verilator ≥ 5 first on `PATH`.
 - **GoldMine (§4c):** not run (optional).
+
+### Final Linux checks (2026-10-08, `ms/H11-linux` with `dev` merged at `29a0343`, after H11b–H11f)
+- **Full `ctest`:** 226 of 226 (2,282 s). The tools are from `third_party` and the user's plain `PATH` (no borrowed Verilator).
+- **Docker:** the image builds with the three tools, and its fast tests pass, 192 of 192.
+- **Local designs (§4a):**
+  - the fixtures (46 runs, new traces) give the same counts as H11e's Linux run;
+  - the examples (51 runs) give the same counts as the Mac.
+- **Still open (`eval/MACOS.md`):**
+  - the Mac `ctest` with the H11d tools (A4 of H11b–H11e);
+  - the Mac fixture table on the new traces;
+  - with it, the Mac/Linux `--check` of the fixtures.
+- **Findings F-L1 to F-L10 found on Linux, all fixed:**
+  - F-L1, F-L2: H11b;
+  - F-L3, F-L4, F-L5: H11c;
+  - F-L6, F-L7, F-L8, F-L10: H11e (D-029);
+  - F-L9: H11f.
 
 ## H11b: HARM builds on Linux (F-L1) (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0, Z3 4.13.4)
 The fix: `ExpToZ3Visitor::bv` takes `uint64_t` instead of `unsigned long long` (plus `#include <cstdint>`). On macOS the two are the same type. Before the fix, the failing evidence is the Linux build log in H11's "Linux evaluation" (F-L1).
