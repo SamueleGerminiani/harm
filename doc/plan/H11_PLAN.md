@@ -1,6 +1,6 @@
 # H11 plan: evaluation, documentation and release
 
-*Status: approved 2026-10-06 (D-026, D-027), with the merge into `main` and the tag **deferred** by the user: HARM stays on `dev` for a while; macOS part done and merged into `dev`; the Linux part (`eval/LINUX.md`) is pending. Branch: `ms/H11-release` (from `dev` @ H3b). Effort: 3–5 d, of which part runs on the Linux machine.*
+*Status: approved 2026-10-06 (D-026, D-027), with the merge into `main` and the tag **deferred** by the user: HARM stays on `dev` for a while; macOS part done and merged into `dev`; the Linux part (`eval/LINUX.md`, H11b–H11f) and the macOS re-checks (`eval/MACOS.md`, H11g) done and merged into `dev` 2026-10-08; F-M2 deferred. Branch: `ms/H11-release` (from `dev` @ H3b). Effort: 3–5 d, of which part runs on the Linux machine.*
 
 ## Goal
 Measure what the extension plan added, and finish the documentation and the Docker image. Run the Linux checks that are still pending for every milestone.

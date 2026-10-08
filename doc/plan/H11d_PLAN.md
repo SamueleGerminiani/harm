@@ -1,6 +1,6 @@
 # H11d plan: the simulation and synthesis tools in `third_party` (Linux and macOS)
 
-*Status: approved 2026-10-07 (build from source); reviewed and merged into `dev` 2026-10-08. Open: macOS (A1, A3, by the user); the Docker image (A4) is re-checked on `ms/H11-linux` with H11e and H11f. Its findings F-L6, F-L7, F-L8 are fixed in H11e, and F-L9 (found by A4) in H11f. Branch: `ms/H11d-tools` (from `dev` @ `e429f47`). Effort: 1–2 d, plus long tool builds and the user's run on the Mac.*
+*Status: approved 2026-10-07 (build from source); reviewed and merged into `dev` 2026-10-08. macOS (2026-10-08, `ms/H11-macos`): A3 pass, 226 of 226; A1 Icarus and yosys pass, Verilator only with `CPATH` set to Homebrew's flex headers (finding F-M1, in VALIDATION); the Docker image (A4) is re-checked on `ms/H11-linux` with H11e and H11f. Its findings F-L6, F-L7, F-L8 are fixed in H11e, and F-L9 (found by A4) in H11f. Branch: `ms/H11d-tools` (from `dev` @ `e429f47`). Effort: 1–2 d, plus long tool builds and the user's run on the Mac.*
 
 ## Why
 The H11 Linux checklist needed tools that were not where HARM's build expects them:
