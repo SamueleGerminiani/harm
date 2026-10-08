@@ -1,6 +1,6 @@
 # H14 plan: documentation and a LaTeX report on what is new in HARM v4
 
-*Status: approved 2026-10-08 by the user (technical report, no evaluation section, developer guide added); done 2026-10-08, A1–A6 pass (VALIDATION), awaiting review. Branch: `ms/H14-v4-report` (from `dev` @ `55bc66a`). Effort: 3–4 d.*
+*Status: approved 2026-10-08 by the user (technical report, no evaluation section, developer guide added); done 2026-10-08, A1–A6 pass (VALIDATION); approved by the user 2026-10-08 (title page kept, PDF committed) and merged into `dev`. Branch: `ms/H14-v4-report` (from `dev` @ `55bc66a`). Effort: 3–4 d.*
 
 ## Why
 - `v3..dev` is 222 commits and about 49,000 added lines across H0–H13. What changed is spread over `README.md`, `doc/RELEASE_NOTES_v4.md`, 25 plan files, `DECISIONS.md` (D-001–D-029) and `VALIDATION.md`.
@@ -66,4 +66,4 @@
 ## Open questions for the user
 1. ~~Report style~~: technical report (answered).
 2. ~~Evaluation section~~: none (answered).
-3. **Author list and affiliation** for the title page. Used: Samuele Germiniani, University of Verona (the default; to be confirmed in review).
+3. **Author list and affiliation** for the title page. Samuele Germiniani, University of Verona (confirmed by the user).

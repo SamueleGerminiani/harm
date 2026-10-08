@@ -47,7 +47,7 @@ HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (L
 
 **HARM v4** adds semantic redundancy reduction (`--reduce`), cones of influence from the RTL (`<coi>`, `harm-coi`), SystemVerilog syntax in propositions and valid SystemVerilog output. All new features are opt-in.
 - What is new: `doc/RELEASE_NOTES_v4.md`; coming from v3: `doc/MIGRATING_v3_to_v4.md`.
-- The technical report on v4, with how each part was validated: `doc/report/` (`make -C doc/report` builds `harm_v4.pdf`).
+- The technical report on v4, with how each part was validated: `doc/report/harm_v4.pdf` (rebuild with `make -C doc/report`).
 - For developers: `doc/DEVELOPER_GUIDE.md`.
 
 
