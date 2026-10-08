@@ -46,7 +46,20 @@ add_test(NAME h1_skip_invalid_props
 set_tests_properties(h1_skip_invalid_props PROPERTIES LABELS regression)
 
 # ---- H1 validation: Verilator replay of HARM's SVA output (only if Verilator and Python exist) -----
-find_program(VERILATOR_FOUND verilator)
+# H11d: Verilator, Icarus and yosys from third_party (install_{verilator,iverilog,yosys}.sh), else
+# from PATH; unusable versions are treated as missing (cmake/HarmTools.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/HarmTools.cmake)
+unset(VERILATOR_FOUND CACHE)   # cached by find_program before H11d
+unset(HARM_COI_YOSYS CACHE)
+harm_find_tools(${CMAKE_SOURCE_DIR}/third_party ${CMAKE_CURRENT_BINARY_DIR})
+foreach(t VERILATOR IVERILOG YOSYS)
+    if(HARM_${t})
+        message(STATUS "${t}: ${HARM_${t}} (${HARM_${t}_VERSION})")
+    else()
+        message(STATUS "${t}: not found (third_party/install_all.sh installs it)")
+    endif()
+endforeach()
+set(VERILATOR_FOUND ${HARM_VERILATOR})
 find_program(PYTHON3_FOUND python3)
 if(VERILATOR_FOUND AND PYTHON3_FOUND)
     function(verilator_replay name csv conf)
@@ -60,6 +73,10 @@ if(VERILATOR_FOUND AND PYTHON3_FOUND)
     verilator_replay(temporal2v ${H1}/temporal2v.csv ${H1}/temporal2v.xml)
     verilator_replay(edit ${CMAKE_SOURCE_DIR}/examples/edit/edit.csv ${CMAKE_SOURCE_DIR}/examples/edit/edit.xml)
     verilator_replay(ex3 ${CMAKE_SOURCE_DIR}/examples/ex3/ex3.csv ${CMAKE_SOURCE_DIR}/examples/ex3/ex3Config.xml)
+    # H11e: the s_eventually control monitor against hand-labelled traces
+    add_test(NAME verilator_replay_monitor_selftest
+        COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/oracle/verilator_replay.py --self-test)
+    set_tests_properties(verilator_replay_monitor_selftest PROPERTIES LABELS verilator)
 else()
     message(STATUS "Verilator or python3 not found: the verilator_replay validation tests are skipped")
 endif()
@@ -164,12 +181,14 @@ if(HARM_COI_OK)
     add_test(NAME h5_unit
         COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/tools/harm-coi/tests)
     set_tests_properties(h5_unit PROPERTIES LABELS coi)
-    # yosys with read_slang (>= 0.67, e.g. OSS CAD Suite) for the optional validation cross-check
-    find_program(HARM_COI_YOSYS yosys)
-    include(${CMAKE_SOURCE_DIR}/cmake/HarmYosysProbe.cmake)
-    harm_yosys_has_read_slang("${HARM_COI_YOSYS}" ${CMAKE_CURRENT_BINARY_DIR} HARM_COI_XCHECK)
+    # yosys with read_slang (>= 0.67; third_party/install_yosys.sh) for the validation cross-check
+    set(HARM_COI_YOSYS ${HARM_YOSYS})
+    set(HARM_COI_XCHECK FALSE)
+    if(HARM_YOSYS)
+        set(HARM_COI_XCHECK TRUE)
+    endif()
     if(NOT HARM_COI_XCHECK)
-        message(STATUS "HARM_COI_YOSYS (${HARM_COI_YOSYS}) has no read_slang: the H5 yosys cross-check is skipped")
+        message(STATUS "no yosys with read_slang: the H5 yosys cross-check is skipped")
     endif()
     # the H4 fixtures, and the H5 validation design (no hand-written cones: simulation and yosys only)
     foreach(design counter arbiter fsm hier structs multipath h5/constructs)
@@ -361,4 +380,34 @@ if(HARM_COI_OK)
         COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_predicates.py harm
                 ${CMAKE_SOURCE_DIR}/tests/input/h11c/wide --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm>)
     set_tests_properties(h11c_emit_config_wide PROPERTIES LABELS coi)
+endif()
+
+# ---- H11d: Verilator, Icarus and yosys from third_party ---------------------------------------------
+# A2: the third_party tools are preferred over PATH; Verilator < 5 and yosys without read_slang are
+# treated as missing
+add_test(NAME h11d_tool_lookup
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
+            -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
+
+# ---- H11e: fixtures independent of the simulator ----------------------------------------------------
+# A2: a fixture testbench gives the same stimulus under Verilator and Icarus (tests/input/stim.svh,
+# finding F-L7). h5/constructs is not included: Icarus does not parse its RTL.
+if(HARM_VERILATOR AND HARM_IVERILOG AND PYTHON3_FOUND)
+    foreach(design counter arbiter fsm hier structs multipath)
+        add_test(NAME h11e_stim_${design}
+            COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/regression/check_stim.py
+                    ${CMAKE_SOURCE_DIR}/tests/input/coi/${design} --iverilog ${HARM_IVERILOG})
+        set_tests_properties(h11e_stim_${design} PROPERTIES LABELS coi)
+    endforeach()
+endif()
+
+# H11d: every test here runs with the chosen tools first on PATH (the fixture scripts call
+# verilator and iverilog by name), whatever the user's PATH is
+if(HARM_TOOLS_PATH)
+    set(_harm_env "")
+    foreach(d ${HARM_TOOLS_PATH})
+        list(APPEND _harm_env "PATH=path_list_prepend:${d}")
+    endforeach()
+    get_property(_harm_tests DIRECTORY PROPERTY TESTS)
+    set_tests_properties(${_harm_tests} PROPERTIES ENVIRONMENT_MODIFICATION "${_harm_env}")
 endif()

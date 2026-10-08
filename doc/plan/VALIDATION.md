@@ -795,3 +795,97 @@ Tests written first and committed failing in `a3260aa`. F-L3 and F-L5 were fixed
   | `sha3` (1600-bit `f_permutation_::out`) | F-L5 | 1,547 | 25 | 60% | 398 | 13 | 60% |
 
   Both failed before H11c: HARM rejected the trace, or rejected the emitted configuration. Added to the H11 AssertLLM2 table on `ms/H11-linux` after the merge, and `ethernet_smii_txrx` restored to its manifest. Re-run there on `v3-168-g73b214f`, with the same counts.
+
+## H11d: Verilator, Icarus and yosys in `third_party` (2026-10-07, Ubuntu 22.04 x86_64, g++ 11.4.0; macOS pending)
+A2 was written first and committed failing in `62dfed3`.
+
+| Test | Result |
+|---|---|
+| A1 the scripts install the pinned releases into `third_party` (Linux) | pass: `Verilator 5.052 2026-09-05`, `Icarus Verilog version 13.0 (stable)`, `Yosys 0.69+post`, and `read_slang` works. **macOS: pending, by the user** |
+| A2 `h11d_tool_lookup`: `third_party` is preferred over `PATH`; Verilator < 5 and yosys without `read_slang` are treated as missing; only `third_party` directories go first on the tests' `PATH` | pass |
+| A3 full `ctest` with the `third_party` tools and the user's plain `PATH` (no OSS CAD Suite) | 208 of 218 pass (2,361 s). The 7 `h5_xcheck_yosys_*` tests run on Linux for the first time and pass (`constructs`: 26 signals, 0 unsound, 1 over-approximated). The 10 failures are findings F-L6, F-L7, F-L8 below, all Verilator 5.052 against fixtures and oracles made with older versions. **macOS: pending** |
+| A4 the Docker image | **pending**: the first build failed on a network error while cloning antlr4 (see below) |
+| H0 regression baselines | pass, byte-identical (all `regression_*`, `determinism`) |
+
+- **Fixed while running the scripts:**
+  - **`install_yosys.sh`:** the environment's `PYTHON=python3.10` (a bare name) was ignored by CMake, whose own search found `/usr/local/bin/python3.6`, too old for slang's generators (`str.removesuffix`). The script now passes an absolute Python ≥ 3.9.
+  - **`install_iverilog.sh`:** the version step (`iverilog -V | head -1`) died of SIGPIPE under `pipefail`, after a good install.
+  - **`docker/build.sh`:** used the git ref as image tag, which fails for a branch with `/`.
+  - **`install_antlr.sh`:** a network error during its clone ("Connection reset by peer") let the script go on and install a wrong tree (headers in `/antlr4-runtime`). HARM's CMake then failed with "Could NOT find ANTLR4". The script now stops at the first failure (`set -euo pipefail`), and re-runs still work.
+- **Only `third_party` directories are prepended** to the tests' `PATH`. A first version also prepended `/usr/bin` (the system `iverilog`), which would shadow the user's other tools. A2 checks it.
+- **Finding F-L6: the replay oracle's control assertions are invalid SystemVerilog** (`verilator_replay_temporal2v`, `verilator_replay_edit`).
+  - `tests/oracle/verilator_replay.py:203` builds each control by negating the consequent with `!`. For a property consequent (`##3 v2`, `s_eventually …`, `… until …`), IEEE 1800 requires `not`:
+    ```
+    %Error: ctl.sv:11:49: syntax error, unexpected ##, expecting IDENTIFIER-for-type
+       11 |   a0: assert property (@(posedge clk) (v1 |-> !(##3 v2))) else $display("FAIL a0 %0t", $time);
+    ```
+  - Verilator 5.031 accepted it; 5.052 does not. HARM's own SVA (the `sim` build) is not affected.
+- **Finding F-L7: the H4/H5 fixture traces are not reproducible with another Verilator** (`coi_reproduce_{counter,arbiter,fsm,hier,structs,multipath}`, `h5_reproduce_constructs`).
+  - The testbenches draw their stimulus from seeded `$urandom`, and Verilator 5.052's generator gives a different sequence for the same seed. `clk` is identical, while the inputs (`rst`, `en`, …) and everything downstream differ.
+  - 5.052 also drops the empty `$rootio` scope and renumbers the VCD identifiers (form only).
+- **Finding F-L8: `perturb.py influence` assumes both traces have the same signals** (`h5_influence_constructs`).
+  - It stops with `KeyError: 'unnamedblk1::i'`. The loop variable of an unnamed block is in the committed trace (Verilator 5.031) and not in 5.052's.
+
+## H11e: fixtures and oracles independent of the Verilator version (2026-10-07, Ubuntu 22.04, Verilator 5.052, Icarus 13.0, yosys 0.69 from `third_party`; D-029)
+A2 was written first and committed failing in `9cdf233`. A1, A3 and A4 were existing tests failing with Verilator 5.052 (H11d's findings).
+
+| Test | Result |
+|---|---|
+| A1 the 7 `*_reproduce_*` tests with Verilator 5.052 | pass |
+| A2 `h11e_stim_{counter,arbiter,fsm,hier,structs,multipath}`: the same stimulus under Verilator and Icarus | pass; it failed before (Verilator's and Icarus' `$urandom` differ from the 4th edge). `h5/constructs` is not included, because Icarus 13 does not parse its RTL ("Errors in port declarations") |
+| A3 `verilator_replay_{newops,temporal2v,edit,ex3}` | pass. `temporal2v`: 635 assertions, all checked as printed; 45 controls by monitor |
+| A3b `verilator_replay_monitor_selftest`: the `s_eventually` control monitor on 6 hand-labelled traces (`\|->`, `\|=>`, same cycle, a `##1` antecedent) | pass |
+| A4 `h5_influence_constructs` | pass |
+| A5 full Linux `ctest`, 225 tests | 224 pass (2,275 s). The one failure is `Z3EquivalenceTest` (SIGSEGV), finding F-L9, fixed in H11f (not on this branch) |
+| A6 the fixture evaluation re-run on the new traces (`eval/results/linux-fixtures`, HARM on `ms/H11e-fixtures`) | done, 46 runs. **The Mac table (`eval/results/macos-fixtures`) is from the old traces and must be re-run on the Mac** before `--check` can compare them |
+
+- **Findings handled (D-029):**
+  - **F-L6:** the replay controls use `not`.
+  - **F-L7:** stimulus from `tests/input/stim.svh`, traces regenerated.
+  - **F-L8:** `perturb.py` compares only shared signals.
+  - **F-L10 (option (a)):** the oracle mines with `--trace-end sva`. With HARM's default, the mined assertions with an `s_eventually` still pending at the end failed in Verilator at `$finish` (IEEE 1800). With `sva` they are not mined (`temporal2v`: 653 assertions before, 635 after).
+- **The `s_eventually` controls:** Verilator 5.052 compiles `a |-> not (s_eventually p)` and `a |-> always (!p)` but never fails them, with no warning. The minimal repro:
+  - `a` at cycle 1 and `p` at cycle 4 must fail at 45 ps;
+  - a plain `assert property (!p)` in the same testbench does fail at 45.
+
+  These controls are checked by a monitor instead (option (a), by the user), validated by A3b.
+- **Expectations that changed with the traces, and why:**
+  - `h8/constructs_coi.json` and `h9/constructs_partial_coi.json`: `unnamedblk1::i` removed from `unknown`. Verilator 5.052 does not dump this loop variable, and harm-coi on the new trace gives the same file (checked).
+  - **H9 A2 (option (b), by the user):** `y_loop` (an output no cone uses) is the signal listed as unknown. The proposition is `y_loop != 1'b0`. HARM's report equals the hand-written `expected_constructs.json` with the name changed and nothing else.
+- **No other expectation changed:**
+  - The H4–H10 regressions on the new traces pass as they are: they check properties (soundness, filter invariants, simulation non-influence), not stored values.
+  - `h6/multipath_rank_expected.txt` passes unchanged.
+- **A6, assertions per configuration on the new traces** (old traces in brackets, from `macos-fixtures`; equal values shown once):
+
+  | Design | C0 | C1 | C2 | C3 | C4 | C5 | C6 | C7 |
+  |---|---|---|---|---|---|---|---|---|
+  | counter | 135 (80) | 135 (80) | 113 (72) | 135 (80) | 110 (65) | 79 (51) | 14 (9) | 5 |
+  | arbiter | 95 (75) | 89 (68) | 57 (53) | 95 (75) | 56 (31) | 74 (32) | 49 (36) | 32 (23) |
+  | fsm | 75 (96) | 65 (85) | 60 (71) | 75 (96) | 58 (73) | 48 (61) | 47 (46) | 24 (27) |
+  | multipath | 104 (94) | 104 (94) | 104 (94) | 104 (94) | 6 (8) | 9 | — | — |
+  | structs | 1,839 (1,526) | 1,833 (1,522) | timeout (1,491) | 1,839 (1,526) | 751 (730) | 271 (322) | 0 | 0 |
+  | constructs | 4,215 (4,438) | 4,195 (4,388) | timeout | 4,215 (4,438) | 1,675 (2,135) | 1,484 (1,862) | 145 (101) | 2 |
+
+  - The counts change because the stimulus changed (F-L7), not HARM.
+  - **`structs` C2 now times out at 1,800 s:** it has 1,839 assertions instead of 1,526, and `--reduce implies` and `--atom-premises` grow with the square of that number (H11's note).
+  - **Same patterns as before:** C5 (`exact`) can still exceed C4 (`arbiter` 74 against 56, `multipath` 9 against 6): fewer candidates change the tree HARM builds (H11's analysis). C7 stays the smallest everywhere.
+
+## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
+Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
+
+| Test | Result |
+|---|---|
+| A1 `LogTest.deleteLastLineOnAnEmptyFile` | pass; before the fix it crashed with SIGSEGV, deterministically |
+| A2 `LogTest.concurrentProcessesKeepOneValidLog`: 8 processes × 200 warnings in one directory | pass: all writers exit normally, and `warning.log` is one JSON array of 1,600 records. Before the fix, writers died with signal 11 |
+| A3 `LogTest.concurrentThreadsKeepOneValidLog`: 8 threads × 200 warnings | pass, with the same checks; before the fix it crashed with SIGSEGV |
+| A4 Linux `ctest`, all labels (Verilator 5.031, as for `dev`) | pass, 211 of 211 (2,314 s) |
+| A4 the Docker image's fast tests on repeated `ctest -j` runs (the H11d symptom) | pass: the image built from `ms/H11f-log-race` (Ubuntu 24.04, g++ 13) passed its fast tests 4 times in parallel (`ctest -j -LE slow`), 177 of 177 each, with no crash. Before the fix, every parallel run crashed (3 of 3). A fifth run printed no result (the check did not record its exit status), so it is not counted; the run that replaced it recorded `ctest exit=0` |
+
+- **The bug:** `deleteLastLine` (`misc.hh`) computed `lines.size() - 1` on a `size_t`, which underflows on an empty file.
+  - A concurrent writer's truncation can empty the file between another writer's `isFileEmpty` and its read.
+  - The gtests share `build/` as their working directory, so `ctest -j` (seen in the Docker image: `PropositionOracleTest` once, `Z3EquivalenceTest` twice, and `Z3EquivalenceTest` on Linux on H11e's branch) and HARM's own threads could crash.
+- **The fix:**
+  - `deleteLastLine` returns on an empty file.
+  - `dumpWarningToFile`/`dumpErrorToFile` hold `flock(LOCK_EX)` on the log file and a mutex for the whole read-modify-write.
+  - A nested log write from inside a failing log write is skipped (the message is still printed), so it cannot wait for its own lock.
+- **Cost:** A2/A3 take 6–8 s for 1,600 warnings. Every record re-reads the whole file, which was already so before; the lock orders the writers but does not add work.

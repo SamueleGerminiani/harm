@@ -9,9 +9,47 @@
 #include "message.hh"
 #include "misc.hh"
 #include <cstring>
+#include <fcntl.h>
 #include <fstream>
+#include <mutex>
+#include <sys/file.h>
+#include <unistd.h>
 
 namespace hlog {
+
+namespace {
+// H11f (F-L9): warning.log and error.log are rewritten in place (read, drop the closing "]",
+// append), so every writer holds an exclusive lock for the whole update: flock against other
+// processes (ctest -j runs the tests in one directory), a mutex against this process's threads.
+std::mutex logMutex;
+// a log write that fails reports through messageError, which writes the log again: such a nested
+// write is skipped (the message is still printed), instead of waiting for its own lock
+thread_local bool inLogWrite = false;
+
+class LogLock {
+public:
+  explicit LogLock(const char *file)
+      : _guard(logMutex), _fd(open(file, O_RDWR | O_CREAT, 0644)) {
+    inLogWrite = true;
+    if (_fd >= 0) {
+      flock(_fd, LOCK_EX);
+    }
+  }
+  ~LogLock() {
+    if (_fd >= 0) {
+      flock(_fd, LOCK_UN);
+      close(_fd);
+    }
+    inLogWrite = false;
+  }
+  LogLock(const LogLock &) = delete;
+  LogLock &operator=(const LogLock &) = delete;
+
+private:
+  std::lock_guard<std::mutex> _guard;
+  int _fd;
+};
+} // namespace
 
 //number of active ScopedThrowOnError in this thread
 static thread_local size_t throwOnErrorDepth = 0;
@@ -31,6 +69,10 @@ std::string NowTime() {
 
 void dumpErrorToFile(std::string message, int custom_errno,
                      int custom_signal, bool withException) {
+  if (inLogWrite) {
+    return;
+  }
+  LogLock lock("error.log");
 
   if (!isFileEmpty("error.log")) {
     deleteLastLine("error.log");
@@ -81,6 +123,10 @@ void dumpErrorToFile(std::string message, int custom_errno,
 }
 
 void dumpWarningToFile(std::string message) {
+  if (inLogWrite) {
+    return;
+  }
+  LogLock lock("warning.log");
 
   if (!isFileEmpty("warning.log")) {
     deleteLastLine("warning.log");

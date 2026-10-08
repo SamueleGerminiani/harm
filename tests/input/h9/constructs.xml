@@ -1,14 +1,15 @@
 <harm>
     <!-- H9 (acceptance A2): unknown signals. constructs_partial_coi.json is H5's generated cone of
          "constructs" (tests/input/h8/constructs_coi.json) without the target "t", so t is a signal
-         coi.json does not know; unnamedblk1::i is listed as unknown. Expected report:
+         coi.json does not know; y_loop is listed as unknown (until H11e, unnamedblk1::i, which Verilator
+         5.052 no longer dumps). Expected report:
          expected_constructs.json, written by hand. -->
     <context name="default">
         <prop exp="a" loc="a, c"/>
         <prop exp="t" loc="a, c"/>
         <prop exp="y_tmp" loc="a, c"/>
         <prop exp="k" loc="a, c"/>
-        <prop exp="unnamedblk1::i != 32'b0" loc="a, c"/>
+        <prop exp="y_loop != 1'b0" loc="a, c"/>
         <prop exp="t &amp;&amp; a" loc="a, c"/>
         <coi file="constructs_partial_coi.json" mode="rank"/>
         <template exp="G(P0 -&gt; P1)"/>

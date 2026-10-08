@@ -475,6 +475,12 @@ inline void deleteLastLine(const std::string &filename) {
   // Close the input file
   inputFile.close();
 
+  // nothing to delete: an empty file (another writer may have just truncated it) stays empty;
+  // lines.size() - 1 would wrap around (H11f, F-L9)
+  if (lines.empty()) {
+    return;
+  }
+
   // Open the file for writing
   std::ofstream outputFile(filename);
   if (!outputFile.is_open()) {

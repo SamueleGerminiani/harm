@@ -7,5 +7,5 @@ out=$1; vcd=${2:-trace.vcd}; shift; shift || true
 mkdir -p "$out"
 cd "$out"
 verilator --binary --timing --trace -Wno-fatal -Wno-lint -Wno-style --top-module tb \
-  +define+VCD=\"$vcd\" -I"$out" "$@" "$here"/rtl/*.sv "$here"/tb.sv -o sim --Mdir obj >/dev/null
+  +define+VCD=\"$vcd\" -I"$out" -I"$here/../.." "$@" "$here"/rtl/*.sv "$here"/tb.sv -o sim --Mdir obj >/dev/null
 ./obj/sim >/dev/null
