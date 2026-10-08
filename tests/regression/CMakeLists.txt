@@ -395,6 +395,15 @@ add_test(NAME h11d_tool_lookup
 add_test(NAME h11g_tools_common_flex
     COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_tools_common.sh ${CMAKE_SOURCE_DIR})
 
+# ---- H12: the same assertions on every platform (finding F-M2) ------------------------------------
+# A1: structs mines Linux x86_64's count (macOS arm64 gave 1,800 before H12: FMA in the DT score)
+if(PYTHON3_FOUND)
+    add_test(NAME h12_structs_count
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_mined_count.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/coi/structs/trace.vcd tb::dut 1839)
+    set_tests_properties(h12_structs_count PROPERTIES LABELS "regression;slow")
+endif()
+
 # ---- H11e: fixtures independent of the simulator ----------------------------------------------------
 # A2: a fixture testbench gives the same stimulus under Verilator and Icarus (tests/input/stim.svh,
 # finding F-L7). h5/constructs is not included: Icarus does not parse its RTL.

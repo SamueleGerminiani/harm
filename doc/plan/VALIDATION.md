@@ -925,7 +925,25 @@ macOS 15.3.2 (Darwin 24.3.0) arm64, Homebrew g++-13 13.3.0, HARM `v3-187-g746e19
       - The difference follows the platform: macOS's libraries, or the architecture (arm64 against x86_64).
       - **Lead:** on arm64, GCC contracts multiply-adds into FMA by default (`-ffp-contract=fast`). This changes floating-point rounding, e.g. in K-means clustering at mining time.
       - The next experiments are in `eval/HANDOFF_FM2.md`.
-  - **Not investigated here** (no HARM change on this branch). A first step for the next milestone: compare `--generate-config` and C0's `--dump-assertion-info` for `structs` on the two systems. A lead, not checked: the numeric clustering (floating point and `<random>` differ between macOS's libm and glibc, and between g++ 11 and 13).
+  - **The Mac experiments (2026-10-08, `ms/H12-fm2` from `dev` @ `ecf9ac2`; HARM sources equal to `746e191`'s; macOS 15.3.2 arm64, g++-13 13.3.0). The cause is found: FMA contraction in the decision-tree score.**
+    - **FMA off, whole HARM** (`-DCMAKE_CXX_FLAGS=-ffp-contract=off`, `build-nofma/`): `structs` C0 **1,839** and `constructs` C0 **4,215**, Linux's counts. Same `gen.xml` as the default build (`structs` `820b2a29…`, `constructs` `aff9a6a6…`). The default build on the same Mac: 1,800 and 4,220.
+    - **Bisection by build target** (`-ffp-contract=off` added to chosen targets' `flags.make` in a scratch build, `build-cls/`; `structs` C0):
+
+      | Contraction off in | Count |
+      |---|---|
+      | `clustering` only (the K-means lead) | 1,800 |
+      | the `harm` executable and all of `src/miner` | 1,839 |
+      | `src/miner/utils`, or the `miner` library | 1,800 |
+      | all of `src/miner/modules` | 1,839 |
+      | `propertyQualification` only | 1,800 |
+      | **`propertyMiner` only** | **1,839** |
+
+    - **In `propertyMiner`, only two functions are fused** (`objdump`, default build): `getConditionalEntropy` and `getCovScore` (`TLMiner/supportMethods.cc`), one `fmsub` each. The FMA-off build has none.
+    - **The one used here is `getCovScore`:** the fixtures' template sets no heuristic, and the default is `COVERAGE` (`DTLimits.hh:99`). Its score `1 - (ATCT/CT) * (1 - ATCF/CF)` becomes a fused multiply-subtract, so the product is not rounded before the subtraction.
+    - **Why it changes the assertions:** `AntecedentGenerator` sorts the candidates by gain and, with `-0.1E` (the generated template's effort), keeps only the best (`AntecedentGenerator.cc:518–527`). Candidates whose scores are equal or nearly equal are then ordered by their last bits, which FMA changes, so a different antecedent is kept and the decision tree grows differently.
+    - **The same fragility without FMA:** a stand-alone copy of the entropy formula gives `H(p) != H(1-p)` in 7,266 of 19,900 mirrored pairs with contraction off, and in 9,626 with it on. HARM's choice among near-ties depends on rounding on every platform; x86_64 and arm64 agree only when neither contracts.
+    - **Not the cause:** the K-means clustering (its `dkm` seed is fixed at 1, `dkm.hpp:293`), the thread count, `--generate-config`, and the compiler version.
+  - **The fix:** H12 (`doc/plan/H12_PLAN.md`), awaiting the user's approval.
 
 ## H11f: the log files under concurrent writers (2026-10-07, Ubuntu 22.04, g++ 11.4.0; finding F-L9)
 Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
@@ -959,3 +977,19 @@ A1 was written first and committed failing in `0f5875e`; the fix is `972b22e`. F
 
 - **The fix:** on macOS, `tools_setup` prepends the `include/` of each Homebrew formula it already puts on `PATH` (bison, flex, gperf) to `CPATH`, keeping a user's `CPATH` after it.
 - **Note on A1:** it first set `SDKROOT` to a fake path, which made Apple's `clang++` shim fail and ask to install the command-line tools. It now uses the real SDK on a Mac (`xcrun`), and any value elsewhere, where it is unused.
+
+## H12: the same assertions on macOS arm64 and Linux x86_64, finding F-M2 (2026-10-08, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0; the Linux part is pending)
+A1 and A2 were written first and committed failing in `cd4baa0`; the fix is `f06d03a`. The cause is in H11e's "macOS checks", F-M2. The Mac's binary reports `v3-213-gcd4baa0 (dirty)`: it was built with the fix before the fix was committed, so its sources are exactly `f06d03a`'s.
+
+| Test | Result |
+|---|---|
+| A1 `h12_structs_count`: `structs`, generated config, `--max-threads 1`, gives Linux's 1,839 | Mac: pass (153 s). Before the fix: `FAIL: 1800 assertions, expected 1839` |
+| A2 `ScoreTest`: `getCovScore` and `getConditionalEntropy` equal, bit for bit, a reference that rounds every operation | Mac: pass. Before the fix: 2,644 of 19,182 coverage scores and 9,436 of 44,850 entropies differed (first: `ATCT=3 ATCF=1 CT=7 CF=3`, `3fe6db6db6db6db7` instead of `…6db6`). `supportMethods.cc.o` has no fused instruction any more (`objdump`) |
+| A3 the Mac fixture table, `--check` against `eval/results/linux-fixtures` | Mac: **pass, 46 of 46 equal in every column but the time** (`eval/results/macos-fixtures`), the six F-M2 runs included. `structs` and `constructs` C2 time out at 1,800 s, as on Linux |
+| A4 full `ctest` | Mac: pass, **229 of 229** (1,935 s): the 226 before, A1, and A2's 2 gtests. The H0 baselines (`regression_*`, `determinism`) pass unchanged. **Linux: pass, 229 of 229** (2,278 s; Ubuntu 22.04, g++ 11.4.0, HARM `v3-215-gf0b2a8b` in a fresh build directory, `-ffp-contract=off` in the targets' flags), with `ScoreTest` and `h12_structs_count` (1,839, 249 s). The H0 baselines pass unchanged. **Linux fixtures:** `run_eval.py` with `--check` against `eval/results/linux-fixtures` gives 46 of 46 equal (no "differs"): Linux is unchanged by H12, and with the Mac's 46 of 46, the two systems agree |
+
+- **The fix:** `add_compile_options("-ffp-contract=off")` in the top-level `CMakeLists.txt`, for GCC and Clang.
+  - It applies to everything HARM's CMake builds: HARM's own targets, the tests, and the sources vendored under `src/` (SQLiteCpp, csv-parser, googletest). The plan said "HARM's own targets"; the vendored sources do no floating-point work that HARM's results depend on.
+  - The libraries in `third_party` (antlr4, Spot, Boost, Z3) are built by their own scripts and are not affected.
+- **Linux is expected to be unchanged:** x86_64 without `-mfma` has no fused instruction to contract into, so the flag changes no Linux code generation for these scores. A1 and A2 should pass on Linux before and after.
+- **Still fragile, by design of the plan (option (b) not taken):** the choice among near-equal candidates depends on the last bit. Platforms now agree because they round the same operations the same way, and `log2` (used with `ENT` only) agreed on these inputs.

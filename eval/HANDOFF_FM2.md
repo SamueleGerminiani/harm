@@ -1,5 +1,7 @@
 # F-M2 on the Mac: find the cause of the macOS/Linux count difference (hand-off, 2026-10-08)
 
+**Done (2026-10-08):** the cause is FMA contraction in the decision-tree scores, fixed in H12 (`ms/H12-fm2`). See VALIDATION (F-M2, H12) and `eval/HANDOFF_H12.md` for the Linux part.
+
 For the Mac session (or the user). The goal of this file is to **find the cause**, not to fix it. The fix is a milestone (H12) with the usual workflow: plan, the user's approval, failing tests first.
 
 **Never modify trivergence.** `main` is not touched: the user decides the release.
