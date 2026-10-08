@@ -45,6 +45,11 @@ HARM (Hint-based AsseRtion Miner) is a tool to generate Linear Temporal Logic (L
 
 ![](doc/figures/harm_demo.gif)
 
+**HARM v4** adds semantic redundancy reduction (`--reduce`), cones of influence from the RTL (`<coi>`, `harm-coi`), SystemVerilog syntax in propositions and valid SystemVerilog output. All new features are opt-in.
+- What is new: `doc/RELEASE_NOTES_v4.md`; coming from v3: `doc/MIGRATING_v3_to_v4.md`.
+- The technical report on v4, with how each part was validated: `doc/report/harm_v4.pdf` (rebuild with `make -C doc/report`).
+- For developers: `doc/DEVELOPER_GUIDE.md`.
+
 
 # Quick start
 
@@ -130,8 +135,10 @@ export DYLD_LIBRARY_PATH=<path_to_install_directory>/harm/lib:$DYLD_LIBRARY_PATH
 ## Run default tests
 
 ```
-ctest -V -R
+ctest            # every test: about 230, about 32 minutes
+ctest -LE slow   # without the slow ones
 ```
+The tests that need Verilator, Icarus, yosys or harm-coi's Python are registered only when those are found; CMake says which at configure time. `doc/DEVELOPER_GUIDE.md` lists the labels.
 
 
 # How to use the miner  
@@ -261,7 +268,7 @@ Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise
 * **Logic/Net:** Verilog types (e.g., `reg`, `wire`, `logic`) are represented as **4-value bit vectors** (0, 1, x, z) with a max width of **511 bits**.
 * **Floats:** All float types are internally represented as **C doubles**.
 
-> **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antl4/propositionParser/grammar/proposition.g4`.
+> **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antlr4/propositionParser/grammar/proposition.g4`.
 
 ### SystemVerilog Syntax in Propositions
 Besides C/C++ operators, propositions accept these SystemVerilog forms:
@@ -487,7 +494,7 @@ These variables represent the number of time units where specific conditions hol
 **2. Trace & Complexity Metrics**
 * **`traceLength`**: Total length of the trace (sum of lengths if multiple input traces are used).
 * **`complexity`**: The number of variables used in the assertion.
-* **`pRepetition`**: The number of repeated propositions in the assertion.
+* **`pRepetitions`**: The number of repeated propositions in the assertion.
 
 **3. Fault Analysis Metrics**
 * **`faultCoverage`**: Number of faults covered by the assertion.
@@ -717,6 +724,17 @@ Harm produces three main types of textual outputs:
       * An implication is claimed only if it holds both over infinite words (proved with Spot, which is what SVA and formal tools need) and on every finite trace as HARM evaluates it, where an assertion still pending at the end of the trace holds.
       * Only **safety** assertions of the form `G(antecedent -> consequent)` with a fixed-length antecedent are reduced; the others (`F`, `[*]`, `##[m:n]`, …) are always kept.
       * Only assertions sharing a proposition are compared (or, with `--atom-premises`, linked by a fact).
+
+  Example (`tests/input/h3/reduce.xml`: `c = a || d` on the trace; the templates `G(P0 -> P1)` and `G(P0 && P1 -> P2)`). Of the five mined assertions, the three conjunctions are implied by `G(a -> c)` or `G(d -> c)`:
+<!-- example -->
+```
+$ harm --csv tests/input/h3/reduce.csv --conf tests/input/h3/reduce.xml --reduce implies \
+    --dump-implications $OUT/implications.json > /dev/null
+$ cat $OUT/implications.json
+{"context": "default", "dropped": "G({a && b} -> c)", "kept": ["G(a -> c)"], "relation": "implied"},
+{"context": "default", "dropped": "G({a && d} -> c)", "kept": ["G(a -> c)", "G(d -> c)"], "relation": "implied"},
+{"context": "default", "dropped": "G({b && d} -> c)", "kept": ["G(d -> c)"], "relation": "implied"}
+```
 * **`--atom-premises`** (with `--reduce implies`), **`--atom-premises-max <N>`** (default 2000)
     Also use facts between the comparisons inside propositions, proved with Z3 under HARM's semantics (x/z included):
     - implications, e.g. `cnt > 9` implies `cnt > 8`;
@@ -736,7 +754,7 @@ Harm produces three main types of textual outputs:
 * **`--min-frank <float>`**
     Minimum final ranking score (0.0 to 1.0). All assertions below this level are discarded.
 
-* **`--keep-vac-ass <FILE>`**
+* **`--keep-vac-ass`**
     Do not discard vacuous assertions.
 
 * **`--include-ass <FILE>`**
@@ -801,6 +819,12 @@ Harm produces three main types of textual outputs:
 * **`--ddd <DIRECTORY>`**
     Dump debug data (useful for understanding internal generation).
 
+* **`--dump-trace-as-csv <FILE>`**
+    Write the input trace(s) as a CSV file, then exit.
+
+* **`--dont-print-ass`**
+    Do not print the table of mined assertions (useful with `--dump-to`).
+
 * **`--check-dump-eval <DIRECTORY>`**
     For each `check` assertion, dump the evaluation of the antecedent, consequent, and shift on input traces (each assertion gets a unique file).
 
@@ -821,6 +845,9 @@ Harm produces three main types of textual outputs:
 
 * **`--name <String>`**
     Name of this execution (used when dumping statistics).
+
+* **`--version`**
+    Print HARM's version and exit: `HARM <git describe>`, e.g. `HARM v4`, or `HARM v3-215-gf0b2a8b` for a build of `dev` 215 commits after `v3`, with ` (dirty)` if the sources had uncommitted changes.
 
 
 # Docker

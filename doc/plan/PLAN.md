@@ -238,6 +238,13 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
   - README sections (`<coi>`, `--reduce`, `harm-coi`), Dockerfile (Z3 and the generator's dependencies), and a release tag.
 - **Acceptance:** a results table reproducible from one script; the Docker image builds; the README examples run.
 
+### H14: Documentation and the v4 report
+- **Depends on:** H0–H13 · **Effort:** 3–4 d
+- **Scope:** finished release notes, a v3 → v4 migration guide, a developer guide, README audits (HARM and harm-coi), and a LaTeX technical report (no evaluation section) (`doc/report/`) on what is new in HARM v4 with respect to v3. Details: `doc/plan/H14_PLAN.md`.
+- **Out of scope:** any behaviour change; re-running the evaluation; the release itself.
+- **Acceptance:** the report builds with no errors or undefined references; the developer guide covers every directory and `src/` module; the examples run; every new option, XML element, default-output decision and milestone is covered (scripted checks, ctest label `doc`).
+- **Validation:** the user's review of the report against the cited DECISIONS and VALIDATION entries.
+
 ---
 
 ## 2. Dependencies and order
@@ -318,3 +325,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H11g | `install_verilator.sh` on macOS: Homebrew flex's `FlexLexer.h` (F-M1) | done |
 | H12 | The same assertions on macOS arm64 and Linux x86_64: FMA contraction in the decision-tree score (F-M2) | done (macOS and Linux: `ctest` 229 of 229, fixtures 46 of 46 equal) |
 | H13 | Profiling opt-in (`HARM_PROFILE`); no `gmon.out` from a default build | done |
+| H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |

@@ -1,0 +1,71 @@
+\section{The proposition language and its semantics}\label{sec:language}
+
+\subsection{SystemVerilog syntax (H1)}
+v3 propositions accepted C operators, binary literals (\code|4'b1010|, \code|0b...|, \code|0x...|), bit selection, \code|inside| and the SVA functions. Several forms that trivergence's specification-derived propositions use were lexer errors, and one bad proposition aborted the whole run. v4 adds:
+
+\begin{center}\small
+\begin{tabular}{@{}P{0.26\textwidth}P{0.3\textwidth}P{0.36\textwidth}@{}}
+\toprule
+Form & Example & Notes \\
+\midrule
+based literals & \code|8'd9|, \code|4'hA|, \code|6'o7x|, \code|8'sd5| & \code|x|, \code|z|, \code|?| digits; \code|_| separators; unsized \code|'h|/\code|'d|/\code|'o| are 32 bits \\
+fill literals & \code|q4 == '1| & \code|'0 '1 'x 'z| take the width of the other operand \\
+concatenation & \code|{go, s} == 3'b110| & items are logic, int or bool variables \\
+replication & \code|{4{1'b0}}| & \\
+conditional & \code|(go ? cnt : 4'h0) > 4'd5| & lowest precedence, as in SystemVerilog \\
+case equality & \code|q4 === 4'b1x0z| & compares \code|x| and \code|z| exactly \\
+hierarchical names & \code|u_core.state| & the same as \code|u_core::state| \\
+\bottomrule
+\end{tabular}
+\end{center}
+Each new node needed an evaluator, a printer, a copier, and an encoding for Z3 (\cref{sec:equiv}). Two more additions:
+\begin{itemize}
+\item \textbf{Invariant templates:} \code|G(P0)|, without an implication, is read as \code|G(true -> P0)| and printed back as \code|G(P0)|. v3 rejected it.
+\item \textbf{\opt{skip-invalid-props}:} a proposition that does not parse is skipped with a warning instead of stopping HARM. This needed a scoped ``throw instead of exit'' mode around proposition parsing, because \code|messageError| exits.
+\end{itemize}
+The semantics of the new operators was validated against Icarus Verilog~\cite{iverilog} on 1{,}000 random expressions $\times$ 32 random 4-valued rows (\cref{sec:validation}).
+
+\subsection{Unknown values: HARM's rule, documented (D-011, H1b)}\label{sec:xz}
+HARM's \code|Logic| type holds 4-valued bit vectors (\code|0|, \code|1|, \code|x|, \code|z|) of up to 511 bits, and computes arithmetic, bitwise operators and concatenation with \code|x| and \code|z| as SystemVerilog does. The two differ where a 4-valued value becomes a truth value. The \ms{H1} oracle measured HARM's rule precisely, and \ms{H1b} documented it:
+\begin{itemize}
+\item a comparison (\code|== != < <= > >=|) is false if any bit of an operand is \code|x| or \code|z|;
+\item a value used as a condition is true only if it has a known \code|1| bit;
+\item \code|!|, \code|&&| and \code!||! then work on true and false;
+\item \code|===| and \code|!==| compare \code|x| and \code|z| exactly.
+\end{itemize}
+In SystemVerilog~\cite[\S11.4.4, \S11.4.5, \S11.4.7, \S16.6]{ieee1800}, a comparison or condition can be \code|x|, the Boolean operators propagate it, and an assertion treats a final \code|x| as false. On cycles where a signal has unknown bits the two can disagree in both directions. With \code|a = 4'b10x1|, \code|b = 4'b1001|, \code|c = 4'b0001|, \code|p = 1'bx|:
+
+\begin{center}\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+Proposition & HARM & SystemVerilog & Consequence \\
+\midrule
+\code|!(a == b)|, \code|!p|, \code+p || !p+ & true & false (\code|x|) & HARM may mine what a simulator sees fail \\
+\code|a != c| (a known bit differs) & false & true & HARM may miss what holds in simulation \\
+\code|a == b|, \code|a === b|, \code|a !== b| & \multicolumn{2}{c}{the same} & \\
+\bottomrule
+\end{tabular}
+\end{center}
+The regression \texttt{h1b\_x\_semantics} pins HARM's value of 23 such propositions; their SystemVerilog values were checked against the standard and with Icarus Verilog, and differ on 9 of the 23.
+
+\paragraph{Why the rule was kept (D-011, D-024 withdrawn).} An option with SystemVerilog's semantics was planned (D-024) and then withdrawn by decision. In HARM a proposition is true or false, and a proposition and its negation are complementary. The decision trees (negated candidates, negated consequents) and the reductions of \cref{sec:reduction} rely on that. Under SystemVerilog's semantics, both \code|a == b| and \code|!(a == b)| are false on a cycle where \code|a| has an \code|x| bit. The difference matters only on traces with unknown values: before reset in a 4-state simulator, uninitialised memories, tri-state nets. The README tells users to mine after reset and to write \code|===|/\code|!==| where unknown values must be told apart.
+
+\subsection{The end of the trace (D-015, D-016, H1c)}\label{sec:traceend}
+A finite trace ends while some assertion instances are still pending: \code|G(a -> F b)| when the last \code|a| has not yet been followed by \code|b|. HARM has always counted a pending instance as holding, the \emph{weak view} of truncated paths~\cite{truncated-paths}. A SystemVerilog simulator follows the \emph{neutral view} at the end of a simulation: a pending weak obligation holds, a pending strong one fails. Since v4 prints unbounded \code|F| as \code|s_eventually|, which is strong, a liveness assertion HARM accepts could fail in a simulator on the same trace.
+
+\opt{trace-end} chooses:
+\begin{itemize}
+\item \code|harm| (default): every operator is weak at the end, as in v3;
+\item \code|sva|: weak obligations (\code|nexttime|, \code|until|, \code|always|, sequences) hold, strong ones fail: \code|s_eventually p| (\code|F p|), \code|not nexttime p| (\code|!X p|, which is \code|s_nexttime !p|) and \code|not (p until q)|.
+\end{itemize}
+Only verdicts that are pending at the end can change, and only from holding to failing. The consequent is evaluated with Spot's LTLf translation~\cite{ltlf} (\code|from_ltlf|), which also says in which automaton states the trace may end. Spot 2.9.7 reads \code|X| as weak there, which a first implementation got wrong and the hand-derived tests caught. The default stays \code|harm| because the change would affect other users: 106 of the 138 assertions of the \texttt{process} example contain a strong operator, and with \code|sva| 62 of them are not mined.
+
+% example
+\begin{lstlisting}
+$ harm --csv-dir examples/process/traces --conf examples/process/processConfig.xml --sva \
+    --trace-end sva --dont-print-ass --dump-to $OUT/sva.txt > /dev/null
+$ grep -c . $OUT/sva.txt
+76
+\end{lstlisting}
+
+The oracle for this option is a model of IEEE~1800's finite-trace semantics written independently of HARM, which parses HARM's printed SVA with the standard's precedence: 297 generated assertions on 4{,}680 traces in both modes, with no disagreement.

@@ -28,6 +28,22 @@ harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include 
 
 As a library: `harm_coi.cli.main(argv)` returns the exit code.
 
+### Example
+The `counter` fixture of HARM's tests (`tests/input/coi/counter/`): a mod-10 counter, `cnt` a register, `wrap = en && cnt == 9`. `cnt` depends on itself, `en` and `rst` one cycle or more back (saturated: also beyond `--max-depth`), `wrap` also on `cnt` and `en` in the same cycle, and the inputs on nothing:
+<!-- example -->
+```
+$ harm-coi --top counter --files tests/input/coi/counter/rtl/counter.sv \
+    --vcd-scope tb::dut --vcd-recursion 0 --vcd tests/input/coi/counter/trace.vcd \
+    --predicates --emit-config $OUT/counter.xml -o $OUT/counter_coi.json
+$ python3 -c "import json; d = json.load(open('$OUT/counter_coi.json')); [print(t, [(s['sig'], s['depths']) for s in v['sources']]) for t, v in d['targets'].items()]; print([p['expr'] for p in d['predicates']])"
+cnt [('cnt', [1, 2, 3]), ('en', [1, 2, 3]), ('rst', [1, 2, 3])]
+en []
+rst []
+wrap [('cnt', [0, 1, 2, 3]), ('en', [0, 1, 2, 3]), ('rst', [1, 2, 3])]
+["cnt == 4'd0", "cnt == 4'd9", 'en', 'rst']
+```
+The emitted `counter.xml` has these four predicates as propositions with `origin="rtl"` and a `<coi file="counter_coi.json" mode="rank"/>`; HARM mines from it with `harm --vcd tests/input/coi/counter/trace.vcd --clk clk --vcd-ss tb::dut --vcd-r 0 --conf $OUT/counter.xml`.
+
 ## What a cone means
 - **Depth = register crossings, measured as HARM samples** (just before each rising edge, D-005): `q <= d` gives `q <- d @1`.
   - Combinational logic, continuous assignments and port connections: `@0`.
@@ -64,7 +80,7 @@ As a library: `harm_coi.cli.main(argv)` returns the exit code.
   - for conditions and labels, the signals assigned under them;
   - for comparisons, the signal assigned from the expression;
   - for enum values and reset values, the variable.
-- **Dropped (counted, listed with `-v`):** predicates on signals that are not visible, on local variables (e.g. a `for` loop's condition), comparisons whose constant does not fit the signal, and expressions that cannot be translated.
+- **Dropped (counted, listed with `-v`):** predicates on signals that are not visible, on local variables (e.g. a `for` loop's condition), comparisons whose constant does not fit the signal, predicates on a signal or constant wider than HARM's 511-bit limit (H11c, F-L5), and expressions that cannot be translated.
 - **Not seen:** elaboration-time conditions (`if` in a `generate`).
 - **`--emit-config`** writes one context:
   - the predicates with `loc="a, c, dt"` and `origin="rtl"`;
@@ -88,5 +104,5 @@ A signal goes to `unknown` (HARM treats it as in every cone, D-017) when:
 - `ctest -L coi` in HARM's build:
   - the H4 fixtures (equality with the hand-written cones);
   - a simulation non-influence check;
-  - an optional cross-check against yosys (`HARM_COI_YOSYS`, a yosys ≥ 0.67 with `read_slang`).
+  - an optional cross-check against yosys (label `xcheck`): it runs when CMake finds a yosys with `read_slang` (`third_party/install_yosys.sh` builds yosys 0.69 with it), and is skipped otherwise.
 - Configure CMake with `-DHARM_COI_PYTHON=<venv>/bin/python`.

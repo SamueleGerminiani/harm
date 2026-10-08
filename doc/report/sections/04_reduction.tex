@@ -1,0 +1,91 @@
+\section{Semantic redundancy reduction}\label{sec:reduction}
+Mining with decision trees produces many assertions that say the same thing, or less: \code|G({a && b} -> c)| next to \code|G(a -> c)|, or \code|cnt == 4'd9| next to \code|4'd9 == cnt|. v3 removed only assertions with the same text and the same contingency table. v4 adds three levels, chosen with \opt{reduce} (\cref{fig:reduction}):
+\begin{itemize}
+\item \code|syntactic| (default): v3's filter;
+\item \code|equiv|: assertions that differ only in equivalent propositions are merged (Z3);
+\item \code|implies|: in addition, an assertion implied by another kept assertion is dropped (Spot and a model of HARM's evaluator); \opt{atom-premises} adds facts between comparisons.
+\end{itemize}
+The logic was ported from USM-T, a fork of HARM's core, and rebuilt where HARM's semantics required it. Reduction runs after the \code|<filter>| metrics and the edit rules, and before ranking, so that the kept assertions are ranked as usual.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  st/.style={draw,rounded corners=2pt,minimum height=9mm,text width=28mm,align=center,font=\small},
+  arr/.style={-{Stealth[length=2mm]},thick}, lab/.style={font=\scriptsize,align=center}]
+\node[st] (mined) {mined assertions};
+\node[st,right=8mm of mined] (syn) {same text and\\contingency table};
+\node[st,right=8mm of syn,fill=blue!8] (eq) {equivalent propositions\\(Z3)};
+\node[st,right=8mm of eq,fill=blue!8] (imp) {implied assertions\\(Spot $\wedge$ finite model)};
+\draw[arr] (mined) -- (syn);
+\draw[arr] (syn) -- (eq);
+\draw[arr] (eq) -- (imp);
+\node[lab,below=1mm of syn] {\code|syntactic|};
+\node[lab,below=1mm of eq] {\code|equiv|};
+\node[lab,below=1mm of imp] {\code|implies| (+ \opt{atom-premises})};
+\end{tikzpicture}
+\caption{The reduction levels. Each level includes the previous ones; the shaded ones are new in v4.}
+\label{fig:reduction}
+\end{figure}
+
+\subsection{Equivalent propositions (H2, D-003)}\label{sec:equiv}
+\paragraph{Encoding HARM's evaluator in Z3.} Two propositions are merged only if Z3~\cite{z3} proves them equivalent under HARM's semantics. The first proposal, ``never merge propositions with \code|x|/\code|z| constants or \code|===|, use two-valued logic for the rest'', is unsound: variables can hold unknown values at run time, and under HARM's rule (\cref{sec:xz}) \code|a == c| and \code|!(a != c)| then differ. So v4 encodes HARM's evaluator exactly (D-003): each logic signal is a value bit-vector plus an \code|x| mask and a \code|z| mask, and each operator follows HARM's implementation of \code|Logic|. Implementing it uncovered details that the encoding had to reproduce: hidden value bits above a value's width (the carry of \code|+|, the ones of \code|~|), \code|~| turning \code|z| into \code|x|, arithmetic with an unknown operand giving a 1-bit \code|x|. Constructs that are not encoded exactly (division and shifts, \code|$past| and the other SVA functions, strings, integer types narrower than 64 bits) become \emph{opaque atoms}, identified by their text: sound, but incomplete. A timeout or an \emph{unknown} answer means ``not equivalent''.
+
+\paragraph{Canonicalisation.} Propositions with the same text are grouped without a solver call; the others are compared with Z3 only within buckets of propositions over the same variables. Each class gets a token, and the redundancy filter's key uses the tokens instead of the text, still together with the contingency table. Of a merged group, the assertion with the smallest text is kept. \code|cnt == 4'd6| and \code|4'd6 == cnt| are merged; \code|s !== 2'b00| and \code|s != 2'b00| are not, although they agree on this x-free trace, because they differ when \code|s| has unknown bits:
+
+% example
+\begin{lstlisting}
+$ harm --csv tests/input/h1/newops.csv --conf tests/input/h2/reduce.xml --reduce equiv \
+    --dont-print-ass --dump-to $OUT/equiv.txt > /dev/null
+$ cat $OUT/equiv.txt
+G({go, s} == 3'b110 -> s != 2'b0)
+G({go, s} == 3'b110 -> s !== 2'b0)
+G(4'b110 == cnt -> s != 2'b0)
+G(4'b110 == cnt -> s !== 2'b0)
+\end{lstlisting}
+Without \opt{reduce} \code|equiv|, the same configuration gives six assertions: the two above with \code|cnt == 4'b110| are also kept.
+
+Z3 is an optional dependency (D-009): it is built from source in \file{third_party/} with HARM's compiler, and the CMake option \code|HARM_WITH_Z3| (default on) can turn it off, in which case \code|equiv| and \code|implies| are not available.
+
+\subsection{Implied assertions (H3, D-004, D-008)}\label{sec:implies}
+\paragraph{From assertions to Spot formulas.} Each assertion is abstracted to an LTL formula over atoms. The abstraction stops at the maximal non-Boolean subexpressions (comparisons, conversions of logic values to Boolean, function calls): \code|&&|, \code!||!, \code|!| and \code|^| between them are kept and given to Spot. Otherwise Spot could not see that \code|G(a -> c)| implies \code|G({a && b} -> c)|, the most common redundancy in decision-tree output. Atoms are named by their equivalence class from \cref{sec:equiv}, so \code|implies| includes \code|equiv|.
+
+\paragraph{Two semantics, both required (D-004 amended, D-015).} The plan was to claim $A \Rightarrow B$ when Spot proves language containment over infinite words and both formulas are syntactic safety: for safety formulas, every finite trace that violates $B$ then violates $A$, so dropping $B$ loses nothing. The bounded oracle of \ms{H3} refuted this on a 3-cycle trace:
+\begin{center}
+$A$ = \code+G({b ##2 !a} |-> X (b && !b))+, \qquad $B$ = \code+G({b ##2 !a} |-> (b && !b))+.
+\end{center}
+Both are false over infinite words, and $B$ fails on the trace. $A$ does not: HARM evaluates the consequent with an automaton over the Boolean \emph{leaves}, which cannot see that \code|b && !b| is false, so the \code|X| instance is still pending at the end of the trace, and a pending instance holds. So v4 claims $A \Rightarrow B$ only if it holds in both semantics:
+\begin{enumerate}
+\item over infinite words, with Spot's containment check: this is what SVA, simulators and formal tools need;
+\item on every finite trace as HARM evaluates it: an exact model of HARM's evaluator in which every antecedent is a fixed-length sequence of Boolean steps, every consequent is the same deterministic, complete Spot automaton over leaves that HARM builds, an instance starts on every cycle, and an instance still pending at the end holds (or, with \opt{trace-end} \code|sva|, fails if its pending obligation is strong). A breadth-first search over the pending instances of $A$ and $B$ explores every finite trace and refutes $A \Rightarrow B$ if $B$ can fail while $A$ has not.
+\end{enumerate}
+Only assertions of the form \code|G(antecedent -> consequent)| with a fixed-length antecedent are reduced; the others (\code|F|, \code|[*]|, \code|##[m:n]|, conjunctions of different lengths) are always kept. Every claim is sound for both trivergence's simulator checks and its formal checks.
+
+\paragraph{Cost.} Only pairs of assertions that share an atom are compared, and every formula is translated to an automaton once. The \texttt{camellia} example found a real performance bug: its assertions span 25 cycles (\code|X[23]|), Spot's automaton for \code|G(a -> X^k b)| has about $2^k$ states, and the first finite model tracked all pending instances. Three limits make the reduction terminate, each of which only removes claims: assertions spanning more than 10 cycles are never reduced; the finite search follows one chosen instance of the dropped assertion; and it gives up after 20{,}000 states (``not proved''). The cost still grows with the square of the number of assertions: on a fixture with 1{,}839 assertions, \code|implies| and \opt{atom-premises} together exceed 30 minutes.
+
+\paragraph{Which side is kept (D-008).} \opt{keep} \code|stronger| (default) keeps the implying assertion and drops the implied one; \code|weaker| does the opposite; \code|ranked| keeps the better ranked. Equivalent assertions keep the smallest text. \opt{dump-implications} writes every dropped assertion, the kept assertions that imply it, and the relation:
+
+% example
+\begin{lstlisting}
+$ harm --csv tests/input/h3/reduce.csv --conf tests/input/h3/reduce.xml --reduce implies \
+    --dump-implications $OUT/implications.json > /dev/null
+$ cat $OUT/implications.json
+{"context": "default", "dropped": "G({a && b} -> c)", "kept": ["G(a -> c)"], "relation": "implied"},
+{"context": "default", "dropped": "G({a && d} -> c)", "kept": ["G(a -> c)", "G(d -> c)"], "relation": "implied"},
+{"context": "default", "dropped": "G({b && d} -> c)", "kept": ["G(d -> c)"], "relation": "implied"}
+\end{lstlisting}
+On this trace \code|c| is \code!a || d!: of the five mined assertions, the three conjunctions are implied by \code|G(a -> c)| or \code|G(d -> c)|. On a synthetic design with planted relations, 116 mined assertions reduce to exactly the 4 planted ones.
+
+\subsection{Facts between comparisons (H3b, D-025)}\label{sec:premises}
+H3's atoms are opaque to Spot, so \code|G(cnt > 4'd8 -> b)| does not drop \code|G(cnt > 4'd9 -> b)|: Spot does not know that \code|cnt > 9| implies \code|cnt > 8|. \opt{atom-premises} asks Z3, for every pair of atoms over a common variable, whether $p \rightarrow q$, $q \rightarrow p$ and $p \rightarrow \neg q$ are valid, with the encoding of \cref{sec:equiv} (unknown values included). Only a proof gives a fact. The facts become premises of both checks: Spot checks $\mathbf{G}(\textit{facts}) \wedge A \subseteq B$, and the finite model explores only atom valuations that satisfy them. Premises can only add implications. The queries are capped by \opt{atom-premises-max} (default 2{,}000); beyond the cap HARM says so and the result stays sound, only weaker.
+
+% example
+\begin{lstlisting}
+$ harm --csv tests/input/h3b/reduce.csv --conf tests/input/h3b/reduce.xml --reduce implies \
+    --atom-premises --dont-print-ass --dump-to $OUT/kept.txt \
+    --dump-implications $OUT/implications.json > /dev/null
+$ cat $OUT/kept.txt $OUT/implications.json
+G(cnt > 4'b1000 -> a)
+"dropped": "G(cnt > 4'b1001 -> a)", "kept": ["G(cnt > 4'b1000 -> a)"], "relation": "implied", "premises": ["cnt > 4'b1001 -> cnt > 4'b1000"]
+"dropped": "G(cnt == 4'b1001 -> a)", "kept": ["G(cnt > 4'b1000 -> a)"], "relation": "implied", "premises": ["cnt == 4'b1001 -> cnt > 4'b1000"]
+\end{lstlisting}
+Without \opt{atom-premises}, all three assertions are kept. The option was approved after a measurement: on outputs with numeric ranges or FSM states, at least 16--22\% of the assertions that survive \code|implies| are redundant given such facts; on Boolean-only outputs, none. On the \texttt{sub\_platform} example the output goes from 89 to 69 assertions, and the reduction from 0.9\,s to 5.3\,s.
