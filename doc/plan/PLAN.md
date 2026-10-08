@@ -343,4 +343,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H13 | Profiling opt-in (`HARM_PROFILE`); no `gmon.out` from a default build | done |
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
-| H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | planned (approved 2026-10-08) |
+| H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | planned (approved 2026-10-08; `H15_PLAN.md` awaiting approval) |
