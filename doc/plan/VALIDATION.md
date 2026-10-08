@@ -977,3 +977,19 @@ A1 was written first and committed failing in `0f5875e`; the fix is `972b22e`. F
 
 - **The fix:** on macOS, `tools_setup` prepends the `include/` of each Homebrew formula it already puts on `PATH` (bison, flex, gperf) to `CPATH`, keeping a user's `CPATH` after it.
 - **Note on A1:** it first set `SDKROOT` to a fake path, which made Apple's `clang++` shim fail and ask to install the command-line tools. It now uses the real SDK on a Mac (`xcrun`), and any value elsewhere, where it is unused.
+
+## H12: the same assertions on macOS arm64 and Linux x86_64, finding F-M2 (2026-10-08, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0; the Linux part is pending)
+A1 and A2 were written first and committed failing in `cd4baa0`; the fix is `f06d03a`. The cause is in H11e's "macOS checks", F-M2. The Mac's binary reports `v3-213-gcd4baa0 (dirty)`: it was built with the fix before the fix was committed, so its sources are exactly `f06d03a`'s.
+
+| Test | Result |
+|---|---|
+| A1 `h12_structs_count`: `structs`, generated config, `--max-threads 1`, gives Linux's 1,839 | Mac: pass (153 s). Before the fix: `FAIL: 1800 assertions, expected 1839` |
+| A2 `ScoreTest`: `getCovScore` and `getConditionalEntropy` equal, bit for bit, a reference that rounds every operation | Mac: pass. Before the fix: 2,644 of 19,182 coverage scores and 9,436 of 44,850 entropies differed (first: `ATCT=3 ATCF=1 CT=7 CF=3`, `3fe6db6db6db6db7` instead of `…6db6`). `supportMethods.cc.o` has no fused instruction any more (`objdump`) |
+| A3 the Mac fixture table, `--check` against `eval/results/linux-fixtures` | Mac: **pass, 46 of 46 equal in every column but the time** (`eval/results/macos-fixtures`), the six F-M2 runs included. `structs` and `constructs` C2 time out at 1,800 s, as on Linux |
+| A4 full `ctest` | Mac: pass, **229 of 229** (1,935 s): the 226 before, A1, and A2's 2 gtests. The H0 baselines (`regression_*`, `determinism`) pass unchanged. **Linux: pending** (`eval/HANDOFF_H12.md`) |
+
+- **The fix:** `add_compile_options("-ffp-contract=off")` in the top-level `CMakeLists.txt`, for GCC and Clang.
+  - It applies to everything HARM's CMake builds: HARM's own targets, the tests, and the sources vendored under `src/` (SQLiteCpp, csv-parser, googletest). The plan said "HARM's own targets"; the vendored sources do no floating-point work that HARM's results depend on.
+  - The libraries in `third_party` (antlr4, Spot, Boost, Z3) are built by their own scripts and are not affected.
+- **Linux is expected to be unchanged:** x86_64 without `-mfma` has no fused instruction to contract into, so the flag changes no Linux code generation for these scores. A1 and A2 should pass on Linux before and after.
+- **Still fragile, by design of the plan (option (b) not taken):** the choice among near-equal candidates depends on the last bit. Platforms now agree because they round the same operations the same way, and `log2` (used with `ENT` only) agreed on these inputs.

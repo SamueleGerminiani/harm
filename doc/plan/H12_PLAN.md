@@ -1,6 +1,6 @@
 # H12 plan: the same assertions on macOS arm64 and Linux x86_64 (finding F-M2)
 
-*Status: approved 2026-10-08 by the user (option (a)). Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
+*Status: approved 2026-10-08 by the user (option (a)); done on the Mac (A1–A4 pass, VALIDATION), the Linux run pending (`eval/HANDOFF_H12.md`). Branch: `ms/H12-fm2` (from `dev` @ `ecf9ac2`). Effort: 0.5 d, plus a full `ctest` and the fixture table on both machines.*
 
 ## The cause (found on the Mac; details: VALIDATION, H11e "macOS checks", F-M2)
 - **Where:** the decision-tree scores in `src/miner/modules/src/propertyMiner/TLMiner/supportMethods.cc`:
@@ -17,7 +17,7 @@
 ## Fix options
 | | Option | Effect | Cost and risk |
 |---|---|---|---|
-| **(a) recommended** | `-ffp-contract=off` for all of HARM's own targets, on every platform and compiler (GCC and Clang) | macOS arm64 gives Linux's counts. Linux x86_64 is unchanged (it never contracted), so every existing Linux table and baseline stays valid | One line in `CMakeLists.txt`. No measurable speed cost expected (a few fused instructions). Does not protect against a future `libm` difference (e.g. `log2` with `ENT`) |
+| **(a) recommended** | `-ffp-contract=off` for everything HARM's CMake builds (HARM's targets, the tests and the sources vendored under `src/`), on every platform and compiler (GCC and Clang) | macOS arm64 gives Linux's counts. Linux x86_64 is unchanged (it never contracted), so every existing Linux table and baseline stays valid | One line in `CMakeLists.txt`. No measurable speed cost expected (a few fused instructions). Does not protect against a future `libm` difference (e.g. `log2` with `ENT`) |
 | (b) | Make the selection robust: compare gains with a tolerance (a few ULPs), and break ties by a deterministic key (e.g. the proposition's index) with a stable sort | Removes the rounding dependence on every platform, `libm` included | Changes the mined assertions on **both** platforms: every count, H0 baseline and evaluation table changes and must be re-made on both machines. It is a change to HARM's behaviour, not a portability fix |
 | (c) | (a) now, (b) as a later milestone if the user wants rounding-independent mining | | |
 
