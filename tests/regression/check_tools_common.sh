@@ -21,13 +21,14 @@ printf '#!/bin/sh\necho 2\n' > "$work/fakebin/sysctl"
 chmod +x "$work/fakebin/brew" "$work/fakebin/sysctl"
 
 out=$(
-    export PATH="$work/fakebin:$PATH" SDKROOT=/fake-sdk
+    # the real SDK on a Mac (Apple's compiler shims need one); any value elsewhere (unused)
+    export PATH="$work/fakebin:$PATH" SDKROOT="$(xcrun --show-sdk-path 2>/dev/null || echo /none)"
     unset CPATH
     OSTYPE=darwin24
     source "$src/third_party/tools_common.sh"
     tools_setup verilator "$work/prefix" >/dev/null
     # what the tool builds see: the compiler, with the environment tools_setup leaves behind
-    echo '#include <FlexLexer.h>' | env -u SDKROOT "$CXX" -E -x c++ - 2>&1 || true
+    echo '#include <FlexLexer.h>' | "$CXX" -E -x c++ - 2>&1 || true
 )
 if grep -q harm_h11g_fake_flexlexer_marker <<<"$out"; then
     echo "ok: the compiler finds Homebrew flex's FlexLexer.h"
