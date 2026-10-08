@@ -993,3 +993,12 @@ A1 and A2 were written first and committed failing in `cd4baa0`; the fix is `f06
   - The libraries in `third_party` (antlr4, Spot, Boost, Z3) are built by their own scripts and are not affected.
 - **Linux is expected to be unchanged:** x86_64 without `-mfma` has no fused instruction to contract into, so the flag changes no Linux code generation for these scores. A1 and A2 should pass on Linux before and after.
 - **Still fragile, by design of the plan (option (b) not taken):** the choice among near-equal candidates depends on the last bit. Platforms now agree because they round the same operations the same way, and `log2` (used with `ENT` only) agreed on these inputs.
+
+## H13: profiling is opt-in (2026-10-08, Ubuntu 22.04, g++ 11.4.0)
+The test was written first and committed failing; then the fix. The full `ctest` was not re-run, by the user's choice: only a link flag changed.
+
+| Test | Result |
+|---|---|
+| `h13_no_gmon`: a default build, run in an empty directory, writes no `gmon.out` | pass. Before the fix: "FAIL: gmon.out written by a default build" |
+| `regression_ex3`, `h11_version` | pass |
+| `-DHARM_PROFILE=ON`: build `harm`, mine `counter` (H7 configuration), run `gprof` | `gmon.out` written; `gprof` gives a flat profile with call counts (e.g. `AutomataBasedEvaluator::runLinearEval`, 70 calls). Before, it gave "no time accumulated" |

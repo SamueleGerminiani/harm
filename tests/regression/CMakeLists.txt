@@ -426,3 +426,9 @@ if(HARM_TOOLS_PATH)
     get_property(_harm_tests DIRECTORY PROPERTY TESTS)
     set_tests_properties(${_harm_tests} PROPERTIES ENVIRONMENT_MODIFICATION "${_harm_env}")
 endif()
+
+# ---- H13: no profiling output from a default build ----------------------------------------------------
+if(NOT HARM_PROFILE)
+    add_test(NAME h13_no_gmon COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_no_gmon.sh $<TARGET_FILE:harm>)
+    set_tests_properties(h13_no_gmon PROPERTIES LABELS regression)
+endif()

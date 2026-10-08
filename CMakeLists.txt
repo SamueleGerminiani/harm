@@ -31,7 +31,15 @@ elseif (CMAKE_COMPILER_IS_GNUCXX)
     #Required for youcompleteme
     add_compile_options("-std=c++1z")
     add_compile_options("-Wno-psabi")
-    add_link_options("--profile")
+endif()
+# Profiling (gprof) is opt-in: -DHARM_PROFILE=ON compiles and links with -pg. A default build writes
+# no gmon.out (until H13 an unconditional "--profile" link option wrote one wherever HARM ran,
+# without call-graph data)
+option(HARM_PROFILE "Build HARM for gprof (-pg; every run writes gmon.out)" OFF)
+if(HARM_PROFILE)
+    add_compile_options("-pg")
+    add_link_options("-pg")
+    message(STATUS "HARM_PROFILE: built for gprof (-pg)")
 endif()
 # Every floating-point operation rounded, as on x86_64: on arm64, contracting `1 - a*b` into a fused
 # multiply-add changes the last bit of the decision-tree scores, and the mined assertions (H12, F-M2)

@@ -115,6 +115,8 @@ Build all targets: harm and tests.
 make
 ```
 
+To profile HARM with gprof, configure with `-DHARM_PROFILE=ON`, which compiles and links with `-pg`. Every run then writes `gmon.out`, which `gprof build/harm gmon.out` reads. A default build writes no `gmon.out`.
+
 ### Mac OS only
 * Install the libraries (specify a proper path using cmake) 
 ```
