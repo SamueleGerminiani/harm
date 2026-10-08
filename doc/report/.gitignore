@@ -1,0 +1,9 @@
+harm_v4.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk

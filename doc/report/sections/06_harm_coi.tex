@@ -1,0 +1,55 @@
+\section{\texttt{harm-coi}: cones and predicates from the RTL}\label{sec:harmcoi}
+\texttt{harm-coi} (\file{tools/harm-coi/}) is a Python tool that reads SystemVerilog RTL and writes the \texttt{coi.json} of \cref{sec:coi}. It is the only part of v4 that reads the design; HARM itself stays source-agnostic.
+
+\subsection{The front end (H5a, D-006)}
+Two front ends were compared on the six hand-written fixtures of \ms{H4} in a spike: the elaborated syntax tree of pyslang~\cite{slang}, with our own dataflow and control-dependency walk, and the JSON netlist of yosys~\cite{yosys} with its slang front end. pyslang reproduced all six fixtures exactly. yosys needed a version newer than the one packaged on macOS, lost struct fields and parameters, and lowered the conditions that predicate harvesting needs. The decision was \textbf{pyslang 12.0.0}, pinned (Python $\ge$ 3.11). yosys stays an optional, signal-level cross-check in the tests.
+
+\subsection{Computing cones (H5, D-019)}
+The front end elaborates the design and extracts, for every assignment, the direct dependencies of its target, with their register delays:
+\begin{itemize}
+\item \textbf{data dependencies} from the right-hand side, and \textbf{control dependencies} from the conditions of \code|if|, \code|case| (selector and items) and \code|?:|;
+\item a register assigned in a clocked process has delay 1; combinational logic, continuous assignments and port connections have delay 0;
+\item a register not assigned on every path holds its value, so it is a source of itself at delay 1;
+\item \textbf{asynchronous controls} (\code|always_ff @(posedge clk or posedge rst)| where the body reads \code|rst|) and registers on the falling edge of the sampling clock have depths 0 and 1;
+\item \textbf{blocking temporaries}: a variable local to a process is replaced by its sources; a visible signal assigned once in a process and read later in it is also a source at delay 0. This last rule came from a test that was wrong (H5, F2): the yosys cross-check and the simulation oracle both showed that forcing such a temporary changes the output, so filter mode must not prune \code|G(t -> y)|.
+\end{itemize}
+\texttt{cone.py} maps the design's signals to the names HARM sees: relative to the VCD scope, with \code|::| between sub-scopes. With \code|--vcd|, the trace decides which signals are visible: a packed struct dumped as one vector is one signal, the union of its fields. The closure up to \code|--max-depth| sums the delays along paths and marks saturation.
+
+\paragraph{Too large, never too small.} A cone that is too small would make filter mode prune real behaviour; one that is too large only prunes less. So where the RTL leaves a doubt, the signal goes to \code|unknown|, which HARM treats as in every cone: latches (including an \code|always_comb| output not assigned on every path, since \code|unique| and \code|priority| are not trusted to make a \code|case| complete), registers on another clock or on both edges, \code|inout| ports, tasks, a driver that slang reports but the walk does not model, and every target whose cone reaches an unknown signal within \code|--max-depth|.
+
+\subsection{RTL predicates (H10, D-023)}\label{sec:predicates}
+\code|--predicates| also harvests the RTL's own conditions as HARM propositions, written in HARM's syntax and names, with \code|origin="rtl"|:
+\begin{center}\small
+\begin{tabular}{@{}P{0.17\textwidth}P{0.42\textwidth}P{0.33\textwidth}@{}}
+\toprule
+Kind & from & predicate \\
+\midrule
+condition & \code|if (c)|, \code|c ? x : y| & \code|c|, and each atom of a compound \code|c| \\
+case label & \code|case (s) L:| & \code|s == L| \\
+enum (FSM) value & a variable of an enum type & \code|v == C| for every value \\
+comparison & with a constant side, anywhere & the comparison \\
+reset value & the first \code|if| of a clocked process whose branch assigns only constants & \code|reg == value| \\
+\bottomrule
+\end{tabular}
+\end{center}
+Constants are written as sized decimal literals of the signal's width (\code|state == 2'd1|); a 1-bit comparison as the signal or its negation. Predicates on invisible signals, on local variables, or on signals wider than HARM's 511-bit limit (finding F-L5, on the AssertLLM2 design \texttt{sha3}) are dropped and counted. \code|--emit-config| writes a ready-to-run HARM configuration: one context with the predicates, \code|<coi ... mode="rank"/>| pointing at the written file, and \opt{generate-config}'s template and sorts. On the \texttt{counter} fixture (a mod-10 counter with enable):
+
+% example
+\begin{lstlisting}
+$ harm-coi --top counter --files tests/input/coi/counter/rtl/counter.sv \
+    --vcd-scope tb::dut --vcd-recursion 0 --vcd tests/input/coi/counter/trace.vcd \
+    --predicates --emit-config $OUT/counter.xml -o $OUT/counter_coi.json
+$ grep -E 'prop|coi' $OUT/counter.xml
+<prop exp="cnt == 4'd0" loc="a, c, dt" origin="rtl"/>
+<prop exp="cnt == 4'd9" loc="a, c, dt" origin="rtl"/>
+<prop exp="en" loc="a, c, dt" origin="rtl"/>
+<prop exp="rst" loc="a, c, dt" origin="rtl"/>
+<coi file="counter_coi.json" mode="rank"/>
+$ harm --vcd tests/input/coi/counter/trace.vcd --clk clk --vcd-ss tb::dut --vcd-r 0 \
+    --conf $OUT/counter.xml --max-ass 3 --sva --dont-print-ass --dump-to $OUT/counter.txt > /dev/null
+$ cat $OUT/counter.txt
+always (cnt == 4'b1001 ##1 !(cnt == 4'b1001) |-> cnt == 4'b0)
+always (cnt == 4'b1001 && en ##1 1'b1 |-> cnt == 4'b0)
+always (rst ##1 1'b1 |-> cnt == 4'b0)
+\end{lstlisting}
+For GoldMine-style mining, the mode is changed to \code|filter|, with \code|depth| as needed.

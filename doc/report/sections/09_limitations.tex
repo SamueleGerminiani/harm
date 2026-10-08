@@ -1,0 +1,22 @@
+\section{Limitations and future work}\label{sec:limits}
+
+\paragraph{Known limitations.}
+\begin{itemize}
+\item \textbf{Unknown values.} On cycles where a signal has \code|x| or \code|z| bits, HARM's verdicts can differ from a simulator's (\cref{sec:xz}). An option with SystemVerilog's semantics was withdrawn (D-024): it would break the complementarity of a proposition and its negation that the decision trees and the reductions rely on.
+\item \textbf{Reduction cost.} \opt{reduce} \code|implies| and \opt{atom-premises} grow with the square of the number of assertions. On outputs of a few thousand assertions they can take tens of minutes.
+\item \textbf{Ties in the decision tree} are decided by the last bit of a floating-point score. Platforms agree because they now round the same operations the same way (\cref{sec:fma}); a different \code|libm| could still change a choice under the entropy heuristic. Rounding-independent tie-breaking would change every platform's results, and was left for a later decision.
+\item \textbf{Cones are signal-level.} A write to one bit of a register makes the whole register depend on itself; the schema reserves a per-bit field that is not used. The out-of-cone report does not use depths.
+\item \textbf{Mining on real designs.} On the AssertLLM2 designs used in the evaluation, the decision-tree template that \opt{generate-config} writes, over every signal, timed out within 10 minutes on every design tried, so the evaluation there ran only the configurations built from the RTL's predicates (\texttt{harm-coi} \code|--emit-config|), which have far fewer propositions.
+\item \textbf{Older limits, unchanged.} Some formulas the grammar accepts cannot be evaluated (\code|F X X (a W c)|, for which Spot gives a non-deterministic automaton); a trace signal named like an operator (\code|W|) cannot be loaded; the \texttt{camellia} example's configuration is not valid XML.
+\end{itemize}
+
+\paragraph{The evaluation and the release.} The measurements of what each configuration does on the fixtures, the examples and ten AssertLLM2 designs (D-026) are in \file{eval/results/} and are not part of this report. The release itself, merging \texttt{dev} into \texttt{main} with the tag \texttt{v4} (D-027), is deferred until the maintainers decide; until then, all fixes stay on \texttt{dev} (D-012).
+
+\paragraph{Future work.}
+\begin{itemize}
+\item a faster implication reduction for large outputs;
+\item depths in the out-of-cone report (``in the cone, but not at the specification's delay'');
+\item a comparison with GoldMine on the designs it supports;
+\item diversity-aware selection under \opt{max-ass}, using USM-T's syntactic similarity;
+\item a shared core library for HARM and USM-T, so that the two do not drift further apart.
+\end{itemize}

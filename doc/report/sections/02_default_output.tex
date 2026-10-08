@@ -1,0 +1,59 @@
+\section{Changes to the default output}\label{sec:default}
+A v3 user who runs v4 with the same configuration and no new option sees the changes of this section, and no other. Each is a decision recorded in \file{doc/plan/DECISIONS.md}, with the regression baselines updated once and the change checked to be exactly the one intended.
+
+\subsection{Deterministic output (D-001, H0)}
+In v3, the same input could give a different output from run to run, and with a different number of threads. Worse, the \opt{max-ass} cut and the fault-coverage subset of \opt{find-min-subset} could change \emph{which} assertions were reported, not only their order. Eight of seventeen determinism tests written in \ms{H0} failed on v3. Five sources were found:
+\begin{enumerate}
+\item the miner appended each permutation's assertions in the order in which threads finished;
+\item the redundancy filter iterated a hash set keyed by pointers, whose order depends on addresses even with one thread;
+\item the ranking sorted on the score only, so equal scores came out in an arbitrary order;
+\item the fault-coverage code iterated maps keyed by assertion identifiers, which come from a global counter incremented as threads create assertions;
+\item the faulty traces of \opt{fd} were read in directory order and then shuffled with a random seed.
+\end{enumerate}
+v4 collects the results per (template, permutation) in key order, deduplicates in input order, ranks by final score and then by the assertion's text, sorts the set-cover candidates by text, and shuffles the faulty traces with a fixed seed. The output is identical across runs and thread counts on every regression case, including the \opt{max-ass} cuts (19 determinism tests in \ms{H0}, 29 today).
+
+\subsection{SystemVerilog output (D-002, H1)}
+v3's \opt{sva} output was not SystemVerilog that tools accept: it printed \code|true|, the package-scope separator \code|::| for hierarchical names, and \code|nexttime|, which Verilator~\cite{verilator} and EBMC reject. v4 prints:
+
+\begin{center}\small
+\begin{tabular}{@{}P{0.47\textwidth}P{0.47\textwidth}@{}}
+\toprule
+v3 & v4 \\
+\midrule
+\code!always (Reject_Application |-> nexttime Assess_Loan_Risk)! & \code!always (Reject_Application |=> Assess_Loan_Risk)! \\
+\code!always (Store_feedback |-> eventually Assess_Eligibility)! & \code!always (Store_feedback |-> s_eventually Assess_Eligibility)! \\
+\code+always (!intf::a ##1 true |-> DUT::state == 2'b0)+ & \code+always (!intf.a ##1 1'b1 |-> DUT.state == 2'b0)+ \\
+\bottomrule
+\end{tabular}
+\end{center}
+These are real lines from the \texttt{process} and \texttt{fsmSVT} examples, printed by v3 and v4. The rules: \code|true|/\code|false| become \code|1'b1|/\code|1'b0|; \code!p |-> nexttime q! becomes \code!p |=> q! and \code|nexttime[n]| becomes \code|##n| when \code|q| is Boolean; unbounded \code|eventually|, which is not SystemVerilog, becomes \code|s_eventually|; \code|a::b| becomes \code|a.b|. \ms{H1c} also found that v3 printed SVA with HARM's own operator precedence, so \code|(b W c) && X X F b| came out as \code|b until c and nexttime nexttime s_eventually b|, which SystemVerilog parses as \code|b until (c and ...)|. v4 adds the brackets that SystemVerilog's precedence (IEEE~1800-2017, Table 16-3~\cite{ieee1800}) needs.
+
+User-written \code|<edit>| rules are matched against the printed text. To keep existing rules working, HARM matches them against v3's printing and prints the result in v4's.
+
+% example
+\begin{lstlisting}
+$ harm --csv-dir examples/process/traces --conf examples/process/processConfig.xml --sva \
+    --dont-print-ass --dump-to $OUT/process.txt > /dev/null
+$ grep -c . $OUT/process.txt
+138
+$ grep -E 'Reject_Application \|=> Assess_Loan_Risk' $OUT/process.txt
+always (Reject_Application |=> Assess_Loan_Risk)
+\end{lstlisting}
+
+\subsection{The meaning of \texttt{->} in SVA, and brackets in Spot LTL (D-021, H1d)}
+Two printing bugs, found while checking cone depths in \ms{H8} (findings F7 and F8 there), changed the \emph{meaning} of printed assertions.
+
+\paragraph{F7: \texttt{->} with a multi-cycle antecedent.} HARM's \code|->| starts the consequent together with the antecedent, as in Spot and PSL; SVA's \code!|->! starts it at the antecedent's \emph{end}. They agree only when the antecedent lasts one cycle. v3 printed \code!G({a ##1 b} -> X c)! as \code!a ##1 b |=> c!, which puts \code|c| one cycle late. v4 re-anchors the consequent at the end of the antecedent: for an antecedent of fixed length $n$ cycles and a Boolean consequent after $k$ cycles of \code|X| (plus one for \code|=>|), with $j = k-(n-1)$, it prints \code!s |-> c! ($j=0$), \code!s |=> c! ($j=1$), \code!s |-> ##j c! ($j>1$) or \code!s |-> $past(c, -j)! ($j<0$). When that is not possible (a variable-length antecedent, or a non-Boolean consequent), it prints IEEE~1800's \code|implies|, which starts both sides together. Spot's \texttt{ltlfilt} confirms that the new texts are equivalent to the formulas HARM mined and the old ones are not.
+
+\paragraph{F8: brackets in Spot LTL.} Spot binds \code|X|, \code|F|, \code|!|, \code|U|/\code|W| and \code|R| tighter than \code|&&| and \code!||!. v3 printed \code!X(en && wrap)! as \code!Xen && wrap!, which Spot reads as \code!(X en) && wrap!. v4 brackets a proposition whose top operator is a Boolean connective under those operators. In the \texttt{sub\_platform} example, 46 of the 91 assertions change this way, and nothing else changes.
+
+\subsection{Vector indices follow SystemVerilog (D-028, H11c)}
+v3 stopped on a VCD vector declared with an ascending range, such as \code|input [1:10] state| (finding F-L4, on the AssertLLM2 design \texttt{ethernet\_smii\_txrx}), and always counted bit positions from the right from 0. v4 keeps each vector's declared range \code|[l:r]|: \code|x[i]| is bit $|i-r|$ from the right, an index outside the range is an error, and so is a part-select against the declared direction. Vectors declared \code|[n:0]| and CSV variables keep their meaning, so no baseline changed. The motivation was \texttt{harm-coi}, which writes the RTL's indices: before D-028, its predicates on vectors not declared \code|[n:0]| were misread. A Verilator testbench prints 14 selects on four vectors every cycle, and HARM's values on the same trace equal Verilator's on all $41 \times 14$.
+
+\subsection{Bug fixes that change results}
+\begin{itemize}
+\item \textbf{F10 (H1):} copying a bit selection swapped its bounds, so a mined \code|r[7:4]| was printed and evaluated as \code|r[4:7]|. Every mined assertion is a copy of its template, so this affected every assertion with a part-select.
+\item \textbf{F9 (H1):} variable names were substituted into propositions without identifier boundaries, so a variable \code|a| or \code|x| corrupted the literals \code|0xa| or \code|'b1x0|.
+\item \textbf{H7:} a template with more placeholders of one kind than propositions in their domain made HARM hang: a binomial coefficient with $k>n$ recursed in exponential time.
+\item \textbf{F-M2 (H12):} on macOS arm64, HARM could mine different assertions than on Linux x86\_64 (\cref{sec:fma}).
+\end{itemize}

@@ -1,0 +1,76 @@
+% HARM v4: what is new with respect to v3. A technical report (H14).
+% Build: make -C doc/report (latexmk -pdf). Checks: doc/report/check.sh, check_coverage.py,
+% run_examples.py (ctest -L doc).
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=green!40!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{3pt}
+\setlength{\emergencystretch}{2em}
+
+% ---- code -------------------------------------------------------------------------------------------
+\lstdefinestyle{inline}{basicstyle=\ttfamily\small,columns=fullflexible,keepspaces=true,upquote=true}
+\lstdefinestyle{block}{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,
+  breaklines=true,upquote=true,frame=single,framesep=4pt,rulecolor=\color{black!30},backgroundcolor=\color{black!3},
+  xleftmargin=6pt,xrightmargin=6pt,aboveskip=8pt,belowskip=8pt,showstringspaces=false}
+\lstset{style=block}
+% \code|...|: inline code (any character but the delimiter)
+\newcommand{\code}{\lstinline[style=inline]}
+% \opt{reduce}: a command-line option
+\newcommand{\opt}[1]{\texttt{-{}-#1}}
+% \file{path}: a path in the repository (checked to exist by check_coverage.py)
+\newcommand{\file}[1]{\path{#1}}
+% decision and milestone references
+\newcommand{\dec}[1]{\textsf{#1}}
+\newcommand{\ms}[1]{\textsf{#1}}
+
+\title{\textbf{HARM v4}\\[4pt]\large What is new with respect to HARM v3}
+\author{Samuele Germiniani\\University of Verona}
+\date{Technical report, October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+HARM is a hint-based miner of temporal assertions from simulation traces. Version~4 is the result of a plan of 24 milestones carried out between v3 and v4. It makes HARM's output deterministic and its SystemVerilog output valid; extends the proposition language with SystemVerilog syntax and documents its semantics on unknown values; adds an option for the end-of-trace semantics of a simulator; removes semantically redundant assertions, proving equivalence of propositions with Z3 and implication between assertions with Spot together with an exact model of HARM's finite-trace evaluation; and lets the RTL guide mining through cones of influence, computed by a new generator, \texttt{harm-coi}, which also harvests the RTL's own predicates. Every new feature is opt-in. This report describes each change, why it was made, the decisions behind it, and how it was validated: every semantic component was checked against an oracle that shares none of its code, and most oracles were themselves checked by planting bugs.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\input{sections/01_introduction}
+\input{sections/02_default_output}
+\input{sections/03_language}
+\input{sections/04_reduction}
+\input{sections/05_coi}
+\input{sections/06_harm_coi}
+\input{sections/07_portability}
+\input{sections/08_validation}
+\input{sections/09_limitations}
+
+\appendix
+\input{sections/A_reference}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

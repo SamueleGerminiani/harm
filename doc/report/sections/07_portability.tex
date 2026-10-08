@@ -1,0 +1,42 @@
+\section{Determinism and portability}\label{sec:portability}
+v4 was developed on macOS (arm64) and checked on Linux (x86\_64, Ubuntu 22.04), with the rule that both pass the same tests and mine the same assertions. Getting there exposed problems in the build, in the test infrastructure, and in HARM itself. Findings on Linux are numbered F-L1 to F-L10, on macOS F-M1 and F-M2.
+
+\subsection{One toolchain (D-010, H0)}
+At the start of the plan, HARM aborted on the development Mac even for \opt{help}: Spot was linked against GCC~12's C++ runtime, ANTLR and HARM against GCC~13's, and Boost against Apple's \code|libc++|, because Boost's build tool ignores \code|CC|/\code|CXX|. Before the fix, ctest even reported the example tests as passing while HARM was aborting at load time. Now every script in \file{third_party/} honours \code|CC|/\code|CXX| (Boost through an explicit toolset), records the compiler in \code|.harm_toolchain|, and CMake warns when HARM is configured with another one. On macOS, Homebrew's GCC~13 cannot compile against the newest Command Line Tools SDK, so the scripts use Xcode's SDK unless \code|SDKROOT| is set.
+
+\subsection{Linux (H11b, H11c, H11f)}
+\begin{itemize}
+\item \textbf{F-L1: HARM did not build on Linux.} Z3's C++ API overloads \code|bv_val| for \code|int|, \code|unsigned|, \code|int64_t| and \code|uint64_t|. On LP64 Linux \code|uint64_t| is \code|unsigned long|, so the \code|unsigned long long| that the Z3 encoding passed matched none exactly; on macOS \code|uint64_t| is \code|unsigned long long|. The encoder now takes \code|uint64_t| (\ms{H11b}).
+\item \textbf{F-L2:} the implication test, which enumerates all short traces for hundreds of pairs, took longer than ctest's default timeout on the slower Linux machine; it has a timeout of one hour.
+\item \textbf{F-L3:} the test registration asked yosys for \code|help read_slang|, which exits with 0 even when the command does not exist; the probe now runs \code|read_slang| on a one-line module (\ms{H11c}).
+\item \textbf{F-L4} and \textbf{F-L5}, found on real designs, are D-028 (\cref{sec:default}) and the 511-bit limit of harvested predicates (\cref{sec:predicates}).
+\item \textbf{F-L9: the log files under concurrent writers} (\ms{H11f}). HARM appends warnings and errors to \code|warning.log| and \code|error.log| as one JSON array, by reading the file, removing the last line and appending. On an empty file the line count underflowed (\code|size_t|), and a concurrent writer could empty the file between another's checks. Parallel ctest runs crashed intermittently, in the same tests as the crashes recorded as an open finding in \ms{H6}. Writers now hold a file lock and a mutex for the whole read-modify-write, and an empty file is handled. Eight processes writing 200 warnings each now leave one valid array of 1{,}600 records.
+\end{itemize}
+
+\subsection{The test tools in \texttt{third\_party} (H11d, H11e, H11g)}
+The oracles use Verilator, Icarus Verilog and yosys. v4 adds install scripts for pinned versions (Verilator 5.052, Icarus 13.0, yosys 0.69 with \code|read_slang|), and CMake prefers them over the ones on \code|PATH|, treating a Verilator older than 5 or a yosys without \code|read_slang| as missing. Moving to the pinned Verilator found that the fixtures depended on the simulator's version (D-029):
+\begin{itemize}
+\item \textbf{F-L7:} the fixture testbenches drew their stimulus from \code|$urandom|, whose sequence for a given seed changed between Verilator 5.031 and 5.052, so the committed traces could not be reproduced. The testbenches now use a xorshift generator written in SystemVerilog (\file{tests/input/stim.svh}), and a test checks that Verilator and Icarus produce the same stimulus.
+\item \textbf{F-L6:} the replay oracle negated property consequents with \code|!|, which IEEE~1800 does not allow (\code|not| is required); Verilator 5.052 rejects it.
+\item \textbf{F-L10:} Verilator 5.052 implements the end-of-simulation failure of a pending \code|s_eventually|, so the replay oracle now mines with \opt{trace-end} \code|sva|. It also never fails \code!a |-> not (s_eventually p)!, so those controls are checked by a monitor validated on hand-labelled traces.
+\item \textbf{F-L8:} the influence oracle assumed both traces had the same signals; Verilator 5.052 no longer dumps a loop variable.
+\item \textbf{F-M1:} Verilator did not build on macOS, because Homebrew's \code|flex| is keg-only and its \code|FlexLexer.h| is on no include path; the scripts now put the Homebrew formulas' headers on \code|CPATH| (\ms{H11g}).
+\end{itemize}
+HARM itself did not change in \ms{H11d}, \ms{H11e} or \ms{H11g}.
+
+\subsection{The same assertions on arm64 and x86\_64 (H12, F-M2)}\label{sec:fma}
+After all tests passed on both machines, the evaluation's fixture table still differed on two designs: on \texttt{structs}, macOS mined 1{,}800 assertions and Linux 1{,}839, deterministically on each, for any thread count, from byte-identical configurations, and also with Linux built with the Mac's compiler version. Bisecting by build target, with floating-point contraction turned off in one target at a time, located the cause in two functions of the decision-tree search, the scores
+\[
+\mathit{cov} = 1 - \frac{\mathit{ATCT}}{\mathit{CT}}\Bigl(1 - \frac{\mathit{ATCF}}{\mathit{CF}}\Bigr), \qquad
+H = -p\log_2 p - q \log_2 q .
+\]
+On arm64, GCC contracts \code|a - b*c| into one fused multiply-subtract by default, which skips the rounding of the product; x86\_64 without FMA instructions rounds it. The decision tree sorts candidates by gain and, with a small effort setting, keeps only the best. Among equal or nearly equal scores, the last bit decides which antecedent is kept, and so the tree, and the assertions. Of 19{,}182 coverage scores computed on arm64, 2{,}644 differed in the last bit from the step-by-step rounded value.
+
+v4 compiles everything HARM's CMake builds with \code|-ffp-contract=off|. Linux is unchanged (it never contracted), and macOS now mines Linux's counts: the fixture table is equal on all 46 runs on both machines. Two tests guard it: the scores are compared bit for bit with a reference that rounds every operation, and \texttt{structs} must mine 1{,}839 assertions. A deeper fix, comparing gains with a tolerance and breaking ties by a fixed key, would remove the dependence on rounding altogether, but it changes the mined assertions on every platform; it was not taken (\cref{sec:limits}).
+
+\subsection{Smaller changes}
+\begin{itemize}
+\item \textbf{\opt{version}} prints \code|HARM <git describe>| (\ms{H11}, D-027), so users and trivergence can tell which build they run.
+\item \textbf{Profiling is opt-in} (\ms{H13}): since v2, every GCC build was linked with \code|--profile| without compiling for profiling, so every run, even \opt{version}, wrote a useless 2.6\,MB \code|gmon.out|. \code|-DHARM_PROFILE=ON| now builds a real \code|gprof| profile.
+\item \textbf{The Docker image} (\file{docker/build.sh}) builds a given git reference with Z3, \texttt{harm-coi}, Verilator and Icarus, and runs the fast tests while it builds.
+\end{itemize}

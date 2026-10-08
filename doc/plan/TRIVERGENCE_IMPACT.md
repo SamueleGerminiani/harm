@@ -236,6 +236,10 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - trivergence's top-50 selection (M0 #31) keeps the inputs small. If trivergence reduces whole mining outputs, it should budget for this, or reduce after the selection.
 - **`main` is unchanged** until the user releases: trivergence should pin `dev` (or a commit) meanwhile.
 
+### H14: documentation and the v4 report (on `ms/H14-v4-report`)
+- **No change to anything trivergence uses:** no code, option or output format changed.
+- **Useful to read:** `doc/MIGRATING_v3_to_v4.md` lists every output change since v3 (what trivergence's adapter rewrote: `true`, `::`, `nexttime`); the report (`doc/report/`, `make -C doc/report`) explains the reduction and COI semantics, with the decision behind each.
+
 ---
 
 ## 3. Proposed changes to trivergence's `docs/plan/PLAN.md`

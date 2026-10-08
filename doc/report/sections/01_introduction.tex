@@ -1,0 +1,75 @@
+\section{Introduction}\label{sec:intro}
+
+\subsection{HARM v3 in one page}
+HARM~\cite{harm-tcad22} mines temporal assertions from the simulation traces of a design. It does not read the design: its inputs are one or more traces (VCD, sampled at the rising edges of a clock, or CSV, one row per cycle) and a configuration of \emph{hints} written by the verification engineer:
+\begin{itemize}
+\item \textbf{propositions} (\code|<prop exp="cnt == 4'd9"/>|): Boolean expressions over the trace's variables, in C or SystemVerilog syntax;
+\item \textbf{numerics} (\code|<numeric>|): arithmetic expressions from which HARM generates propositions by clustering their values~\cite{harm-vlsisoc22};
+\item \textbf{templates}: temporal formulas with placeholders, e.g.\ \code!G({..#1&..} |-> P0)! or \code|G(P0 -> X P1)|;
+\item \textbf{metrics}: formulas over the features of an assertion (its contingency table \code|atct|, \code|atcf|, \ldots, its complexity, its fault coverage), used to filter and rank.
+\end{itemize}
+Propositions are grouped into \emph{domains} (\code|loc="a"|, \code|"c"|, \code|"dt"|, or local numbers), which restrict the placeholders they may fill. A \emph{context} groups the hints that are mined together.
+
+Mining runs on three levels of parallelism. For each template (level~3), HARM enumerates the \emph{permutations} that fill its placeholders with propositions of the right domains (level~2). A template may contain one \emph{decision-tree operator} in its antecedent (\code|..&&..|, \code|..##1..|, \code|..#1&..|): for each permutation, a greedy decision tree then grows the antecedent one proposition at a time, keeping the candidates that best separate the cycles where the consequent holds from those where it fails (level~1). Every candidate assertion is evaluated on the traces with a deterministic automaton built by Spot~\cite{spot2}; an assertion is kept if no instance of it fails inside the trace. The kept assertions are qualified: trivial and duplicated ones are removed, metrics filter and rank them, optional edit rules rewrite them, and they are printed in Spot LTL, PSL or SVA.
+
+\subsection{Why v4}
+HARM v4 was developed for two uses.
+\begin{itemize}
+\item \textbf{trivergence}, a project that compares three views of a design: the specification (through an LLM), the RTL, and the simulation traces, with HARM as the trace view. It needed HARM's output to be deterministic, valid SystemVerilog, free of redundant assertions, and able to take structural hints from the RTL. Its adapter worked around several of HARM's limits; v4 removes most of those workarounds.
+\item \textbf{Traditional RTL-guided mining}, as GoldMine~\cite{goldmine} does: restricting the search to what the RTL can produce. GoldMine does not support SystemVerilog; v4 can do this for SystemVerilog designs with \texttt{harm-coi}.
+\end{itemize}
+
+\subsection{What is new}
+\begin{itemize}
+\item \textbf{Default output} (\cref{sec:default}): deterministic order; valid SystemVerilog; correct brackets in Spot LTL; SystemVerilog vector indices; bug fixes.
+\item \textbf{Proposition language and semantics} (\cref{sec:language}): SystemVerilog literals and operators, invariant templates, skipping invalid propositions, HARM's rule for unknown (\code|x|/\code|z|) values, and the end-of-trace semantics of a simulator as an option.
+\item \textbf{Semantic redundancy reduction} (\cref{sec:reduction}): equivalent propositions (Z3), implied assertions (Spot and an exact model of HARM's evaluation), and facts between comparisons.
+\item \textbf{Cones of influence} (\cref{sec:coi}): a file format, a rank mode that scores assertions by structural plausibility, a filter mode that prunes the search, with or without depths, and a report of the propositions outside each cone.
+\item \textbf{\texttt{harm-coi}} (\cref{sec:harmcoi}): a generator of cones and RTL predicates from SystemVerilog.
+\item \textbf{Determinism and portability} (\cref{sec:portability}): one toolchain, Linux and macOS with identical results, the test tools in \file{third_party/}, profiling as an option.
+\item \textbf{Validation} (\cref{sec:validation}): the oracles behind each component, and the tests of the oracles.
+\end{itemize}
+\Cref{sec:limits} lists the known limitations. The appendix is a reference: the new options and XML elements, every decision, and every milestone with its findings.
+
+\Cref{fig:flow} shows how the parts fit. HARM stays independent of the design's source: the RTL is read only by \texttt{harm-coi}, which talks to HARM through a versioned JSON file.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw,rounded corners=2pt,minimum height=8mm,minimum width=22mm,align=center,font=\small},
+  file/.style={draw,minimum height=7mm,minimum width=18mm,align=center,font=\small\ttfamily,fill=black!4},
+  new/.style={fill=blue!8},
+  arr/.style={-{Stealth[length=2mm]},thick}]
+\node[file] (rtl) {RTL (.sv)};
+\node[box,new,right=12mm of rtl] (coi) {\texttt{harm-coi}\\\footnotesize pyslang};
+\node[file,new,right=14mm of coi] (json) {coi.json};
+\node[file,above=8mm of json] (cfg) {config.xml};
+\node[box,below=9mm of rtl] (sim) {simulator};
+\node[file,below=9mm of json] (vcd) {trace.vcd};
+\node[box,right=14mm of json,minimum height=30mm,minimum width=26mm] (harm) {\textbf{HARM}\\[2pt]\footnotesize mining\\\footnotesize qualification\\\footnotesize reduction};
+\node[file,right=12mm of harm,yshift=7mm] (ass) {assertions};
+\node[file,new,right=12mm of harm,yshift=-7mm] (dumps) {JSON dumps};
+\draw[arr] (rtl) -- (coi);
+\draw[arr] (coi) -- (json);
+\draw[arr] (rtl) -- (sim);
+\draw[arr] (sim) -- (vcd);
+\draw[arr,dashed] (coi.north) |- node[above,pos=0.75,font=\scriptsize]{\texttt{-{}-emit-config}} (cfg.west);
+\draw[arr] (json.east) -- (json.east -| harm.west);
+\draw[arr] (cfg.east) -- ++(4mm,0) |- ($(harm.west)+(0,9mm)$);
+\draw[arr] (vcd.east) -- ++(4mm,0) |- ($(harm.west)+(0,-9mm)$);
+\draw[arr] (harm.east |- ass) -- (ass);
+\draw[arr] (harm.east |- dumps) -- (dumps);
+\end{tikzpicture}
+\caption{The tool flow of HARM v4. New parts are shaded. The RTL is optional: without it, HARM works as in v3 on traces and hints only.}
+\label{fig:flow}
+\end{figure}
+
+\subsection{How the work was done}
+The changes were made in 24 milestones, \ms{H0} to \ms{H13} (\cref{tab:milestones} in the appendix), under rules that this report refers to throughout.
+\begin{enumerate}
+\item \textbf{Default behaviour is unchanged unless a decision says otherwise.} Every feature is opt-in. Regression baselines of all the examples were frozen in \ms{H0}; any change to them is recorded as a decision (D-\textit{nnn}, \cref{tab:decisions}).
+\item \textbf{Tests first.} Each milestone's acceptance tests were committed failing before the implementation. A test was never weakened to pass; where an expectation turned out wrong, the change and its reason were recorded.
+\item \textbf{Independent validation.} Each semantic component (equivalence, implication, cones, printing) is checked by an oracle that does not share its code: brute-force enumeration, a simulator, Spot, a model written from the IEEE standard, or hand-labelled fixtures. Where possible, bugs were planted to check that the oracle catches them (\cref{sec:validation}).
+\item \textbf{Two platforms.} macOS on arm64 and Linux on x86\_64 must pass the same tests and mine the same assertions.
+\end{enumerate}
+The development record is in \file{doc/plan/}: the plan (\file{doc/plan/PLAN.md}), one plan per milestone, the decisions (\file{doc/plan/DECISIONS.md}) and the validation log (\file{doc/plan/VALIDATION.md}). This report summarises them; each claim cites the decision or milestone it comes from.

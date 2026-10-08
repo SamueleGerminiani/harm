@@ -63,7 +63,7 @@ options = set(opt_re.findall((root / "src/commandLineParser/src/commandLineParse
 new_options = sorted(options - listed("v3_options.txt"))
 for o in new_options:
     # Markdown writes --name; the report writes --name or \opt{name}
-    need(f"option --{o}", rf"--{re.escape(o)}(?![a-z0-9-])|\\opt\{{{re.escape(o)}\}}",
+    need(f"option --{o}", rf"--{re.escape(o)}(?![A-Za-z0-9_-])|\\opt\{{{re.escape(o)}\}}",
          ["release notes", "README", "report"])
 
 md = (root / "src/miner/modules/src/contextMiner/manualDefinition/ManualDefinition.cc").read_text()

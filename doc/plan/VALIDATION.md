@@ -1002,3 +1002,35 @@ The test was written first and committed failing; then the fix. The full `ctest`
 | `h13_no_gmon`: a default build, run in an empty directory, writes no `gmon.out` | pass. Before the fix: "FAIL: gmon.out written by a default build" |
 | `regression_ex3`, `h11_version` | pass |
 | `-DHARM_PROFILE=ON`: build `harm`, mine `counter` (H7 configuration), run `gprof` | `gmon.out` written; `gprof` gives a flat profile with call counts (e.g. `AutomataBasedEvaluator::runLinearEval`, 70 calls). Before, it gave "no time accumulated" |
+
+## H14: documentation and the v4 report (2026-10-08, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0, MacTeX latexmk, poppler pdftotext)
+The checks were written first and committed failing in `d4c3f14` (182 coverage failures, 4 example failures, no report). The documents are in `42116ef` and the report's commit.
+
+| Test | Result |
+|---|---|
+| A1 `h14_report_builds`: `doc/report/check.sh` builds a clean copy with `latexmk -pdf`; no LaTeX error, undefined reference or citation, no `??` in the PDF text | pass: `harm_v4.pdf`, 25 pages |
+| A2 `h14_doc_coverage`, developer guide: every top-level directory, every module under `src/`, `src/miner/`, `src/miner/modules/src/` and `tests/`, every harm-coi module and every file in `eval/` is described (51 items); every repository path cited in the guides, the release notes and the report (`\file{}`) exists (308 cited) | pass |
+| A3 `h14_doc_examples`: the runnable examples of the README (1), the migration guide (1), the developer guide (1), the harm-coi README (1) and the report (9) run in a scratch directory and print what they show | pass, 13 of 13, none skipped (harm-coi from `HARM_COI_PYTHON`'s venv) |
+| A4 `h14_doc_coverage`: the 10 options, 5 XML names and 3 metric variables that v3 did not have (sources against `doc/report/inventory/v3_*.txt`, taken from `git show v3:`) are in the release notes, the README and the report; D-001, D-002, D-021, D-028 (default-output decisions) are in the release notes, the migration guide and the report | pass |
+| A5 `h14_doc_coverage`: the 24 milestones of PLAN's status board (H0–H13), the findings F-L1–F-L10 and F-M1–F-M2 are cited in the report and the release notes; every decision D-001–D-029 named in `doc/plan` is cited in the report | pass |
+| A6 no code change: `ctest -L doc` and `ctest -L regression -LE slow` on the Mac | pass, 3 of 3 and 70 of 70. (The plan said `ctest -L fast`; there is no such label, so the fast regression label was run.) HARM's and harm-coi's code are unchanged, so the full suite was not re-run |
+
+- **Mutation test of the checks** (faults planted in a copy of the repository, one at a time):
+
+  | Planted fault | Caught by |
+  |---|---|
+  | `--trace-end` renamed `--trace-endX` in the report | A4, **after a fix**: the first run passed, because the pattern's lookahead `(?![a-z0-9-])` let `--trace-endX` match `--trace-end`. The lookahead now excludes letters of either case and `_` |
+  | a wrong expected value in a report example (`G(z -> rb) 1.0 0.0`) | A3 |
+  | `\cref{sec:nowhere}` | A1 (`??` in the PDF) |
+  | a new directory `src/newmodule/` | A2 |
+  | a cited path that does not exist (`eval/run_evalX.py`) | A2 |
+- **v3 against v4 on the same inputs:** the migration guide's and the report's v3 lines are real output. `v3` was built in a scratch worktree (g++-13, the same `third_party` libraries) and run with v4 on `process`, `fsmSVT`, `vendingMachine` and `sub_platform1k`:
+  - `vendingMachine` is identical;
+  - `process` (138 assertions both) and `fsmSVT` (10 both): with D-002's rewrites applied to v3's lines, the two sets are equal; the order differs (D-001);
+  - `sub_platform1k` (91 both) by F8 (D-021).
+- **Found while documenting** (all documentation, fixed in H14):
+  - README: `--version` was not documented, nor were `--dont-print-ass` and `--dump-trace-as-csv`; the metric variable is `pRepetitions`, not `pRepetition`; the grammar path read `src/antl4`; "Run default tests" said `ctest -V -R`; `--keep-vac-ass` was documented with a `<FILE>` it does not take.
+  - harm-coi README: it named a CMake option `HARM_COI_YOSYS` that H11d removed (the yosys is now found by `cmake/HarmTools.cmake`); it did not say that predicates wider than 511 bits are dropped (F-L5).
+  - Release notes: they stopped at D-027 and did not cover D-028 or H11b–H13.
+- **Not changed, recorded as known limitations** in the release notes and the report: the `camellia` example's invalid XML, the reserved name `W`, and the formulas HARM cannot evaluate (all predate v4, H3 and H7 findings).
+- **The report's figures** are TikZ in the `.tex` files; there is no `figures/` directory (the plan listed one).

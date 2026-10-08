@@ -1,0 +1,120 @@
+\section{Reference}\label{sec:reference}
+
+\subsection{New command-line options}
+No v3 option was removed or renamed. The new ones, all opt-in:
+
+\begin{longtable}{@{}P{0.3\textwidth}P{0.62\textwidth}@{}}
+\toprule
+Option & Effect (section) \\
+\midrule
+\endhead
+\opt{reduce} \code+syntactic|equiv|implies+ & redundancy reduction; \code|syntactic| is v3's filter (\cref{sec:reduction}) \\
+\opt{keep} \code+stronger|weaker|ranked+ & with \code|implies|: which side of an implication is kept (\cref{sec:implies}) \\
+\opt{atom-premises} & with \code|implies|: facts between comparisons, proved with Z3 (\cref{sec:premises}) \\
+\opt{atom-premises-max} \code|<N>| & at most $N$ Z3 queries for those facts (default 2{,}000) \\
+\opt{dump-implications} \code|<file>| & the dropped assertions and what implies them, as JSON \\
+\opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON \\
+\opt{dump-coi-report} \code|<file>| & the out-of-cone report (\cref{sec:coi}) \\
+\opt{trace-end} \code+harm|sva+ & the end-of-trace semantics (\cref{sec:traceend}) \\
+\opt{skip-invalid-props} & skip a proposition that does not parse, with a warning \\
+\opt{version} & print \code|HARM <git describe>| and exit \\
+\bottomrule
+\end{longtable}
+
+\subsection{New configuration elements and metric variables}
+\begin{longtable}{@{}P{0.38\textwidth}P{0.54\textwidth}@{}}
+\toprule
+Element or attribute & Meaning \\
+\midrule
+\endhead
+\code|<coi file="..." mode="rank"/>| & a cone file for the context; \code|mode| is \code|rank| (default) or \code|filter| \\
+\code|<coi ... mode="filter" depth="exact"/>| & \code|depth| is \code|any| (default), \code|bounded| or \code|exact|; only with \code|filter| \\
+\code|<prop ... origin="spec"/>|, \code|<numeric ... origin="..."/>| & free-text provenance, reported in the JSON dumps \\
+\code|coiFrac|, \code|coiDepthFit|, \code|coiUnknown| & metric variables, available with a \code|<coi>| (D-014) \\
+\code|G(P0)| & invariant templates, without an implication \\
+\bottomrule
+\end{longtable}
+The file format of \code|<coi>| is \file{doc/schemas/coi.v1.json}; the formats of the JSON dumps carry a \code|"version": "1"| field.
+
+\subsection{Decisions}
+Every decision of the plan, in \file{doc/plan/DECISIONS.md} unless noted.
+\begin{longtable}{@{}lP{0.62\textwidth}l@{}}
+\caption{The decisions.}\label{tab:decisions}\\
+\toprule
+ID & Decision & Milestone \\
+\midrule
+\endfirsthead
+\toprule
+ID & Decision & Milestone \\
+\midrule
+\endhead
+D-001 & deterministic output: ranking ties broken by text, ordered collection & H0 \\
+D-002 & SVA printing: \code|1'b1|, \code+|=>+, \code|##n|, \code|s_eventually|, \code|.| & H1 \\
+D-003 & Z3 equivalence encodes HARM's 4-valued evaluator exactly & H2 \\
+D-004 & implication only between safety assertions, in both infinite-word and HARM's finite-trace semantics (amended) & H3 \\
+D-005 & COI depth = register crossings, sampled before the rising edge & H4 \\
+D-006 & \texttt{harm-coi}'s front end is pyslang & H5 \\
+D-007 & decision-tree index $\to$ cycle distance to the consequent & H8 \\
+D-008 & by default the stronger assertion of an implication is kept & H3 \\
+D-009 & Z3 is optional (\code|HARM_WITH_Z3|, default on) (\file{doc/plan/PLAN.md}) & H2 \\
+D-010 & one C++ toolchain for HARM and every library & H0 \\
+D-011 & x/z semantics of propositions: HARM's rule, documented & H1, H1b \\
+D-012 & fixes stay on \texttt{dev} until the release & --- \\
+D-013 & COI sources and targets: visible signals, clock never a source & H4 \\
+D-014 & the COI rank metrics & H6 \\
+D-015 & mining keeps HARM's end-of-trace semantics; reduction requires both semantics & H3, H1c \\
+D-016 & \opt{trace-end} \code|sva|, the neutral view, as an option & H1c \\
+D-017 & ``in the cone'': every variable of the proposition & H7 \\
+D-018 & COI metrics in filter mode; filter is not rank minus out-of-cone & H7 \\
+D-019 & \texttt{harm-coi} conventions: too large, never too small & H5 \\
+D-020 & depth modes of the filter & H8 \\
+D-021 & SVA printing of \code|->|; brackets in Spot LTL & H1d \\
+D-022 & the out-of-cone report & H9 \\
+D-023 & RTL predicate harvesting & H10 \\
+D-024 & an SVA-semantics option for x/z: withdrawn (\file{doc/plan/H1b_PLAN.md}) & H1b \\
+D-025 & atom-implication premises & H3b \\
+D-026 & the evaluation's configurations C0--C7 (\file{doc/plan/H11_PLAN.md}) & H11 \\
+D-027 & the release: tag \texttt{v4}, \opt{version}, Docker (\file{doc/plan/H11_PLAN.md}) & H11 \\
+D-028 & vector indexing follows SystemVerilog & H11c \\
+D-029 & fixtures and oracles independent of the Verilator version & H11e \\
+\bottomrule
+\end{longtable}
+
+\subsection{Milestones and findings}
+\begin{longtable}{@{}lP{0.52\textwidth}P{0.3\textwidth}@{}}
+\caption{The milestones from v3 to v4, with the findings fixed in each.}\label{tab:milestones}\\
+\toprule
+ID & Milestone & Findings fixed \\
+\midrule
+\endfirsthead
+\toprule
+ID & Milestone & Findings fixed \\
+\midrule
+\endhead
+H0 & regression baselines; deterministic output & --- \\
+H1 & proposition and SVA language & F9, F10 (H1's own) \\
+H1b & x/z semantics, documented & --- \\
+H1c & end-of-trace strength, \opt{trace-end} & SVA precedence \\
+H1d & SVA \code|->| and Spot brackets & F7, F8 (found in H8) \\
+H2 & Z3 back end, \opt{reduce} \code|equiv| & --- \\
+H3 & \opt{reduce} \code|implies| & reduction time on deep assertions \\
+H3b & atom-implication premises & --- \\
+H4 & \code|coi.json| contract and RTL fixtures & --- \\
+H5 & \texttt{harm-coi} & --- \\
+H6 & COI rank mode, \code|origin| & --- \\
+H7 & COI filter mode & template with too few propositions hung \\
+H8 & depth-aware filter & \code|->| offsets (F6) \\
+H9 & out-of-cone report & --- \\
+H10 & RTL predicates, \code|--emit-config| & --- \\
+H11 & evaluation, documentation, \opt{version}, Docker & --- \\
+H11b & HARM builds on Linux & F-L1, F-L2 \\
+H11c & yosys probe, vector ranges, wide predicates & F-L3, F-L4, F-L5 \\
+H11d & Verilator, Icarus and yosys in \file{third_party/} & --- \\
+H11e & fixtures and oracles independent of the Verilator version & F-L6, F-L7, F-L8, F-L10 \\
+H11f & log files under concurrent writers & F-L9 \\
+H11g & \code|install_verilator.sh| on macOS & F-M1 \\
+H12 & the same assertions on macOS and Linux & F-M2 \\
+H13 & profiling opt-in & --- \\
+H14 & this documentation and report & --- \\
+\bottomrule
+\end{longtable}

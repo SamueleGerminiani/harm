@@ -1,0 +1,73 @@
+\section{Validation}\label{sec:validation}
+Tests written together with the code tend to share its assumptions. Every semantic component of v4 was therefore checked against an \emph{independent oracle}: something that computes the expected answer without HARM's code, or that checks HARM's answer with HARM's own evaluator from the other side. \Cref{tab:oracles} lists them; \file{doc/plan/VALIDATION.md} has every run.
+
+\begin{longtable}{@{}P{0.2\textwidth}P{0.44\textwidth}P{0.28\textwidth}@{}}
+\caption{The independent oracle of each component.}\label{tab:oracles}\\
+\toprule
+Component & Oracle & Result \\
+\midrule
+\endfirsthead
+\toprule
+Component & Oracle & Result \\
+\midrule
+\endhead
+Proposition semantics (H1) & Icarus Verilog computes, for 1{,}000 random expressions on 32 random 4-valued rows, both the SystemVerilog value and HARM's documented rule & 0 mismatches with the rule; the SystemVerilog gap measured (D-011) \\
+x/z rule (H1b) & 23 pinned propositions, their SystemVerilog values checked against IEEE~1800 and with Icarus & differ on 9 of 23, as documented \\
+SVA printing (H1, H1d) & Verilator replays HARM's mined assertions on the same trace: each must never fail, and a negated control of each must fail at least once & 0 failures; all controls fire \\
+Spot brackets and \code|->| (H1d) & Spot's \texttt{ltlfilt}: the new texts are equivalent to HARM's formulas, the old ones are not & pass \\
+End-of-trace semantics (H1c) & a model of IEEE~1800's finite-trace semantics, written from the standard; 297 assertions $\times$ 4{,}680 traces $\times$ 2 modes & 0 disagreements \\
+Z3 equivalence (H2) & brute-force enumeration with HARM's evaluator: for 6-bit variables, all $4^6$ four-valued assignments, 960 pairs; for wide variables, 20{,}000 random rows, 640 pairs. Every ``not equivalent'' must come with a counterexample that HARM's evaluator confirms & 0 unsound; every equivalent 6-bit pair proved \\
+Implication (H3) & every Boolean trace of 3 atoms up to length 6, judged by HARM's evaluator: a claimed $A \Rightarrow B$ is refuted if $B$ fails where $A$ does not; 310 generated pairs and 200 pairs in mined shapes, in both end-of-trace modes & 0 unsound (after the D-004 amendment) \\
+Atom premises (H3b) & 2{,}000 random traces per pair in which the variables take \code|x|/\code|z| bits; the facts re-checked by enumerating 4{,}096 values & 0 unsound; 10 of 10 facts agree \\
+Cone fixtures (H4) & simulation: toggling a signal claimed \emph{outside} a target's cone, with the stimulus otherwise fixed, never changes the target; depths observed with one-cycle pulses & 0 violations in 120 pairs; 102 of 105 depths observed (3 structurally unexcitable) \\
+\texttt{harm-coi} (H5) & the hand-written fixtures; the simulation check above on its output; yosys bit-level reachability as a cross-check & exact on 6 fixtures; 0 unsound on 7 designs \\
+Rank metrics (H6) & values computed by hand from D-014 on cones validated by simulation & pass, 24 assertions \\
+Filter mode (H7) & per-consequent oracle: the union of rank runs on configurations restricted, in Python, to each consequent's cone & equal on 5 fixtures \\
+Depth filter (H8) & the D-020 rule recomputed in Python from the printed text; soundness of every kept assertion; the D-007 table counted by hand & pass, 6 designs $\times$ 2 modes \\
+Out-of-cone report (H9) & hand-written reports, and the rule recomputed in Python & pass \\
+Predicates (H10) & hand-labelled predicates per fixture; Z3 finds no duplicates; no predicate is constant on its trace & pass, 26 predicates \\
+Vector indices (H11c) & Verilator prints 14 selects on four vectors every cycle; HARM evaluates the same selects & equal on all $41\times14$ \\
+Same results on two platforms (H12) & the fixture table (46 runs) on macOS and Linux, compared count by count & 46 of 46 equal \\
+\bottomrule
+\end{longtable}
+
+\subsection{Testing the oracles}
+An oracle that cannot fail proves nothing. For the components where it was possible, bugs were planted in the implementation, one at a time, and each oracle was run against them (\cref{tab:mutation}). The mutation tests found real gaps, which were closed before the milestones were approved:
+\begin{itemize}
+\item in \ms{H7}, ``\emph{any} variable in the cone'' instead of ``\emph{every} variable'' passed every fixture, because all fixture propositions had one variable. Two multi-variable propositions were added to each configuration;
+\item in \ms{H8}, two planted bugs were caught only by unit tests, because no fixture had a plain \code!|=>! template or a distance beyond \code|max_depth|, and one end-to-end check compared HARM with its own metric. The fixtures gained two templates, and the check a Python rule;
+\item in \ms{H5}, each family of oracles missed some bug the others caught: simulation and yosys cannot see depths or self-dependencies, and the fixtures cannot see constructs they do not contain. Only the constructs test caught all six.
+\end{itemize}
+
+\begin{table}[t]
+\centering\small
+\caption{Mutation tests of the oracles: bugs planted in the implementation, and the tests that caught them.}\label{tab:mutation}
+\begin{tabular}{@{}lP{0.42\textwidth}P{0.3\textwidth}@{}}
+\toprule
+Milestone & Planted bug & Caught by \\
+\midrule
+H3b & facts proved without \code|x|/\code|z| & the hand-labelled facts \\
+H3b & premises given to Spot but not to the finite model & the hand-labelled pairs, the command-line test \\
+H3b & $p \rightarrow q$ stored as $q \rightarrow p$ & the trace oracle (6 unsound claims) \\
+H5 & no control dependencies & fixtures, simulation, yosys \\
+H5 & register delay 0 instead of 1 & fixtures (all 6) \\
+H7 & decision-tree candidates not pruned & 4 of 5 fixtures \\
+H8 & distance off by one & unit tests and 12 end-to-end checks \\
+H8 & the tree's index ignored & 11 end-to-end checks \\
+H9 & unknown variables counted as out & the unknown-signal fixture \\
+H10 & literal width + 1 & 4 fixtures, unit tests \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tests that were wrong}
+Writing tests first means some expectations turn out wrong. They were changed only with a recorded reason, and none to make an implementation pass. Examples: \ms{H5}'s blocking-temporary expectation (\cref{sec:harmcoi}); an \ms{H1} expectation that encoded the SVA precedence bug (\code|s_eventually b_1 until b_2| for \code|F b_1 W b_2|); an \ms{H1c} hand label (\code|!(b W c)| is a strong until, not safety); an \ms{H6} expected order with two equal scores in the wrong order (\code|X| sorts before \code|r| in ASCII, which is the D-001 tie-break).
+
+\subsection{The test suite}
+v3 had 35 tests; v4 has 233, run by \code|ctest| in about 32 minutes on either machine. They include the frozen regression baselines of every example (\ms{H0}), the determinism checks, the unit tests, the oracles above, and the documentation checks of this report (\ms{H14}). Tests that need a tool (Verilator, Icarus, yosys, \texttt{harm-coi}'s Python) are registered only when it is found.
+
+\subsection{Not validated}
+\begin{itemize}
+\item The planned cross-check of the reduction against USM-T's own evaluator was not run: USM-T builds only on Linux, and it would cover only the Boolean and integer subset that the hand labels already cover.
+\item No commercial simulator was available to check \code|s_eventually| and \code|not nexttime| at the end of a simulation; the oracle is the standard's semantics.
+\end{itemize}
