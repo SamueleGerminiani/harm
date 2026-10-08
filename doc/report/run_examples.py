@@ -2,14 +2,15 @@
 """H14, acceptance A3: the runnable examples of the v4 documentation run and print what they show.
 
 An example is a code block marked as runnable:
-  - Markdown (README, migration guide, developer guide): a fenced block right after `<!-- example -->`;
+  - Markdown (README, migration guide, developer guide, harm-coi README): a fenced block right after `<!-- example -->`;
   - LaTeX (doc/report/**/*.tex): an `lstlisting` environment right after a `% example` line.
 In the block, a line starting with `$ ` is a command (a trailing `\\` continues it on the next line);
 every other non-empty line, except `...`, is expected output: after the ANSI colours are removed and
 runs of blank space are collapsed, it must appear in what the block's commands print (stdout and
-stderr). The commands run with bash in the repository root, with `harm` (and `harm-coi`, if given)
-first on PATH and `$OUT` set to an empty temporary directory shared by the block's commands. Every
-command must exit with 0.
+stderr). The commands run with bash in a scratch directory that links every top-level entry of the
+repository (so `examples/ex3/ex3.csv` works, and the log files HARM writes stay out of the checkout),
+with `harm` (and `harm-coi`, if given) first on PATH and `$OUT` set to an empty directory shared by
+the block's commands. Every command must exit with 0.
 Each document must have at least one example. An example that needs harm-coi is skipped, and said so,
 when --harm-coi is not given.
 Usage: run_examples.py <repository root> --harm <path> [--harm-coi <path>]
@@ -29,7 +30,8 @@ ap.add_argument("--harm-coi")
 args = ap.parse_args()
 root = Path(args.root).resolve()
 
-DOCS = [root / "README.md", root / "doc/MIGRATING_v3_to_v4.md", root / "doc/DEVELOPER_GUIDE.md"]
+DOCS = [root / "README.md", root / "doc/MIGRATING_v3_to_v4.md", root / "doc/DEVELOPER_GUIDE.md",
+        root / "tools/harm-coi/README.md"]
 DOCS += sorted((root / "doc/report").rglob("*.tex"))
 MD_RE = re.compile(r"<!-- example -->\s*\n```[^\n]*\n(.*?)```", re.S)
 TEX_RE = re.compile(r"^%\s*example\s*\n\\begin\{lstlisting\}[^\n]*\n(.*?)\\end\{lstlisting\}", re.S | re.M)
@@ -82,10 +84,15 @@ with tempfile.TemporaryDirectory() as bindir:
                 skipped += 1
                 continue
             out = ""
-            with tempfile.TemporaryDirectory() as tmp:
-                env = dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}", OUT=tmp)
+            with tempfile.TemporaryDirectory() as work:
+                for entry in root.iterdir():
+                    if not entry.name.startswith("."):
+                        os.symlink(entry, Path(work) / entry.name)
+                out_dir = Path(work) / "OUT"
+                out_dir.mkdir()
+                env = dict(os.environ, PATH=f"{bindir}:{os.environ['PATH']}", OUT=str(out_dir))
                 for c in cmds:
-                    r = subprocess.run(["bash", "-c", c], cwd=root, env=env, capture_output=True,
+                    r = subprocess.run(["bash", "-c", c], cwd=work, env=env, capture_output=True,
                                        text=True, timeout=600)
                     out += r.stdout + r.stderr
                     if r.returncode != 0:
