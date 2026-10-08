@@ -1,7 +1,8 @@
 #!/bin/bash
 # Shared by install_{verilator,iverilog,yosys}.sh (H11d). Sourced, not run.
 # Sets NThreads, installPrefix (third_party/<tool>, or $1), CC/CXX, and on macOS puts Homebrew's
-# bison and flex first on PATH (macOS's own bison 2.3 is too old for Verilator and yosys).
+# bison and flex first on PATH (macOS's own bison 2.3 is too old for Verilator and yosys) and their
+# include directories on CPATH.
 # Usage: tools_setup <tool> [install prefix]
 set -euo pipefail
 
@@ -16,6 +17,11 @@ tools_setup() {
             for f in bison flex gperf; do
                 if p=$(brew --prefix "$f" 2>/dev/null) && [ -d "$p/bin" ]; then
                     export PATH="$p/bin:$PATH"
+                    # keg-only: the compiler needs its headers too (flex's FlexLexer.h for
+                    # Verilator; the SDK has none, F-M1)
+                    if [ -d "$p/include" ]; then
+                        export CPATH="$p/include${CPATH:+:$CPATH}"
+                    fi
                 fi
             done
         fi

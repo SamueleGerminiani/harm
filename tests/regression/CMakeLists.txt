@@ -389,6 +389,12 @@ add_test(NAME h11d_tool_lookup
     COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DWORK=${CMAKE_CURRENT_BINARY_DIR}
             -P ${CMAKE_SOURCE_DIR}/tests/regression/check_tool_lookup.cmake)
 
+# ---- H11g: the tool scripts on macOS (finding F-M1) -------------------------------------------------
+# A1: after tools_setup on macOS, the compiler finds Homebrew flex's FlexLexer.h (macOS is faked, so
+# this runs everywhere)
+add_test(NAME h11g_tools_common_flex
+    COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_tools_common.sh ${CMAKE_SOURCE_DIR})
+
 # ---- H11e: fixtures independent of the simulator ----------------------------------------------------
 # A2: a fixture testbench gives the same stimulus under Verilator and Icarus (tests/input/stim.svh,
 # finding F-L7). h5/constructs is not included: Icarus does not parse its RTL.
