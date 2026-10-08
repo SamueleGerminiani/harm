@@ -1,6 +1,6 @@
 # H13 plan: profiling is opt-in (`HARM_PROFILE`)
 
-*Status: approved 2026-10-08 by the user ("fix, add the HARM_PROFILE option; no need to rerun all the tests"); done, awaiting review. Branch: `ms/H13-profile` (from `dev` @ `ad00f9a`). Effort: 0.5 h.*
+*Status: approved 2026-10-08 by the user ("fix, add the HARM_PROFILE option; no need to rerun all the tests"); reviewed and merged into `dev` 2026-10-08. Branch: `ms/H13-profile` (from `dev` @ `ad00f9a`). Effort: 0.5 h.*
 
 - **The problem:** since v2 (`70ca1c0`), GCC builds were linked with `--profile`. Every HARM run, even `--version`, wrote a 2.6 MB `gmon.out` in its working directory.
   - Nothing was compiled for profiling (no `-pg`), so `gprof` found "no time accumulated".
