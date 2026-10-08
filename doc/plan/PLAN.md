@@ -315,3 +315,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H11d | Verilator, Icarus and yosys in `third_party` (Linux and macOS) | done (macOS open) |
 | H11e | Fixtures and oracles independent of the Verilator version (F-L6, F-L7, F-L8, F-L10; D-029) | done (macOS open) |
 | H11f | Log files under concurrent writers (F-L9) | done |
+| H11g | `install_verilator.sh` on macOS: Homebrew flex's `FlexLexer.h` (F-M1) | in progress |
