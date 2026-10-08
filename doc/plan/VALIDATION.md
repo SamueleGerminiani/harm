@@ -789,3 +789,15 @@ Tests written first and committed failing in `56a6d1a`; the fix is `6072328`.
   - `dumpWarningToFile`/`dumpErrorToFile` hold `flock(LOCK_EX)` on the log file and a mutex for the whole read-modify-write.
   - A nested log write from inside a failing log write is skipped (the message is still printed), so it cannot wait for its own lock.
 - **Cost:** A2/A3 take 6–8 s for 1,600 warnings. Every record re-reads the whole file, which was already so before; the lock orders the writers but does not add work.
+
+## H11g: `install_verilator.sh` on macOS, finding F-M1 (2026-10-08, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0)
+A1 was written first and committed failing in `0f5875e`; the fix is `972b22e`. F-M1 was found by the macOS checks on `ms/H11-macos` (H11e's "macOS checks" there).
+
+| Test | Result |
+|---|---|
+| A1 `h11g_tools_common_flex`: `tools_setup` with macOS and Homebrew faked; the compiler must find the fake flex's `FlexLexer.h` | pass with `c++`, `g++-13` and `clang++`. Before the fix it fails with `g++-13` and `clang++` (checked again with the fix stashed) |
+| A2 `install_verilator.sh` on the Mac with no `CPATH` (`env -u CPATH CC=gcc-13 CXX=g++-13`) | pass: `Verilator 5.052 2026-09-05`, no `FlexLexer.h` error |
+| A3 `h11d_tool_lookup`, and the `verilator` label (5 tests) with the rebuilt Verilator | pass, 2 of 2 and 5 of 5. Linux unchanged by construction: the change is inside the `darwin` branch of `tools_setup` |
+
+- **The fix:** on macOS, `tools_setup` prepends the `include/` of each Homebrew formula it already puts on `PATH` (bison, flex, gperf) to `CPATH`, keeping a user's `CPATH` after it.
+- **Note on A1:** it first set `SDKROOT` to a fake path, which made Apple's `clang++` shim fail and ask to install the command-line tools. It now uses the real SDK on a Mac (`xcrun`), and any value elsewhere, where it is unused.
