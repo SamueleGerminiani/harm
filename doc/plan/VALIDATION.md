@@ -1050,3 +1050,20 @@ The test was written first and committed failing in `92de07f` (5 files for 12 as
 - **Not tested:** the `"file": null` path (a file that cannot be opened). Nothing in the test can make the open fail once HARM has created the directory; the code path is a warning and an index entry.
 - **Found while testing, not fixed:** Boolean `^` (`G(a ^ b -> c)`) is a temporal parse error; `x ^ y == 1` on integers works. `a ^ b`, listed in PLAN §H16 as a collision, does not collide: Spot prints it with parentheses.
 - **Linux:** pending, as for the earlier milestones.
+
+## H15: the proposition table, `--dump-prop-table` (2026-10-09, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0)
+The tests were written first and committed failing in `359ba5c` (the option did not exist).
+
+| Test | Result |
+|---|---|
+| A1 `h15_prop_table_xz`: the 23 propositions of `tests/input/h1b` (x/z values): every cell equals `--check-dump-eval`'s `Ant` column for `G(p -> k)` (generated from the table's texts, mapped back through H16's `index.json`) and the HARM values written by hand in `check_x_semantics.py` | pass, 23 × 2 cells |
+| A2 `h15_prop_table_vcd`: the counter VCD twice (`--vcd-dir`), `--vcd-ss tb --clk clk --reset rst`, two contexts: every cell equals `--check-dump-eval`, and a VCD reader written in the test (its own parser; the values before each rising edge of `clk`; Python evaluation of the printed text) | pass: 46 propositions × 404 cycles; among them 10 `cnt ==` expansions and 30 `stim_state` range expansions (`>=`, `<=`, `&&`, 32-bit constants) |
+| A3 the same test: `format`, `version`, `harm`, `sampling`, `length`; `traces` (both files, 202 cycles each); `segments` equal the reset intervals the test's reader finds (18 segments); the hand-written propositions (texts, domains `a`/`c`/`ac`/`dt`, sources, origin `rtl`); `en` given twice is one entry with domains `a, c, dt`; the `[dt]` numeric only in `unexpanded_numerics` | pass |
+| A4 the same test: HARM's stdout with and without the option (timings masked: clock in messages, "Time to mine", the progress bar's seconds; the first comparison differed only in a progress bar's `0.002s`/`0.001s`) | pass, identical |
+| A5 full `ctest` on the Mac | 236 of 236, including `h14_doc_coverage` with the new option in the README, the release notes and the report; the H0 baselines byte-identical |
+
+- **Independence of the oracles:** check mode evaluates assertions through the template evaluator, not the table's code; the test's VCD reader and evaluator share no code with HARM. Before the tests were committed, the reader was compared with check mode on `en`, `rst`, `cnt == 4'b1111`, `cnt >= 3 && cnt <= 7`, `!en`: equal on all 202 cycles.
+- **Mutation test:** values written one cycle late (`evaluate(t + 1)`): `h15_prop_table_vcd` fails on every changing proposition, against both oracles. `h15_prop_table_xz` passes, as expected: its trace has two identical rows, so it cannot see a shift (it pins the x/z values, the VCD test pins the timing).
+- **Cost** (`bl_master10k`, its configuration without templates, 10,000 cycles, 20 propositions of which 9 from numerics): 2.20 s with the table, 2.14 s without; 203 KB.
+- **Observed:** `--vcd-dir` concatenated `t1.vcd` before `t0.vcd` (the directory's order, recorded in PLAN §H15 "not in scope"); the table's `traces` records it.
+- **Linux:** pending, as for the earlier milestones.

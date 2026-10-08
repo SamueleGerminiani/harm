@@ -37,6 +37,7 @@ TracePtr TraceReader::readTrace() {
     auto trace = readTrace(f);
     if (trace != nullptr) {
       traces.push_back(trace);
+      _readFiles.emplace_back(f, trace->getLength());
     }
   }
   messageErrorIf(traces.empty(),

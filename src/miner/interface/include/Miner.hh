@@ -1,7 +1,14 @@
 #pragma once
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace harm {
+class Context;
+using ContextPtr = std::shared_ptr<Context>;
+class Trace;
+using TracePtr = std::shared_ptr<Trace>;
 class ContextMiner;
 using ContextMinerPtr = std::shared_ptr<ContextMiner>;
 class PropertyMiner;
@@ -52,6 +59,11 @@ private:
 
   /// @brief Print/Dump the statistics of mining (stored in the hs::namespace)
   void handleStatistics();
+
+  /// @brief --dump-prop-table (H15, D-031): every context's propositions and their values
+  void writePropTable(const std::vector<ContextPtr> &contexts,
+                      const TracePtr &trace,
+                      const std::vector<std::pair<std::string, size_t>> &files);
 };
 
 } // namespace harm

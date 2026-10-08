@@ -80,6 +80,16 @@ public:
   } _coiFilterStats;
   ///origin="..." of propositions and numerics, by their text
   std::unordered_map<std::string, std::string> _origin;
+  /// --dump-prop-table (H15): every <prop> and every proposition expanded from a <numeric>, in
+  /// configuration order, with its domain ids; numeric is the numeric's text ("" for a <prop>)
+  struct LoadedProp {
+    expression::PropositionPtr prop;
+    std::vector<int> domains;
+    std::string numeric;
+  };
+  std::vector<LoadedProp> _loadedProps;
+  /// --dump-prop-table (H15): the <numeric>s left to the decision tree ([dt], [n]), not expanded
+  std::vector<std::pair<std::string, std::vector<int>>> _unexpandedNumerics;
 };
 //using shared pointer for the context
 using ContextPtr = std::shared_ptr<Context>;

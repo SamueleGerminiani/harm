@@ -539,10 +539,13 @@ void ManualDefinition::mineContexts(
       if (!origin.empty()) {
         context->_origin[prop2String(p)] = origin;
       }
+      std::vector<int> ids;
       for (auto &[id, dontExpand] : domains) {
         //dontExpand is not used for non-numerics
         context->_domainIdToProps[id].push_back(p);
+        ids.push_back(id);
       }
+      context->_loadedProps.push_back({p, ids, ""});
 
       if (clc::dumpDebugData) {
         std::vector<int> domains_int;
@@ -638,23 +641,21 @@ void ManualDefinition::mineContexts(
         }
 
         //get the domains
-        std::vector<int> expandedDomains;
+        std::vector<int> expandedDomains, unexpandedDomains;
         for (auto &[id, dontExpand] : domains) {
           if (dontExpand) {
             context->_domainIdToNumerics[id].push_back(nn);
+            unexpandedDomains.push_back(id);
           } else {
             expandedDomains.push_back(id);
           }
         }
+        if (!unexpandedDomains.empty()) {
+          context->_unexpandedNumerics.emplace_back(nnStr, unexpandedDomains);
+        }
 
         //non-expanded domains
         if (clc::dumpDebugData) {
-          std::vector<int> unexpandedDomains;
-          for (auto &[id, dontExpand] : domains) {
-            if (dontExpand) {
-              unexpandedDomains.push_back(id);
-            }
-          }
           ddd::addNumeric(nn.get(), contextName, nnStr,
                           unexpandedDomains);
         }
@@ -672,6 +673,9 @@ void ManualDefinition::mineContexts(
             context->_domainIdToProps[id].insert(
                 context->_domainIdToProps[id].end(), props.begin(),
                 props.end());
+          }
+          for (const auto &p : props) {
+            context->_loadedProps.push_back({p, expandedDomains, nnStr});
           }
 
           //expanded domains

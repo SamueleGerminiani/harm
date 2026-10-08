@@ -248,6 +248,10 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
   - a long assertion no longer stops HARM (it exited with code 1 over 255 bytes of name), and no file is overwritten.
 - **Not changed:** check mode still evaluates attempts lying inside a reset interval, which SVA `disable iff` would skip; trivergence keeps its post-processing for that (an SVA-style reset is recorded in PLAN §H16, undecided).
 
+### H15: the proposition table (on `dev`; D-031)
+- **No change trivergence needs.** `--dump-prop-table <file>` is new and opt-in; nothing else in HARM's output changes.
+- **What it could use:** every proposition of a context (hint propositions, `origin`, numeric expansions) with its value at every sampled cycle, plus the trace's files and reset segments (`prop-table` v1, README). trivergence could read propositions' truth values per cycle from it instead of evaluating them itself, with HARM's x/z rule (D-011). The consumer it was made for is the miner portfolio's SAT miner (`~/miner-portfolio`, S1).
+
 ---
 
 ## 3. Proposed changes to trivergence's `docs/plan/PLAN.md`
@@ -266,3 +270,7 @@ These are suggestions; the trivergence lead decides them, with a `DECISIONS.md` 
 ## 4. Open questions for trivergence
 - Should trivergence keep its own selection policy (length, text) or adopt HARM's ranking now that it's deterministic?
 - Should HARM's COI generator run inside the trivergence pipeline (stage 3), or be precomputed per design by the benchmark loaders (F4)?
+
+## 5. The miner portfolio
+The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner, GoldMine) is planned and developed on the Mac in its own repository, `~/miner-portfolio`, with its own hand-off file (`doc/TRIVERGENCE_HANDOFF.md`). HARM's part is H15 (`--dump-prop-table`).
+

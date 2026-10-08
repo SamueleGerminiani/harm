@@ -245,6 +245,12 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Acceptance:** the report builds with no errors or undefined references; the developer guide covers every directory and `src/` module; the examples run; every new option, XML element, default-output decision and milestone is covered (scripted checks, ctest label `doc`).
 - **Validation:** the user's review of the report against the cited DECISIONS and VALIDATION entries.
 
+### H15: Proposition table export (for the miner portfolio's SAT miner)
+- **Depends on:** H14, H16 (its oracle) · **Effort:** 2–3 d
+- **Scope:** `--dump-prop-table <file>`: for every trace, cycle and proposition of a context (numerics' propositions included), the value HARM's evaluator gives (true or false; x/z follow D-011). Versioned format `prop-table` v1 (a JSON header: traces, propositions with text and origin, sampling; a compact body). HARM's behaviour is unchanged.
+- **Why in HARM:** the SAT miner of the miner portfolio (a separate repository, `~/miner-portfolio`, plan milestone S1) then needs neither a VCD reader nor a proposition evaluator, and inherits HARM's validated semantics (D-005, D-011, D-028).
+- **Acceptance:** on `tests/input/h1b` (x/z values) and on a VCD fixture, the table equals HARM's own evaluation cell by cell (`--check-dump-eval` as the oracle); baselines byte-identical.
+
 ### H16: `--check-dump-eval` file names (finding from trivergence's T12 A5 test)
 - **Depends on:** H14 · **Effort:** 0.5–1 d · **Do before H15**, whose oracle is `--check-dump-eval`.
 - **The bug** (reported by the trivergence session on HARM `55bc66a`): each checked assertion's CSV is named after its text through `sanitizeFilename()` (`src/utils/include/misc.hh`), which deletes every character outside a small set (`!`, `&`, `<`, `~`, `^`, `*`, spaces, quotes vanish), with no uniqueness or length check (`TemplateImplication.cc`, the `checkDumpEvalDirectory` block).
@@ -337,3 +343,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H13 | Profiling opt-in (`HARM_PROFILE`); no `gmon.out` from a default build | done |
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
+| H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
