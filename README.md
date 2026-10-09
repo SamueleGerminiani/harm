@@ -270,6 +270,23 @@ Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise
 
 > **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antlr4/propositionParser/grammar/proposition.g4`.
 
+### Operator precedence (D-034)
+Operators bind as in C and SystemVerilog (IEEE 1800-2017 Table 11-2), from the tightest:
+
+| Operators | Notes |
+| :--- | :--- |
+| `x[i]`, `x[a:b]` | selects |
+| `!` `~` `-` `+` (unary) | `!x` is 1 where `x` has no known 1 bit, else 0 (HARM's 2-valued rule, D-011) |
+| `*` `/` | |
+| `+` `-` | `x-1` needs no blanks |
+| `<<` `>>` | |
+| `<` `<=` `>` `>=` `inside` | a comparison gives 0 or 1, usable as a number: `(a < b) + 1`, `x < y < z` |
+| `==` `!=` `===` `!==` | a Boolean compared with a number compares numbers: `(x > 0) == y` is `y == 0` or `y == 1` |
+| `&`, then `^`, then `\|` | below the comparisons: `x & y == y` is `x & (y == y)` |
+| `&&`, then `\|\|`, then `?:` | |
+
+All binary operators are left-associative. A CSV `bool` is a 1-bit number wherever it is an operand of one of these operators (`a + a == 2`, `a ^ b`, `!a ^ b` is `(!a) ^ b`); a bracketed Boolean can be one too (`(a && b) ^ c`). HARM prints propositions with the brackets these rules need, so a printed proposition re-parses to itself. **Changed in v4 (H18):** `!x == y`, `x & y == y` and `(x > 0) == y` used to read `!(x == y)`, `(x & y) == y` and `(x > 0) == (y != 0)`; write those brackets if that is what you mean.
+
 ### SystemVerilog Syntax in Propositions
 Besides C/C++ operators, propositions accept these SystemVerilog forms:
 
@@ -281,7 +298,7 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 | Replication | `{2{q4}}`, `{4{1'b0}}` | |
 | Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
 | Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
-| Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). The operand must be the variable or constant itself: `(a && b) ^ c` and `!a ^ b` are errors (HARM's `!` binds looser than `^`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so only `^` and `~` work inline there. See D-032. |
+| Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` (and, since D-034, of every numeric operator) is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so they are not bitwise inline there. See D-032, D-034. |
 | Hierarchical names | `u_core.state` | The same as `u_core::state` (the name used in VCD traces). |
 | Bit and part selects | `asc[2]`, `off[6:3] == 4'd9` | On a vector with a declared range in the VCD (`[1:10]`, `[10:3]`, `[7:0]`), the indices are SystemVerilog's: inside the range and in its direction, otherwise an error. Assertions print them as written. Without a declared range (CSV traces), an index is a bit position counted from the right, from 0. Packed multi-dimensional vectors are seen flattened (`[1:0][3:0]` is `[7:0]`). Bit-blasted vectors (one VCD `$var` per bit) take the highest index as the MSB. See D-028. |
 

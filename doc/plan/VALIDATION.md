@@ -1084,3 +1084,25 @@ The tests were written first and committed in `807aed3`: `BitwiseBoolTest`, `h17
 - **ANTLR tool:** 4.13.2 from Maven Central (SHA-1 `7df86c341abb175a0f4b76a7845074cc45f82ff8`, equal to Maven's). Regenerating the unchanged grammars first reproduced the committed parsers byte for byte.
 - **Recorded, not changed:** HARM's `!` binds looser than `^` and the comparisons: `!p ^ q` with `logic` operands reads `!(p ^ q)` (printed with the brackets), where SystemVerilog reads `(!p) ^ q`. It predates v4. For `bool` operands, `!a ^ b` is an error instead.
 - **Linux:** pending, as the user decided.
+
+## H18: operators bind, convert and print as in C and SystemVerilog (2026-10-09, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0, ANTLR tool 4.13.2, Icarus Verilog 12.0)
+The audit (`doc/plan/h18_audit/`, 1,154 expressions against Icarus Verilog on `dev` @ `b05dcc7`: 387 differed or were rejected) was cross-checked with IEEE Std 1800-2017 and C11 (N1570); Icarus agreed with the standard on every case used. The tests were written first and committed failing in `290c1c3`.
+
+| Test | Result |
+|---|---|
+| A1 `h18_operators_fixture`: 1,212 expressions (every pair of 17 binary operators; `! ~ - +` before each; every operator on 7 operand types; Boolean/number comparisons; chains; `x-1`; `inside`; widths; ternaries) against Icarus Verilog on 40 rows | pass: the 861 marked `ok` agree on every row (before: 241 failed or were rejected). 351 cases are marked H19 by written rules (shifts: E1/E2/E4; signed with unsigned: E3); 162 of them still differ, 189 already agree |
+| A3 the same test, and `h18_operators_examples`: every printed proposition re-parses to the same values and prints the same text (the 1,212, and 449 propositions of the 29 example configurations) | pass (before: 5 fixture cases, e.g. `(!x) == y` printed `!x == y`, and `inside` sets re-ordering on every print) |
+| A2 the H1 oracle (`PropositionOracleTest`, 1,000 4-valued expressions) unchanged | pass |
+| A4 `OperatorPrecedenceTest`: 33 hand cases on 6 rows (the expected strings recomputed by a script that spells out each grouping: it corrected 7 of my hand-written strings); printing of 13 forms (value and text re-parse); functions in both positions | pass |
+| A5 the same test: 9 pairs, Z3 against an enumeration of every 4-valued assignment of two 2-bit `logic` variables and a `bool` (512 rows) | pass: Z3 decides 8 (all agreeing with the enumeration, 4 equivalent, 4 not), `-p` on `logic` is Unknown (opaque by design) |
+| A6 full `ctest` | 243 of 243; the H0 baselines byte-identical; `h14_doc_coverage` with H18, H19, H20, D-034 |
+
+- **Trees unchanged:** comparisons and `!` are numeric operators now, but every expression that parsed before keeps its tree (a Boolean made a number and used as a Boolean is given back; a numeric ternary of two Booleans is the Boolean ternary): the H0 baselines, the H1 oracle and `--reduce equiv` tests are unchanged.
+- **Found by the full suite, fixed** (first full run: 241 of 243):
+  - `OpeTest`: `$past(v2,1) == $past(v2,2)` stopped the parser ("Calling top() on empty Stack"). A function's result follows its argument's kind ($past of a number is a number), and the new alternative order put it in a Boolean position. The handler now converts a function's result to its position's kind; `OperatorPrecedenceTest.functionsInBothPositions` covers `$past`, `$stable`, `$rose` in both positions.
+  - `ClsTest` expected `v1 inside {[1:3]} ` with a trailing blank, which H18 removes on purpose (D-034); its four expected strings were updated.
+- **Found while implementing, fixed:** H1's oracle failed twice when the bracketed Boolean ternary came before `numeric` in the `boolean` rule: `(c ? ~w8 : w8) == w8` was read as a Boolean ternary compared as a Boolean. The order is now `numeric` first (commented in the grammar).
+- **Test fixes before the tests were committed:** the generator gave a float divisor the value 0 (division by zero is H19's E5); the E3 rule missed a narrow signed operand with an unsigned one in arithmetic (`u - s`). Both were corrected in the generator, and the fixture regenerated, before `290c1c3`.
+- **Mutation test:** the old precedence of `!` (the Boolean `!` before `numeric` in the grammar) makes `h18_operators_fixture` fail 23 cases (21 prefix, 1 `inside`, 1 round trip).
+- **The `parser` label** (`ctest -L parser`, 41 tests, 4 min 15 s on the Mac) runs the language's tests while iterating; the full suite runs before review (developer guide).
+- **Linux:** pending, as the user decided.

@@ -454,8 +454,7 @@ void PropositionParserHandler::exitInt_constant(
         _trace->getLength());
     _numericExpressions.push(c);
     return;
-  } else if (ctx->SINTEGER() != nullptr ||
-             ctx->UINTEGER() != nullptr) {
+  } else if (ctx->UINTEGER() != nullptr) {
 
     if (ctx->CONST_SUFFIX() == nullptr) {
       // Store the int as 2s complement int
@@ -586,6 +585,11 @@ void PropositionParserHandler::exitStringAtom(
     messageError("Unknown string atom!" + printErrorMessage());
   }
 }
+void PropositionParserHandler::enterNonTemporalFunction(
+    propositionParser::NonTemporalFunctionContext *ctx) {
+  _functionStart[ctx] = {_proposition.size(), _numericExpressions.size()};
+}
+
 void PropositionParserHandler::exitNonTemporalFunction(
     propositionParser::NonTemporalFunctionContext *ctx) {
 
@@ -848,6 +852,93 @@ void PropositionParserHandler::exitNonTemporalFunction(
                  printErrorMessage());                               \
   }
 
+expression::PropositionPtr
+PropositionParserHandler::toBool(NumericPack np) {
+  if (np._logExp != nullptr) {
+    if (auto b = std::dynamic_pointer_cast<BoolToLogic>(np._logExp)) {
+      return b->getItem();
+    }
+    // a ternary between two Booleans: the Boolean ternary, as before D-034
+    if (auto t = std::dynamic_pointer_cast<LogicTernary>(np._logExp)) {
+      auto bt = std::dynamic_pointer_cast<BoolToLogic>(t->getWhenTrue());
+      auto bf = std::dynamic_pointer_cast<BoolToLogic>(t->getWhenFalse());
+      if (bt && bf) {
+        return generatePtr<PropositionTernary>(t->getCondition(), bt->getItem(),
+                                               bf->getItem());
+      }
+    }
+    return generatePtr<LogicToBool>(np._logExp);
+  }
+  if (np._intExp != nullptr) {
+    return generatePtr<IntToBool>(np._intExp);
+  }
+  if (np._floatExp != nullptr) {
+    return generatePtr<FloatToBool>(np._floatExp);
+  }
+  messageError("Unknown type to convert to bool!" + printErrorMessage());
+  return nullptr;
+}
+
+PropositionParserHandler::NumericPack
+PropositionParserHandler::toNumber(const PropositionPtr &p) {
+  return NumericPack(LogicExpressionPtr(generatePtr<BoolToLogic>(p)));
+}
+
+expression::PropositionPtr
+PropositionParserHandler::compare(NumericPack exp1, NumericPack exp2,
+                                  const std::string &op) {
+  resolveFill(exp1, exp2);
+
+  if (op == "===" || op == "!==") {
+    // === and !== compare 4-valued bit patterns: both operands as logic
+    messageErrorIf(exp1._floatExp != nullptr || exp2._floatExp != nullptr,
+                   "=== and !== cannot be used with floats" +
+                       printErrorMessage());
+    if (exp1._intExp != nullptr) {
+      exp1.convert(NumericType::NumericLogic);
+    }
+    if (exp2._intExp != nullptr) {
+      exp2.convert(NumericType::NumericLogic);
+    }
+    if (op == "===") {
+      return makeGenericExpression<LogicCaseEq>(exp1._logExp, exp2._logExp);
+    }
+    return makeGenericExpression<LogicCaseNeq>(exp1._logExp, exp2._logExp);
+  }
+
+  auto conversionResult =
+      applyCStandardConversion(exp1.getType(), exp2.getType());
+  convert(exp1, exp2, conversionResult);
+
+  std::stack<PropositionPtr> result;
+  if (op == "<") {
+    handleNumericRelExp(Less, exp1, exp2, result)
+  } else if (op == "<=") {
+    handleNumericRelExp(LessEq, exp1, exp2, result)
+  } else if (op == ">") {
+    handleNumericRelExp(Greater, exp1, exp2, result)
+  } else if (op == ">=") {
+    handleNumericRelExp(GreaterEq, exp1, exp2, result)
+  } else if (op == "==") {
+    handleNumericRelExp(Eq, exp1, exp2, result)
+  } else if (op == "!=") {
+    handleNumericRelExp(Neq, exp1, exp2, result)
+  } else {
+    messageError("Unknown comparison operator '" + op + "'" +
+                 printErrorMessage());
+  }
+  return result.top();
+}
+
+namespace {
+/// the number inside a number-to-Boolean cast, or nullptr
+bool isNumberAsBool(const PropositionPtr &p) {
+  return std::dynamic_pointer_cast<IntToBool>(p) != nullptr ||
+         std::dynamic_pointer_cast<LogicToBool>(p) != nullptr ||
+         std::dynamic_pointer_cast<FloatToBool>(p) != nullptr;
+}
+} // namespace
+
 void PropositionParserHandler::exitBoolean(
     propositionParser::BooleanContext *ctx) {
 
@@ -856,215 +947,91 @@ void PropositionParserHandler::exitBoolean(
     return;
   }
 
-  if (ctx->boolean().size() == 1) {
-    if (ctx->NOT()) {
-      PropositionPtr p = _proposition.top();
-      _proposition.pop();
-      _proposition.push(makeGenericExpression<PropositionNot>(p));
-      return;
+  // D-034: a function in a Boolean position whose result is a number
+  if (auto f = ctx->nonTemporalFunction()) {
+    if (_numericExpressions.size() > _functionStart.at(f).second) {
+      NumericPack np = _numericExpressions.top();
+      _numericExpressions.pop();
+      _proposition.push(toBool(np));
     }
-    messageError("Unknown unary boolean operator!" +
-                 printErrorMessage());
-  } else if (ctx->boolean().size() == 2) {
-    antlr4::Token *boolop = ctx->booleanop;
-    if (boolop != nullptr) {
-      // std::cout<<__func__<<"boolop"<<std::endl;
-      PropositionPtr p2 = _proposition.top();
-      _proposition.pop();
-      PropositionPtr p1 = _proposition.top();
-      _proposition.pop();
-      if (boolop->getText() == "&&") {
-        //operator is associative
-        if (std::dynamic_pointer_cast<PropositionAnd>(p1) !=
-            nullptr) {
-          PropositionAndPtr p1and =
-              std::dynamic_pointer_cast<PropositionAnd>(p1);
-          p1and->addItem(p2);
-          _proposition.push(p1and);
-        } else {
-          _proposition.push(
-              makeGenericExpression<PropositionAnd>(p1, p2));
-        }
-        return;
-      } else if (boolop->getText() == "||") {
-        //operator is associative
-        if (std::dynamic_pointer_cast<PropositionOr>(p1) != nullptr) {
-          PropositionOrPtr p1or =
-              std::dynamic_pointer_cast<PropositionOr>(p1);
-          p1or->addItem(p2);
-          _proposition.push(p1or);
-        } else {
-          _proposition.push(
-              makeGenericExpression<PropositionOr>(p1, p2));
-        }
-        return;
-      }
-      messageError("Unknown boolean operator in expression!" +
-                   printErrorMessage());
-    }
-    if (ctx->EQ() != nullptr) {
-      PropositionPtr p2 = _proposition.top();
-      _proposition.pop();
-      PropositionPtr p1 = _proposition.top();
-      _proposition.pop();
-      _proposition.push(makeGenericExpression<PropositionEq>(p1, p2));
-      return;
-    }
-    if (ctx->NEQ() != nullptr) {
-      PropositionPtr p2 = _proposition.top();
-      _proposition.pop();
-      PropositionPtr p1 = _proposition.top();
-      _proposition.pop();
-      _proposition.push(
-          makeGenericExpression<PropositionNeq>(p1, p2));
-      return;
-    }
-    messageError("Unknown binary boolean operator!" +
-                 printErrorMessage());
-  }
-
-  if (ctx->INSIDE() != nullptr) {
-    NumericPack op(_numericExpressions.top());
-    _numericExpressions.pop();
-
-    //gather the constants
-    std::vector<NumericPack> constants;
-    for (size_t i = 0; i < ctx->sm_constant().size(); i++) {
-      constants.push_back(_sm_constants.top());
-      _sm_constants.pop();
-    }
-
-    //gather the ranges
-    std::vector<std::pair<NumericPack, NumericPack>> ranges;
-    for (size_t i = 0; i < ctx->sm_range().size(); i++) {
-      ranges.push_back(_sm_ranges.top());
-      _sm_ranges.pop();
-    }
-
-    if (isInt(op.getType().first)) {
-      std::vector<IntExpressionPtr> setInt;
-      std::vector<std::pair<IntExpressionPtr, IntExpressionPtr>>
-          rangesInt;
-      for (auto &c : constants) {
-        setInt.push_back(c._intExp);
-      }
-      for (auto &[l, r] : ranges) {
-        rangesInt.push_back(std::make_pair(l._intExp, r._intExp));
-      }
-      _proposition.push(generatePtr<expression::IntSetMembership>(
-          op._intExp, setInt, rangesInt));
-    } else if (isLogic(op.getType().first)) {
-      std::vector<LogicExpressionPtr> setLogic;
-      std::vector<std::pair<LogicExpressionPtr, LogicExpressionPtr>>
-          rangesLogic;
-      for (auto &c : constants) {
-        setLogic.push_back(c._logExp);
-      }
-      for (auto &[l, r] : ranges) {
-        rangesLogic.push_back(std::make_pair(l._logExp, r._logExp));
-      }
-      _proposition.push(generatePtr<expression::LogicSetMembership>(
-          op._logExp, setLogic, rangesLogic));
-
-    } else {
-      messageError("Unknown type to check set membership!" +
-                   printErrorMessage());
-    }
-
     return;
   }
 
-  if (ctx->numeric().size() == 1) {
-    //implitic conversion to bool
-    if (_numericExpressions.isTopFloat()) {
-      _proposition.push(
-          generatePtr<FloatToBool>(_numericExpressions.topFloat()));
-    } else if (_numericExpressions.isTopInt()) {
-      _proposition.push(
-          generatePtr<IntToBool>(_numericExpressions.topInt()));
-    } else if (_numericExpressions.isTopLogic()) {
-      _proposition.push(
-          generatePtr<LogicToBool>(_numericExpressions.topLogic()));
-    } else {
-      messageError("Unknown type to convert to bool!" +
-                   printErrorMessage());
-    }
-    _numericExpressions.pop();
+  if (ctx->NOT() != nullptr) {
+    PropositionPtr p = _proposition.top();
+    _proposition.pop();
+    _proposition.push(makeGenericExpression<PropositionNot>(p));
     return;
+  }
 
-  } else if (ctx->numeric().size() == 2) {
-
-    PropositionParserHandler::NumericPack exp2 =
-        _numericExpressions.top();
-    _numericExpressions.pop();
-
-    PropositionParserHandler::NumericPack exp1 =
-        _numericExpressions.top();
-    _numericExpressions.pop();
-
-    resolveFill(exp1, exp2);
-
-    if (ctx->CASE_EQ() != nullptr || ctx->CASE_NEQ() != nullptr) {
-      // === and !== compare 4-valued bit patterns: both operands as logic
-      messageErrorIf(exp1._floatExp != nullptr || exp2._floatExp != nullptr,
-                     "=== and !== cannot be used with floats" +
-                         printErrorMessage());
-      if (exp1._intExp != nullptr) {
-        exp1.convert(NumericType::NumericLogic);
-      }
-      if (exp2._intExp != nullptr) {
-        exp2.convert(NumericType::NumericLogic);
-      }
-      if (ctx->CASE_EQ() != nullptr) {
-        _proposition.push(makeGenericExpression<LogicCaseEq>(
-            exp1._logExp, exp2._logExp));
+  antlr4::Token *boolop = ctx->booleanop;
+  if (boolop != nullptr) {
+    PropositionPtr p2 = _proposition.top();
+    _proposition.pop();
+    PropositionPtr p1 = _proposition.top();
+    _proposition.pop();
+    if (boolop->getText() == "&&") {
+      //operator is associative
+      if (auto p1and = std::dynamic_pointer_cast<PropositionAnd>(p1)) {
+        p1and->addItem(p2);
+        _proposition.push(p1and);
       } else {
-        _proposition.push(makeGenericExpression<LogicCaseNeq>(
-            exp1._logExp, exp2._logExp));
+        _proposition.push(makeGenericExpression<PropositionAnd>(p1, p2));
       }
       return;
     }
-
-    auto conversionResult =
-        applyCStandardConversion(exp1.getType(), exp2.getType());
-
-    convert(exp1, exp2, conversionResult);
-
-    propositionParser::RelopContext *relop = ctx->relop();
-
-    if (relop != nullptr) {
-
-      if (relop->LT() != nullptr) {
-        handleNumericRelExp(Less, exp1, exp2, _proposition) return;
+    if (boolop->getText() == "||") {
+      //operator is associative
+      if (auto p1or = std::dynamic_pointer_cast<PropositionOr>(p1)) {
+        p1or->addItem(p2);
+        _proposition.push(p1or);
+      } else {
+        _proposition.push(makeGenericExpression<PropositionOr>(p1, p2));
       }
-
-      if (relop->LE() != nullptr) {
-        handleNumericRelExp(LessEq, exp1, exp2, _proposition) return;
-        return;
-      }
-      if (relop->GT() != nullptr) {
-        handleNumericRelExp(Greater, exp1, exp2, _proposition) return;
-        return;
-      }
-      if (relop->GE() != nullptr) {
-        handleNumericRelExp(GreaterEq, exp1, exp2,
-                            _proposition) return;
-        return;
-      }
-      messageError("Unknown relational operator!" +
-                   printErrorMessage());
-    }
-
-    if (ctx->EQ() != nullptr) {
-      handleNumericRelExp(Eq, exp1, exp2, _proposition) return;
       return;
     }
-    if (ctx->NEQ() != nullptr) {
-      handleNumericRelExp(Neq, exp1, exp2, _proposition) return;
-      return;
-    }
-    messageError("Unknown binary bool operator between numerics!" +
+    messageError("Unknown boolean operator in expression!" +
                  printErrorMessage());
+  }
+
+  if (ctx->eqop != nullptr) {
+    PropositionPtr p2 = _proposition.top();
+    _proposition.pop();
+    PropositionPtr p1 = _proposition.top();
+    _proposition.pop();
+    const std::string op = ctx->eqop->getText();
+    // D-034: a Boolean compared with a number compares numerically, the Boolean as 0 or 1
+    // (as C, C++ and SystemVerilog do); two Booleans compare as before
+    if (isNumberAsBool(p1) || isNumberAsBool(p2)) {
+      auto number = [&](const PropositionPtr &p) {
+        if (auto c = std::dynamic_pointer_cast<IntToBool>(p)) {
+          return NumericPack(c->getItem());
+        }
+        if (auto c = std::dynamic_pointer_cast<LogicToBool>(p)) {
+          return NumericPack(c->getItem());
+        }
+        if (auto c = std::dynamic_pointer_cast<FloatToBool>(p)) {
+          return NumericPack(c->getItem());
+        }
+        return toNumber(p);
+      };
+      _proposition.push(compare(number(p1), number(p2), op));
+      return;
+    }
+    if (op == "==") {
+      _proposition.push(makeGenericExpression<PropositionEq>(p1, p2));
+    } else {
+      _proposition.push(makeGenericExpression<PropositionNeq>(p1, p2));
+    }
+    return;
+  }
+
+  if (ctx->numeric() != nullptr) {
+    // a number used as a Boolean
+    NumericPack np = _numericExpressions.top();
+    _numericExpressions.pop();
+    _proposition.push(toBool(np));
+    return;
   }
 
   messageErrorIf(ctx->string().size() == 1,
@@ -1131,8 +1098,153 @@ void PropositionParserHandler::exitNumeric(
     return;
   }
 
+  // D-034: a function in a numeric position whose result is a Boolean
+  if (auto f = ctx->nonTemporalFunction()) {
+    if (_proposition.size() > _functionStart.at(f).first) {
+      PropositionPtr p = _proposition.top();
+      _proposition.pop();
+      _numericExpressions.push(toNumber(p)._logExp);
+    }
+    return;
+  }
+
+  // D-034: a bracketed Boolean used as a number (1 bit)
+  if (ctx->boolean() != nullptr) {
+    PropositionPtr p = _proposition.top();
+    _proposition.pop();
+    _numericExpressions.push(toNumber(p)._logExp);
+    return;
+  }
+
   //ignore parenthesis
   if (ctx->LROUND() && ctx->RROUND()) {
+    return;
+  }
+
+  // D-034: ! (logical not, a 1-bit 0 or 1, 2-valued), unary - and unary +
+  if (ctx->unop != nullptr && ctx->unop->getType() != propositionParser::NEG) {
+    NumericPack np = _numericExpressions.top();
+    _numericExpressions.pop();
+    const size_t t = ctx->unop->getType();
+    if (t == propositionParser::PLUS) {
+      if (np._intExp != nullptr) {
+        _numericExpressions.push(np._intExp);
+      } else if (np._logExp != nullptr) {
+        _numericExpressions.push(np._logExp);
+      } else {
+        _numericExpressions.push(np._floatExp);
+      }
+    } else if (t == propositionParser::NOT) {
+      _numericExpressions.push(
+          toNumber(makeGenericExpression<PropositionNot>(toBool(np)))
+              ._logExp);
+    } else if (np._intExp != nullptr) {
+      // a negative literal is a constant, as before D-034
+      if (auto c = std::dynamic_pointer_cast<IntConstant>(np._intExp)) {
+        auto type = c->getType();
+        UInt v = c->evaluate(0);
+        _numericExpressions.push(IntExpressionPtr(generatePtr<IntConstant>(
+            (UInt)0 - v, type.first, type.second, _trace->getLength())));
+      } else {
+        auto neg = makeGenericExpression<IntNeg>(np._intExp);
+        neg->setType(np._intExp->getType().first,
+                     np._intExp->getType().second);
+        _numericExpressions.push(IntExpressionPtr(neg));
+      }
+    } else if (np._floatExp != nullptr) {
+      if (auto c = std::dynamic_pointer_cast<FloatConstant>(np._floatExp)) {
+        auto type = c->getType();
+        _numericExpressions.push(FloatExpressionPtr(generatePtr<FloatConstant>(
+            -c->evaluate(0), type.first, type.second, _trace->getLength())));
+      } else {
+        _numericExpressions.push(
+            FloatExpressionPtr(makeGenericExpression<FloatNeg>(np._floatExp)));
+      }
+    } else if (np._logExp != nullptr) {
+      messageErrorIf(isFill(np), "A fill literal ('0, '1, 'x, 'z) cannot be "
+                                 "negated" + printErrorMessage());
+      auto neg = makeGenericExpression<LogicNeg>(np._logExp);
+      neg->setType(np._logExp->getType().first, np._logExp->getType().second);
+      _numericExpressions.push(LogicExpressionPtr(neg));
+    } else {
+      messageError("Unknown operand of a unary operator!" +
+                   printErrorMessage());
+    }
+    return;
+  }
+
+  // D-034: comparisons are numeric operators with a 1-bit result
+  if (ctx->relop() != nullptr || ctx->eqop != nullptr) {
+    NumericPack np2 = _numericExpressions.top();
+    _numericExpressions.pop();
+    NumericPack np1 = _numericExpressions.top();
+    _numericExpressions.pop();
+    const std::string op = ctx->relop() != nullptr ? ctx->relop()->getText()
+                                                   : ctx->eqop->getText();
+    auto b1 = np1._logExp ? std::dynamic_pointer_cast<BoolToLogic>(np1._logExp)
+                          : nullptr;
+    auto b2 = np2._logExp ? std::dynamic_pointer_cast<BoolToLogic>(np2._logExp)
+                          : nullptr;
+    PropositionPtr p;
+    if (b1 && b2 && op == "==") {
+      // two Booleans: the Boolean equality, as before D-034
+      p = makeGenericExpression<PropositionEq>(b1->getItem(), b2->getItem());
+    } else if (b1 && b2 && op == "!=") {
+      p = makeGenericExpression<PropositionNeq>(b1->getItem(), b2->getItem());
+    } else {
+      p = compare(np1, np2, op);
+    }
+    _numericExpressions.push(toNumber(p)._logExp);
+    return;
+  }
+
+  if (ctx->INSIDE() != nullptr) {
+    NumericPack op(_numericExpressions.top());
+    _numericExpressions.pop();
+
+    //gather the constants and the ranges, in the order written
+    std::vector<NumericPack> constants;
+    for (size_t i = 0; i < ctx->sm_constant().size(); i++) {
+      constants.push_back(_sm_constants.top());
+      _sm_constants.pop();
+    }
+    std::reverse(constants.begin(), constants.end());
+    std::vector<std::pair<NumericPack, NumericPack>> ranges;
+    for (size_t i = 0; i < ctx->sm_range().size(); i++) {
+      ranges.push_back(_sm_ranges.top());
+      _sm_ranges.pop();
+    }
+    std::reverse(ranges.begin(), ranges.end());
+
+    PropositionPtr p;
+    if (isInt(op.getType().first)) {
+      std::vector<IntExpressionPtr> setInt;
+      std::vector<std::pair<IntExpressionPtr, IntExpressionPtr>> rangesInt;
+      for (auto &c : constants) {
+        setInt.push_back(c._intExp);
+      }
+      for (auto &[l, r] : ranges) {
+        rangesInt.push_back(std::make_pair(l._intExp, r._intExp));
+      }
+      p = generatePtr<expression::IntSetMembership>(op._intExp, setInt,
+                                                     rangesInt);
+    } else if (isLogic(op.getType().first)) {
+      std::vector<LogicExpressionPtr> setLogic;
+      std::vector<std::pair<LogicExpressionPtr, LogicExpressionPtr>>
+          rangesLogic;
+      for (auto &c : constants) {
+        setLogic.push_back(c._logExp);
+      }
+      for (auto &[l, r] : ranges) {
+        rangesLogic.push_back(std::make_pair(l._logExp, r._logExp));
+      }
+      p = generatePtr<expression::LogicSetMembership>(op._logExp, setLogic,
+                                                       rangesLogic);
+    } else {
+      messageError("Unknown type to check set membership!" +
+                   printErrorMessage());
+    }
+    _numericExpressions.push(toNumber(p)._logExp);
     return;
   }
 
@@ -1171,9 +1283,6 @@ void PropositionParserHandler::exitNumeric(
       size_t left;
       size_t right;
       auto type = _numericExpressions.top().getType();
-      messageErrorIf(!ctx->range()->SINTEGER().empty(),
-                     "Negative index in bit range!" +
-                         printErrorMessage());
       messageErrorIf(ctx->range()->UINTEGER().empty(),
                      "Invalid range!" + printErrorMessage());
 

@@ -42,6 +42,7 @@ enum ope : int {
 
   FloatSum,
   FloatSub,
+  FloatNeg,
   FloatMul,
   FloatDiv,
   FloatEq,
@@ -60,6 +61,7 @@ enum ope : int {
   IntBOr,
   IntBXor,
   IntNot,
+  IntNeg,
   IntEq,
   IntNeq,
   IntGreater,
@@ -78,6 +80,7 @@ enum ope : int {
   LogicBOr,
   LogicBXor,
   LogicNot,
+  LogicNeg,
   LogicEq,
   LogicNeq,
   LogicGreater,
@@ -104,6 +107,7 @@ enum ope : int {
 
   Function,
 
+  Select, // D-034: a bit or part select, tighter than every operator (printing only)
   NoOp
 
 };
@@ -340,6 +344,10 @@ inline std::string opeToString(ope o) {
     return "^";
   case IntNot:
     return "~";
+  case IntNeg:
+  case LogicNeg:
+  case FloatNeg:
+    return "-";
   case IntEq:
     return "==";
   case IntNeq:
@@ -419,6 +427,8 @@ inline std::string opeToString(ope o) {
   case Substring:
     return ".substr";
 
+  case Select:
+    return "[]";
   case NoOp:
     return "NoOp";
 
@@ -494,14 +504,18 @@ inline int opeToPrecedenceClass(ope o) {
     return 0;
   case IntNot:
     return 0;
+  case IntNeg:
+  case LogicNeg:
+  case FloatNeg:
+    return 0;
   case LogicNot:
     return 0;
   case IntSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case LogicSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case FloatSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case PropositionNot:
     return 0;
   case Substring:
@@ -631,6 +645,8 @@ inline int opeToPrecedenceClass(ope o) {
   case Ternary:
     return 12;
 
+  case Select:
+    return -1;
   case NoOp:
     return 12;
   }
@@ -663,6 +679,21 @@ inline bool hasHigherPrecedence(const ope &o1,
 //return true if o1 has a higher precedence than o2
 inline bool hasHigherPrecedence(const ope &o1, const ope &o2) {
   return opeToPrecedenceClass(o1) < opeToPrecedenceClass(o2);
+}
+/// D-034: a right operand of the same precedence class needs brackets (operators are
+/// left-associative), unless it is the same associative operator (a + (b + c) is a + b + c)
+inline bool needsBracketsAsRight(const ope &parent, const ope &child) {
+  if (opeToPrecedenceClass(parent) != opeToPrecedenceClass(child)) {
+    return false;
+  }
+  switch (child) {
+  case IntSum: case LogicSum: case FloatSum: case IntMul: case LogicMul: case FloatMul:
+  case IntBAnd: case LogicBAnd: case IntBOr: case LogicBOr: case IntBXor: case LogicBXor:
+  case PropositionAnd: case PropositionOr:
+    return parent != child;
+  default:
+    return true;
+  }
 }
 inline bool isSamePrecedence(const temporalOpe &o1,
                              const temporalOpe &o2) {

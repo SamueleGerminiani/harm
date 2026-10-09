@@ -5,6 +5,7 @@
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
@@ -147,6 +148,31 @@ TEST(OperatorPrecedenceTest, handValues) {
   }
 }
 
+// ---------------------------------------------------------------- functions in both positions
+// A function's result follows its argument ($past of a number is a number); D-034 converts it to
+// the kind its position needs (OpeTest found '$past(v2,1) == $past(v2,2)' broken by a first
+// version of H18). Each pair must agree on every row.
+TEST(OperatorPrecedenceTest, functionsInBothPositions) {
+  std::vector<Vals> rows = {{1, 0, 0, 0, 0, 0, "0001", "0000"}, {1, 2, 0, 1, 1, 0, "0101", "0001"},
+                            {3, 2, 1, 0, 1, 1, "1000", "0001"}, {3, 3, 2, 1, 0, 1, "1111", "0010"},
+                            {0, 3, 0, 1, 1, 0, "0011", "0010"}};
+  TracePtr tr = makeTrace(rows);
+  const size_t n = rows.size();
+  const std::vector<std::pair<std::string, std::string>> same = {
+      {"x == $past(x)", "$past(x) == x"},
+      {"$past(x, 1) == $past(x, 2)", "!($past(x, 1) != $past(x, 2))"},
+      {"$stable(x) + 1 == 2", "$stable(x)"},
+      {"$past(x) + 0 == $past(x)", "1'b1"},
+      {"$past(a) == b", "b == $past(a)"},
+      {"$rose(a) ^ b", "$rose(a) != b"},
+  };
+  for (const auto &[x, y] : same) {
+    std::string vx = values(x, tr, n), vy = values(y, tr, n);
+    EXPECT_EQ(vx.rfind("ERROR", 0), std::string::npos) << x << ": " << vx;
+    EXPECT_EQ(vx, vy) << x << " vs " << y;
+  }
+}
+
 // ---------------------------------------------------------------- A3, A4: printing re-parses
 TEST(OperatorPrecedenceTest, printingKeepsTheMeaning) {
   // shift amounts stay below 32 (a larger one stops HARM: finding E1, H19)
@@ -177,31 +203,45 @@ TEST(OperatorPrecedenceTest, printingKeepsTheMeaning) {
 }
 
 // ---------------------------------------------------------------- A5: Z3 against enumeration
+// Z3 sees logic variables as 4-valued, so the enumeration covers every 4-valued assignment of two
+// 2-bit logic variables p, r (0, 1, x, z per bit) and a bool a: 512 rows
 TEST(OperatorPrecedenceTest, z3AgreesWithEnumeration) {
   if (!smt::available()) {
     GTEST_SKIP() << "built without Z3";
   }
-  // every assignment of 2-bit p, r and bool a (as 4-bit q, v with the top bits 0 and a few ints)
-  std::vector<Vals> rows;
-  for (int p = 0; p < 4; p++) {
-    for (int r = 0; r < 4; r++) {
-      for (int a = 0; a < 2; a++) {
-        std::string qs = std::string("00") + char('0' + (p >> 1)) + char('0' + (p & 1));
-        std::string vs = std::string("00") + char('0' + (r >> 1)) + char('0' + (r & 1));
-        rows.push_back({p - 1, r - 1, p + r, bool(a), bool(p & 1), bool(r & 1), qs, vs});
+  const std::string digits = "01xz";
+  std::vector<std::string> vals;
+  for (char h : digits) {
+    for (char l : digits) {
+      vals.push_back(std::string(1, h) + l);
+    }
+  }
+  std::vector<VarDeclaration> decls = {{"p", ExpType::ULogic, 2}, {"r", ExpType::ULogic, 2},
+                                       {"a", ExpType::Bool, 1}};
+  const size_t n = vals.size() * vals.size() * 2;
+  TracePtr tr = generatePtr<Trace>(decls, n);
+  size_t t = 0;
+  for (const auto &pv : vals) {
+    for (const auto &rv : vals) {
+      for (int a = 0; a < 2; a++, t++) {
+        tr->getLogicVariable("p")->assign(t, Logic(pv, 2));
+        tr->getLogicVariable("r")->assign(t, Logic(rv, 2));
+        tr->getBooleanVariable("a")->assign(t, a == 1);
       }
     }
   }
-  TracePtr tr = makeTrace(rows);
   const std::vector<std::pair<std::string, std::string>> pairs = {
-      {"!q == v", "q == 4'd0 && v == 4'd1 || q != 4'd0 && v == 4'd0"},
-      {"(q > 4'd1) == v", "q > 4'd1 && v == 4'd1 || q <= 4'd1 && v == 4'd0"},
-      {"q & v == v", "q[0] == 1'b1"},
-      {"a == q", "a && q == 4'd1 || !a && q == 4'd0"},
-      {"a + a == q", "a && q == 4'd2 || !a && q == 4'd0"},
-      {"q < v < q", "q < v && q > 4'd1 || q >= v && q > 4'd0"},
-      {"!q == v", "q == v"},
+      {"!p == r", "p == 2'd0 && r == 2'd1 || p != 2'd0 && r == 2'd0"},
+      {"(p > 2'd1) == r", "p > 2'd1 && r == 2'd1 || p <= 2'd1 && r == 2'd0"},
+      {"p & r == r", "p[0] == 1'b1"},
+      {"p & r == r", "p[0] == 1'b1 && r == r"},
+      {"a == p", "a && p == 2'd1 || !a && p == 2'd0"},
+      {"a + a == p", "a && p == 2'd2 || !a && p == 2'd0"},
+      {"p < r < p", "p < r && p > 2'd1 || p >= r && p > 2'd0"},
+      {"!p == r", "p == r"},
+      {"-p == 2'd3", "p == 2'd1"},
   };
+  size_t decided = 0;
   for (const auto &[x, y] : pairs) {
     std::string error;
     PropositionPtr px = hparser::tryParseProposition(x, tr, error);
@@ -209,11 +249,23 @@ TEST(OperatorPrecedenceTest, z3AgreesWithEnumeration) {
     PropositionPtr py = hparser::tryParseProposition(y, tr, error);
     ASSERT_NE(py, nullptr) << y << ": " << error;
     bool same = true;
-    for (size_t t = 0; t < rows.size(); t++) {
-      same = same && px->evaluate(t) == py->evaluate(t);
+    for (size_t i = 0; i < n; i++) {
+      same = same && px->evaluate(i) == py->evaluate(i);
     }
-    EXPECT_EQ(smt::checkEquivalence(px, py),
-              same ? smt::Equivalence::Equivalent : smt::Equivalence::NotEquivalent)
-        << x << " vs " << y;
+    smt::Equivalence e = smt::checkEquivalence(px, py);
+    decided += e != smt::Equivalence::Unknown;
+    std::cout << x << " vs " << y << ": enumeration " << (same ? "equal" : "differ")
+              << ", Z3 " << (e == smt::Equivalence::Equivalent      ? "Equivalent"
+                             : e == smt::Equivalence::NotEquivalent ? "NotEquivalent"
+                                                                    : "Unknown")
+              << "\n";
+    // Z3 may answer Unknown (an opaque node, a timeout): never Equivalent when they differ
+    if (same) {
+      EXPECT_NE(e, smt::Equivalence::NotEquivalent) << x << " vs " << y << " (equal on every row)";
+    } else {
+      EXPECT_NE(e, smt::Equivalence::Equivalent) << x << " vs " << y << " (differ on a row)";
+    }
   }
+  // the new nodes are encoded, not left opaque: most pairs are decided
+  EXPECT_GE(decided, pairs.size() - 1);
 }

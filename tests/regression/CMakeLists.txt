@@ -10,6 +10,8 @@ function(harm_case name)
     set(labels regression)
     if(HC_SLOW)
         list(APPEND labels slow)
+    else()
+        list(APPEND labels parser)  # the fast baselines guard the language too
     endif()
 
     if(NOT HC_NO_BASELINE)
@@ -21,7 +23,7 @@ function(harm_case name)
 
     add_test(NAME determinism_${name}
         COMMAND bash ${REGRESSION_DIR}/determinism.sh $<TARGET_FILE:harm> ${HC_ARGS})
-    list(REMOVE_ITEM labels regression)
+    list(REMOVE_ITEM labels regression parser)
     list(APPEND labels determinism)
     # determinism runs HARM four times, two of them with 8 threads: never run them in parallel
     set_tests_properties(determinism_${name} PROPERTIES LABELS "${labels}" RUN_SERIAL TRUE)
@@ -478,7 +480,7 @@ if(PYTHON3_FOUND)
     foreach(mode exclusion order)
         add_test(NAME h17_${mode}
             COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h17.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} ${mode})
-        set_tests_properties(h17_${mode} PROPERTIES LABELS regression)
+        set_tests_properties(h17_${mode} PROPERTIES LABELS "regression;parser")
     endforeach()
 endif()
 
@@ -487,6 +489,6 @@ if(PYTHON3_FOUND)
     foreach(mode fixture examples)
         add_test(NAME h18_operators_${mode}
             COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} ${mode})
-        set_tests_properties(h18_operators_${mode} PROPERTIES LABELS regression)
+        set_tests_properties(h18_operators_${mode} PROPERTIES LABELS "regression;parser")
     endforeach()
 endif()

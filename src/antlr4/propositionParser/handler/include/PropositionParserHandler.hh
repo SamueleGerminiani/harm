@@ -139,12 +139,27 @@ private:
   void resolveFill(NumericPack &a, NumericPack &b);
   /// error if a fill literal never got a width
   void checkNoUnresolvedFill();
+  /// D-034: a number as a Boolean (true where it has a known 1 bit); a Boolean that was made a
+  /// number (BoolToLogic) is given back as it was, so that trees keep their pre-D-034 shape
+  expression::PropositionPtr toBool(NumericPack np);
+  /// D-034: a Boolean as a 1-bit number
+  NumericPack toNumber(const expression::PropositionPtr &p);
+  /// D-034: the comparison op (< <= > >= == != === !==) of two numbers, as a proposition
+  expression::PropositionPtr compare(NumericPack e1, NumericPack e2,
+                                     const std::string &op);
   virtual void
   exitStringAtom(propositionParser::StringAtomContext *ctx) override;
   void exitInt_constant(
       propositionParser::Int_constantContext *ctx) override;
   virtual void
   exitFloatAtom(propositionParser::FloatAtomContext *ctx) override;
+  virtual void enterNonTemporalFunction(
+      propositionParser::NonTemporalFunctionContext *ctx) override;
+  /// D-034: the sizes of the two stacks when a function starts: its result goes to the stack
+  /// of its argument's kind ($past of a number is a number), whatever the grammar position
+  std::unordered_map<propositionParser::NonTemporalFunctionContext *,
+                     std::pair<size_t, size_t>>
+      _functionStart;
   virtual void exitNonTemporalFunction(
       propositionParser::NonTemporalFunctionContext *ctx) override;
   virtual void

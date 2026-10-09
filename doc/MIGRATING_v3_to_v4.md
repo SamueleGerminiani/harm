@@ -65,6 +65,8 @@ On a vector declared in the VCD with a range other than `[n:0]` (e.g. `[1:10]` o
 | macOS arm64 mines the same assertions as Linux x86_64 (H12, F-M2) | among near-equal decision-tree scores, arm64 could keep a different antecedent (a fused multiply-subtract) |
 | The log files under concurrent writers (H11f, F-L9) | several HARM processes in one directory could crash |
 | `--check-dump-eval` files (H16, D-030) | files named after the assertion's text overwrote each other (`a != b` and `a <= b` both gave `G(a=b->...)`), a name over 255 bytes stopped HARM, and rows of an assertion without a shift had only `t` and `Ant`. v4 writes `<k>_<text>.csv` and `index.json`: **read the index** to find an assertion's file |
+| Operator precedence (H18, D-034) | `!x == y` read `!(x == y)`; `x & y == y` read `(x & y) == y`; `(x > 0) == y` read `(x > 0) == (y != 0)`. v4 reads them as C and SystemVerilog do. **If a configuration meant v3's reading, write the brackets** |
+| Printing (H18) | `x - (y - k)` printed `x - y - k` (a different value); `(x + y)[1:0]` printed `x + y[1:0]`; `!(q inside {..})` printed `!q inside {..}` |
 | Float `<numeric>` exclusions (H17) | `clustering="...,2E"` on a float compared 2 with the cycle index: it dropped the value at cycle 2 and kept `f == 2` |
 | `--vcd-dir`/`--csv-dir` order (H17, D-033) | the files were concatenated in the directory's order, which differs between machines; v4 uses path order |
 | Determinism of `--fd` (D-001) | the faulty traces were shuffled with a random seed, so `--find-min-subset` could change between runs |

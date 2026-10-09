@@ -44,6 +44,9 @@
   VIRTUAL void visit(IntBOr &o) OVVERIDE;                            \
   VIRTUAL void visit(IntBXor &o) OVVERIDE;                           \
   VIRTUAL void visit(IntNot &o) OVVERIDE;                            \
+  VIRTUAL void visit(IntNeg &o) OVVERIDE;                            \
+  VIRTUAL void visit(LogicNeg &o) OVVERIDE;                          \
+  VIRTUAL void visit(FloatNeg &o) OVVERIDE;                          \
   VIRTUAL void visit(IntEq &o) OVVERIDE;                             \
   VIRTUAL void visit(IntNeq &o) OVVERIDE;                            \
   VIRTUAL void visit(IntGreater &o) OVVERIDE;                        \

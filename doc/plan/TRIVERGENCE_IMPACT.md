@@ -257,6 +257,12 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **Trace directories in path order** (D-033): a multi-trace run (`--vcd-dir`/`--csv-dir`) numbers its cycles the same way on every machine. Mined assertions are unchanged.
 - **Float `<numeric>` exclusions** (`...,2E`) now exclude the value; nothing changes without a float exclusion.
 
+### H18: operators as in C and SystemVerilog (on `ms/H18-not-precedence`; D-034)
+- **Hints are now read as C and SystemVerilog read them:** `!x == y` is `(!x) == y`; `x & y == y` is `x & (y == y)`; `(x > 0) == y` compares numbers. Before, HARM read `!(x == y)`, `(x & y) == y`, `(x > 0) == (y != 0)`: an LLM-written hint in C/SV style could have meant something else to HARM. Hints written with explicit brackets are unaffected.
+- **Newly accepted in hints:** `x-1` without blanks, unary minus, comparisons as numbers, `bool` columns in arithmetic.
+- **HARM's printed propositions re-parse to themselves** (before, `x - (y - k)` printed as `x - y - k`, and `!(q inside {..})` as `!q inside {..}`, which SystemVerilog reads differently): SVA trivergence takes from HARM is now faithful in these cases.
+- **Not yet (H19):** shifts by at least the width stop HARM; signed/unsigned mixing follows C for `logic`.
+
 ---
 
 ## 3. Proposed changes to trivergence's `docs/plan/PLAN.md`
