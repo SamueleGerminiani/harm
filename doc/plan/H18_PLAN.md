@@ -15,6 +15,21 @@
 
 ## Findings
 
+**Cross-checked against the standards** (at the user's request: Icarus could be wrong). Every finding below matches IEEE Std 1800-2017 (the user's copy) and, for C, ISO/IEC 9899:201x draft N1570 (C11). Icarus agreed with the standard on every case used; where it rejected an expression (`!!x`, `~-x`), the standard agrees: a unary operator's operand is a `primary` (Annex A, A.8.3: `unary_operator { attribute_instance } primary`), so HARM accepting them is an extension, not a deviation.
+
+| Finding | IEEE 1800-2017 | C11 (N1570) |
+|---|---|---|
+| P1 `!` binds tightest | Table 11-2 (unary `! ~ + -` on the second row, below `() []`); §11.4.7: `!` yields 0, 1 or x | §6.5.3.3: `!E` is `(0 == E)`, type `int`; unary operators bind tighter than every binary one (§6.5 grammar) |
+| P2 `& ^ \|` below `==` | Table 11-2 | §6.5.10–6.5.12: `AND-expression & equality-expression` |
+| P3 comparisons are operators with a number as result | §11.4.4 (result 0 or 1; example `b - (1 < a)`); §11.8.1 (comparison results are unsigned) | §6.5.8, §6.5.9: result 0 or 1 of type `int`; `a < b < c` is legal |
+| P4 one level for `<< >>`, one for `== !=` | Table 11-2 ("operators on the same row have the same precedence") | §6.5.7, §6.5.9 grammars |
+| E1, E2 shifts | §11.4.10: the right operand is always unsigned; vacated bits are zero (a shift by ≥ the width gives 0) | §6.5.7 ¶3: a negative amount or one ≥ the width is **undefined**, so HARM may follow SystemVerilog without contradicting C |
+| E3 signedness | §11.4.4: "when one or both operands … are unsigned, … comparison between unsigned values", the smaller zero-extended; §11.8.1: "if any operand is unsigned, the result is unsigned" | §6.3.1.8 (usual arithmetic conversions): what HARM implements today for C types |
+| E4 `>>` on signed | §11.4.10: `>>` is logical (zero fill); `>>>` is arithmetic | §6.5.7 ¶5: a negative signed value shifted right is **implementation-defined** (arithmetic on GCC and Clang) |
+| E5 division by zero | §11.4.2: the result is x | §6.5.5: undefined |
+| E6 types | Table 6-8: `integer` is 4-state 32-bit signed, `time` 4-state 64-bit unsigned; `int unsigned` is a legal type | — |
+| R4 literal padding | §5.7.1: a literal shorter than its size is padded with x (or z) when its leftmost digit is x (or z), so `4'bx01` is `4'bxx01` | — |
+
 ### P: precedence (the parser)
 | # | Finding | Example: HARM reads / C and SV read |
 |---|---|---|
