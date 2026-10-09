@@ -252,7 +252,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **No change trivergence needs.** `--dump-prop-table <file>` is new and opt-in; nothing else in HARM's output changes.
 - **What it could use:** every proposition of a context (hint propositions, `origin`, numeric expansions) with its value at every sampled cycle, plus the trace's files and reset segments (`prop-table` v1, README). trivergence could read propositions' truth values per cycle from it instead of evaluating them itself, with HARM's x/z rule (D-011). The consumer it was made for is the miner portfolio's SAT miner (`~/miner-portfolio`, S1).
 
-### H17: findings left open by H15/H16 (on `ms/H17-open-findings`; D-032, D-033)
+### H17: findings left open by H15/H16 (on `dev`; D-032, D-033)
 - **Bitwise operators on CSV `bool`s** (D-032): hints written as `a ^ b`, `~a & c` over `bool` columns now parse (they stopped HARM before). VCD signals are `logic` and were never affected. In templates, `&` and `|` remain temporal.
 - **Trace directories in path order** (D-033): a multi-trace run (`--vcd-dir`/`--csv-dir`) numbers its cycles the same way on every machine. Mined assertions are unchanged.
 - **Float `<numeric>` exclusions** (`...,2E`) now exclude the value; nothing changes without a float exclusion.

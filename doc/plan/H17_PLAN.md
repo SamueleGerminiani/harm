@@ -1,6 +1,6 @@
 # H17 plan: the findings left open by H15 and H16
 
-*Status: approved 2026-10-09 by the user (F1 option (a); the ANTLR 4.13.2 download); implemented, awaiting review (VALIDATION, H17). F1 is implemented by marking the operand when variables are typed, not by a grammar predicate (the predicate broke `(a)`; D-032). Branch: `ms/H17-open-findings` (from `dev` @ `886e675`). Effort: 1–1.5 d, plus a full `ctest`. Linux `ctest` stays pending, as the user asked.*
+*Status: approved 2026-10-09 by the user (F1 option (a); the ANTLR 4.13.2 download); implemented (VALIDATION, H17); reviewed and merged into `dev` 2026-10-09. F1 is implemented by marking the operand when variables are typed, not by a grammar predicate (the predicate broke `(a)`; D-032). Branch: `ms/H17-open-findings` (from `dev` @ `886e675`). Effort: 1–1.5 d, plus a full `ctest`. Linux `ctest` stays pending, as the user asked.*
 
 Four findings, each reproduced on the Mac (`dev` @ `886e675`):
 
