@@ -4,7 +4,9 @@
 #include <gtest/gtest-message.h>
 #include <gtest/gtest-test-part.h>
 
+#include <chrono>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -123,4 +125,96 @@ TEST(LogTest, concurrentThreadsKeepOneValidLog) {
   }
   std::cout.rdbuf(saved);
   expectValidLog(slurp("warning.log"), threads * each);
+}
+
+// H21: a message is appended at a constant cost, not by rewriting the whole file
+namespace {
+
+// the record's time replaced by T, so that texts written at different times compare equal
+std::string withoutTimes(std::string s) {
+  const std::string key = "\"time\" : \"";
+  for (size_t p = s.find(key); p != std::string::npos; p = s.find(key, p + 1)) {
+    size_t b = p + key.size(), e = s.find('"', b);
+    s.replace(b, e - b, "T");
+  }
+  return s;
+}
+
+std::string warningRecord(const std::string &message) {
+  return "{\n\"time\" : \"T\",\n\"message\" : \"" + message + "\"}\n";
+}
+
+// silences the warnings' printing for the scope
+struct QuietCout {
+  std::streambuf *saved = std::cout.rdbuf();
+  std::ostringstream sink;
+  QuietCout() { std::cout.rdbuf(sink.rdbuf()); }
+  ~QuietCout() { std::cout.rdbuf(saved); }
+};
+
+} // namespace
+
+// A1: before, every warning read and rewrote the whole file (H19: a 21,636-line warning.log slowed
+// Z3EquivalenceTest 15-fold)
+TEST(LogTest, appendCostDoesNotGrowWithTheFile) {
+  InTempDir tmp;
+  const size_t before = 50000, added = 2000;
+  {
+    std::ofstream out("warning.log");
+    out << "[\n";
+    for (size_t i = 0; i < before; i++) {
+      out << (i ? ",\n" : "") << warningRecord("old warning " + std::to_string(i));
+    }
+    out << "]\n";
+  }
+  QuietCout quiet;
+  auto start = std::chrono::steady_clock::now();
+  for (size_t i = 0; i < added; i++) {
+    messageWarning("new warning " + std::to_string(i));
+  }
+  double seconds =
+      std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+  EXPECT_LT(seconds, 2.0);
+  expectValidLog(slurp("warning.log"), before + added);
+}
+
+// A2: the bytes are those written before H21
+TEST(LogTest, sameBytesAsBefore) {
+  InTempDir tmp;
+  {
+    QuietCout quiet;
+    messageWarning("first");
+    messageWarning("second");
+    messageWarning("third");
+  }
+  EXPECT_EQ(withoutTimes(slurp("warning.log")),
+            "[\n" + warningRecord("first") + ",\n" + warningRecord("second") + ",\n" +
+                warningRecord("third") + "]\n");
+  hlog::dumpErrorToFile("an error");
+  hlog::dumpErrorToFile("another", 2);
+  EXPECT_EQ(withoutTimes(slurp("error.log")),
+            "[\n{\n\"time\" : \"T\",\n\"message\" : \"an error\"\n}\n,\n"
+            "{\n\"time\" : \"T\",\n\"message\" : \"another\",\n\"errno\" : [\"2\",\"" +
+                std::string(strerror(2)) + "\"]\n}\n]\n");
+}
+
+// A3: a file that does not end with the line "]" (edited by hand, cut by a crash) is handled as
+// before: its last line is replaced
+TEST(LogTest, unterminatedFileKeepsTheOldBehaviour) {
+  InTempDir tmp;
+  for (std::string start : {std::string("[\n{\n\"time\" : \"T\",\n\"message\" : \"a\"}\n"),
+                            std::string("[\n") + warningRecord("b") + "x]\n",
+                            std::string("[\n") + warningRecord("c") + "]"}) {
+    { std::ofstream("warning.log") << start; }
+    {
+      QuietCout quiet;
+      messageWarning("new");
+    }
+    std::string kept = start.substr(0, start.rfind('\n', start.size() - 2) + 1);
+    if (start.back() != '\n') {
+      kept = start.substr(0, start.rfind('\n') + 1);
+    }
+    EXPECT_EQ(withoutTimes(slurp("warning.log")), kept + ",\n" + warningRecord("new") + "]\n")
+        << start;
+  }
 }
