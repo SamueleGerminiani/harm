@@ -265,6 +265,10 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Depends on:** H15, H16 · **Effort:** 1–1.5 d
 - **Scope:** bitwise `&`, `|`, `^`, `~` on CSV `bool` operands (a parse error today; D-032); float `<numeric>` exclusions compared with the cycle index instead of the value; a test for `--check-dump-eval`'s `"file": null`; `--vcd-dir`/`--csv-dir` sorted by path (D-033). Details and acceptance tests: `doc/plan/H17_PLAN.md`.
 
+### H18: `!` binds as in C and SystemVerilog
+- **Depends on:** H17 · **Effort:** 1.5–3 d
+- **Scope:** on numeric operands, `!` took the whole comparison or arithmetic after it (`!x == y` read `!(x == y)`); the user chose SystemVerilog precedence (option A). Related: a Boolean compared with a number, and `(!x) == y` printed as text that re-parses differently. Details and acceptance tests: `doc/plan/H18_PLAN.md`.
+
 ---
 
 ## 2. Dependencies and order
@@ -349,3 +353,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
+| H18 | `!` binds as in C and SystemVerilog (and Boolean-versus-number comparisons) | planned (`H18_PLAN.md`, awaiting approval) |
