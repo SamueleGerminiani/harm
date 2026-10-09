@@ -472,3 +472,12 @@ if(PYTHON3_FOUND)
         set_tests_properties(h15_prop_table_${mode} PROPERTIES LABELS regression)
     endforeach()
 endif()
+
+# ---- H17: findings left open by H15/H16 ---------------------------------------------------------------
+if(PYTHON3_FOUND)
+    foreach(mode exclusion order)
+        add_test(NAME h17_${mode}
+            COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h17.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} ${mode})
+        set_tests_properties(h17_${mode} PROPERTIES LABELS regression)
+    endforeach()
+endif()

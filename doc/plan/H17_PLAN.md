@@ -1,6 +1,6 @@
 # H17 plan: the findings left open by H15 and H16
 
-*Status: planned 2026-10-09, awaiting approval. Branch: `ms/H17-open-findings` (from `dev` @ `886e675`). Effort: 1–1.5 d, plus a full `ctest`. Linux `ctest` stays pending, as the user asked.*
+*Status: approved 2026-10-09 by the user (F1 option (a); the ANTLR 4.13.2 download). Branch: `ms/H17-open-findings` (from `dev` @ `886e675`). Effort: 1–1.5 d, plus a full `ctest`. Linux `ctest` stays pending, as the user asked.*
 
 Four findings, each reproduced on the Mac (`dev` @ `886e675`):
 
