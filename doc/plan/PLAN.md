@@ -368,4 +368,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H18 | Operator precedence and printing as in C and SystemVerilog (audit) | done |
 | H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | done |
 | H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | future work (plan in `H20_PLAN.md`, not scheduled) |
-| H21 | Leftovers from H19: log writes at a constant cost, a stale Z3 comment, `build-*/` ignored | planned (`H21_PLAN.md`, awaiting approval) |
+| H21 | Leftovers from H19: log writes at a constant cost, a stale Z3 comment, `build-*/` ignored | awaiting-review |

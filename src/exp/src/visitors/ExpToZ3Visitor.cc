@@ -542,7 +542,7 @@ void ExpToZ3Visitor::visit(IntNot &o) {
   o.getItems()[0]->acceptVisitor(*this);
   _ints.push_back(intNorm(~intAs(popInt(), o.getItems()[0]->getType(), t), t));
 }
-OPAQUE_INT(IntDiv) // division by zero aborts HARM
+OPAQUE_INT(IntDiv) // by zero, Z3 gives all ones or ±1; HARM gives 0 (D-035)
 #define INT_CMP(NODE, OP)                                            \
   void ExpToZ3Visitor::visit(NODE &o) {                              \
     o.getItems()[0]->acceptVisitor(*this);                           \
@@ -653,7 +653,7 @@ void ExpToZ3Visitor::visit(LogicVariable &o) {
 LOGIC_ARITH(LogicSum, SUM)
 LOGIC_ARITH(LogicSub, SUB)
 LOGIC_ARITH(LogicMul, MUL)
-OPAQUE_LOGIC(LogicDiv) // division by zero aborts HARM
+OPAQUE_LOGIC(LogicDiv) // by zero, Z3 gives all ones or ±1; HARM gives x (D-035)
 #define LOGIC_BITWISE(NODE, OP)                                      \
   void ExpToZ3Visitor::visit(NODE &o) {                              \
     o.getItems()[0]->acceptVisitor(*this);                           \

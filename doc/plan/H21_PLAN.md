@@ -1,6 +1,6 @@
 # H21 plan: leftovers from H19
 
-*Status: planned, awaiting approval. Branch: `ms/H21-leftovers` (from `dev` @ `ccf06e8`). Effort: 0.5 d, plus a full `ctest`. Linux: not scheduled (the user, 2026-10-10).*
+*Status: approved 2026-10-10 by the user. Implemented, awaiting review (VALIDATION, H21). Branch: `ms/H21-leftovers` (from `dev` @ `ccf06e8`). Effort: 0.5 d, plus a full `ctest`. Linux: not scheduled (the user, 2026-10-10).*
 
 | # | Leftover | From | Fix |
 |---|---|---|---|
