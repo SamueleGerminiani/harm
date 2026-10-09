@@ -78,7 +78,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **The test suite** has grown from 35 to about 230 tests, with independent oracles: brute-force enumeration, iverilog and Verilator simulation, Spot, and hand-labelled fixtures (the report's validation chapter).
 
 ## Known limitations
-- **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are H20 (optional).
+- **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are future work (H20, planned, not scheduled).
 - **The warning and error logs** (`warning.log`, `error.log`) are JSON arrays rewritten at their end on every message: in a working directory where they have grown large, a run that emits many warnings slows down (found in H19; delete them, or run in a fresh directory).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
 - **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions; on several thousand assertions they can take tens of minutes.
@@ -120,4 +120,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H17 | bitwise operators on `bool` (D-032), float exclusions, sorted trace directories (D-033) |
 | H18 | operators and printing as in C and SystemVerilog (D-034) |
 | H19 | evaluation and conversions as in SystemVerilog (D-035) |
-| H20 | (planned, optional) missing operators: `%`, `**`, reductions, `~^` |
+| H20 | (future work) missing operators: `%`, `**`, reductions, `~^` |
