@@ -269,9 +269,9 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Depends on:** H17 · **Effort:** 3–4 d
 - **Scope:** an audit of every operator against Icarus Verilog and C found precedence deviations (`!` on numerics, `&`/`^`/`|` above comparisons, comparisons not numeric, two levels for shifts and for `==`/`!=`), missing unary `-`, `x-1` unparsable, `bool` in arithmetic rejected, and printed text that re-parses differently (`x - (y - k)` prints `x - y - k`). H18 fixes the parser and the printer together; evaluation findings go to H19, missing operators to H20. Details: `doc/plan/H18_PLAN.md`.
 
-### H19: evaluation and conversions (planned with H18's audit)
+### H19: evaluation and conversions as in SystemVerilog
 - **Depends on:** H18 · **Effort:** 2–3 d
-- **Scope:** shifts by ≥ the width (or negative) stop HARM; the shift amount read at the operand's width; signed/unsigned rules for `logic` (SystemVerilog) and C types; `>>` on signed values; division by zero; cast bugs; literal printing (`4'b0x01` prints `4'bx01`). Details: `doc/plan/H18_PLAN.md` (findings E1–E6, R4).
+- **Scope:** H18's evaluation findings, re-measured: shifts by ≥ the width stop HARM; the shift amount is read at the operand's width; signed/unsigned rules (C's, also for `logic`); `>>` on signed values; division by zero (a crash for `logic`, platform-dependent for `int`); cast bugs; CSV `integer`/`time`/`int unsigned`; arithmetic with x giving a 1-bit x; literal printing that changes value or type. Decisions Q1–Q5 and acceptance tests: `doc/plan/H19_PLAN.md`.
 
 ### H20 (optional): missing SystemVerilog operators
 - **Scope:** `%`, `**`, reduction operators, `<<<`, `>>>`, `~^`. Details: `doc/plan/H18_PLAN.md` (L4).
@@ -361,5 +361,5 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
 | H18 | Operator precedence and printing as in C and SystemVerilog (audit) | done |
-| H19 | Evaluation and conversions (shifts, signedness, division by zero, casts, literal printing) | todo (after H18) |
+| H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | planned (`H19_PLAN.md`, awaiting approval) |
 | H20 | Missing SystemVerilog operators (optional) | todo |
