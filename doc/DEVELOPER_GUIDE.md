@@ -107,6 +107,8 @@ The parsers in `src/antlr4/*/grammar*/` are generated and committed. After chang
 ```
 cd src/antlr4 && bash regenerateAllParsers.sh /path/to/antlr-4.13.2-complete.jar
 ```
+
+`temporal.g4` imports `proposition.g4`, so a change to the proposition grammar means regenerating both (ANTLR also merges the imported grammar's `@parser::members` into the temporal parser). Avoid semantic predicates that look at neighbouring tokens: ANTLR ignores a predicate during prediction once a decision has consumed a token, which turns ambiguities into parse errors. Context that the grammar cannot express is better decided when the variables are typed (`addTypeToExp`), as for `bool` operands of bitwise operators (D-032).
 The VCD parser (`src/miner/modules/src/traceReader/vcdTraceReader/`) is bison/flex output, also committed; it was last regenerated with bison 3.8.2 (H11c).
 
 ### The tests

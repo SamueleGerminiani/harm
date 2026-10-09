@@ -26,15 +26,16 @@ public:
     SEREIMPL = 19, SEREIMPLO = 20, ASS = 21, DELAY = 22, SCOL = 23, FIRST_MATCH = 24, 
     TNOT = 25, TAND = 26, INTERSECT = 27, TOR = 28, BOOLEAN_CONSTANT = 29, 
     BOOLEAN_VARIABLE = 30, INT_VARIABLE = 31, CONST_SUFFIX = 32, LOGIC_VARIABLE = 33, 
-    FLOAT_CONSTANT = 34, FLOAT_VARIABLE = 35, SUBSTR = 36, STRING_CONSTANT = 37, 
-    STRING_VARIABLE = 38, LCURLY = 39, RCURLY = 40, LSQUARED = 41, RSQUARED = 42, 
-    LROUND = 43, RROUND = 44, INSIDE = 45, FUNCTION = 46, SINTEGER = 47, 
-    UINTEGER = 48, FLOAT = 49, GCC_BINARY = 50, HEX = 51, VERILOG_BASED = 52, 
-    FILL_LITERAL = 53, SINGLE_QUOTE = 54, PLUS = 55, MINUS = 56, TIMES = 57, 
-    DIV = 58, GT = 59, GE = 60, LT = 61, LE = 62, EQ = 63, NEQ = 64, CASE_EQ = 65, 
-    CASE_NEQ = 66, QUESTION = 67, BAND = 68, BOR = 69, BXOR = 70, NEG = 71, 
-    LSHIFT = 72, RSHIFT = 73, AND = 74, OR = 75, NOT = 76, COL = 77, DCOL = 78, 
-    DOLLAR = 79, RANGE = 80, CLS_TYPE = 81, WS = 82
+    BIT_VARIABLE = 34, FLOAT_CONSTANT = 35, FLOAT_VARIABLE = 36, SUBSTR = 37, 
+    STRING_CONSTANT = 38, STRING_VARIABLE = 39, LCURLY = 40, RCURLY = 41, 
+    LSQUARED = 42, RSQUARED = 43, LROUND = 44, RROUND = 45, INSIDE = 46, 
+    FUNCTION = 47, SINTEGER = 48, UINTEGER = 49, FLOAT = 50, GCC_BINARY = 51, 
+    HEX = 52, VERILOG_BASED = 53, FILL_LITERAL = 54, SINGLE_QUOTE = 55, 
+    PLUS = 56, MINUS = 57, TIMES = 58, DIV = 59, GT = 60, GE = 61, LT = 62, 
+    LE = 63, EQ = 64, NEQ = 65, CASE_EQ = 66, CASE_NEQ = 67, QUESTION = 68, 
+    BAND = 69, BOR = 70, BXOR = 71, NEG = 72, LSHIFT = 73, RSHIFT = 74, 
+    AND = 75, OR = 76, NOT = 77, COL = 78, DCOL = 79, DOLLAR = 80, RANGE = 81, 
+    CLS_TYPE = 82, WS = 83
   };
 
   enum {
@@ -731,6 +732,7 @@ public:
     Logic_constantContext *logic_constant();
     Int_constantContext *int_constant();
     antlr4::tree::TerminalNode *LOGIC_VARIABLE();
+    antlr4::tree::TerminalNode *BIT_VARIABLE();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;

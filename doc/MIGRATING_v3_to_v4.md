@@ -65,11 +65,13 @@ On a vector declared in the VCD with a range other than `[n:0]` (e.g. `[1:10]` o
 | macOS arm64 mines the same assertions as Linux x86_64 (H12, F-M2) | among near-equal decision-tree scores, arm64 could keep a different antecedent (a fused multiply-subtract) |
 | The log files under concurrent writers (H11f, F-L9) | several HARM processes in one directory could crash |
 | `--check-dump-eval` files (H16, D-030) | files named after the assertion's text overwrote each other (`a != b` and `a <= b` both gave `G(a=b->...)`), a name over 255 bytes stopped HARM, and rows of an assertion without a shift had only `t` and `Ant`. v4 writes `<k>_<text>.csv` and `index.json`: **read the index** to find an assertion's file |
+| Float `<numeric>` exclusions (H17) | `clustering="...,2E"` on a float compared 2 with the cycle index: it dropped the value at cycle 2 and kept `f == 2` |
+| `--vcd-dir`/`--csv-dir` order (H17, D-033) | the files were concatenated in the directory's order, which differs between machines; v4 uses path order |
 | Determinism of `--fd` (D-001) | the faulty traces were shuffled with a random seed, so `--find-min-subset` could change between runs |
 
 ## 3. What you can now use
 All opt-in; see the README for each.
-- **Propositions:** `8'd9`, `4'hA`, `'0`, `{a, b}`, `{4{a}}`, `?:`, `===`, `a.b`; invariant templates `G(P0)`; `--skip-invalid-props` to skip a proposition that does not parse.
+- **Propositions:** `8'd9`, `4'hA`, `'0`, `{a, b}`, `{4{a}}`, `?:`, `===`, `a.b`, bitwise operators on CSV `bool`s (`a ^ b`); invariant templates `G(P0)`; `--skip-invalid-props` to skip a proposition that does not parse.
 - **Fewer, non-redundant assertions:** `--reduce equiv` (equivalent propositions, Z3), `--reduce implies` (assertions implied by another one), `--atom-premises`, `--keep`, `--dump-implications`.
 - **Simulator semantics at the end of a trace:** `--trace-end sva`, if the mined SVA will be checked by a simulator (`s_eventually` still pending at the end fails).
 - **The RTL as a hint:** `harm-coi` computes cones of influence and harvests the RTL's predicates; `<coi mode="rank">` sorts by `coiFrac`/`coiDepthFit`, `<coi mode="filter">` prunes the search, `--dump-coi-report` lists the propositions outside each cone.

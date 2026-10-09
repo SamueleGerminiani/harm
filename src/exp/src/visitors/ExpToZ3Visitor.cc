@@ -527,6 +527,14 @@ void ExpToZ3Visitor::visit(IntToLogic &o) {
   _logics.push_back(LTerm{v, zero(), zero(), (unsigned)o.getType().second,
                           isSigned(o.getType().first), false});
 }
+void ExpToZ3Visitor::visit(BoolToLogic &o) {
+  // D-032: the bool as a 1-bit unsigned value, never x or z
+  see(1);
+  o.getItem()->acceptVisitor(*this);
+  z3::expr c = popBool();
+  _logics.push_back(LTerm{z3::ite(c, _ctx.bv_val(1, _U), zero()), zero(), zero(),
+                          1, false, false});
+}
 OPAQUE_INT(IntLShift)
 OPAQUE_INT(IntRShift)
 void ExpToZ3Visitor::visit(IntSetMembership &o) {

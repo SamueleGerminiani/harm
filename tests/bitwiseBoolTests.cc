@@ -189,12 +189,24 @@ TEST(BitwiseBoolTest, notAtomsStillRejected) {
     EXPECT_EQ(hparser::tryParseProposition(exp, tr, error), nullptr) << exp;
     EXPECT_FALSE(error.empty()) << exp;
   }
-  // what worked before is unchanged
-  for (std::string exp : {"a == b", "a != b", "a && b || c", "!a", "{a, p} == 2'b10"}) {
+  // what worked before is unchanged, parenthesised bools included (a first version, a grammar
+  // predicate, broke them: ANTLR ignores a predicate past the first token of a decision)
+  const std::vector<std::pair<std::string, std::string>> before = {
+      {"a == b", "a == b"},   {"a != b", "a != b"},       {"a && b || c", "a && b || c"},
+      {"!a", "!a"},           {"(a)", "a"},               {"!(a)", "!a"},
+      {"!((a))", "!a"},       {"c && !(a)", "c && !a"},   {"(a) == b", "a == b"},
+      {"!(a == b)", "!(a == b)"}};
+  for (const auto &[exp, printed] : before) {
     std::string error;
     PropositionPtr p = hparser::tryParseProposition(exp, tr, error);
     ASSERT_NE(p, nullptr) << exp << ": " << error;
+    EXPECT_EQ(prop2String(p), printed) << exp;
   }
+  // in templates, & stays temporal
+  hlog::ScopedThrowOnError throwOnError;
+  auto ti = hparser::parseTemplateImplication("G(a & b -> c)", tr, DTLimits(), false);
+  EXPECT_EQ(temp2String(ti->getTemplateFormula(), Language::SpotLTL, PrintMode::ShowAll),
+            "G({a & b} -> c)");
   EXPECT_EQ(prop2String(parse("{a, p} == 2'b10", tr)), "{(a ? 1'b1 : 1'b0), p} == 2'b10");
 }
 

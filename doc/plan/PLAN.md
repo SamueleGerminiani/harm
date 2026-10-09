@@ -348,4 +348,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
-| H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | in-progress (plan approved 2026-10-09) |
+| H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | awaiting-review |

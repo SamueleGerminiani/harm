@@ -344,10 +344,54 @@ void replaceIdentifiers(
   }
   formula = out;
 }
+
+/// D-032: «x,bool» becomes «x,bit» (a 1-bit logic for the parser) where it is an operand of a
+/// bitwise operator: the nearest non-blank character before it is ^ or ~, or a single & or |, or
+/// the nearest one after it is ^, or a single & or |; and the character before it is not !. A
+/// doubled && or ||, and |-> or |=>, do not count; in templates & and | are temporal operators.
+void markBitwiseBoolOperands(std::string &formula, bool inTemplate) {
+  const std::string tag = ",bool»";
+  auto isBlank = [](char c) { return c == ' ' || c == '\t' || c == '\n'; };
+  // the operator character at i is a single & or | (not && / ||, not |-> / |=>)
+  auto singleAndOr = [&](size_t i) {
+    char c = formula[i];
+    if (inTemplate || (c != '&' && c != '|')) {
+      return false;
+    }
+    bool before = i > 0 && formula[i - 1] == c;
+    bool after = i + 1 < formula.size() &&
+                 (formula[i + 1] == c || formula[i + 1] == '-' || formula[i + 1] == '=');
+    return !before && !after;
+  };
+  size_t pos = 0;
+  while ((pos = formula.find(tag, pos)) != std::string::npos) {
+    size_t start = formula.rfind("«", pos);
+    size_t end = pos + tag.size();
+    size_t b = start;
+    while (b > 0 && isBlank(formula[b - 1])) {
+      b--;
+    }
+    size_t a = end;
+    while (a < formula.size() && isBlank(formula[a])) {
+      a++;
+    }
+    bool opBefore = b > 0 && (formula[b - 1] == '^' || formula[b - 1] == '~' ||
+                              singleAndOr(b - 1));
+    bool opAfter = a < formula.size() && (formula[a] == '^' || singleAndOr(a));
+    // after !, the variable stays a bool: '!a ^ b' would read as '!(a ^ b)', since HARM's ! binds
+    // looser than ^ (unlike SystemVerilog); it is an error instead
+    bool notBefore = b > 0 && formula[b - 1] == '!';
+    if (start != std::string::npos && !notBefore && (opBefore || opAfter)) {
+      formula.replace(pos, tag.size(), ",bit»");
+    }
+    pos = end;
+  }
+}
 } // namespace
 
 void addTypeToExp(std::string &formula,
-                  std::vector<harm::VarDeclaration> varDeclarations) {
+                  std::vector<harm::VarDeclaration> varDeclarations,
+                  bool inTemplate) {
 
   // match the longest variables first to solve (3)
   std::sort(begin(varDeclarations), end(varDeclarations),
@@ -418,6 +462,7 @@ void addTypeToExp(std::string &formula,
   }
   //replace all the variables in the formula (whole identifiers only)
   replaceIdentifiers(varSubstitutions, formula);
+  markBitwiseBoolOperands(formula, inTemplate);
   //        debug
   //       std::cout << "After: " << formula << "\n";
 }

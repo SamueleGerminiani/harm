@@ -1067,3 +1067,20 @@ The tests were written first and committed failing in `359ba5c` (the option did 
 - **Cost** (`bl_master10k`, its configuration without templates, 10,000 cycles, 20 propositions of which 9 from numerics): 2.20 s with the table, 2.14 s without; 203 KB.
 - **Observed:** `--vcd-dir` concatenated `t1.vcd` before `t0.vcd` (the directory's order, recorded in PLAN §H15 "not in scope"); the table's `traces` records it.
 - **Linux:** pending, as for the earlier milestones.
+
+## H17: findings left open by H15 and H16 (2026-10-09, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0, ANTLR tool 4.13.2)
+The tests were written first and committed in `807aed3`: `BitwiseBoolTest`, `h17_exclusion`, `h17_order` failing; `CheckDumpTest` passing (it covers a code path that already existed; F3 was a test gap).
+
+| Test | Result |
+|---|---|
+| A1 `BitwiseBoolTest.valuesEqualTheReference`: 14 propositions (`a ^ b`, `a & b`, `a \| b`, `~a`, `~a ^ b`, `a ^ b ^ c`, `a & b \| c`, `a \| b & c`, `a ^ b & c`, `a ^ p`, `p & a`, `a ^ v`, `a & v`, `v \| b`) on 144 rows (all `a, b, c`; `p` 0/1/x; six 4-bit `v`, two with x), against a SystemVerilog reference written in the test (1-bit operands, zero-extension, true on a known 1 bit) | pass, 14 × 144 |
+| A2 `BitwiseBoolTest`: each prints back as written and re-parses to the same values; `G(a ^ b -> c)`, `G(~a ^ b -> c)`, `G(a ^ v -> c)` print `always (... \|-> c)` and give the reference verdict; `(a && b) ^ c`, `!a ^ b`, `(a) ^ b` are errors; ten forms that parsed before (`(a)`, `!(a)`, `(a) == b`, `c && !(a)`, …) parse and print as before; `G(a & b -> c)` is still `G({a & b} -> c)`; Z3 against enumeration on 7 pairs (`a ^ b` ≡ `a != b`, `a & b` ≡ `a && b`, `~a` ≡ `!a`, `a ^ b` ≢ `a \| b`, …) | pass |
+| A3 `h17_exclusion`: float `f` and int `i`: with `2E`, no `f == 2`; `2.0E` the same; `5E` (cycle 5 holds 7.25) excludes nothing; `2E,9.5E` with `5E` on `i` | pass (before: `f == 2` kept, the value at the excluded cycle index dropped) |
+| A4 `CheckDumpTest`: the dump directory is a regular file; two assertions: no exit, a warning each, two `"file": null` records with context and texts | pass |
+| A5 `h17_order`: `traces` in path order for `examples/multiTrace/csv` (6 files), `examples/process/traces` (20), and a VCD directory written `t1, t0, t2` | pass (before: `counter5, counter4, counter1, …`; `t2, t1, t0`); `regression_multiTrace`, `regression_process`, `regression_process_trace_end_sva` byte-identical |
+| A6 full `ctest` on the Mac | 240 of 240, `h14_doc_coverage` included; the H0 baselines byte-identical |
+
+- **Found by the full suite, fixed:** the first implementation of F1 was a semantic predicate in `proposition.g4` that looked at the neighbouring tokens. `Z3EquivalenceTest` failed (55 of 56 hand-labelled pairs parsed): `!(flag)` with a `bool` `flag` was a parse error. ANTLR ignores a predicate during prediction once a decision has consumed a token, so in `(a)` the "numeric in parentheses" alternative looked viable, won the ambiguity (lower alternative number), and then failed when the predicate was evaluated; `(a) == b` and `c && !(a)` failed the same way. F1 now marks the operand when the variables are typed (`«a,bit»`, a lexer token read only as a `logicAtom`; D-032), which adds no ambiguity. The forms that broke are now in `BitwiseBoolTest`.
+- **ANTLR tool:** 4.13.2 from Maven Central (SHA-1 `7df86c341abb175a0f4b76a7845074cc45f82ff8`, equal to Maven's). Regenerating the unchanged grammars first reproduced the committed parsers byte for byte.
+- **Recorded, not changed:** HARM's `!` binds looser than `^` and the comparisons: `!p ^ q` with `logic` operands reads `!(p ^ q)` (printed with the brackets), where SystemVerilog reads `(!p) ^ q`. It predates v4. For `bool` operands, `!a ^ b` is an error instead.
+- **Linux:** pending, as the user decided.

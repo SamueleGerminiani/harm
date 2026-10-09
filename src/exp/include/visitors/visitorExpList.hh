@@ -54,6 +54,7 @@
   VIRTUAL void visit(IntToBool &o) OVVERIDE;                         \
   VIRTUAL void visit(IntToFloat &o) OVVERIDE;                        \
   VIRTUAL void visit(IntToLogic &o) OVVERIDE;                        \
+  VIRTUAL void visit(BoolToLogic &o) OVVERIDE;                       \
   VIRTUAL void visit(IntLShift &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRShift &o) OVVERIDE;                         \
   VIRTUAL void visit(IntSetMembership &o) OVVERIDE;                  \

@@ -154,7 +154,7 @@ The user can find several working examples in the "examples" directory.
 
 * clock is the signal used to sample time (every posedge).
 * config.xml is the configuration file containing propositions and templates.
-* Use --vcd-dir <DIRECTORY> to give as input a set of .vcd traces
+* Use --vcd-dir <DIRECTORY> to give as input a set of .vcd traces (concatenated in path order, D-033)
 * IMPORTANT: see the options --vcd-ss and --vcd-r to make harm capture the correct VCD scope and signals
 
 ## Run with a csv trace
@@ -162,7 +162,7 @@ The user can find several working examples in the "examples" directory.
 ```
 ./harm --csv trace.csv --conf config.xml
 ```
-* Use --csv-dir <DIRECTORY> to give as input a set of .csv traces
+* Use --csv-dir <DIRECTORY> to give as input a set of .csv traces (concatenated in path order, D-033)
 * Note that you do not have to specify a clock signal when using a csv file, as each row is already considered a clock event.
 * A CSV trace must contain the declaration of the design's variables in the first row, following a C/Verilog style.
 	
@@ -281,6 +281,7 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 | Replication | `{2{q4}}`, `{4{1'b0}}` | |
 | Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
 | Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
+| Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). The operand must be the variable or constant itself: `(a && b) ^ c` and `!a ^ b` are errors (HARM's `!` binds looser than `^`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so only `^` and `~` work inline there. See D-032. |
 | Hierarchical names | `u_core.state` | The same as `u_core::state` (the name used in VCD traces). |
 | Bit and part selects | `asc[2]`, `off[6:3] == 4'd9` | On a vector with a declared range in the VCD (`[1:10]`, `[10:3]`, `[7:0]`), the indices are SystemVerilog's: inside the range and in its direction, otherwise an error. Assertions print them as written. Without a declared range (CSV traces), an index is a bit position counted from the right, from 0. Packed multi-dimensional vectors are seen flattened (`[1:0][3:0]` is `[7:0]`). Bit-blasted vectors (one VCD `$var` per bit) take the highest index as the MSB. See D-028. |
 
@@ -337,7 +338,7 @@ The `<numeric>` element allows you to automatically generate propositions using 
 | :--- | :--- |
 | **K** | Use the **K-means** algorithm. |
 | **C** | Use an algorithm to generate all **contiguous subsequences** of integer/logic data. |
-| **\<N\>E** | **Exclude** the value `<N>` from clustering. Can be used multiple times.<br>_Note: `<N>` must be a base-10 integer or float._ |
+| **\<N\>E** | **Exclude** the value `<N>` from clustering. Can be used multiple times.<br>_Note: `<N>` must be a base-10 integer or float; for a float numeric it is compared as a number (`2E` and `2.0E` exclude 2.0)._ |
 | **\<N\>Max** | Keep only the **top N** generated propositions (ranked by support). |
 | **\<F\>WCSS** | **Elbow Method:** Stop K-means when variance reduction drops below `<F>` (float between 0-1). |
 | **==** | Generate propositions of the form: `<numeric-exp> == c` |
@@ -708,7 +709,7 @@ Harm produces three main types of textual outputs:
 
 * **`--dump-prop-table <FILE>`**
     Write the proposition table (`prop-table` v1, D-031) as JSON: for every context, its propositions and the value HARM's evaluator gives each at every cycle of the trace. It is written when the configuration has been read, before mining, and changes nothing else; for the table alone, a configuration without templates is enough. It is what the miner portfolio's SAT miner reads instead of the traces.
-    - **Header:** `format` (`prop-table`), `version` (`1`), `harm` (the version), `sampling` (`{"input": "vcd", "clock": <--clk>, "edge": "posedge", "values": "preponed"}`: the values just before each rising edge, D-005; or `{"input": "csv"}`: a row is a cycle), `length` (cycles), `traces` (each input file, in the order they were concatenated, with its `first` and `last` cycle), `segments` (the trace's cuts as `[first, last]`: the end of each file and, with `--reset`, of each reset interval). With `--vcd-dir`/`--csv-dir`, read the files' order from `traces`: it is the order the directory listed them in.
+    - **Header:** `format` (`prop-table`), `version` (`1`), `harm` (the version), `sampling` (`{"input": "vcd", "clock": <--clk>, "edge": "posedge", "values": "preponed"}`: the values just before each rising edge, D-005; or `{"input": "csv"}`: a row is a cycle), `length` (cycles), `traces` (each input file, in the order they were concatenated, with its `first` and `last` cycle), `segments` (the trace's cuts as `[first, last]`: the end of each file and, with `--reset`, of each reset interval). With `--vcd-dir`/`--csv-dir`, the files are in path order (D-033).
     - **Per context:** `propositions`, each with `id`, `text` (Spot LTL, as in `--dump-assertion-info`), `domains` (`a`, `c`, `ac`, `dt` or a domain number), `source` (`prop` or `numeric`, with `numeric` the numeric it was expanded from), `origin` (or `null`), and `values`: one character per cycle, `1` where the proposition is true, else `0` (x/z as in "x and z values"). A text listed twice in the configuration is one entry, with the union of its domains.
     - **`unexpanded_numerics`:** numerics with a bracketed domain (`loc="[dt]"`) are clustered by the decision tree while it mines, differently for every template, so they have no propositions in the table. Write `loc="dt"` to have them expanded over the whole trace, and listed.
 

@@ -21,6 +21,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
   - a mined bit selection kept its bounds: v3 printed and evaluated `r[7:4]` as `r[4:7]` (H1, finding F10);
   - a variable name no longer corrupts a literal that contains it (`a` in `0xa`, `x` in `'b1x0`; H1, F9);
   - a template with more placeholders than propositions in their domain no longer hangs HARM (H7);
+  - a float `<numeric>`'s excluded values (`clustering="...,2E"`) are compared with the values: v3 compared them with the cycle index, so it kept `f == 2` and dropped the value at cycle 2 instead (H17);
+  - `--vcd-dir` and `--csv-dir` concatenate the files in path order (D-033), not the directory's order, which differs between machines; the cycle numbering of a multi-trace run (`--dump-prop-table`, failing sub-traces) is the same everywhere. The mined assertions did not depend on it;
   - on macOS arm64, the same assertions as on Linux x86_64 (H12, F-M2). v3 could choose a different decision-tree antecedent among near-equal scores, because GCC fused a multiply-subtract on arm64. The fix changes nothing on Linux x86_64.
 
 ## New in propositions (H1)
@@ -33,6 +35,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **`--skip-invalid-props`:** skips a proposition that does not parse, with a warning, instead of stopping.
 - **x/z values** follow HARM's documented rule, not SystemVerilog's: README, "x and z values" (D-011, H1b).
 - **`origin="…"`** on `<prop>` and `<numeric>`, free text (e.g. `spec`, `rtl`), reported by `--dump-assertion-info` and `--dump-coi-report`.
+- **Bitwise operators on CSV `bool` operands** (H17, D-032): `a ^ b`, `~a & c`, `a ^ q4`, as in SystemVerilog (v3 stopped with a parse error).
 
 ## New options
 | Option | What it does |
@@ -107,3 +110,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H13 | profiling opt-in (`HARM_PROFILE`) |
 | H15 | `--dump-prop-table` (D-031) |
 | H16 | `--check-dump-eval` file names and `index.json` (D-030) |
+| H17 | bitwise operators on `bool` (D-032), float exclusions, sorted trace directories (D-033) |

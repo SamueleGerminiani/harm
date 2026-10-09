@@ -78,6 +78,13 @@ template <> void LogicToInt::initEvaluate() {
   disableCache();
 }
 
+template <> void BoolToLogic::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    return Logic(1, false, (ULogic)(_e->evaluate(time) ? 1 : 0), 0, 0);
+  };
+  disableCache();
+}
+
 //-----constructors-----
 
 //int
@@ -156,6 +163,14 @@ FloatToLogic::TypeCast(FloatExpressionPtr e)
   initEvaluate();
 }
 
+//bool
+template <>
+BoolToLogic::TypeCast(PropositionPtr e)
+    : LogicExpression(ExpType::ULogic, 1, e->getMaxTime()), _e(e) {
+
+  initEvaluate();
+}
+
 //------------------acceptVisitor------------------
 template <> void IntToFloat::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
@@ -182,6 +197,9 @@ template <> void FloatToInt::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
 template <> void FloatToLogic::acceptVisitor(ExpVisitor &vis) {
+  vis.visit(*this);
+}
+template <> void BoolToLogic::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
 

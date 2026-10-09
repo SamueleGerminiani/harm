@@ -536,6 +536,12 @@ void PropositionParserHandler::exitLogicAtom(
     auto name = getVariableName(exp, "logic");
     _numericExpressions.push(_trace->getLogicVariable(name));
 
+  } else if (ctx->BIT_VARIABLE() != nullptr) {
+    // D-032: a bool operand of a bitwise operator, as a 1-bit unsigned logic
+    auto name = getVariableName(exp, "bit");
+    _numericExpressions.push(
+        generatePtr<BoolToLogic>(_trace->getBooleanVariable(name)));
+
   } else if (ctx->int_constant() != nullptr) {
     //already handled in exitIntConstant
   } else if (ctx->logic_constant() != nullptr) {

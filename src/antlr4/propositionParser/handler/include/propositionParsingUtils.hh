@@ -11,8 +11,11 @@ class VarDeclaration;
 } // namespace harm
 
 namespace hparser {
+/// @param inTemplate & and | are temporal operators in templates: only ^ and ~ mark a bool
+/// variable as a bitwise operand there (D-032)
 void addTypeToExp(std::string &formula,
-                  std::vector<harm::VarDeclaration> varDeclarations);
+                  std::vector<harm::VarDeclaration> varDeclarations,
+                  bool inTemplate = false);
 
 expression::PropositionPtr parseProposition(std::string formula,
                                             const harm::TracePtr &trace);

@@ -118,6 +118,7 @@ logicAtom
     : logic_constant
     | int_constant
     | LOGIC_VARIABLE
+    | BIT_VARIABLE
     ;
 
 
@@ -129,6 +130,12 @@ logic_constant
 
 LOGIC_VARIABLE
     : START_VAR VARIABLE ',logic' END_VAR
+    ;
+
+// D-032: a bool variable that is an operand of a bitwise operator, as a 1-bit logic (marked by
+// addTypeToExp, so no other parse changes)
+BIT_VARIABLE
+    : START_VAR VARIABLE ',bit' END_VAR
     ;
 
 floatAtom
