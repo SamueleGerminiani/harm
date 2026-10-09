@@ -51,7 +51,7 @@ parse(std::string formula, const harm::TracePtr &trace,
       bool useCache) {
 
   auto decls = trace->getDeclarations();
-  addTypeToExp(formula, decls);
+  addTypeToExp(formula, decls, true);
 
   // parse typed propositions
   std::shared_ptr<hparser::TemporalParserHandler> listener =

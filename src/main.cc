@@ -167,6 +167,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(clc::traceFiles.empty(),
                    "No vcd trace found in: " +
                        result["vcd-dir"].as<std::string>());
+    // D-033: path order, not the directory's (unspecified) order
+    std::sort(clc::traceFiles.begin(), clc::traceFiles.end());
   } else if (result.count("csv-dir")) {
     messageErrorIf(!std::filesystem::is_directory(
                        result["csv-dir"].as<std::string>()),
@@ -182,6 +184,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(clc::traceFiles.empty(),
                    "No csv trace found in: " +
                        result["csv-dir"].as<std::string>());
+    // D-033: path order, not the directory's (unspecified) order
+    std::sort(clc::traceFiles.begin(), clc::traceFiles.end());
   }
 
   if (result.count("reset")) {

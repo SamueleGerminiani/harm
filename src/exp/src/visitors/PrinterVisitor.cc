@@ -286,6 +286,7 @@ EXP_OPE(IntRShift)
 TYPE_CAST(IntToFloat)
 TYPE_CAST(IntToBool)
 TYPE_CAST(IntToLogic)
+TYPE_CAST(BoolToLogic) // D-032: printed as the bool operand itself
 UNARY_FUNCTION(IntPast)
 UNARY_FUNCTION(IntStable)
 UNARY_FUNCTION(IntRose)
