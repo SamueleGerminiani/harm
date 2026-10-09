@@ -265,9 +265,16 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Depends on:** H15, H16 · **Effort:** 1–1.5 d
 - **Scope:** bitwise `&`, `|`, `^`, `~` on CSV `bool` operands (a parse error today; D-032); float `<numeric>` exclusions compared with the cycle index instead of the value; a test for `--check-dump-eval`'s `"file": null`; `--vcd-dir`/`--csv-dir` sorted by path (D-033). Details and acceptance tests: `doc/plan/H17_PLAN.md`.
 
-### H18: `!` binds as in C and SystemVerilog
-- **Depends on:** H17 · **Effort:** 1.5–3 d
-- **Scope:** on numeric operands, `!` took the whole comparison or arithmetic after it (`!x == y` read `!(x == y)`); the user chose SystemVerilog precedence (option A). Related: a Boolean compared with a number, and `(!x) == y` printed as text that re-parses differently. Details and acceptance tests: `doc/plan/H18_PLAN.md`.
+### H18: operator precedence and printing as in C and SystemVerilog
+- **Depends on:** H17 · **Effort:** 3–4 d
+- **Scope:** an audit of every operator against Icarus Verilog and C found precedence deviations (`!` on numerics, `&`/`^`/`|` above comparisons, comparisons not numeric, two levels for shifts and for `==`/`!=`), missing unary `-`, `x-1` unparsable, `bool` in arithmetic rejected, and printed text that re-parses differently (`x - (y - k)` prints `x - y - k`). H18 fixes the parser and the printer together; evaluation findings go to H19, missing operators to H20. Details: `doc/plan/H18_PLAN.md`.
+
+### H19: evaluation and conversions (planned with H18's audit)
+- **Depends on:** H18 · **Effort:** 2–3 d
+- **Scope:** shifts by ≥ the width (or negative) stop HARM; the shift amount read at the operand's width; signed/unsigned rules for `logic` (SystemVerilog) and C types; `>>` on signed values; division by zero; cast bugs; literal printing (`4'b0x01` prints `4'bx01`). Details: `doc/plan/H18_PLAN.md` (findings E1–E6, R4).
+
+### H20 (optional): missing SystemVerilog operators
+- **Scope:** `%`, `**`, reduction operators, `<<<`, `>>>`, `~^`. Details: `doc/plan/H18_PLAN.md` (L4).
 
 ---
 
@@ -353,4 +360,6 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
-| H18 | `!` binds as in C and SystemVerilog (and Boolean-versus-number comparisons) | planned (`H18_PLAN.md`, awaiting approval) |
+| H18 | Operator precedence and printing as in C and SystemVerilog (audit) | planned (`H18_PLAN.md`, findings and split awaiting approval) |
+| H19 | Evaluation and conversions (shifts, signedness, division by zero, casts, literal printing) | todo (after H18) |
+| H20 | Missing SystemVerilog operators (optional) | todo |

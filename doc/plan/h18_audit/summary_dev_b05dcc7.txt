@@ -1,0 +1,29 @@
+('boolnum', 'HARM error') 3
+('boolnum', 'value') 5
+('conv', 'HARM error') 157
+('conv', 'value') 69
+('prec', 'HARM error') 23
+('prec', 'value') 58
+('prefix', 'HARM error') 42
+('prefix', 'value') 28
+('width', 'HARM error') 1
+('width', 'value') 1
+
+-- precedence (bracketed SV reading agrees, bare does not): operator pairs
+
+-- HARM errors (messages)
+   65  ERROR: Antlr parse error: «a,bool»
+   37  ERROR: Antlr parse error: -
+   25  ERROR: Antlr parse error: «x,int»
+   20  ERROR: right side of right bit shift is greater than left side size, 
+   19  ERROR: right side of left bit shift is greater than left side size, 
+    9  ERROR: Antlr parse error: «u,int»
+    9  ERROR: Antlr parse error: «q,logic»
+    9  ERROR: Antlr parse error: «w,logic»
+    9  ERROR: Antlr parse error: «s,logic»
+    7  ERROR: Antlr parse error: «f,float»
+    7  ERROR: right side of left bit shift must be positive, 
+    7  ERROR: right side of right bit shift must be positive, 
+    1  ERROR: Antlr parse error: ~
+    1  ERROR: Antlr parse error: !
+    1  ERROR: Antlr parse error: (
