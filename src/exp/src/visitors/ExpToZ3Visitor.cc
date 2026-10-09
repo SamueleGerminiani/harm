@@ -489,6 +489,17 @@ INT_BINARY(IntMul, *)
 INT_BINARY(IntBAnd, &)
 INT_BINARY(IntBOr, |)
 INT_BINARY(IntBXor, ^)
+void ExpToZ3Visitor::visit(IntNeg &o) {
+  // D-034: exact on 64-bit ints (two's complement), opaque otherwise, as ~
+  if (o.getType().second != 64) {
+    opaqueInt(text(o));
+    return;
+  }
+  o.getItems()[0]->acceptVisitor(*this);
+  _ints.push_back(-popInt());
+}
+OPAQUE_LOGIC(LogicNeg)
+OPAQUE_FLOAT(FloatNeg)
 void ExpToZ3Visitor::visit(IntNot &o) {
   if (o.getType().second != 64) {
     opaqueInt(text(o));

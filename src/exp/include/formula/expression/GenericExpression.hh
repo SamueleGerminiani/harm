@@ -113,6 +113,8 @@ using FloatSum = GenericExpression<ope::ope::FloatSum,
                                    FloatExpression, FloatExpression>;
 using FloatSub = GenericExpression<ope::ope::FloatSub,
                                    FloatExpression, FloatExpression>;
+using FloatNeg = GenericExpression<ope::ope::FloatNeg,
+                                   FloatExpression, FloatExpression>;
 using FloatMul = GenericExpression<ope::ope::FloatMul,
                                    FloatExpression, FloatExpression>;
 using FloatDiv = GenericExpression<ope::ope::FloatDiv,
@@ -160,6 +162,9 @@ using IntLessEq = GenericExpression<ope::ope::IntLessEq,
                                     IntExpression, Proposition>;
 using IntNot =
     GenericExpression<ope::ope::IntNot, IntExpression, IntExpression>;
+/// D-034: unary minus
+using IntNeg =
+    GenericExpression<ope::ope::IntNeg, IntExpression, IntExpression>;
 using IntLShift = GenericExpression<ope::ope::IntLShift,
                                     IntExpression, IntExpression>;
 using IntRShift = GenericExpression<ope::ope::IntRShift,
@@ -201,6 +206,8 @@ using LogicLess = GenericExpression<ope::ope::LogicLess,
 using LogicLessEq = GenericExpression<ope::ope::LogicLessEq,
                                       LogicExpression, Proposition>;
 using LogicNot = GenericExpression<ope::ope::LogicNot,
+                                   LogicExpression, LogicExpression>;
+using LogicNeg = GenericExpression<ope::ope::LogicNeg,
                                    LogicExpression, LogicExpression>;
 using LogicLShift =
     GenericExpression<ope::ope::LogicLShift, LogicExpression,
@@ -260,6 +267,9 @@ using IntGreaterEqPtr = std::shared_ptr<IntGreaterEq>;
 using IntLessPtr = std::shared_ptr<IntLess>;
 using IntLessEqPtr = std::shared_ptr<IntLessEq>;
 using IntNotPtr = std::shared_ptr<IntNot>;
+using IntNegPtr = std::shared_ptr<IntNeg>;
+using LogicNegPtr = std::shared_ptr<LogicNeg>;
+using FloatNegPtr = std::shared_ptr<FloatNeg>;
 using IntLShiftPtr = std::shared_ptr<IntLShift>;
 using IntRShiftPtr = std::shared_ptr<IntRShift>;
 using LogicSumPtr = std::shared_ptr<LogicSum>;

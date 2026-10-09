@@ -118,6 +118,8 @@ std::string PrinterVisitor::get() {
 #define EXP_OPE(NODE)                                                \
   void PrinterVisitor::visit(expression::NODE &o) {                  \
     auto parent_op = _ope_stack.top();                               \
+    bool asRight = _rightOperand;                                    \
+    _rightOperand = false;                                           \
     _ope_stack.push(ope::ope::NODE);                                 \
     auto &items = o.getItems();                                      \
     auto iterStop = items.end();                                     \
@@ -128,13 +130,15 @@ std::string PrinterVisitor::get() {
                                                                      \
     bool putBrakets =                                                \
         items.size() > 1 &&                                          \
-        hasHigherPrecedence(parent_op, ope::ope::NODE);              \
+        (hasHigherPrecedence(parent_op, ope::ope::NODE) ||           \
+         (asRight && needsBracketsAsRight(parent_op, ope::ope::NODE)));\
     if (putBrakets) {                                                \
       _ss << selCol("(", BOOL("("));                                 \
     }                                                                \
     if (items.size() > 1) {                                          \
       --iterStop;                                                    \
       for (; iter != iterStop; ++iter) {                             \
+        _rightOperand = false;                                       \
         (*iter)->acceptVisitor(*this);                               \
         _ss << " "                                                   \
             << selCol(opeToString(ope::NODE),                        \
@@ -142,11 +146,38 @@ std::string PrinterVisitor::get() {
             << " ";                                                  \
       }                                                              \
     }                                                                \
+    /* the last item is a right operand (D-034) */                   \
+    _rightOperand = items.size() > 1;                                \
     (*iter)->acceptVisitor(*this);                                   \
+    _rightOperand = false;                                           \
     if (putBrakets) {                                                \
       _ss << selCol(")", BOOL(")"));                                 \
     }                                                                \
     _ope_stack.pop();                                                \
+  }
+
+// D-034: x inside {...} has the precedence of a relational operator; the values print in the
+// order written, without a trailing blank
+#define SET_MEMBERSHIP(NODE)                                         \
+  void PrinterVisitor::visit(NODE &o) {                              \
+    auto parent_op = _ope_stack.top();                               \
+    bool asRight = _rightOperand;                                    \
+    _rightOperand = false;                                           \
+    bool putBrakets =                                                \
+        hasHigherPrecedence(parent_op, ope::ope::NODE) ||            \
+        (asRight && needsBracketsAsRight(parent_op, ope::ope::NODE));\
+    if (putBrakets) {                                                \
+      _ss << selCol("(", BOOL("("));                                 \
+    }                                                                \
+    _ope_stack.push(ope::ope::NODE);                                 \
+    o.getItem()->acceptVisitor(*this);                               \
+    std::string kw = " " + ope::opeToString(ope::ope::NODE) + " ";   \
+    _ss << selCol(kw, BOOL(kw));                                     \
+    _ss << selCol(o.valuesToString(), VAR(o.valuesToString()));      \
+    _ope_stack.pop();                                                \
+    if (putBrakets) {                                                \
+      _ss << selCol(")", BOOL(")"));                                 \
+    }                                                                \
   }
 
 #define TYPE_CAST(NODE)                                              \
@@ -154,8 +185,16 @@ std::string PrinterVisitor::get() {
     o.getItem()->acceptVisitor(*this);                               \
   }
 
+// D-034: a select binds tighter than every operator: its operand is bracketed unless it is a
+// primary (the Select pseudo-operator is tighter than every class)
 #define EXP_OPE_BIT_SELECTION(NODE)                                  \
   void PrinterVisitor::visit(expression::NODE &o) {                  \
+    _rightOperand = false;                                           \
+    _ope_stack.push(ope::ope::Select);                               \
+    printSelected(o);                                                \
+    _ope_stack.pop();                                                \
+  }                                                                  \
+  void PrinterVisitor::printSelected(expression::NODE &o) {          \
     if (o.getSourceLeft() >= 0) {                                    \
       /* the SystemVerilog indices as written (D-028) */             \
       o.getItem()->acceptVisitor(*this);                             \
@@ -212,20 +251,48 @@ UNARY_FUNCTION(PropositionStable)
 UNARY_FUNCTION(PropositionRose)
 UNARY_FUNCTION(PropositionFell)
 
-void PrinterVisitor::visit(expression::PropositionNot &o) {
-  _ope_stack.push(ope::ope::PropositionNot);
-  _ss << selCol(opeToString(ope::PropositionNot),
-                BOOL(opeToString(ope::PropositionNot)));
-  o.getItems()[0]->acceptVisitor(*this);
+// D-034: a prefix operator binds tighter than every binary operator, so a binary operand gets
+// brackets (through _ope_stack); a unary minus over a negation or a negative constant gets them
+// too, so that '--' (decrement in SystemVerilog) is never printed
+template <typename N> void PrinterVisitor::printPrefix(N &o, ope::ope op) {
+  _rightOperand = false;
+  _ope_stack.push(op);
+  _ss << selCol(opeToString(op), BOOL(opeToString(op)));
+  auto child = o.getItems()[0];
+  bool minus = op == ope::ope::IntNeg || op == ope::ope::LogicNeg ||
+               op == ope::ope::FloatNeg;
+  std::string childText;
+  if (minus) {
+    PrinterVisitor pv(_lang, false, _printMode);
+    child->acceptVisitor(pv);
+    childText = pv.get();
+  }
+  bool brackets = minus && !childText.empty() && childText[0] == '-';
+  if (brackets) {
+    _ss << selCol("(", BOOL("("));
+  }
+  child->acceptVisitor(*this);
+  if (brackets) {
+    _ss << selCol(")", BOOL(")"));
+  }
   _ope_stack.pop();
 }
 
+void PrinterVisitor::visit(expression::PropositionNot &o) {
+  printPrefix(o, ope::ope::PropositionNot);
+}
+
 void PrinterVisitor::visit(expression::IntNot &o) {
-  _ope_stack.push(ope::ope::IntNot);
-  _ss << selCol(opeToString(ope::IntNot),
-                BOOL(opeToString(ope::IntNot)));
-  o.getItems()[0]->acceptVisitor(*this);
-  _ope_stack.pop();
+  printPrefix(o, ope::ope::IntNot);
+}
+void PrinterVisitor::visit(expression::IntNeg &o) {
+  printPrefix(o, ope::ope::IntNeg);
+}
+void PrinterVisitor::visit(expression::LogicNeg &o) {
+  printPrefix(o, ope::ope::LogicNeg);
+}
+void PrinterVisitor::visit(expression::FloatNeg &o) {
+  printPrefix(o, ope::ope::FloatNeg);
 }
 
 // float
@@ -247,22 +314,7 @@ TYPE_CAST(FloatToBool)
 UNARY_FUNCTION(FloatStable)
 UNARY_FUNCTION(FloatPast)
 
-void PrinterVisitor::visit(FloatSetMembership &o) {
-  _ope_stack.push(ope::ope::FloatSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::FloatSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::FloatSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(FloatSetMembership)
 
 // int
 VARIABLE(IntVariable)
@@ -292,21 +344,7 @@ UNARY_FUNCTION(IntStable)
 UNARY_FUNCTION(IntRose)
 UNARY_FUNCTION(IntFell)
 
-void PrinterVisitor::visit(IntSetMembership &o) {
-  _ope_stack.push(ope::ope::IntSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::IntSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::IntSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(IntSetMembership)
 
 // logic
 VARIABLE(LogicVariable)
@@ -388,29 +426,10 @@ UNARY_FUNCTION(LogicRose)
 UNARY_FUNCTION(LogicFell)
 
 void PrinterVisitor::visit(expression::LogicNot &o) {
-  _ope_stack.push(ope::ope::LogicNot);
-  _ss << selCol(opeToString(ope::LogicNot),
-                BOOL(opeToString(ope::LogicNot)));
-  o.getItems()[0]->acceptVisitor(*this);
-  _ope_stack.pop();
+  printPrefix(o, ope::ope::LogicNot);
 }
 
-void PrinterVisitor::visit(LogicSetMembership &o) {
-  _ope_stack.push(ope::ope::LogicSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::LogicSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::LogicSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(LogicSetMembership)
 
 //string
 STRING_CONSTANT(StringConstant)

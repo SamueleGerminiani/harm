@@ -1,0 +1,2 @@
+seed=7 rows=40 cases=1212
+Icarus Verilog version 12.0 (stable) ()

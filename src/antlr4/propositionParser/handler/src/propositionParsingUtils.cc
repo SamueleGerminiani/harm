@@ -345,43 +345,66 @@ void replaceIdentifiers(
   formula = out;
 }
 
-/// D-032: «x,bool» becomes «x,bit» (a 1-bit logic for the parser) where it is an operand of a
-/// bitwise operator: the nearest non-blank character before it is ^ or ~, or a single & or |, or
-/// the nearest one after it is ^, or a single & or |; and the character before it is not !. A
-/// doubled && or ||, and |-> or |=>, do not count; in templates & and | are temporal operators.
+/// D-032, D-034: «x,bool» becomes «x,bit» (a 1-bit logic for the parser) where it is an operand
+/// of a numeric operator: the nearest non-blank character before or after it belongs to an
+/// arithmetic, shift, comparison or bitwise operator (* / + - << >> < <= > >= == != === !== ^ ~,
+/// a single & or |). Template arrows (->, |->, |=>) do not count; nor do && and ||; in templates a
+/// single & or | is a temporal operator. A bool used only as a Boolean (a, !a, a && b) is unchanged.
 void markBitwiseBoolOperands(std::string &formula, bool inTemplate) {
   const std::string tag = ",bool»";
   auto isBlank = [](char c) { return c == ' ' || c == '\t' || c == '\n'; };
-  // the operator character at i is a single & or | (not && / ||, not |-> / |=>)
-  auto singleAndOr = [&](size_t i) {
-    char c = formula[i];
+  auto at = [&](long i) { return i >= 0 && i < (long)formula.size() ? formula[i] : '\0'; };
+  // the character at i is a single & or | (not && / ||, not |-> / |=>), outside templates
+  auto singleAndOr = [&](long i) {
+    char c = at(i);
     if (inTemplate || (c != '&' && c != '|')) {
       return false;
     }
-    bool before = i > 0 && formula[i - 1] == c;
-    bool after = i + 1 < formula.size() &&
-                 (formula[i + 1] == c || formula[i + 1] == '-' || formula[i + 1] == '=');
-    return !before && !after;
+    return at(i - 1) != c && at(i + 1) != c && at(i + 1) != '-' && at(i + 1) != '=';
+  };
+  // the operator ending at i (just before an operand)
+  auto opEndsAt = [&](long i) {
+    char c = at(i);
+    switch (c) {
+    case '^': case '~': case '*': case '/': case '+': case '<': case '=':
+      return true;
+    case '-':
+      return true; // binary or unary minus ('->' ends with '>')
+    case '>':
+      return at(i - 1) != '-' && at(i - 1) != '='; // not -> or |=>
+    default:
+      return singleAndOr(i);
+    }
+  };
+  // the operator starting at i (just after an operand)
+  auto opStartsAt = [&](long i) {
+    char c = at(i);
+    switch (c) {
+    case '^': case '*': case '/': case '+': case '<': case '>':
+      return true;
+    case '=':
+      return at(i + 1) == '='; // ==, ===
+    case '!':
+      return at(i + 1) == '='; // !=, !==
+    case '-':
+      return at(i + 1) != '>'; // not ->
+    default:
+      return singleAndOr(i);
+    }
   };
   size_t pos = 0;
   while ((pos = formula.find(tag, pos)) != std::string::npos) {
     size_t start = formula.rfind("«", pos);
     size_t end = pos + tag.size();
-    size_t b = start;
-    while (b > 0 && isBlank(formula[b - 1])) {
+    long b = (long)start - 1;
+    while (b >= 0 && isBlank(formula[b])) {
       b--;
     }
     size_t a = end;
     while (a < formula.size() && isBlank(formula[a])) {
       a++;
     }
-    bool opBefore = b > 0 && (formula[b - 1] == '^' || formula[b - 1] == '~' ||
-                              singleAndOr(b - 1));
-    bool opAfter = a < formula.size() && (formula[a] == '^' || singleAndOr(a));
-    // after !, the variable stays a bool: '!a ^ b' would read as '!(a ^ b)', since HARM's ! binds
-    // looser than ^ (unlike SystemVerilog); it is an error instead
-    bool notBefore = b > 0 && formula[b - 1] == '!';
-    if (start != std::string::npos && !notBefore && (opBefore || opAfter)) {
+    if (start != std::string::npos && (opEndsAt(b) || opStartsAt((long)a))) {
       formula.replace(pos, tag.size(), ",bit»");
     }
     pos = end;

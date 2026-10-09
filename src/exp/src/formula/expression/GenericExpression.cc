@@ -31,6 +31,7 @@ VISITOR_CALL(PropositionNot, Proposition, Proposition)
 // float
 VISITOR_CALL(FloatSum, FloatExpression, FloatExpression)
 VISITOR_CALL(FloatSub, FloatExpression, FloatExpression)
+VISITOR_CALL(FloatNeg, FloatExpression, FloatExpression)
 VISITOR_CALL(FloatMul, FloatExpression, FloatExpression)
 VISITOR_CALL(FloatDiv, FloatExpression, FloatExpression)
 VISITOR_CALL(FloatEq, FloatExpression, Proposition)
@@ -43,6 +44,7 @@ VISITOR_CALL(FloatLessEq, FloatExpression, Proposition)
 // int
 VISITOR_CALL(IntSum, IntExpression, IntExpression)
 VISITOR_CALL(IntSub, IntExpression, IntExpression)
+VISITOR_CALL(IntNeg, IntExpression, IntExpression)
 VISITOR_CALL(IntMul, IntExpression, IntExpression)
 VISITOR_CALL(IntDiv, IntExpression, IntExpression)
 VISITOR_CALL(IntBAnd, IntExpression, IntExpression)
@@ -61,6 +63,7 @@ VISITOR_CALL(IntRShift, IntExpression, IntExpression)
 // logic
 VISITOR_CALL(LogicSum, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicSub, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicNeg, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicMul, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicDiv, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicBAnd, LogicExpression, LogicExpression)
@@ -614,6 +617,37 @@ void GenericExpression<ope::ope::IntNot, IntExpression,
   };
   disableCache();
 }
+// D-034: unary minus, at the operand's type (as ~ is)
+template <>
+void GenericExpression<ope::ope::IntNeg, IntExpression,
+                       IntExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 1,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[0]->getType());
+    if (resType.first == ExpType::SInt) {
+      auto res = -(SInt)_items[0]->evaluate(time);
+      RESIZES(res, resType);
+      return (UInt)res;
+    } else {
+      auto res = (UInt)0 - (UInt)_items[0]->evaluate(time);
+      RESIZEU(res, resType);
+      return res;
+    }
+  };
+  disableCache();
+}
+template <>
+void GenericExpression<ope::ope::FloatNeg, FloatExpression,
+                       FloatExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 1,
+                   "size==" + std::to_string(_items.size()));
+    return -_items[0]->evaluate(time);
+  };
+  disableCache();
+}
 template <>
 void GenericExpression<ope::ope::IntLShift, IntExpression,
                        IntExpression>::initEvaluate() {
@@ -945,6 +979,21 @@ void GenericExpression<ope::ope::LogicLessEq, LogicExpression,
   disableCache();
 }
 
+template <>
+void GenericExpression<ope::ope::LogicNeg, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 1,
+                   "size==" + std::to_string(_items.size()));
+    auto resType = applyCStandardConversion(_items[0]->getType(),
+                                            _items[0]->getType());
+    // 0 - v at the operand's width (x/z as in subtraction)
+    Logic v = _items[0]->evaluate(time);
+    Logic zero(resType.second, isSigned(resType.first), 0, 0, 0);
+    return sub(zero, v, resType);
+  };
+  disableCache();
+}
 template <>
 void GenericExpression<ope::ope::LogicNot, LogicExpression,
                        LogicExpression>::initEvaluate() {

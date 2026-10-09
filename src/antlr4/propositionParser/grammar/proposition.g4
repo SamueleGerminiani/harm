@@ -17,26 +17,26 @@ numericTernary
     ;
 
 // ------------------------------------------ BOOLEAN
+// D-034: operators bind as in C and SystemVerilog (IEEE 1800-2017 Table 11-2). Comparisons are
+// numeric operators (rule numeric), so only &&, ||, ! and == / != between Booleans are here.
+// ANTLR resolves an ambiguity with the lowest alternative, so the order of the primaries matters:
+//  - booleanAtom and the bracketed Boolean come before numeric: '(a)' and 'a' stay Booleans;
+//  - numeric comes before the bracketed Boolean ternary: '(c ? v : w) == u' compares numbers;
+//  - numeric comes before NOT: '!x == y' is the numeric '(!x) == y', not '!(x == y)';
+//  - NOT comes before the binary operators, so it binds tighter than they do.
 boolean
-    : NOT boolean
+    : booleanAtom
     | nonTemporalFunction
-    | numeric INSIDE LCURLY ((sm_constant | sm_range) ',')* (sm_constant | sm_range) RCURLY
-    | numeric relop numeric
-    | numeric EQ numeric
-    | numeric NEQ numeric
-    | numeric CASE_EQ numeric
-    | numeric CASE_NEQ numeric
     | string relop string
     | string EQ string
     | string NEQ string
-    | boolean EQ boolean
-    | boolean NEQ boolean
+    | LROUND boolean RROUND
+    | numeric
+    | LROUND booleanTernary RROUND
+    | NOT boolean
+    | boolean eqop=(EQ | NEQ) boolean
     | boolean booleanop=AND boolean
     | boolean booleanop=OR boolean
-    | booleanAtom
-    | numeric
-    | LROUND boolean RROUND
-    | LROUND booleanTernary RROUND
     ;
 
 
@@ -56,14 +56,18 @@ BOOLEAN_VARIABLE
     ;
 
 // ------------------------------------------ NUMERIC
+// D-034, from the tightest: selects; unary ~ ! - +; * /; + -; << >>; < <= > >= inside;
+// == != === !==; &; ^; |. A comparison (and a numeric !) gives a 1-bit unsigned value.
 numeric
-    : NEG numeric 
+    : numeric range
+    | unop=(NEG | NOT | MINUS | PLUS) numeric
     | nonTemporalFunction
-    | numeric range 
-    | numeric artop=(TIMES|DIV) numeric
-    | numeric artop=(PLUS|MINUS) numeric
-    | numeric logop=LSHIFT numeric
-    | numeric logop=RSHIFT numeric
+    | numeric artop=(TIMES | DIV) numeric
+    | numeric artop=(PLUS | MINUS) numeric
+    | numeric logop=(LSHIFT | RSHIFT) numeric
+    | numeric relop numeric
+    | numeric INSIDE LCURLY ((sm_constant | sm_range) ',')* (sm_constant | sm_range) RCURLY
+    | numeric eqop=(EQ | NEQ | CASE_EQ | CASE_NEQ) numeric
     | numeric logop=BAND numeric
     | numeric logop=BXOR numeric
     | numeric logop=BOR numeric
@@ -73,6 +77,8 @@ numeric
     | concatenation
     | LROUND numeric RROUND
     | LROUND numericTernary RROUND
+    // a Boolean used as a number (1 bit); after the numeric bracket, so that '(x)' stays numeric
+    | LROUND boolean RROUND
     ;
 
 // at least two items (or a replication), so that '{a}' stays a SERE in temporal formulas
@@ -85,7 +91,7 @@ concatItem
     | booleanAtom
     ;
 
-range: LSQUARED (SINTEGER | UINTEGER) (COL (SINTEGER | UINTEGER))? RSQUARED;
+range: LSQUARED UINTEGER (COL UINTEGER)? RSQUARED;
 
 sm_range: LSQUARED (numeric | min_dollar) COL (numeric | max_dollar) RSQUARED;
 min_dollar: DOLLAR;
@@ -100,7 +106,6 @@ intAtom
 
 int_constant
     : GCC_BINARY
-    | SINTEGER CONST_SUFFIX?
     | UINTEGER CONST_SUFFIX?
     | HEX
     ;
@@ -240,17 +245,15 @@ fragment VALID_ID_CHAR
 
 
 //==== Token constant ==========================================================
-    SINTEGER
-    : '-' ('0' .. '9')+
-    ;
-
+    // D-034: no sign in number tokens: 'x-1' is x, minus, 1 (a negative literal is a unary minus,
+    // folded into the constant)
     UINTEGER
     : ('0' .. '9')+
     ;
 
     FLOAT
-    : '-'? ('0' .. '9')+ '.' ('0' .. '9')+
-    | '-'? ('0' .. '9')+ '.f'
+    : ('0' .. '9')+ '.' ('0' .. '9')+
+    | ('0' .. '9')+ '.f'
     ;
 
     

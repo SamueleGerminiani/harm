@@ -57,6 +57,13 @@ protected:
   PrintMode _printMode;
   /// @brief Stack of operators visited in the expression
   std::stack<ope::ope> _ope_stack;
+  /// @brief D-034: true while printing the right operand of a binary operator
+  bool _rightOperand = false;
+  /// @brief D-034: a select, with its operand bracketed unless it is a primary
+  void printSelected(expression::IntBitSelector &o);
+  void printSelected(expression::LogicBitSelector &o);
+  /// @brief D-034: a prefix operator (!, ~, -)
+  template <typename N> void printPrefix(N &o, ope::ope op);
   /// @brief Stack of temporal operators visited in the expression
   std::stack<ope::temporalOpe> _temporal_ope_stack;
   /// @brief see setPropositionSubstitution
