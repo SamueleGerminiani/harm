@@ -1,6 +1,6 @@
 # H18 plan: operator precedence, conversions and printing, audited against C and SystemVerilog
 
-*Status: approved 2026-10-09 by the user: option A (`!` as in C/SystemVerilog), Q1 (b) (a 2-valued numeric `!`), Q2 (a) (a Boolean compared with a number compares numerically), the audit's split into H18/H19/H20, Q3 (a) (`&`/`^`/`|` below comparisons). Branch: `ms/H18-not-precedence` (from `dev` @ `b05dcc7`). Linux `ctest` stays pending. Implemented, awaiting review (VALIDATION, H18).*
+*Status: approved 2026-10-09 by the user: option A (`!` as in C/SystemVerilog), Q1 (b) (a 2-valued numeric `!`), Q2 (a) (a Boolean compared with a number compares numerically), the audit's split into H18/H19/H20, Q3 (a) (`&`/`^`/`|` below comparisons). Branch: `ms/H18-not-precedence` (from `dev` @ `b05dcc7`). Linux `ctest` stays pending. Implemented (VALIDATION, H18); reviewed and merged into `dev` 2026-10-09.*
 
 ## How the audit was done
 - **Differential test** (`doc/plan/h18_audit/audit.py`, measured on `dev` @ `b05dcc7`): 1,154 expressions evaluated by HARM (`--dump-prop-table`, one HARM run per expression) and by Icarus Verilog 12 (SystemVerilog) on 40 rows of random 2-valued values (`bool`, `int`, `unsigned int`, `logic [3:0]`, `logic [7:0]`, `logic signed [3:0]`, `float`/`real`):
