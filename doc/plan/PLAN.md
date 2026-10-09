@@ -277,6 +277,10 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Depends on:** H19 · **Effort:** 2 d · **Status:** kept as future work by the user (2026-10-10)
 - **Scope:** `%`, `**`, reduction operators, binary `~^`/`^~`, mixed-case C hex constants (`<<<` and `>>>` were done in H19). Decisions Q1–Q3 and acceptance tests: `doc/plan/H20_PLAN.md`.
 
+
+### H21: leftovers from H19
+- **Depends on:** H19 · **Effort:** 0.5 d
+- **Scope:** the logs rewritten whole on every message (a cost that grows with the file); a stale comment in the Z3 encoding; `build-mac/` untracked. Details and acceptance tests: `doc/plan/H21_PLAN.md`.
 ---
 
 ## 2. Dependencies and order
@@ -364,3 +368,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H18 | Operator precedence and printing as in C and SystemVerilog (audit) | done |
 | H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | done |
 | H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | future work (plan in `H20_PLAN.md`, not scheduled) |
+| H21 | Leftovers from H19: log writes at a constant cost, a stale Z3 comment, `build-*/` ignored | planned (`H21_PLAN.md`, awaiting approval) |
