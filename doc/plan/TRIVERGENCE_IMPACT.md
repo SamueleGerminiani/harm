@@ -263,7 +263,7 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **HARM's printed propositions re-parse to themselves** (before, `x - (y - k)` printed as `x - y - k`, and `!(q inside {..})` as `!q inside {..}`, which SystemVerilog reads differently): SVA trivergence takes from HARM is now faithful in these cases.
 - **Not yet (H19):** shifts by at least the width stop HARM; signed/unsigned mixing follows C for `logic`.
 
-### H19: evaluation as in SystemVerilog (on `ms/H19-evaluation`; D-035)
+### H19: evaluation as in SystemVerilog (on `dev`; D-035)
 - **HARM now evaluates propositions as the simulators and formal tools trivergence uses do** (signedness, context-determined widths, 32-bit decimal literals, logical `>>`, shifts by the width or more give 0): an assertion HARM mines holds in simulation on the same values, apart from D-011's x/z rule.
 - **No crash any more** on shifts by large amounts or on `logic` divisions by zero (HARM stopped or aborted, losing the run).
 - **Printed literals re-parse to the same value and type**: an unsigned C constant prints as a sized literal (`0x1F` as `8'b11111`); trivergence's normalisation of HARM's SVA may see this new form.
