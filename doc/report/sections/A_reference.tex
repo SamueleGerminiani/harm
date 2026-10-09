@@ -83,6 +83,7 @@ D-031 & the proposition table, \code|prop-table| v1 & H15 \\
 D-032 & bitwise operators on \code|bool| operands & H17 \\
 D-033 & trace directories in path order & H17 \\
 D-034 & operators bind and convert as in C and SystemVerilog & H18 \\
+D-035 & evaluation and conversions as in SystemVerilog & H19 \\
 \bottomrule
 \end{longtable}
 
@@ -126,7 +127,7 @@ H15 & the proposition table, \opt{dump-prop-table} & --- \\
 H16 & \opt{check-dump-eval} file names & overwrites, exit on long names (trivergence) \\
 H17 & bitwise operators on \code|bool|, float exclusions, sorted trace directories & float exclusions by cycle index \\
 H18 & operators and printing as in C and SystemVerilog & precedence of \code|!|, \code|& ^ \|| and comparisons; printing that re-parsed differently \\
-H19 & (planned) evaluation and conversions & --- \\
+H19 & evaluation and conversions as in SystemVerilog & shifts and divisions that stopped HARM; C's signedness rules for \code|logic| \\
 H20 & (planned, optional) missing operators & --- \\
 \bottomrule
 \end{longtable}

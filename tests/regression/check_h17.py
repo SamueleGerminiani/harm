@@ -29,13 +29,14 @@ def table(args, conf_text, d):
 
 if mode == "exclusion":
     # f: 1.5, 2.0, 2.0, 3.0, 9.5, 7.25 (7.25 only at cycle 5); i: 7, 5, 5, 7, 5, 7
-    ALL = {"f == 1.5", "f == 2", "f == 3", "f == 9.5", "f == 7.25"}
+    # H19 (D-035): a real prints with its decimal point
+    ALL = {"f == 1.5", "f == 2.0", "f == 3.0", "f == 9.5", "f == 7.25"}
     cases = [  # (float option, int option, expected f propositions, expected i propositions)
         ("", "", ALL, {"i == 5", "i == 7"}),
-        (",2E", "", ALL - {"f == 2"}, {"i == 5", "i == 7"}),
-        (",2.0E", "", ALL - {"f == 2"}, {"i == 5", "i == 7"}),
+        (",2E", "", ALL - {"f == 2.0"}, {"i == 5", "i == 7"}),
+        (",2.0E", "", ALL - {"f == 2.0"}, {"i == 5", "i == 7"}),
         (",5E", "", ALL, {"i == 5", "i == 7"}),          # no value 5.0: nothing excluded (cycle 5 holds 7.25)
-        (",2E,9.5E", ",5E", ALL - {"f == 2", "f == 9.5"}, {"i == 7"}),
+        (",2E,9.5E", ",5E", ALL - {"f == 2.0", "f == 9.5"}, {"i == 7"}),
     ]
     with tempfile.TemporaryDirectory() as d:
         for fopt, iopt, want_f, want_i in cases:

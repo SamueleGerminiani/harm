@@ -43,6 +43,11 @@ public:
   ope::ope getOperator() override { return ope::ope::Ternary; }
 
   PropositionPtr &getCondition() { return _cond; }
+  /// @brief D-035: the type of the context (SystemVerilog's context-determined width and sign)
+  void setType(ExpType type, size_t size) {
+    this->_type = type;
+    this->_size = size;
+  }
   GenericPtr<ET> &getWhenTrue() { return _whenTrue; }
   GenericPtr<ET> &getWhenFalse() { return _whenFalse; }
 
@@ -85,6 +90,26 @@ template <typename ET> void Ternary<ET>::initEvaluate() {
   directEvaluate = [this](size_t time) {
     return _cond->evaluate(time) ? _whenTrue->evaluate(time)
                                  : _whenFalse->evaluate(time);
+  };
+  disableCache();
+}
+
+/// D-035: integer branches are extended from their own width to the result's type: sign-extended
+/// when both are signed, zero-extended otherwise (IEEE 1800-2017 11.8.2)
+template <> inline void Ternary<IntExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    auto &b = _cond->evaluate(time) ? _whenTrue : _whenFalse;
+    UInt raw = b->evaluate(time);
+    auto own = b->getType(), type = this->getType();
+    size_t w = std::min<size_t>(own.second, 64), rw = std::min<size_t>(type.second, 64);
+    if (w < 64) {
+      bool sx = isSigned(type.first) && isSigned(own.first) && ((raw >> (w - 1)) & 1);
+      raw = sx ? raw | ~((UInt(1) << w) - 1) : raw & ((UInt(1) << w) - 1);
+    }
+    if (rw < 64 && !isSigned(type.first)) {
+      raw &= (UInt(1) << rw) - 1;
+    }
+    return raw;
   };
   disableCache();
 }

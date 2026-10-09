@@ -86,6 +86,9 @@ Logic bls(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType);
 Logic brs(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType);
+/// D-035: >>> (arithmetic on a signed result)
+Logic bars(const Logic &lhs, const Logic &rhs,
+           const std::pair<ExpType, size_t> &resType);
 Logic bnot(const Logic &lhs,
            const std::pair<ExpType, size_t> &resType);
 bool eq(const Logic &lhs, const Logic &rhs,

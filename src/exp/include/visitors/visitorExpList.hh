@@ -60,6 +60,8 @@
   VIRTUAL void visit(BoolToLogic &o) OVVERIDE;                       \
   VIRTUAL void visit(IntLShift &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRShift &o) OVVERIDE;                         \
+  VIRTUAL void visit(IntARShift &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicARShift &o) OVVERIDE;                      \
   VIRTUAL void visit(IntSetMembership &o) OVVERIDE;                  \
   VIRTUAL void visit(IntStable &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRose &o) OVVERIDE;                           \

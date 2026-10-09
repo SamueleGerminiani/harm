@@ -91,7 +91,9 @@ cases = list(dict.fromkeys(cases))
 
 
 def expect(e):
-    """'ok', or the H19 findings that explain a known difference (rules, not results)."""
+    """'ok' (since H19, D-035, every case must agree). Before H19: the H19 findings that explained a
+    known difference, by these rules (kept to document the H18 fixture's history)."""
+    return "ok"
     toks = re.findall(r"[A-Za-z_]\w*|\d+'[bdh]\w+|\d+|<<|>>|<=|>=|==|!=|&&|\|\||[-+*/<>&^|!~()]", e)
     ids = []
     if "<<" in toks or ">>" in toks:

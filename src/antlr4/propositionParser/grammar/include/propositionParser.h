@@ -20,9 +20,9 @@ public:
     GCC_BINARY = 23, HEX = 24, VERILOG_BASED = 25, FILL_LITERAL = 26, SINGLE_QUOTE = 27, 
     PLUS = 28, MINUS = 29, TIMES = 30, DIV = 31, GT = 32, GE = 33, LT = 34, 
     LE = 35, EQ = 36, NEQ = 37, CASE_EQ = 38, CASE_NEQ = 39, QUESTION = 40, 
-    BAND = 41, BOR = 42, BXOR = 43, NEG = 44, LSHIFT = 45, RSHIFT = 46, 
-    AND = 47, OR = 48, NOT = 49, COL = 50, DCOL = 51, DOLLAR = 52, RANGE = 53, 
-    CLS_TYPE = 54, WS = 55
+    BAND = 41, BOR = 42, BXOR = 43, NEG = 44, ALSHIFT = 45, ARSHIFT = 46, 
+    LSHIFT = 47, RSHIFT = 48, AND = 49, OR = 50, NOT = 51, COL = 52, DCOL = 53, 
+    DOLLAR = 54, RANGE = 55, CLS_TYPE = 56, WS = 57
   };
 
   enum {
@@ -264,6 +264,8 @@ public:
     antlr4::tree::TerminalNode *DIV();
     antlr4::tree::TerminalNode *LSHIFT();
     antlr4::tree::TerminalNode *RSHIFT();
+    antlr4::tree::TerminalNode *ALSHIFT();
+    antlr4::tree::TerminalNode *ARSHIFT();
     RelopContext *relop();
     antlr4::tree::TerminalNode *EQ();
     antlr4::tree::TerminalNode *NEQ();

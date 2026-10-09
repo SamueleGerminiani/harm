@@ -33,9 +33,9 @@ public:
     VERILOG_BASED = 52, FILL_LITERAL = 53, SINGLE_QUOTE = 54, PLUS = 55, 
     MINUS = 56, TIMES = 57, DIV = 58, GT = 59, GE = 60, LT = 61, LE = 62, 
     EQ = 63, NEQ = 64, CASE_EQ = 65, CASE_NEQ = 66, QUESTION = 67, BAND = 68, 
-    BOR = 69, BXOR = 70, NEG = 71, LSHIFT = 72, RSHIFT = 73, AND = 74, OR = 75, 
-    NOT = 76, COL = 77, DCOL = 78, DOLLAR = 79, RANGE = 80, CLS_TYPE = 81, 
-    WS = 82
+    BOR = 69, BXOR = 70, NEG = 71, ALSHIFT = 72, ARSHIFT = 73, LSHIFT = 74, 
+    RSHIFT = 75, AND = 76, OR = 77, NOT = 78, COL = 79, DCOL = 80, DOLLAR = 81, 
+    RANGE = 82, CLS_TYPE = 83, WS = 84
   };
 
   enum {
@@ -567,6 +567,8 @@ public:
     antlr4::tree::TerminalNode *DIV();
     antlr4::tree::TerminalNode *LSHIFT();
     antlr4::tree::TerminalNode *RSHIFT();
+    antlr4::tree::TerminalNode *ALSHIFT();
+    antlr4::tree::TerminalNode *ARSHIFT();
     RelopContext *relop();
     antlr4::tree::TerminalNode *EQ();
     antlr4::tree::TerminalNode *NEQ();

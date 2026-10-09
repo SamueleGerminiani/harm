@@ -59,6 +59,7 @@ VISITOR_CALL(IntLessEq, IntExpression, Proposition)
 VISITOR_CALL(IntNot, IntExpression, IntExpression)
 VISITOR_CALL(IntLShift, IntExpression, IntExpression)
 VISITOR_CALL(IntRShift, IntExpression, IntExpression)
+VISITOR_CALL(IntARShift, IntExpression, IntExpression)
 
 // logic
 VISITOR_CALL(LogicSum, LogicExpression, LogicExpression)
@@ -81,6 +82,7 @@ VISITOR_CALL(LogicLessEq, LogicExpression, Proposition)
 VISITOR_CALL(LogicNot, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicLShift, LogicExpression, LogicExpression)
 VISITOR_CALL(LogicRShift, LogicExpression, LogicExpression)
+VISITOR_CALL(LogicARShift, LogicExpression, LogicExpression)
 
 //string
 VISITOR_CALL(StringConcat, StringExpression, StringExpression)
@@ -302,299 +304,91 @@ void GenericExpression<ope::ope::FloatLessEq, FloatExpression,
   value = (UInt)(value << (64 - type.second)) >> (64 - type.second);
 
 //==== evaluate methods for int ==============================================
-template <>
-void GenericExpression<ope::ope::IntSum, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto sumType = this->getType();
-    UInt sum = 0;
-
-    if (sumType.first == ExpType::SInt) {
-      sum = (SInt)_items[0]->evaluate(time) +
-            (SInt)_items[1]->evaluate(time);
-      RESIZES(sum, sumType)
-    } else {
-      sum = (UInt)_items[0]->evaluate(time) +
-            (UInt)_items[1]->evaluate(time);
-      RESIZEU(sum, sumType)
-    }
-
-    return sum;
-  };
-  disableCache();
+namespace {
+/// D-035: an integer operand as SystemVerilog extends it to the result (IEEE 1800-2017 11.8.2):
+/// from its own width, sign-extended when the result is signed (both operands are then signed),
+/// zero-extended otherwise
+UInt extendInt(UInt raw, const std::pair<ExpType, size_t> &own, ExpType res) {
+  const size_t w = std::min<size_t>(own.second, 64);
+  if (w >= 64) {
+    return raw;
+  }
+  if (isSigned(res) && isSigned(own.first)) {
+    return (UInt)(((SInt)(raw << (64 - w))) >> (64 - w));
+  }
+  return raw & ((UInt(1) << w) - 1);
 }
-
-template <>
-void GenericExpression<ope::ope::IntSub, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto subType = this->getType();
-    UInt sub = 0;
-
-    if (subType.first == ExpType::SInt) {
-      sub = (SInt)_items[0]->evaluate(time) -
-            (SInt)_items[1]->evaluate(time);
-      RESIZES(sub, subType)
-    } else {
-      sub = (UInt)_items[0]->evaluate(time) -
-            (UInt)_items[1]->evaluate(time);
-      RESIZEU(sub, subType)
-    }
-    return sub;
-  };
-  disableCache();
+UInt maskTo(UInt v, size_t w) { return w >= 64 ? v : v & ((UInt(1) << w) - 1); }
+/// the result's bits as the result type stores them (sign-extended when signed)
+UInt store(UInt v, const std::pair<ExpType, size_t> &t) {
+  if (isSigned(t.first)) {
+    RESIZES(v, t)
+  } else {
+    RESIZEU(v, t)
+  }
+  return v;
 }
+} // namespace
 
-template <>
-void GenericExpression<ope::ope::IntMul, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-    auto mulType = this->getType();
+#define INT_BINARY(NODE, EXPR)                                       \
+  template <>                                                        \
+  void GenericExpression<ope::ope::NODE, IntExpression,              \
+                         IntExpression>::initEvaluate() {            \
+    directEvaluate = [this](size_t time) {                           \
+      messageErrorIf(_items.size() != 2,                             \
+                     "size==" + std::to_string(_items.size()));      \
+      auto t = this->getType();                                      \
+      UInt a = extendInt(_items[0]->evaluate(time),                  \
+                         _items[0]->getType(), t.first);             \
+      UInt b = extendInt(_items[1]->evaluate(time),                  \
+                         _items[1]->getType(), t.first);             \
+      bool sgn = isSigned(t.first);                                  \
+      (void)sgn;                                                     \
+      return store(EXPR, t);                                         \
+    };                                                               \
+    disableCache();                                                  \
+  }
+// two's complement: + - * & | ^ are the same bits signed or unsigned
+INT_BINARY(IntSum, a + b)
+INT_BINARY(IntSub, a - b)
+INT_BINARY(IntMul, a * b)
+INT_BINARY(IntBAnd, a & b)
+INT_BINARY(IntBOr, a | b)
+INT_BINARY(IntBXor, a ^ b)
+// D-035, Q3 (a): a division by zero gives 0 (a C integer has no x; SystemVerilog gives x)
+INT_BINARY(IntDiv,
+           b == 0 ? UInt(0)
+                  : (sgn ? (UInt)((SInt)a == INT64_MIN && (SInt)b == -1
+                                      ? (SInt)a
+                                      : (SInt)a / (SInt)b)
+                         : a / b))
 
-    UInt mul = 1;
-
-    if (mulType.first == ExpType::SInt) {
-      mul = (SInt)_items[0]->evaluate(time) *
-            (SInt)_items[1]->evaluate(time);
-      RESIZES(mul, mulType)
-    } else {
-      mul = (UInt)_items[0]->evaluate(time) *
-            (UInt)_items[1]->evaluate(time);
-      RESIZEU(mul, mulType)
-    }
-
-    return mul;
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntDiv, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto divType = this->getType();
-    UInt div = 0;
-
-    if (divType.first == ExpType::SInt) {
-      div = (SInt)_items[0]->evaluate(time) /
-            (SInt)_items[1]->evaluate(time);
-      RESIZES(div, divType)
-    } else {
-      div = (UInt)_items[0]->evaluate(time) /
-            (UInt)_items[1]->evaluate(time);
-      RESIZEU(div, divType)
-    }
-    return div;
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntBAnd, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto bAndType = this->getType();
-    UInt bAnd = 0;
-
-    if (bAndType.first == ExpType::SInt) {
-      bAnd = (SInt)_items[0]->evaluate(time) &
-             (SInt)_items[1]->evaluate(time);
-      RESIZES(bAnd, bAndType)
-    } else {
-      bAnd = (UInt)_items[0]->evaluate(time) &
-             (UInt)_items[1]->evaluate(time);
-      RESIZEU(bAnd, bAndType)
-    }
-    return bAnd;
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntBOr, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto bOrType = this->getType();
-    UInt bOr = 0;
-
-    if (bOrType.first == ExpType::SInt) {
-      bOr = (SInt)_items[0]->evaluate(time) |
-            (SInt)_items[1]->evaluate(time);
-      RESIZES(bOr, bOrType)
-    } else {
-      bOr = (UInt)_items[0]->evaluate(time) |
-            (UInt)_items[1]->evaluate(time);
-      RESIZEU(bOr, bOrType)
-    }
-    return bOr;
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntBXor, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto bXorType = this->getType();
-    UInt bXor = 0;
-
-    if (bXorType.first == ExpType::SInt) {
-      bXor = (SInt)_items[0]->evaluate(time) ^
-             (SInt)_items[1]->evaluate(time);
-      RESIZES(bXor, bXorType)
-    } else {
-      bXor = (UInt)_items[0]->evaluate(time) ^
-             (UInt)_items[1]->evaluate(time);
-      RESIZEU(bXor, bXorType)
-    }
-    return bXor;
-  };
-  disableCache();
-}
-template <>
-void GenericExpression<ope::ope::IntEq, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) ==
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) ==
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntNeq, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) !=
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) !=
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntGreater, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) >
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) >
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntGreaterEq, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) >=
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) >=
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntLess, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) <
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) <
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
-
-template <>
-void GenericExpression<ope::ope::IntLessEq, IntExpression,
-                       Proposition>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[1]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      return (SInt)_items[0]->evaluate(time) <=
-             (SInt)_items[1]->evaluate(time);
-    } else {
-      return (UInt)_items[0]->evaluate(time) <=
-             (UInt)_items[1]->evaluate(time);
-    }
-  };
-  disableCache();
-}
+#define INT_COMPARE(NODE, OP)                                        \
+  template <>                                                        \
+  void GenericExpression<ope::ope::NODE, IntExpression,              \
+                         Proposition>::initEvaluate() {              \
+    directEvaluate = [this](size_t time) {                           \
+      messageErrorIf(_items.size() != 2,                             \
+                     "size==" + std::to_string(_items.size()));      \
+      auto t = applyCStandardConversion(_items[0]->getType(),        \
+                                        _items[1]->getType());       \
+      UInt a = extendInt(_items[0]->evaluate(time),                  \
+                         _items[0]->getType(), t.first);             \
+      UInt b = extendInt(_items[1]->evaluate(time),                  \
+                         _items[1]->getType(), t.first);             \
+      if (isSigned(t.first)) {                                       \
+        return (SInt)a OP(SInt) b;                                   \
+      }                                                              \
+      return maskTo(a, t.second) OP maskTo(b, t.second);             \
+    };                                                               \
+    disableCache();                                                  \
+  }
+INT_COMPARE(IntEq, ==)
+INT_COMPARE(IntNeq, !=)
+INT_COMPARE(IntGreater, >)
+INT_COMPARE(IntGreaterEq, >=)
+INT_COMPARE(IntLess, <)
+INT_COMPARE(IntLessEq, <=)
 
 template <>
 void GenericExpression<ope::ope::IntNot, IntExpression,
@@ -602,18 +396,10 @@ void GenericExpression<ope::ope::IntNot, IntExpression,
   directEvaluate = [this](size_t time) {
     messageErrorIf(_items.size() != 1,
                    "size==" + std::to_string(_items.size()));
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[0]->getType());
-
-    if (resType.first == ExpType::SInt) {
-      auto res = ~(SInt)_items[0]->evaluate(time);
-      RESIZES(res, resType);
-      return (UInt)res;
-    } else {
-      auto res = ~(UInt)_items[0]->evaluate(time);
-      RESIZEU(res, resType);
-      return res;
-    }
+    auto t = this->getType() /* D-035: the context's type */;
+    UInt a = extendInt(_items[0]->evaluate(time), _items[0]->getType(),
+                       t.first);
+    return store(~a, t);
   };
   disableCache();
 }
@@ -624,17 +410,10 @@ void GenericExpression<ope::ope::IntNeg, IntExpression,
   directEvaluate = [this](size_t time) {
     messageErrorIf(_items.size() != 1,
                    "size==" + std::to_string(_items.size()));
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[0]->getType());
-    if (resType.first == ExpType::SInt) {
-      auto res = -(SInt)_items[0]->evaluate(time);
-      RESIZES(res, resType);
-      return (UInt)res;
-    } else {
-      auto res = (UInt)0 - (UInt)_items[0]->evaluate(time);
-      RESIZEU(res, resType);
-      return res;
-    }
+    auto t = this->getType() /* D-035: the context's type */;
+    UInt a = extendInt(_items[0]->evaluate(time), _items[0]->getType(),
+                       t.first);
+    return store(UInt(0) - a, t);
   };
   disableCache();
 }
@@ -648,98 +427,42 @@ void GenericExpression<ope::ope::FloatNeg, FloatExpression,
   };
   disableCache();
 }
-template <>
-void GenericExpression<ope::ope::IntLShift, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
 
-    if (this->getType().first == ExpType::SInt) {
-      messageWarningIf(
-          (SInt)_items[0]->evaluate(time) < 0,
-          "left bit shift on negative values is undefined behavior, "
-          "got:" +
-              std::to_string((SInt)_items[0]->evaluate(time)) + "");
-      messageErrorIf(
-          (SInt)_items[1]->evaluate(time) < 0,
-          "right side of left bit shift must be positive, got:" +
-              std::to_string((SInt)_items[1]->evaluate(time)));
-      messageErrorIf(
-          (SInt)_items[1]->evaluate(time) >
-              (SInt)_items[0]->getType().second,
-          "right side of left bit shift is greater than left side "
-          "size, got:" +
-              std::to_string((SInt)_items[1]->evaluate(time)));
-      auto res = (SInt)_items[0]->evaluate(time)
-                 << (SInt)_items[1]->evaluate(time);
-      RESIZES(res, this->getType())
-      return (UInt)res;
-    } else {
-      messageWarningIf(
-          (UInt)_items[0]->evaluate(time) < 0,
-          "left bit shift on negative values is undefined behavior, "
-          "got:" +
-              std::to_string((UInt)_items[0]->evaluate(time)) + "");
-      messageErrorIf(
-          (UInt)_items[1]->evaluate(time) < 0,
-          "right side of left bit shift must be positive, got:" +
-              std::to_string((UInt)_items[1]->evaluate(time)));
-      messageErrorIf(
-          (UInt)_items[1]->evaluate(time) >
-              (UInt)_items[0]->getType().second,
-          "right side of left bit shift is greater than left side "
-          "size, got:" +
-              std::to_string((UInt)_items[1]->evaluate(time)));
-      auto res = (UInt)_items[0]->evaluate(time)
-                 << (UInt)_items[1]->evaluate(time);
-      RESIZEU(res, this->getType())
-      return res;
-    }
-  };
-  disableCache();
-}
-template <>
-void GenericExpression<ope::ope::IntRShift, IntExpression,
-                       IntExpression>::initEvaluate() {
-  directEvaluate = [this](size_t time) {
-    messageErrorIf(_items.size() != 2,
-                   "size==" + std::to_string(_items.size()));
-
-    if (this->getType().first == ExpType::SInt) {
-      messageErrorIf(
-          (SInt)_items[1]->evaluate(time) < 0,
-          "right side of right bit shift must be positive, got:" +
-              std::to_string((SInt)_items[1]->evaluate(time)));
-      messageErrorIf(
-          (SInt)_items[1]->evaluate(time) >
-              (SInt)_items[0]->getType().second,
-          "right side of right bit shift is greater than left side "
-          "size, got:" +
-              std::to_string((SInt)_items[1]->evaluate(time)));
-      auto res = (SInt)_items[0]->evaluate(time) >>
-                 (SInt)_items[1]->evaluate(time);
-      RESIZES(res, this->getType())
-      return (UInt)res;
-    } else {
-      messageErrorIf(
-          (UInt)_items[1]->evaluate(time) < 0,
-          "right side of right bit shift must be positive, got:" +
-              std::to_string((UInt)_items[1]->evaluate(time)));
-      messageErrorIf(
-          (UInt)_items[1]->evaluate(time) >
-              (UInt)_items[0]->getType().second,
-          "right side of right bit shift is greater than left side "
-          "size, got:" +
-              std::to_string((UInt)_items[1]->evaluate(time)));
-      auto res = (UInt)_items[0]->evaluate(time) >>
-                 (UInt)_items[1]->evaluate(time);
-      RESIZEU(res, this->getType())
-      return res;
-    }
-  };
-  disableCache();
-}
+// D-035: shifts as SystemVerilog's (IEEE 1800-2017 11.4.10): the amount is unsigned and
+// self-determined (from its own width); a shift by the result's width or more gives 0 (>>> of a
+// negative signed value: -1); << and >> fill with 0, >>> with the sign bit of a signed result
+#define INT_SHIFT(NODE, KIND)                                        \
+  template <>                                                        \
+  void GenericExpression<ope::ope::NODE, IntExpression,              \
+                         IntExpression>::initEvaluate() {            \
+    directEvaluate = [this](size_t time) {                           \
+      messageErrorIf(_items.size() != 2,                             \
+                     "size==" + std::to_string(_items.size()));      \
+      auto t = this->getType();                                      \
+      const size_t w = std::min<size_t>(t.second, 64);               \
+      UInt a = maskTo(extendInt(_items[0]->evaluate(time),           \
+                                _items[0]->getType(), t.first),      \
+                      w);                                            \
+      UInt n = extendInt(_items[1]->evaluate(time),                  \
+                         _items[1]->getType(), ExpType::UInt);       \
+      bool negative = isSigned(t.first) && w > 0 &&                  \
+                      ((a >> (w - 1)) & 1);                          \
+      UInt r;                                                        \
+      if (KIND == 0) { /* << */                                      \
+        r = n >= w ? 0 : a << n;                                     \
+      } else if (KIND == 1 || !negative) { /* >>, or >>> of a      \
+                                              non-negative value */  \
+        r = n >= w ? 0 : a >> n;                                     \
+      } else { /* >>> of a negative signed value */                  \
+        r = n >= w ? ~UInt(0) : ~((~a & maskTo(~UInt(0), w)) >> n);  \
+      }                                                              \
+      return store(r, t);                                            \
+    };                                                               \
+    disableCache();                                                  \
+  }
+INT_SHIFT(IntLShift, 0)
+INT_SHIFT(IntRShift, 1)
+INT_SHIFT(IntARShift, 2)
 
 //==== evaluate methods for logic ==============================================
 template <>
@@ -855,6 +578,18 @@ void GenericExpression<ope::ope::LogicRShift, LogicExpression,
                    "size==" + std::to_string(_items.size()));
     auto brsType = this->getType();
     return brs(_items[0]->evaluate(time), _items[1]->evaluate(time),
+               brsType);
+  };
+  disableCache();
+}
+template <>
+void GenericExpression<ope::ope::LogicARShift, LogicExpression,
+                       LogicExpression>::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    messageErrorIf(_items.size() != 2,
+                   "size==" + std::to_string(_items.size()));
+    auto brsType = this->getType();
+    return bars(_items[0]->evaluate(time), _items[1]->evaluate(time),
                brsType);
   };
   disableCache();
@@ -985,8 +720,7 @@ void GenericExpression<ope::ope::LogicNeg, LogicExpression,
   directEvaluate = [this](size_t time) {
     messageErrorIf(_items.size() != 1,
                    "size==" + std::to_string(_items.size()));
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[0]->getType());
+    auto resType = this->getType() /* D-035: the context's type */;
     // 0 - v at the operand's width (x/z as in subtraction)
     Logic v = _items[0]->evaluate(time);
     Logic zero(resType.second, isSigned(resType.first), 0, 0, 0);
@@ -1000,8 +734,7 @@ void GenericExpression<ope::ope::LogicNot, LogicExpression,
   directEvaluate = [this](size_t time) {
     messageErrorIf(_items.size() != 1,
                    "size==" + std::to_string(_items.size()));
-    auto resType = applyCStandardConversion(_items[0]->getType(),
-                                            _items[0]->getType());
+    auto resType = this->getType() /* D-035: the context's type */;
     return bnot(_items[0]->evaluate(time), resType);
   };
   disableCache();

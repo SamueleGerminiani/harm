@@ -144,6 +144,12 @@ private:
   expression::PropositionPtr toBool(NumericPack np);
   /// D-034: a Boolean as a 1-bit number
   NumericPack toNumber(const expression::PropositionPtr &p);
+  /// D-035: SystemVerilog's context-determined operands (IEEE 1800-2017 11.6.1, 11.8.2): the
+  /// width and signedness of a context (a comparison, a condition, a ?: or an inside) are given to
+  /// its context-determined operands, recursively (+ - * / & | ^ ~ unary -, the left operand of a
+  /// shift, the branches of ?:); not to self-determined ones (shift amounts, selects,
+  /// concatenation items, function arguments, the operands of a nested comparison)
+  void toContext(NumericPack &np, std::pair<expression::ExpType, size_t> context);
   /// D-034: the comparison op (< <= > >= == != === !==) of two numbers, as a proposition
   expression::PropositionPtr compare(NumericPack e1, NumericPack e2,
                                      const std::string &op);

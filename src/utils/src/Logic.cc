@@ -37,6 +37,50 @@ SLogic signedToSLogic(ULogic a, size_t size) {
 SLogic unsignedToSLogic(ULogic val, size_t size) {
   return (SLogic)(~((~((ULogic)0) >> size) << size) & val);
 }
+
+namespace {
+ULogic maskOf(size_t width) {
+  return width == 0 ? ULogic(0) : ((ULogic(1) << width) - 1);
+}
+} // namespace
+
+/// D-035: an operand as SystemVerilog extends it to the result (IEEE 1800-2017 11.8.2): from
+/// its own width, sign-extended when the result is signed (both operands are then signed),
+/// zero-extended otherwise; x and z bits extend with it
+static Logic operandAt(const Logic &l, const std::pair<ExpType, size_t> &resType) {
+  const size_t width = std::max(resType.second, l._size);
+  const bool signExtend = isSigned(resType.first) && l._isSigned;
+  ULogic m = maskOf(l._size);
+  ULogic x = l._x & m, z = l._z & m;
+  ULogic i = l._int & m & ~(x | z);
+  if (signExtend && l._size > 0 && width > l._size) {
+    ULogic high = maskOf(width) & ~m;
+    ULogic msb = ULogic(1) << (l._size - 1);
+    if (x & msb) {
+      x |= high;
+    } else if (z & msb) {
+      z |= high;
+    } else if (i & msb) {
+      i |= high;
+    }
+  }
+  ULogic rm = maskOf(resType.second);
+  return Logic(resType.second, isSigned(resType.first), i & rm, x & rm, z & rm);
+}
+
+/// D-035: an all-x value of the result type (an arithmetic operand with x/z, a division by
+/// zero: IEEE 1800-2017 11.4.2)
+static Logic allX(const std::pair<ExpType, size_t> &resType) {
+  return Logic(resType.second, isSigned(resType.first), 0, maskOf(resType.second), 0);
+}
+
+/// D-035: an operand's value for an operation of type resType, as SystemVerilog extends it: its
+/// own-width value, sign-extended when the result and the operand are signed, zero-extended
+/// otherwise (one conversion: the fast path of operandAt, for the value bits)
+static inline SLogic valueAt(const Logic &l, const std::pair<ExpType, size_t> &resType) {
+  return isSigned(resType.first) && l._isSigned ? signedToSLogic(l._int, l._size)
+                                                : unsignedToSLogic(l._int, l._size);
+}
 //-------------------------------------------------
 
 bool Logic::containsXZ() const { return _x != 0 || _z != 0; }
@@ -143,81 +187,80 @@ Logic Logic::select(size_t lower_bound, size_t upper_bound) const {
   return Logic(upper_bound - lower_bound + 1, _isSigned, i, x, z);
 }
 
-Logic sum(const Logic &lhs, const Logic &rhs,
+Logic sum(const Logic &lhs_, const Logic &rhs_,
           const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
-    return Logic(1, 0, 0, 1, 0);
+    return allX(resType);
   } else {
 
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     SLogic sum = op1 + op2;
     return Logic(resType.second, isSigned(resType.first), (ULogic)sum,
                  0, 0);
   }
-  return Logic(1, 0, 0, 1, 0);
+  return allX(resType);
 }
 
-Logic sub(const Logic &lhs, const Logic &rhs,
+Logic sub(const Logic &lhs_, const Logic &rhs_,
           const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
-    return Logic(1, 0, 0, 1, 0);
+    return allX(resType);
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     SLogic sub = op1 - op2;
     return Logic(resType.second, isSigned(resType.first), (ULogic)sub,
                  0, 0);
   }
-  return Logic(1, 0, 0, 1, 0);
+  return allX(resType);
 }
 
-Logic mul(const Logic &lhs, const Logic &rhs,
+Logic mul(const Logic &lhs_, const Logic &rhs_,
           const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
-    return Logic(1, 0, 0, 1, 0);
+    return allX(resType);
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     SLogic mul = op1 * op2;
     return Logic(resType.second, isSigned(resType.first), (ULogic)mul,
                  0, 0);
   }
-  return Logic(1, 0, 0, 1, 0);
+  return allX(resType);
 }
-Logic div(const Logic &lhs, const Logic &rhs,
+Logic div(const Logic &lhs_, const Logic &rhs_,
           const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
-    return Logic(1, 0, 0, 1, 0);
+    return allX(resType);
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
+    if (op2 == 0) {
+      return allX(resType);
+    }
     SLogic div = op1 / op2;
     return Logic(resType.second, isSigned(resType.first), (ULogic)div,
                  0, 0);
   }
 
-  return Logic(1, 0, 0, 1, 0);
+  return allX(resType);
 }
 namespace {
 ULogic lowMask(size_t width) {
@@ -276,15 +319,21 @@ bool caseEq(const Logic &lhs, const Logic &rhs) {
   return l._int == r._int && l._x == r._x && l._z == r._z;
 }
 
-Logic band(const Logic &lhs, const Logic &rhs,
+Logic band(const Logic &lhs_, const Logic &rhs_,
            const std::pair<ExpType, size_t> &resType) {
+  // D-035: with x or z bits, both operands fully extended (x/z included); otherwise their
+  // values from their own width (valueAt), the fast path
+  const bool xz = lhs_.containsXZ() || rhs_.containsXZ();
+  Logic lx, rx;
+  if (xz) {
+    lx = operandAt(lhs_, resType);
+    rx = operandAt(rhs_, resType);
+  }
+  const Logic &lhs = xz ? lx : lhs_;
+  const Logic &rhs = xz ? rx : rhs_;
 
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic op2 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(rhs._int, resType.second)
-                   : signedToSLogic(rhs._int, resType.second);
+  SLogic op1 = valueAt(lhs, resType);
+  SLogic op2 = valueAt(rhs, resType);
   ULogic lxz = lhs._x | lhs._z;
   ULogic rxz = rhs._x | rhs._z;
   ULogic xzToZero =
@@ -294,15 +343,21 @@ Logic band(const Logic &lhs, const Logic &rhs,
   return Logic(resType.second, isSigned(resType.first), (ULogic)int_,
                newx, 0);
 }
-Logic bor(const Logic &lhs, const Logic &rhs,
+Logic bor(const Logic &lhs_, const Logic &rhs_,
           const std::pair<ExpType, size_t> &resType) {
+  // D-035: with x or z bits, both operands fully extended (x/z included); otherwise their
+  // values from their own width (valueAt), the fast path
+  const bool xz = lhs_.containsXZ() || rhs_.containsXZ();
+  Logic lx, rx;
+  if (xz) {
+    lx = operandAt(lhs_, resType);
+    rx = operandAt(rhs_, resType);
+  }
+  const Logic &lhs = xz ? lx : lhs_;
+  const Logic &rhs = xz ? rx : rhs_;
 
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic op2 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(rhs._int, resType.second)
-                   : signedToSLogic(rhs._int, resType.second);
+  SLogic op1 = valueAt(lhs, resType);
+  SLogic op2 = valueAt(rhs, resType);
 
   ULogic lxz = lhs._x | lhs._z;
   ULogic rxz = rhs._x | rhs._z;
@@ -313,15 +368,21 @@ Logic bor(const Logic &lhs, const Logic &rhs,
   return Logic(resType.second, isSigned(resType.first), (ULogic)int_,
                newx, 0);
 }
-Logic bxor(const Logic &lhs, const Logic &rhs,
+Logic bxor(const Logic &lhs_, const Logic &rhs_,
            const std::pair<ExpType, size_t> &resType) {
+  // D-035: with x or z bits, both operands fully extended (x/z included); otherwise their
+  // values from their own width (valueAt), the fast path
+  const bool xz = lhs_.containsXZ() || rhs_.containsXZ();
+  Logic lx, rx;
+  if (xz) {
+    lx = operandAt(lhs_, resType);
+    rx = operandAt(rhs_, resType);
+  }
+  const Logic &lhs = xz ? lx : lhs_;
+  const Logic &rhs = xz ? rx : rhs_;
 
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic op2 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(rhs._int, resType.second)
-                   : signedToSLogic(rhs._int, resType.second);
+  SLogic op1 = valueAt(lhs, resType);
+  SLogic op2 = valueAt(rhs, resType);
 
   ULogic lxz = lhs._x | lhs._z;
   ULogic rxz = rhs._x | rhs._z;
@@ -331,160 +392,160 @@ Logic bxor(const Logic &lhs, const Logic &rhs,
   return Logic(resType.second, isSigned(resType.first), (ULogic)int_,
                newx, 0);
 }
+/// D-035: shifts as SystemVerilog's (IEEE 1800-2017 11.4.10): the amount is unsigned and
+/// self-determined (its own width); an x/z amount gives x; a shift by the result's width or more
+/// gives 0 (>>> of a negative signed value: all ones); << and >> fill with 0, >>> with the sign
+/// bit (x and z included) of a signed result
+static Logic shift(const Logic &lhs_, const Logic &rhs,
+                   const std::pair<ExpType, size_t> &resType, int kind) {
+  const size_t w = resType.second;
+  const bool sgn = isSigned(resType.first);
+  if (rhs.containsXZ()) {
+    return allX(resType);
+  }
+  const Logic l = operandAt(lhs_, resType);
+  ULogic n = rhs._int & maskOf(rhs._size);
+  ULogic m = maskOf(w);
+  ULogic i = l._int, x = l._x, z = l._z;
+  if (kind == 0) {
+    if (n >= w) {
+      return Logic(w, sgn, 0, 0, 0);
+    }
+    size_t k = (size_t)n;
+    return Logic(w, sgn, (i << k) & m, (x << k) & m, (z << k) & m);
+  }
+  const bool arithmetic = kind == 2 && sgn && w > 0;
+  ULogic msb = w > 0 ? ULogic(1) << (w - 1) : ULogic(0);
+  // the fill: 0, or the sign bit for >>> on a signed result
+  ULogic fi = 0, fx = 0, fz = 0;
+  if (arithmetic) {
+    fx = (x & msb) ? m : ULogic(0);
+    fz = (z & msb) ? m : ULogic(0);
+    fi = (!(x & msb) && !(z & msb) && (i & msb)) ? m : ULogic(0);
+  }
+  if (n >= w) {
+    return Logic(w, sgn, fi, fx, fz);
+  }
+  size_t k = (size_t)n;
+  ULogic top = m & ~(m >> k);
+  return Logic(w, sgn, (i >> k) | (fi & top), (x >> k) | (fx & top),
+               (z >> k) | (fz & top));
+}
 Logic bls(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType) {
-
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic op2 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(rhs._int, resType.second)
-                   : signedToSLogic(rhs._int, resType.second);
-  messageWarningIf(op1 < 0, "left bit shift on negative values is "
-                            "undefined behavior, got:" +
-                                to_string(op1) + "");
-  messageErrorIf(
-      op2 < 0, "right side of left bit shift must be positive, got:" +
-                   to_string(op2));
-  messageErrorIf(op2 > resType.second,
-                 "right side of left bit shift is greater than left "
-                 "side size, got:" +
-                     to_string(op2));
-  SLogic int_ = op1 << (uint64_t)op2;
-  ULogic x_ = lhs._x << (uint64_t)op2;
-  ULogic z_ = lhs._z << (uint64_t)op2;
-  return Logic(resType.second, isSigned(resType.first), (ULogic)int_,
-               x_, z_);
+  return shift(lhs, rhs, resType, 0);
 }
 Logic brs(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType) {
-
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic op2 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(rhs._int, resType.second)
-                   : signedToSLogic(rhs._int, resType.second);
-  messageErrorIf(
-      op2 < 0,
-      "right side of right bit shift must be positive, got:" +
-          to_string(op2));
-  messageErrorIf(op2 > resType.second,
-                 "right side of right bit shift is greater than left "
-                 "side size, got:" +
-                     to_string(op2));
-  SLogic int_ = op1 >> (uint64_t)op2;
-  ULogic x_ = lhs._x >> (uint64_t)op2;
-  ULogic z_ = lhs._z >> (uint64_t)op2;
-  return Logic(resType.second, isSigned(resType.first), (ULogic)int_,
-               x_, z_);
+  return shift(lhs, rhs, resType, 1);
 }
-
-Logic bnot(const Logic &lhs,
+Logic bars(const Logic &lhs, const Logic &rhs,
            const std::pair<ExpType, size_t> &resType) {
-
-  SLogic op1 = isUnsigned(resType.first)
-                   ? unsignedToSLogic(lhs._int, resType.second)
-                   : signedToSLogic(lhs._int, resType.second);
-  SLogic _not = ~op1;
-
-  return Logic(resType.second, isSigned(resType.first), (ULogic)_not,
-               lhs._x | lhs._z, 0);
+  return shift(lhs, rhs, resType, 2);
 }
-bool eq(const Logic &lhs, const Logic &rhs,
+
+Logic bnot(const Logic &lhs_,
+           const std::pair<ExpType, size_t> &resType) {
+  if (!lhs_.containsXZ()) {
+    // the fast path: the value from its own width, inverted (bits above the width are ignored
+    // by every reader, which extends from the width)
+    return Logic(resType.second, isSigned(resType.first),
+                 (ULogic)(~valueAt(lhs_, resType)), 0, 0);
+  }
+  const Logic lhs = operandAt(lhs_, resType);
+  // D-035: an x or z bit stays x, and its value bit stays 0 (the truth test reads value bits)
+  ULogic xz = lhs._x | lhs._z;
+  ULogic int_ = ~lhs._int & maskOf(resType.second) & ~xz;
+  return Logic(resType.second, isSigned(resType.first), int_, xz, 0);
+}
+bool eq(const Logic &lhs_, const Logic &rhs_,
         const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 == op2;
   }
   return 0;
 }
-bool neq(const Logic &lhs, const Logic &rhs,
+bool neq(const Logic &lhs_, const Logic &rhs_,
          const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 != op2;
   }
   return 0;
 }
-bool gt(const Logic &lhs, const Logic &rhs,
+bool gt(const Logic &lhs_, const Logic &rhs_,
         const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 > op2;
   }
   return 0;
 }
 
-bool gte(const Logic &lhs, const Logic &rhs,
+bool gte(const Logic &lhs_, const Logic &rhs_,
          const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 >= op2;
   }
   return 0;
 }
 
-bool lt(const Logic &lhs, const Logic &rhs,
+bool lt(const Logic &lhs_, const Logic &rhs_,
         const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 < op2;
   }
   return 0;
 }
 
-bool lte(const Logic &lhs, const Logic &rhs,
+bool lte(const Logic &lhs_, const Logic &rhs_,
          const std::pair<ExpType, size_t> &resType) {
+  // D-035: values extended from their own width (valueAt); x/z handled before
+  const Logic &lhs = lhs_;
+  const Logic &rhs = rhs_;
 
   if (lhs.containsXZ() || rhs.containsXZ()) {
     return 0;
   } else {
-    SLogic op1 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(lhs._int, resType.second)
-                     : signedToSLogic(lhs._int, resType.second);
-    SLogic op2 = isUnsigned(resType.first)
-                     ? unsignedToSLogic(rhs._int, resType.second)
-                     : signedToSLogic(rhs._int, resType.second);
+    SLogic op1 = valueAt(lhs, resType);
+    SLogic op2 = valueAt(rhs, resType);
     return op1 <= op2;
   }
   return 0;

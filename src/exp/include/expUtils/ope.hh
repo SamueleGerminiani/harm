@@ -70,6 +70,7 @@ enum ope : int {
   IntLessEq,
   IntLShift,
   IntRShift,
+  IntARShift,
   IntSetMembership,
 
   LogicSum,
@@ -89,6 +90,7 @@ enum ope : int {
   LogicLessEq,
   LogicLShift,
   LogicRShift,
+  LogicARShift,
   LogicSetMembership,
   LogicCaseEq,
   LogicCaseNeq,
@@ -362,6 +364,9 @@ inline std::string opeToString(ope o) {
     return "<=";
   case IntLShift:
     return "<<";
+  case IntARShift:
+  case LogicARShift:
+    return ">>>";
   case IntRShift:
     return ">>";
   case IntSetMembership:
@@ -552,6 +557,9 @@ inline int opeToPrecedenceClass(ope o) {
   case IntLShift:
     return 3;
   case LogicLShift:
+    return 3;
+  case IntARShift:
+  case LogicARShift:
     return 3;
   case IntRShift:
     return 3;
