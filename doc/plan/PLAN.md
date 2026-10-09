@@ -361,5 +361,5 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
 | H18 | Operator precedence and printing as in C and SystemVerilog (audit) | done |
-| H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | planned (`H19_PLAN.md`, awaiting approval) |
+| H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | in-progress (plan approved 2026-10-09) |
 | H20 | Missing SystemVerilog operators (optional) | todo |

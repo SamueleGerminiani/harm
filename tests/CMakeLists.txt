@@ -47,10 +47,11 @@ addTest("ScoreTest" ./scoreTests.cc )
 addTest("BitwiseBoolTest" ./bitwiseBoolTests.cc )
 addTest("CheckDumpTest" ./checkDumpTests.cc )
 addTest("OperatorPrecedenceTest" ./operatorPrecedenceTests.cc )
+addTest("ConversionH19Test" ./conversionH19Tests.cc )
 
 # the label 'parser': the tests that guard the proposition language (grammar, typing, evaluation,
 # printing); a few minutes, for iterating on src/antlr4 or src/exp (with: ctest -L parser)
-set_tests_properties(OperatorPrecedenceTest BitwiseBoolTest PropositionLanguageTest
+set_tests_properties(OperatorPrecedenceTest ConversionH19Test BitwiseBoolTest PropositionLanguageTest
     PropositionOracleTest Z3EquivalenceTest OpeTest ClsTest svaParserPrinterTests PrintingTest
     SvaOutputTest VectorIndexTest ConstantsTest TemporalExpressionTest CheckDumpTest
     PROPERTIES LABELS parser)

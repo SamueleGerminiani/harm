@@ -492,3 +492,10 @@ if(PYTHON3_FOUND)
         set_tests_properties(h18_operators_${mode} PROPERTIES LABELS "regression;parser")
     endforeach()
 endif()
+
+# ---- H19: evaluation and conversions as in SystemVerilog (D-035) ---------------------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h19_evaluation_fixture
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} fixture19)
+    set_tests_properties(h19_evaluation_fixture PROPERTIES LABELS "regression;parser")
+endif()
