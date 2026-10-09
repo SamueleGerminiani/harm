@@ -261,6 +261,10 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Acceptance:** tests written first and failing: the colliding pairs above give distinct files; a 20-conjunct assertion gets its dump and the run continues; every file maps back to its exact assertion text; nothing else in HARM's output changes (baselines byte-identical).
 - **Not in scope, recorded:** HARM's `--reset` only cuts the trace after each reset interval, so check mode still evaluates attempts lying entirely inside reset, which SVA `disable iff` skips. An optional SVA-style reset for check mode would spare trivergence its post-processing. A separate decision and milestone, if the user wants it.
 
+### H17: the findings left open by H15 and H16
+- **Depends on:** H15, H16 · **Effort:** 1–1.5 d
+- **Scope:** bitwise `&`, `|`, `^`, `~` on CSV `bool` operands (a parse error today; D-032); float `<numeric>` exclusions compared with the cycle index instead of the value; a test for `--check-dump-eval`'s `"file": null`; `--vcd-dir`/`--csv-dir` sorted by path (D-033). Details and acceptance tests: `doc/plan/H17_PLAN.md`.
+
 ---
 
 ## 2. Dependencies and order
@@ -344,3 +348,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H14 | Documentation and the v4 report (release notes, migration and developer guides, LaTeX report) | done |
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
+| H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | planned (`H17_PLAN.md`, awaiting approval) |
