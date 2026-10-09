@@ -273,8 +273,8 @@ Each milestone lists: **Depends on · Effort (working days with Claude Code) · 
 - **Depends on:** H18 · **Effort:** 2–3 d
 - **Scope:** H18's evaluation findings, re-measured: shifts by ≥ the width stop HARM; the shift amount is read at the operand's width; signed/unsigned rules (C's, also for `logic`); `>>` on signed values; division by zero (a crash for `logic`, platform-dependent for `int`); cast bugs; CSV `integer`/`time`/`int unsigned`; arithmetic with x giving a 1-bit x; literal printing that changes value or type. Decisions Q1–Q5 and acceptance tests: `doc/plan/H19_PLAN.md`.
 
-### H20 (optional): missing SystemVerilog operators
-- **Depends on:** H19 · **Effort:** 2 d
+### H20 (future work): missing SystemVerilog operators
+- **Depends on:** H19 · **Effort:** 2 d · **Status:** kept as future work by the user (2026-10-10)
 - **Scope:** `%`, `**`, reduction operators, binary `~^`/`^~`, mixed-case C hex constants (`<<<` and `>>>` were done in H19). Decisions Q1–Q3 and acceptance tests: `doc/plan/H20_PLAN.md`.
 
 ---
@@ -363,4 +363,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
 | H18 | Operator precedence and printing as in C and SystemVerilog (audit) | done |
 | H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | done |
-| H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | planned (`H20_PLAN.md`, awaiting approval) |
+| H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | future work (plan in `H20_PLAN.md`, not scheduled) |

@@ -1,6 +1,6 @@
 # H20 plan: the missing SystemVerilog operators (H18 audit finding L4)
 
-*Status: planned, awaiting approval. Branch: `ms/H20-missing-operators` (from `dev` @ `1f10fa0`, with H18 and H19). Effort: 2 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest`: in Docker, as for H19; the real machine stays pending.*
+*Status: kept as future work by the user (2026-10-10): not approved, not scheduled; Q1–Q3 stay open. The plan was written on branch: `ms/H20-missing-operators` (from `dev` @ `1f10fa0`, with H18 and H19). Effort: 2 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest`: in Docker, as for H19; the real machine stays pending.*
 
 ## Why
 Hints, `--check` assertions and trivergence's LLM-written SVA use SystemVerilog's operators. Today HARM rejects some of them with a parse error: a hint or a checked assertion that uses one cannot be read. Reductions (`|req`, `^data`) are common in SVA.
@@ -38,7 +38,7 @@ Hints, `--check` assertions and trivergence's LLM-written SVA use SystemVerilog'
 | A5 | `ctest -L parser` while iterating; one full `ctest` before review; the H0 baselines byte-identical (H20 only adds syntax; if any baseline changes, I stop and report) | ctest |
 
 ## Documents
-DECISIONS D-036 (Q1–Q3); README (operator table); release notes; report; VALIDATION; PLAN status; TRIVERGENCE_IMPACT (hints and `--check` accept SystemVerilog's reductions, `%`, `**` and XNOR; the adapter's rewrites can go).
+a new DECISIONS entry (Q1–Q3); README (operator table); release notes; report; VALIDATION; PLAN status; TRIVERGENCE_IMPACT (hints and `--check` accept SystemVerilog's reductions, `%`, `**` and XNOR).
 
 ## Not in scope
 - `$onehot`, `$onehot0`, `$countones`, `$isunknown` (Q3).
