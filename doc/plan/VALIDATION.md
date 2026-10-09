@@ -1130,3 +1130,15 @@ The tests were written first and committed failing in `4634c49`.
 - **Performance** (`--max-threads 1`, median of 3, `dev` @ `d1be73b` built in a worktree against H19): `bl_master10k` 130.8 s → 131.5 s (+0.6%); `sobel1k` 79.7 s → 82.1 s (+2.9%); `process` 0.015 s → 0.015 s; `nonBoolDT` 0.076 s → 0.082 s. A first version was 61% slower on `bl_master10k`: every logic comparison built extended copies of its operands (the profile: 512-bit masks and shifts in `operandAt`); comparisons and arithmetic now convert each operand once (`valueAt`), bitwise operators extend fully only with x/z. `Z3EquivalenceTest`'s soundness cases: 11.0 s and 16.9 s on `dev`, 15.0 s and 20.0 s now (exact integers of every width).
 - **Found, not fixed** (release notes, known limitations): `warning.log`/`error.log` are JSON arrays rewritten at their end on every message; in `build-mac` the warning log had grown to 21,636 lines and slowed `Z3EquivalenceTest` 15-fold (it emits about 10,000 warnings per run).
 - **Linux:** pending, as the user decided.
+
+### H15–H19 on Linux x86_64, in Docker on the Mac (2026-10-09)
+- **Environment:** a `linux/amd64` container (Ubuntu 22.04.5, g++ 11.4.0, CMake 3.31.1) run by Docker Desktop with Rosetta on the Mac (about 80% of native speed on a CPU-bound check). The libraries and test tools (ANTLR, Spot, Boost, Z3, Verilator, Icarus, yosys) were built by HARM's own `third_party` scripts inside the container; HARM is built from a clone of the local repository (tracked files and tags only, no macOS build). The scripts are kept outside the repository (scratch), not committed.
+- **Result at `a7146b5` (H19, which contains H15–H18):** 244 of 245 tests pass, 1 skipped (`h14_report_builds`: no LaTeX in the image). Total ctest time 2,613 s; `ImplicationTest` 1,941 s (under its 3,600 s timeout); `h12_structs_count` passes (1,839 assertions: macOS arm64 and Linux x86_64 still agree after H18 and H19); `h18_operators_fixture`, `h19_evaluation_fixture`, the H1 oracle and `Z3EquivalenceTest` pass.
+- **Environment issues met and fixed** (none in HARM):
+  - a transient DNS failure in the container during the library build (resumed);
+  - harm-coi pins `pyslang==12.0.0`, whose wheels need Python 3.11 or newer; Ubuntu 22.04's `python3` is 3.10, so the harm-coi venv uses Ubuntu's `python3.11` package (3.11.0rc1). **The Linux machine (also Ubuntu 22.04) needs a Python ≥ 3.11 for harm-coi's environment too;**
+  - `tests/coi/check_coi.py` needs `jsonschema` in the system Python (`python3-jsonschema`);
+  - `h11_version` needs a git checkout (a `git archive` export printed `HARM unknown`).
+
+  After the last two fixes, the 8 tests they affected pass (`coi_valid_*`, `coi_invalid_documents`, `h11_version`).
+- **Not the Linux machine:** an emulated CPU and another kernel, and none of trivergence's data or tools; `eval/LINUX.md` (the AssertLLM2 evaluation) still needs the real machine.
