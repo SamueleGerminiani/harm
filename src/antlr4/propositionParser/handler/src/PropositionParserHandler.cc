@@ -457,10 +457,12 @@ void PropositionParserHandler::exitInt_constant(
   } else if (ctx->UINTEGER() != nullptr) {
 
     if (ctx->CONST_SUFFIX() == nullptr) {
-      // Store the int as 2s complement int
+      // D-035: an unsized decimal is a signed 32-bit number, as in SystemVerilog (IEEE 1800-2017
+      // 5.7.1), or 64 bits if its value does not fit in 32
       UInt value = safeStoll(conStr);
+      size_t width = (SInt)value <= INT32_MAX ? 32 : 64;
       IntConstantPtr c = generatePtr<IntConstant>(
-          value, ExpType::SInt, 64, _trace->getLength());
+          value, ExpType::SInt, width, _trace->getLength());
       _numericExpressions.push(c);
     } else {
       if (ctx->CONST_SUFFIX()->getText() == "ll") {
@@ -852,8 +854,93 @@ void PropositionParserHandler::exitNonTemporalFunction(
                  printErrorMessage());                               \
   }
 
+namespace {
+void logicToContext(const LogicExpressionPtr &e, std::pair<ExpType, size_t> t);
+void intToContext(const IntExpressionPtr &e, std::pair<ExpType, size_t> t);
+
+#define CONTEXT_ALL(NODE, RECURSE)                                   \
+  if (auto n = std::dynamic_pointer_cast<NODE>(e)) {                 \
+    n->setType(t.first, std::max(t.second, n->getType().second));    \
+    for (auto &item : n->getItems()) {                               \
+      RECURSE(item, t);                                              \
+    }                                                                \
+    return;                                                          \
+  }
+#define CONTEXT_FIRST(NODE, RECURSE)                                 \
+  if (auto n = std::dynamic_pointer_cast<NODE>(e)) {                 \
+    n->setType(t.first, std::max(t.second, n->getType().second));    \
+    RECURSE(n->getItems()[0], t);                                    \
+    return;                                                          \
+  }
+
+void logicToContext(const LogicExpressionPtr &e, std::pair<ExpType, size_t> t) {
+  CONTEXT_ALL(LogicSum, logicToContext)
+  CONTEXT_ALL(LogicSub, logicToContext)
+  CONTEXT_ALL(LogicMul, logicToContext)
+  CONTEXT_ALL(LogicDiv, logicToContext)
+  CONTEXT_ALL(LogicBAnd, logicToContext)
+  CONTEXT_ALL(LogicBOr, logicToContext)
+  CONTEXT_ALL(LogicBXor, logicToContext)
+  CONTEXT_ALL(LogicNot, logicToContext)
+  CONTEXT_ALL(LogicNeg, logicToContext)
+  CONTEXT_FIRST(LogicLShift, logicToContext)
+  CONTEXT_FIRST(LogicRShift, logicToContext)
+  CONTEXT_FIRST(LogicARShift, logicToContext)
+  if (auto n = std::dynamic_pointer_cast<LogicTernary>(e)) {
+    n->setType(t.first, std::max(t.second, n->getType().second));
+    logicToContext(n->getWhenTrue(), t);
+    logicToContext(n->getWhenFalse(), t);
+    return;
+  }
+  if (auto n = std::dynamic_pointer_cast<IntToLogic>(e)) {
+    // an integer computed in a logic context: at the context's width (up to 64 bits)
+    std::pair<ExpType, size_t> it(isSigned(t.first) ? ExpType::SInt : ExpType::UInt,
+                                  std::min<size_t>(t.second, 64));
+    intToContext(n->getItem(), it);
+    n->setType(t.first, std::max(it.second, n->getType().second));
+    return;
+  }
+}
+
+void intToContext(const IntExpressionPtr &e, std::pair<ExpType, size_t> t) {
+  CONTEXT_ALL(IntSum, intToContext)
+  CONTEXT_ALL(IntSub, intToContext)
+  CONTEXT_ALL(IntMul, intToContext)
+  CONTEXT_ALL(IntDiv, intToContext)
+  CONTEXT_ALL(IntBAnd, intToContext)
+  CONTEXT_ALL(IntBOr, intToContext)
+  CONTEXT_ALL(IntBXor, intToContext)
+  CONTEXT_ALL(IntNot, intToContext)
+  CONTEXT_ALL(IntNeg, intToContext)
+  CONTEXT_FIRST(IntLShift, intToContext)
+  CONTEXT_FIRST(IntRShift, intToContext)
+  CONTEXT_FIRST(IntARShift, intToContext)
+  if (auto n = std::dynamic_pointer_cast<IntTernary>(e)) {
+    n->setType(t.first, std::max(t.second, n->getType().second));
+    intToContext(n->getWhenTrue(), t);
+    intToContext(n->getWhenFalse(), t);
+    return;
+  }
+}
+} // namespace
+
+void PropositionParserHandler::toContext(NumericPack &np,
+                                         std::pair<ExpType, size_t> context) {
+  if (np._logExp != nullptr) {
+    ExpType s = isSigned(context.first) ? ExpType::SLogic : ExpType::ULogic;
+    logicToContext(np._logExp, {s, context.second});
+  } else if (np._intExp != nullptr) {
+    ExpType s = isSigned(context.first) ? ExpType::SInt : ExpType::UInt;
+    intToContext(np._intExp, {s, std::min<size_t>(context.second, 64)});
+  }
+}
+
 expression::PropositionPtr
 PropositionParserHandler::toBool(NumericPack np) {
+  // a condition is self-determined: its operands take its own width (D-035)
+  if (np._logExp != nullptr || np._intExp != nullptr) {
+    toContext(np, np.getType());
+  }
   if (np._logExp != nullptr) {
     if (auto b = std::dynamic_pointer_cast<BoolToLogic>(np._logExp)) {
       return b->getItem();
@@ -900,6 +987,10 @@ PropositionParserHandler::compare(NumericPack exp1, NumericPack exp2,
     if (exp2._intExp != nullptr) {
       exp2.convert(NumericType::NumericLogic);
     }
+    // D-035: the comparison is the context of its operands
+    auto context = applyCStandardConversion(exp1.getType(), exp2.getType());
+    toContext(exp1, context);
+    toContext(exp2, context);
     if (op == "===") {
       return makeGenericExpression<LogicCaseEq>(exp1._logExp, exp2._logExp);
     }
@@ -909,6 +1000,11 @@ PropositionParserHandler::compare(NumericPack exp1, NumericPack exp2,
   auto conversionResult =
       applyCStandardConversion(exp1.getType(), exp2.getType());
   convert(exp1, exp2, conversionResult);
+  // D-035: the comparison is the context of its operands
+  if (!isFloat(conversionResult.first)) {
+    toContext(exp1, conversionResult);
+    toContext(exp2, conversionResult);
+  }
 
   std::stack<PropositionPtr> result;
   if (op == "<") {
@@ -1216,6 +1312,17 @@ void PropositionParserHandler::exitNumeric(
     }
     std::reverse(ranges.begin(), ranges.end());
 
+    // D-035: x inside {...} is a context: the operand takes the width of the whole set
+    if (op._floatExp == nullptr) {
+      auto context = op.getType();
+      for (auto &c : constants) {
+        if (c._floatExp == nullptr) {
+          context = applyCStandardConversion(context, c.getType());
+        }
+      }
+      toContext(op, context);
+    }
+
     PropositionPtr p;
     if (isInt(op.getType().first)) {
       std::vector<IntExpressionPtr> setInt;
@@ -1408,7 +1515,7 @@ void PropositionParserHandler::exitNumeric(
                          conversionResult);
         return;
       }
-      if (logop->getText() == "<<") {
+      if (logop->getText() == "<<" || logop->getText() == "<<<") {
         auto conversionResult =
             applyCStandardConversion(np1.getType(), np1.getType());
         handleBitWiseExp(LShift, np1, np2, _numericExpressions,
@@ -1419,6 +1526,13 @@ void PropositionParserHandler::exitNumeric(
         auto conversionResult =
             applyCStandardConversion(np1.getType(), np1.getType());
         handleBitWiseExp(RShift, np1, np2, _numericExpressions,
+                         conversionResult);
+        return;
+      }
+      if (logop->getText() == ">>>") {
+        auto conversionResult =
+            applyCStandardConversion(np1.getType(), np1.getType());
+        handleBitWiseExp(ARShift, np1, np2, _numericExpressions,
                          conversionResult);
         return;
       }

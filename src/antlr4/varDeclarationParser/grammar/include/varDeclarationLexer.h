@@ -20,9 +20,9 @@ public:
     FLOAT = 25, GCC_BINARY = 26, HEX = 27, VERILOG_BASED = 28, FILL_LITERAL = 29, 
     SINGLE_QUOTE = 30, PLUS = 31, MINUS = 32, TIMES = 33, DIV = 34, GT = 35, 
     GE = 36, LT = 37, LE = 38, EQ = 39, NEQ = 40, CASE_EQ = 41, CASE_NEQ = 42, 
-    QUESTION = 43, BAND = 44, BOR = 45, BXOR = 46, NEG = 47, LSHIFT = 48, 
-    RSHIFT = 49, AND = 50, OR = 51, NOT = 52, COL = 53, DCOL = 54, DOLLAR = 55, 
-    RANGE = 56, CLS_TYPE = 57
+    QUESTION = 43, BAND = 44, BOR = 45, BXOR = 46, NEG = 47, ALSHIFT = 48, 
+    ARSHIFT = 49, LSHIFT = 50, RSHIFT = 51, AND = 52, OR = 53, NOT = 54, 
+    COL = 55, DCOL = 56, DOLLAR = 57, RANGE = 58, CLS_TYPE = 59
   };
 
   explicit varDeclarationLexer(antlr4::CharStream *input);

@@ -21,6 +21,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
   - a mined bit selection kept its bounds: v3 printed and evaluated `r[7:4]` as `r[4:7]` (H1, finding F10);
   - a variable name no longer corrupts a literal that contains it (`a` in `0xa`, `x` in `'b1x0`; H1, F9);
   - a template with more placeholders than propositions in their domain no longer hangs HARM (H7);
+  - **evaluation** (H19, D-035): an operation with an unsigned operand is unsigned, also for C types (v3 followed C's rank rules, also for `logic`: `x < q` with a negative `int x` was true); a comparison is computed at its context's width (`ch << am == 0`); a decimal literal is 32 bits; `>>` is logical; a shift by the width or more gave an error and stopped v3, now 0; a `logic` division by zero aborted v3, now x; `(q + 4'bx) ^ 4'b1000` was true; CSV `integer`/`time` were 2-valued; `4'b0x01` printed `4'bx01` (a different constant). The H0 baselines did not change;
   - **operators** (H18, D-034): hand-written `!x == y`, `x & y == y`, `(x > 0) == y` now read as in C and SystemVerilog (v3 read `!(x == y)`, `(x & y) == y`, `(x > 0) == (y != 0)`); HARM's printed output always bracketed these forms, so mined assertions are unaffected;
   - **printing** (H18): a printed proposition re-parses to itself. v3 printed `x - (y - k)` as `x - y - k`, `(x + y)[1:0]` as `x + y[1:0]`, and `!(q inside {...})` as `!q inside {...}` (wrong SystemVerilog);
   - a float `<numeric>`'s excluded values (`clustering="...,2E"`) are compared with the values: v3 compared them with the cycle index, so it kept `f == 2` and dropped the value at cycle 2 instead (H17);
@@ -39,6 +40,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **`origin="…"`** on `<prop>` and `<numeric>`, free text (e.g. `spec`, `rtl`), reported by `--dump-assertion-info` and `--dump-coi-report`.
 - **Bitwise operators on CSV `bool` operands** (H17, D-032): `a ^ b`, `~a & c`, `a ^ q4`, as in SystemVerilog (v3 stopped with a parse error).
 - **Operators bind and convert as in C and SystemVerilog** (H18, D-034): `!x == y` is `(!x) == y`; `x & y == y` is `x & (y == y)`; a comparison is a number (`(a < b) + 1`, `x < y < z`, `(x > 0) == y` compares numbers); unary `-` and `+`; `x-1` without blanks; `bool` operands of arithmetic and comparisons. The README has the precedence table.
+- **Evaluation as in SystemVerilog** (H19, D-035): signed/unsigned rules, context-determined widths, 32-bit decimal literals, `>>>`/`<<<`, shifts and divisions by zero that never stop HARM, 4-state `integer`/`time`, literals that print as they re-parse. The README describes each rule.
 
 ## New options
 | Option | What it does |
@@ -76,7 +78,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **The test suite** has grown from 35 to about 230 tests, with independent oracles: brute-force enumeration, iverilog and Verilator simulation, Spot, and hand-labelled fixtures (the report's validation chapter).
 
 ## Known limitations
-- **Evaluation differences from SystemVerilog, planned for H19** (found by H18's operator audit): a shift by at least the operand's width (or by a negative amount) stops HARM, where SystemVerilog gives 0; signed and unsigned operands follow C's rules even for `logic` (SystemVerilog: unsigned if any operand is unsigned); `>>` on a signed value is arithmetic; integer division by zero is undefined; a few literals print differently (`4'b0x01` as `4'bx01`). The missing operators `%`, `**`, reduction operators, `<<<`, `>>>` are H20 (optional).
+- **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are H20 (optional).
+- **The warning and error logs** (`warning.log`, `error.log`) are JSON arrays rewritten at their end on every message: in a working directory where they have grown large, a run that emits many warnings slows down (found in H19; delete them, or run in a fresh directory).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
 - **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions; on several thousand assertions they can take tens of minutes.
 - **Ties in the decision tree** are decided by the last bit of a floating-point score. Platforms agree because they now round the same way (H12); a change of `libm` could still change a choice with `ENT`.
@@ -116,5 +119,5 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H16 | `--check-dump-eval` file names and `index.json` (D-030) |
 | H17 | bitwise operators on `bool` (D-032), float exclusions, sorted trace directories (D-033) |
 | H18 | operators and printing as in C and SystemVerilog (D-034) |
-| H19 | (planned) evaluation and conversions: shifts, signedness, division by zero, casts |
-| H20 | (planned, optional) missing operators: `%`, `**`, reductions, `<<<`, `>>>` |
+| H19 | evaluation and conversions as in SystemVerilog (D-035) |
+| H20 | (planned, optional) missing operators: `%`, `**`, reductions, `~^` |

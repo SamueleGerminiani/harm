@@ -98,6 +98,14 @@ private:
                   const std::pair<ExpType, size_t> &b, int op);
   /// HARM's extendTo: masked to the width, sign-extended (x/z included) if 'sgn'
   LTerm extendTo(const LTerm &t, unsigned width, bool sgn);
+  /// D-035: an operand at the result's width: extended from its own width, sign-extended when
+  /// the result is signed (both operands are then signed), zero-extended otherwise
+  LTerm operandAt(const LTerm &t, unsigned R, bool resSgn);
+  /// D-035: a 64-bit integer term holding a value of type t (extended by its own sign)
+  z3::expr intNorm(const z3::expr &v, const std::pair<ExpType, size_t> &t);
+  /// D-035: an integer operand of type own, extended for an operation of type res
+  z3::expr intAs(const z3::expr &v, const std::pair<ExpType, size_t> &own,
+                 const std::pair<ExpType, size_t> &res);
 };
 
 } // namespace expression

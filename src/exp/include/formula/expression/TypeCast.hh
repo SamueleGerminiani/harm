@@ -39,6 +39,12 @@ public:
 
   void popItem();
 
+  /// @brief D-035: the type of the context (SystemVerilog's context-determined width and sign)
+  void setType(ExpType type, size_t size) {
+    this->_type = type;
+    this->_size = size;
+  }
+
   /// @brief Assing operator
   TypeCast &operator=(const TypeCast &other) = delete;
 

@@ -59,23 +59,38 @@ std::string PrinterVisitor::get() {
     _ss << selCol(name, VAR(name));                                  \
   }
 
+// D-035 (R4): an unsigned integer constant prints as a sized SystemVerilog literal, so that the
+// text re-parses to an unsigned value of the same width (a decimal would re-parse signed)
 #define INT_CONSTANT(LEAF)                                           \
   void PrinterVisitor::visit(LEAF &o) {                              \
     if (o.getType().first == ExpType::UInt) {                        \
       UInt val = (UInt)o.evaluate(0);                                \
-      _ss << selCol(std::to_string(val) +                            \
-                        (std::log2(val) > 63.f ? "ull" : ""),        \
-                    VAR(std::to_string(val) +                        \
-                        (std::log2(val) > 63.f ? "ull" : "")));      \
+      size_t w = std::min<size_t>(o.getType().second, 64);           \
+      if (w < 64) {                                                  \
+        val &= (UInt(1) << w) - 1;                                   \
+      }                                                              \
+      std::string bits;                                              \
+      for (UInt v = val; v != 0; v >>= 1) {                          \
+        bits.insert(bits.begin(), char('0' + (v & 1)));              \
+      }                                                              \
+      std::string t = std::to_string(w) + "'b" + (bits.empty() ? "0" : bits); \
+      _ss << selCol(t, VAR(t));                                      \
     } else {                                                         \
       _ss << selCol(std::to_string((SInt)o.evaluate(0)),             \
                     VAR(std::to_string((SInt)o.evaluate(0))));       \
     }                                                                \
   }
 
+// D-035 (R4): a real keeps a decimal point ('2.0', not '2', which would re-parse as an integer)
 #define REAL_CONSTANT(LEAF)                                          \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << std::setprecision(17) << o.evaluate(0);                   \
+    std::ostringstream os;                                           \
+    os << std::setprecision(17) << o.evaluate(0);                    \
+    std::string t = os.str();                                        \
+    if (t.find_first_of(".eEni") == std::string::npos) {             \
+      t += ".0";                                                     \
+    }                                                                \
+    _ss << t;                                                        \
   }
 
 #define LOGIC_CONSTANT(LEAF)                                         \
@@ -91,10 +106,18 @@ std::string PrinterVisitor::get() {
             VAR(to_string(o.evaluate(0).getSignedValue())));         \
       }                                                              \
     } else {                                                         \
-      _ss << selCol(std::to_string(o.getType().second) + "'b" +      \
-                        o.evaluate(0).toString(),                    \
-                    VAR(std::to_string(o.getType().second) + "'b" +  \
-                        o.evaluate(0).toString()));                  \
+      /* D-035 (R4): a leading x or z digit after stripped zeros keeps */ \
+      /* one 0 (4'bx01 would mean 4'bxx01); a signed literal keeps 's' */  \
+      std::string digits = o.evaluate(0).toString();                 \
+      if (!digits.empty() &&                                         \
+          std::string("xXzZ").find(digits[0]) != std::string::npos &&\
+          digits.size() < o.getType().second) {                      \
+        digits = "0" + digits;                                       \
+      }                                                              \
+      std::string t = std::to_string(o.getType().second) +           \
+                      (isSigned(o.getType().first) ? "'sb" : "'b") + \
+                      digits;                                        \
+      _ss << selCol(t, VAR(t));                                      \
     }                                                                \
   }
 
@@ -335,6 +358,8 @@ EXP_OPE(IntLessEq)
 EXP_OPE_BIT_SELECTION(IntBitSelector)
 EXP_OPE(IntLShift)
 EXP_OPE(IntRShift)
+EXP_OPE(IntARShift)
+EXP_OPE(LogicARShift)
 TYPE_CAST(IntToFloat)
 TYPE_CAST(IntToBool)
 TYPE_CAST(IntToLogic)

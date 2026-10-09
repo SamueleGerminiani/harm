@@ -1106,3 +1106,27 @@ The audit (`doc/plan/h18_audit/`, 1,154 expressions against Icarus Verilog on `d
 - **Mutation test:** the old precedence of `!` (the Boolean `!` before `numeric` in the grammar) makes `h18_operators_fixture` fail 23 cases (21 prefix, 1 `inside`, 1 round trip).
 - **The `parser` label** (`ctest -L parser`, 41 tests, 4 min 15 s on the Mac) runs the language's tests while iterating; the full suite runs before review (developer guide).
 - **Linux:** pending, as the user decided.
+
+## H19: evaluation and conversions as in SystemVerilog (2026-10-09, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0, Icarus Verilog 12.0)
+The tests were written first and committed failing in `4634c49`.
+
+| Test | Result |
+|---|---|
+| A1 `h18_operators_fixture` with H18's 351 `H19:` exemptions removed (1,212 expressions) | pass (before: 162 failed) |
+| A2 `h19_evaluation_fixture`: 2,337 expressions (signedness on 12 operand types × 13 operators; shifts by 0 … width + 3, by variable and negative amounts, `<< >> <<< >>>` on 11 types; divisions with zero divisors; x/z in arithmetic; literals) on 48 rows with x/z in the 4-state variables, against Icarus Verilog under HARM's x/z rule (D-011) for top-level comparisons | pass (before: every case, the trace's `int unsigned` column could not be loaded) |
+| A3 the same tests: every printed proposition re-parses to the same values and text | pass |
+| A4 `ConversionH19Test`: casts keep the sign; a 40-bit signed logic; CSV `int unsigned`, 4-state `integer`/`time`; no exit on `int`/`logic` division by zero, shifts by 100 and by -1; context width of a shift; `>>` logical, `>>>` arithmetic | pass |
+| A5 full `ctest` | 245 tests: 243 passed at first; `ConvTest` and `TraceTest` failed, both because they encoded the replaced behaviour (below); after updating their expectations, both pass. No HARM code changed after the full run. The H0 baselines are byte-identical |
+
+- **Context-determined widths** (IEEE 1800-2017 §11.6, §11.8.2) were needed and are not in the plan's text: with operands extended from their own width, `q << am == 0` and `q + r == 5'd16` need the comparison's width carried down to its operands. Comparisons, conditions, `?:`, `inside` and `===` give their width and signedness to context-determined operands (`PropositionParserHandler::toContext`). Before, HARM got `+` right by keeping carry bits until a comparison truncated them.
+- **Decimal literals are 32 bits** (§5.7.1; before, 64): with context widths, a 64-bit `0` made `ig + ig < 0` and `it << 31 < 0` 64-bit operations.
+- **Z3 (H2's encoding)** updated with the evaluator: operand extension from the own width, whole-x arithmetic, and every integer width up to 64 encoded exactly. Without the last change, 32-bit literals made most integer comparisons opaque: `Z3EquivalenceTest`'s pair `!(flag)` ≡ `flag == 0` became "Unknown" (caught by the test).
+- **Tests whose expectations changed, by the approved decisions:**
+  - `ConvTest` used C's usual arithmetic conversions as its oracle; Q1 replaced them for every operation. Its expected values are now computed by a SystemVerilog model in the test (§11.8.1–11.8.2: signed only if both are, the wider width, extension from the own width, "sign-extended only if the propagated type is signed"). The three failing cases (`uint32 0 > int64 -2`, `int32 MIN + uint64 -2`, `uint64 + int32 -2`) were checked with Icarus Verilog: SystemVerilog gives HARM's new values.
+  - `TraceTest` read a VCD `integer` as a 2-valued `int`; Q4 makes it a 4-state signed 32-bit `logic`.
+  - `ConstantsTest` and `h17_exclusion` expected the old literal printing (`0xff` as `255`, `2.0` as `2`); Q5.
+- **Icarus Verilog pitfalls found** (the generator avoids them): `(e) ? 1 : 0` with an x condition gives x, not 0 (an `if` is used); `$isunknown(ch + ch)` returns 1 for a 2-state `byte ch = -111` (an Icarus bug; `(^(e)) === 1'bx` is used).
+- **A test bug fixed before the commit:** the generator gave a float divisor the value 0, and bitwise cases `a & b < 0` read as `a & (b < 0)` (D-034); both corrected before `4634c49`.
+- **Performance** (`--max-threads 1`, median of 3, `dev` @ `d1be73b` built in a worktree against H19): `bl_master10k` 130.8 s → 131.5 s (+0.6%); `sobel1k` 79.7 s → 82.1 s (+2.9%); `process` 0.015 s → 0.015 s; `nonBoolDT` 0.076 s → 0.082 s. A first version was 61% slower on `bl_master10k`: every logic comparison built extended copies of its operands (the profile: 512-bit masks and shifts in `operandAt`); comparisons and arithmetic now convert each operand once (`valueAt`), bitwise operators extend fully only with x/z. `Z3EquivalenceTest`'s soundness cases: 11.0 s and 16.9 s on `dev`, 15.0 s and 20.0 s now (exact integers of every width).
+- **Found, not fixed** (release notes, known limitations): `warning.log`/`error.log` are JSON arrays rewritten at their end on every message; in `build-mac` the warning log had grown to 21,636 lines and slowed `Z3EquivalenceTest` 15-fold (it emits about 10,000 warnings per run).
+- **Linux:** pending, as the user decided.

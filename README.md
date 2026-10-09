@@ -264,7 +264,7 @@ Propositions are non-temporal boolean expressions defined in the `exp` attribute
 ### Data Types & Internal Representation
 Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise, string).
 
-* **Integers:** C/C++ integer types are represented as **64-bit C integers** (signed or unsigned).
+* **Integers:** C/C++ integer types are **2-valued integers** of their declared width (`char` 8 bits … `long int` 64), signed or unsigned. `integer` and `time` are 4-state, as in SystemVerilog (D-035).
 * **Logic/Net:** Verilog types (e.g., `reg`, `wire`, `logic`) are represented as **4-value bit vectors** (0, 1, x, z) with a max width of **511 bits**.
 * **Floats:** All float types are internally represented as **C doubles**.
 
@@ -286,6 +286,15 @@ Operators bind as in C and SystemVerilog (IEEE 1800-2017 Table 11-2), from the t
 | `&&`, then `\|\|`, then `?:` | |
 
 All binary operators are left-associative. A CSV `bool` is a 1-bit number wherever it is an operand of one of these operators (`a + a == 2`, `a ^ b`, `!a ^ b` is `(!a) ^ b`); a bracketed Boolean can be one too (`(a && b) ^ c`). HARM prints propositions with the brackets these rules need, so a printed proposition re-parses to itself. **Changed in v4 (H18):** `!x == y`, `x & y == y` and `(x > 0) == y` used to read `!(x == y)`, `(x & y) == y` and `(x > 0) == (y != 0)`; write those brackets if that is what you mean.
+
+### Evaluation and conversions (D-035)
+Operations evaluate as in SystemVerilog (IEEE 1800-2017 §11.4, §11.6, §11.8), so that a mined assertion holds in a simulator exactly where it holds in HARM:
+- **Signedness:** an operation is unsigned if any operand is unsigned (also for C types), and as wide as its widest operand; an unsized decimal literal is 32 bits (64 if it does not fit); each operand is extended from its own width, sign-extended only when the operation is signed.
+- **Context-determined widths:** a comparison is computed at the width of its widest operand, and its arithmetic operands with it: with an 8-bit `ch`, `ch << am == 0` is computed at 32 bits (the literal `0`), `q + r == 5'd16` at 5 bits.
+- **Shifts:** the amount is unsigned and taken at its own width; shifting by the width or more gives 0; `>>` is logical, `>>>` arithmetic on a signed value, `<<<` is `<<`. A shift never stops HARM.
+- **Division by zero:** x for `logic` (false when compared), 0 for the 2-valued C types (they have no x).
+- **x and z:** an x/z bit in an operand of `+ - * /` makes the whole result x; bitwise operators work bit by bit (as before); a comparison with an x/z operand is false (D-011, unchanged).
+- **Printing:** a literal prints as text that re-parses to the same value and type: `4'b0x01` (not `4'bx01`, which means `4'bxx01`), `8'sb…` keeps its `s`, an unsigned C constant prints as a sized literal (`0x1F` as `8'b11111`), a real keeps its point (`2.0`).
 
 ### SystemVerilog Syntax in Propositions
 Besides C/C++ operators, propositions accept these SystemVerilog forms:

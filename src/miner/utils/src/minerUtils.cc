@@ -62,7 +62,7 @@ variableTypeFromString(const std::string &type, size_t size) {
     return std::make_pair(ExpType::SInt, 32);
   } else if (type == "int") {
     return std::make_pair(ExpType::SInt, sizeof(int) * 8);
-  } else if (type == "unsigned int") {
+  } else if (type == "unsigned int" || type == "int unsigned") {
     return std::make_pair(ExpType::UInt, sizeof(int) * 8);
   } else if (type == "uint32_t") {
     return std::make_pair(ExpType::UInt, 32);
@@ -83,13 +83,14 @@ variableTypeFromString(const std::string &type, size_t size) {
 
     //4-value
   } else if (type == "integer") {
-    return std::make_pair(ExpType::SInt, 32);
+    // D-035: integer and time are 4-state (IEEE 1800-2017 Table 6-8)
+    return std::make_pair(ExpType::SLogic, 32);
   } else if (type == "integer unsigned") {
-    return std::make_pair(ExpType::UInt, 32);
+    return std::make_pair(ExpType::ULogic, 32);
   } else if (type == "time") {
-    return std::make_pair(ExpType::UInt, 64);
+    return std::make_pair(ExpType::ULogic, 64);
   } else if (type == "time signed") {
-    return std::make_pair(ExpType::SInt, 64);
+    return std::make_pair(ExpType::SLogic, 64);
   } else if (type == "reg" || type == "wire" || type == "logic") {
     return std::make_pair(ExpType::ULogic, size);
   } else if (type == "reg signed" || type == "wire signed" ||

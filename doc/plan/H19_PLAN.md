@@ -1,6 +1,6 @@
 # H19 plan: evaluation and conversions as in SystemVerilog (H18 audit findings E1–E6, R4)
 
-*Status: approved 2026-10-09 by the user: Q1 (a) SystemVerilog's rules for every operation, Q2 (a), Q3 (a), Q4 (a), Q5 (a). Branch: `ms/H19-evaluation` (from `dev` @ `d1be73b`, with H18). Effort: 2–3 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest` stays pending.*
+*Status: approved 2026-10-09 by the user: Q1 (a) SystemVerilog's rules for every operation, Q2 (a), Q3 (a), Q4 (a), Q5 (a). Implemented, awaiting review (VALIDATION, H19). Branch: `ms/H19-evaluation` (from `dev` @ `d1be73b`, with H18). Effort: 2–3 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest` stays pending.*
 
 ## Why SystemVerilog is the reference
 HARM prints SVA, and that SVA is checked by SystemVerilog simulators and formal tools (trivergence's OpenFPV, Verilator). Wherever HARM evaluates a proposition differently from SystemVerilog, it can mine an assertion that fails in simulation, or miss one that holds. C only matters where SystemVerilog and C agree, or where C leaves the case undefined (§6.5.5, §6.5.7: division by zero, shift amounts).

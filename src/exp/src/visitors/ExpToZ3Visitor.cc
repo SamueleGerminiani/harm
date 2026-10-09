@@ -198,6 +198,48 @@ ExpToZ3Visitor::LTerm ExpToZ3Visitor::extendTo(const LTerm &t,
   return LTerm{i, x, z, width, t.sgn, false};
 }
 
+ExpToZ3Visitor::LTerm ExpToZ3Visitor::operandAt(const LTerm &t, unsigned R,
+                                                bool resSgn) {
+  // the bits of the operand's own width; sign extension by shift left, arithmetic shift right
+  // (a cheap bit-vector operation, no ite): applied to the value, x and z masks alike, it
+  // repeats an x or z sign bit as x or z, and a known 1 as 1 (value bits are 0 under x/z)
+  z3::expr m = mask(t.w);
+  z3::expr x = t.x & m, z = t.z & m;
+  z3::expr v = t.v & m & ~(x | z);
+  if (resSgn && t.sgn && R > t.w && t.w > 0 && t.w < _U) {
+    auto sx = [&](const z3::expr &e) {
+      return z3::ashr(z3::shl(e, bv(_U - t.w)), bv(_U - t.w));
+    };
+    v = sx(v);
+    x = sx(x);
+    z = sx(z);
+  }
+  z3::expr r = mask(R);
+  return LTerm{v & r, x & r, z & r, R, resSgn, false};
+}
+
+z3::expr ExpToZ3Visitor::intNorm(const z3::expr &v,
+                                 const std::pair<ExpType, size_t> &t) {
+  unsigned w = (unsigned)std::min<size_t>(t.second, 64);
+  if (w >= 64) {
+    return v;
+  }
+  z3::expr low = v.extract(w - 1, 0);
+  return isSigned(t.first) ? z3::sext(low, 64 - w) : z3::zext(low, 64 - w);
+}
+
+z3::expr ExpToZ3Visitor::intAs(const z3::expr &v,
+                               const std::pair<ExpType, size_t> &own,
+                               const std::pair<ExpType, size_t> &res) {
+  unsigned w = (unsigned)std::min<size_t>(own.second, 64);
+  if (w >= 64) {
+    return v;
+  }
+  z3::expr low = v.extract(w - 1, 0);
+  return isSigned(res.first) && isSigned(own.first) ? z3::sext(low, 64 - w)
+                                                     : z3::zext(low, 64 - w);
+}
+
 void ExpToZ3Visitor::logicCompare(const std::pair<ExpType, size_t> &a,
                                   const std::pair<ExpType, size_t> &b,
                                   int op) {
@@ -207,6 +249,8 @@ void ExpToZ3Visitor::logicCompare(const std::pair<ExpType, size_t> &a,
   unsigned R = res.second;
   bool sgn = isSigned(res.first);
   see(R);
+  l = operandAt(l, R, sgn);
+  r = operandAt(r, R, sgn);
   z3::expr x = ext(l.v, R, sgn), y = ext(r.v, R, sgn);
   z3::expr c = _ctx.bool_val(true);
   switch (op) {
@@ -240,7 +284,9 @@ void ExpToZ3Visitor::logicBitwise(const std::pair<ExpType, size_t> &type,
   unsigned R = type.second;
   bool sgn = isSigned(type.first);
   see(R);
-  z3::expr op1 = ext(l.v, R, sgn), op2 = ext(r.v, R, sgn);
+  l = operandAt(l, R, sgn);
+  r = operandAt(r, R, sgn);
+  z3::expr op1 = l.v, op2 = r.v;
   z3::expr lxz = l.x | l.z, rxz = r.x | r.z;
   z3::expr v = zero(), x = zero();
   if (op == AND) {
@@ -265,21 +311,24 @@ void ExpToZ3Visitor::logicArith(const std::pair<ExpType, size_t> &type,
   unsigned R = type.second;
   bool sgn = isSigned(type.first);
   see(R);
-  z3::expr op1 = ext(l.v, R, sgn), op2 = ext(r.v, R, sgn);
-  z3::expr val = op == SUM ? op1 + op2 : op == SUB ? op1 - op2 : op1 * op2;
-  // HARM: an x or z operand bit makes the result a 1-bit x
-  z3::expr collapsed = anyXZ(l) || anyXZ(r);
-  _logics.push_back(LTerm{z3::ite(collapsed, zero(), val),
-                          z3::ite(collapsed, bv(1), zero()), zero(), R,
-                          sgn, true});
+  l = operandAt(l, R, sgn);
+  r = operandAt(r, R, sgn);
+  z3::expr op1 = l.v, op2 = r.v;
+  z3::expr val = (op == SUM ? op1 + op2 : op == SUB ? op1 - op2 : op1 * op2) & mask(R);
+  // D-035: an x or z operand bit makes the whole result x (IEEE 1800-2017 11.4.2)
+  z3::expr unknown = anyXZ(l) || anyXZ(r);
+  _logics.push_back(LTerm{z3::ite(unknown, zero(), val),
+                          z3::ite(unknown, mask(R), zero()), zero(), R, sgn,
+                          false});
 }
 
 void ExpToZ3Visitor::intCompare(const std::pair<ExpType, size_t> &a,
                                 const std::pair<ExpType, size_t> &b,
                                 int op) {
-  z3::expr y = popInt();
-  z3::expr x = popInt();
-  bool sgn = applyCStandardConversion(a, b).first == ExpType::SInt;
+  auto common = applyCStandardConversion(a, b);
+  z3::expr y = intAs(popInt(), b, common);
+  z3::expr x = intAs(popInt(), a, common);
+  bool sgn = common.first == ExpType::SInt;
   z3::expr c = _ctx.bool_val(true);
   switch (op) {
   case EQ:
@@ -451,18 +500,12 @@ void ExpToZ3Visitor::visit(FloatTernary &o) {
 }
 
 // ---------------------------------------------------------------- int (exact for 64-bit types)
+// D-035: an integer of any width up to 64 is a 64-bit term holding its value, extended by its own
+// sign (intNorm); operations extend their operands as SystemVerilog does (intAs)
 void ExpToZ3Visitor::visit(IntConstant &o) {
-  if (o.getType().second != 64) {
-    opaqueInt(text(o));
-    return;
-  }
-  _ints.push_back(_ctx.bv_val((uint64_t)o.evaluate(0), 64));
+  _ints.push_back(intNorm(_ctx.bv_val((uint64_t)o.evaluate(0), 64), o.getType()));
 }
 void ExpToZ3Visitor::visit(IntVariable &o) {
-  if (o.getType().second != 64) {
-    opaqueInt("v:" + o.getName());
-    return;
-  }
   auto it = _intAtoms.find("v:" + o.getName());
   if (it == _intAtoms.end()) {
     it = _intAtoms
@@ -470,18 +513,16 @@ void ExpToZ3Visitor::visit(IntVariable &o) {
                       _ctx.bv_const(("i_" + o.getName()).c_str(), 64))
              .first;
   }
-  _ints.push_back(it->second);
+  _ints.push_back(intNorm(it->second, o.getType()));
 }
 #define INT_BINARY(NODE, OP)                                         \
   void ExpToZ3Visitor::visit(NODE &o) {                              \
-    if (o.getType().second != 64) {                                  \
-      opaqueInt(text(o));                                            \
-      return;                                                        \
-    }                                                                \
+    auto t = o.getType();                                            \
     o.getItems()[0]->acceptVisitor(*this);                           \
     o.getItems()[1]->acceptVisitor(*this);                           \
-    z3::expr b = popInt(), a = popInt();                             \
-    _ints.push_back(a OP b);                                         \
+    z3::expr b = intAs(popInt(), o.getItems()[1]->getType(), t);     \
+    z3::expr a = intAs(popInt(), o.getItems()[0]->getType(), t);     \
+    _ints.push_back(intNorm(a OP b, t));                             \
   }
 INT_BINARY(IntSum, +)
 INT_BINARY(IntSub, -)
@@ -490,23 +531,16 @@ INT_BINARY(IntBAnd, &)
 INT_BINARY(IntBOr, |)
 INT_BINARY(IntBXor, ^)
 void ExpToZ3Visitor::visit(IntNeg &o) {
-  // D-034: exact on 64-bit ints (two's complement), opaque otherwise, as ~
-  if (o.getType().second != 64) {
-    opaqueInt(text(o));
-    return;
-  }
+  auto t = o.getType();
   o.getItems()[0]->acceptVisitor(*this);
-  _ints.push_back(-popInt());
+  _ints.push_back(intNorm(-intAs(popInt(), o.getItems()[0]->getType(), t), t));
 }
 OPAQUE_LOGIC(LogicNeg)
 OPAQUE_FLOAT(FloatNeg)
 void ExpToZ3Visitor::visit(IntNot &o) {
-  if (o.getType().second != 64) {
-    opaqueInt(text(o));
-    return;
-  }
+  auto t = o.getType();
   o.getItems()[0]->acceptVisitor(*this);
-  _ints.push_back(~popInt());
+  _ints.push_back(intNorm(~intAs(popInt(), o.getItems()[0]->getType(), t), t));
 }
 OPAQUE_INT(IntDiv) // division by zero aborts HARM
 #define INT_CMP(NODE, OP)                                            \
@@ -529,12 +563,16 @@ void ExpToZ3Visitor::visit(IntToBool &o) {
 }
 OPAQUE_FLOAT(IntToFloat)
 void ExpToZ3Visitor::visit(IntToLogic &o) {
-  // HARM: Logic(int width, signed, (ULogic)value, 0, 0): the 64-bit value, zero-extended
+  // D-035: the integer extended from its own width to the cast's, sign-extended when both are
+  // signed (TypeCast.cc)
   see(64);
   see(o.getType().second);
   o.getItem()->acceptVisitor(*this);
-  z3::expr i = popInt();
-  z3::expr v = _U > 64 ? z3::zext(i, _U - 64) : i.extract(_U - 1, 0);
+  bool sx = isSigned(o.getType().first) && isSigned(o.getItem()->getType().first);
+  z3::expr i = intAs(popInt(), o.getItem()->getType(), o.getType());
+  z3::expr v = _U > 64 ? (sx ? z3::sext(i, _U - 64) : z3::zext(i, _U - 64))
+                       : i.extract(_U - 1, 0);
+  v = v & mask(o.getType().second);
   _logics.push_back(LTerm{v, zero(), zero(), (unsigned)o.getType().second,
                           isSigned(o.getType().first), false});
 }
@@ -548,6 +586,8 @@ void ExpToZ3Visitor::visit(BoolToLogic &o) {
 }
 OPAQUE_INT(IntLShift)
 OPAQUE_INT(IntRShift)
+OPAQUE_INT(IntARShift)
+OPAQUE_LOGIC(LogicARShift)
 void ExpToZ3Visitor::visit(IntSetMembership &o) {
   z3::expr e = _ctx.bool_val(false);
   for (auto &c : o.getConditions()) {
@@ -561,15 +601,14 @@ OPAQUE_BOOL(IntRose)
 OPAQUE_BOOL(IntFell)
 OPAQUE_INT(IntPast)
 void ExpToZ3Visitor::visit(IntTernary &o) {
-  if (o.getType().second != 64) {
-    opaqueInt(text(o));
-    return;
-  }
+  auto ty = o.getType();
   o.getCondition()->acceptVisitor(*this);
   o.getWhenTrue()->acceptVisitor(*this);
   o.getWhenFalse()->acceptVisitor(*this);
-  z3::expr f = popInt(), t = popInt(), c = popBool();
-  _ints.push_back(z3::ite(c, t, f));
+  z3::expr f = intAs(popInt(), o.getWhenFalse()->getType(), ty);
+  z3::expr t = intAs(popInt(), o.getWhenTrue()->getType(), ty);
+  z3::expr c = popBool();
+  _ints.push_back(intNorm(z3::ite(c, t, f), ty));
 }
 
 // ---------------------------------------------------------------- logic (4-valued)
@@ -630,9 +669,10 @@ void ExpToZ3Visitor::visit(LogicNot &o) {
   unsigned R = o.getType().second;
   bool sgn = isSigned(o.getType().first);
   see(R);
-  // HARM: ~ of the operand at width R (hidden bits above become ones); z becomes x
-  _logics.push_back(LTerm{~ext(t.v, R, sgn), t.x | t.z, zero(), R, sgn,
-                          false});
+  // D-035: ~ of the operand extended to width R; an x or z bit stays x, with value bit 0
+  t = operandAt(t, R, sgn);
+  z3::expr xz = t.x | t.z;
+  _logics.push_back(LTerm{~t.v & mask(R) & ~xz, xz, zero(), R, sgn, false});
 }
 #define LOGIC_CMP(NODE, OP)                                          \
   void ExpToZ3Visitor::visit(NODE &o) {                              \

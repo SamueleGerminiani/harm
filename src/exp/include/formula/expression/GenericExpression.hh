@@ -266,6 +266,13 @@ using IntGreaterPtr = std::shared_ptr<IntGreater>;
 using IntGreaterEqPtr = std::shared_ptr<IntGreaterEq>;
 using IntLessPtr = std::shared_ptr<IntLess>;
 using IntLessEqPtr = std::shared_ptr<IntLessEq>;
+/// D-035: >>> (arithmetic on a signed result)
+using IntARShift =
+    GenericExpression<ope::ope::IntARShift, IntExpression, IntExpression>;
+using LogicARShift = GenericExpression<ope::ope::LogicARShift,
+                                       LogicExpression, LogicExpression>;
+using IntARShiftPtr = std::shared_ptr<IntARShift>;
+using LogicARShiftPtr = std::shared_ptr<LogicARShift>;
 using IntNotPtr = std::shared_ptr<IntNot>;
 using IntNegPtr = std::shared_ptr<IntNeg>;
 using LogicNegPtr = std::shared_ptr<LogicNeg>;

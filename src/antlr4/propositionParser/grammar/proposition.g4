@@ -64,7 +64,7 @@ numeric
     | nonTemporalFunction
     | numeric artop=(TIMES | DIV) numeric
     | numeric artop=(PLUS | MINUS) numeric
-    | numeric logop=(LSHIFT | RSHIFT) numeric
+    | numeric logop=(LSHIFT | RSHIFT | ALSHIFT | ARSHIFT) numeric
     | numeric relop numeric
     | numeric INSIDE LCURLY ((sm_constant | sm_range) ',')* (sm_constant | sm_range) RCURLY
     | numeric eqop=(EQ | NEQ | CASE_EQ | CASE_NEQ) numeric
@@ -367,6 +367,11 @@ BXOR
 NEG
     : '~'
     ;
+
+// D-035: <<< (as <<) and >>> (arithmetic on a signed result); the lexer takes the longest match
+ALSHIFT: '<<<';
+
+ARSHIFT: '>>>';
 
 LSHIFT: '<<';
 

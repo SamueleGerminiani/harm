@@ -9,7 +9,9 @@ Writes, into tests/oracle/fixture_h19/:
   meta.txt   generator parameters and the Icarus Verilog version
 
 Expected values: Icarus Verilog 12 (SystemVerilog, IEEE 1800-2017 §11.4, §11.6, §11.8), mapped to
-HARM's truth value by '(e) ? 1 : 0' (x and z are false, D-011). Comparisons appear only at the top
+HARM's truth value by 'if (e)' (x and z are false, D-011; a '?:' would give x on an x condition). A
+comparison at the top of an expression follows D-011: false when an operand has an x or z bit (where
+SystemVerilog can still decide == and != from the known bits), as the H1 oracle's model does. Comparisons appear only at the top
 of an expression, where SystemVerilog and D-011 agree on x. One exception, decided by the user
 (H19, Q3 (a)): a C integer type has no x, so a division by zero gives 0; on those rows the expected
 value is computed here (the expression evaluated with the quotient 0), not taken from Icarus.
@@ -71,8 +73,10 @@ cases = []
 OPERANDS = ["ch", "it", "li", "uch", "ui", "uli", "q", "w", "sq", "sw", "ig", "tm"]
 for a in OPERANDS:
     for b in OPERANDS:
-        for op in ["+", "-", "*", "&", "|", "^"]:
+        for op in ["+", "-", "*"]:
             cases.append(("signedness", f"{a} {op} {b} < 0"))
+        for op in ["&", "|", "^"]:  # bracketed: & | ^ bind looser than < (D-034)
+            cases.append(("signedness", f"({a} {op} {b}) < 0"))
         cases.append(("signedness", f"{a} - {b} > 1"))
         for op in ["<", ">=", "==", "!="]:
             cases.append(("signedness", f"{a} {op} {b}"))
@@ -121,9 +125,44 @@ def csv_value(name, v):
 C_LITERALS = {"0x1F": "8'h1F", "0b101": "3'b101", "18446744073709551615ull": "64'hFFFF_FFFF_FFFF_FFFF"}
 
 
+# precedence classes, lowest first (IEEE 1800-2017 Table 11-2)
+LEVELS = [{"||"}, {"&&"}, {"|"}, {"^"}, {"&"}, {"==", "!=", "===", "!=="}, {"<", "<=", ">", ">="}]
+
+
+def top_comparison(e):
+    """(L, R) when the operator at the top of e (bracket depth 0, lowest precedence, the last one
+    of its level: operators are left-associative) is ==, !=, <, <=, > or >=; else None"""
+    toks = [m for m in re.finditer(
+        r"===|!==|==|!=|<<<|>>>|<<|>>|<=|>=|&&|\|\||[<>&|^(){}]", e)]
+    depth, top = 0, {}
+    for m in toks:
+        t = m.group(0)
+        if t in "({":
+            depth += 1
+        elif t in ")}":
+            depth -= 1
+        elif depth == 0:
+            for lvl, ops in enumerate(LEVELS):
+                if t in ops:
+                    top[lvl] = m
+    if not top:
+        return None
+    m = top[min(top)]
+    if m.group(0) not in ("==", "!=", "<", "<=", ">", ">="):
+        return None
+    return e[:m.start()].strip(), e[m.end():].strip()
+
+
 def svtext(e):
     for c, sv in C_LITERALS.items():
         e = e.replace(c, sv)
+    # HARM's x/z rule (D-011): a comparison with an x or z bit in an operand is false (SystemVerilog
+    # gives x, or a definite value when known bits already decide it, IEEE 1800-2017 11.4.5)
+    lr = top_comparison(e)
+    if lr is not None:
+        # '(^(v)) === 1'bx': v has an x or z bit. Not $isunknown: Icarus 12 gets it wrong on some
+        # 2-state sums ($isunknown(ch + ch) is 1 for a byte ch = -111; checked 2026-10-09)
+        return f"((^({lr[0]})) !== 1'bx) && ((^({lr[1]})) !== 1'bx) && ({e})"
     return e
 
 
@@ -137,7 +176,8 @@ body = []
 for r in rows:
     body.append("    " + " ".join(f"{n} = {sv_value(n, v)};" for (n, *_), v in zip(VARS, r)))
     body.append('    $write("R");')
-    body += [f'    $write("%0d", (({svtext(e)}) ? 1 : 0));' for _, e in cases]
+    # an if statement: an x or z condition is false (a ?: would merge both branches into x)
+    body += [f'    if ({svtext(e)}) $write("1"); else $write("0");' for _, e in cases]
     body.append('    $display("");')
 with tempfile.TemporaryDirectory() as d:
     sv = Path(d) / "t.sv"

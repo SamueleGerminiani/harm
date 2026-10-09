@@ -249,11 +249,13 @@ TEST_F(TraceTest, SignedLogic) {
       new VCDtraceReader("../tests/input/SignedTypes.vcd", vcdConfig);
   const TracePtr &trace = tr->readTrace();
 
-  IntVariablePtr c_0 = trace->getIntVariable("c_0");
-
-  EXPECT_EQ(c_0->evaluate(1), -1);
-  EXPECT_EQ(c_0->evaluate(2), -2);
-  EXPECT_EQ(c_0->evaluate(3), -3);
+  // H19 (D-035, Q4): a VCD integer is 4-state, a signed 32-bit logic (IEEE 1800-2017 Table 6-8)
+  LogicVariablePtr c_0 = trace->getLogicVariable("c_0");
+  EXPECT_EQ(c_0->getType().first, ExpType::SLogic);
+  EXPECT_EQ(c_0->getType().second, 32u);
+  EXPECT_EQ(c_0->evaluate(1).getSignedValue(), -1);
+  EXPECT_EQ(c_0->evaluate(2).getSignedValue(), -2);
+  EXPECT_EQ(c_0->evaluate(3).getSignedValue(), -3);
 }
 
 TEST_F(TraceTest, ResetMultiTrace) {
