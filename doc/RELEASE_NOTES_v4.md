@@ -75,11 +75,11 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **Profiling is opt-in** (H13): `-DHARM_PROFILE=ON` builds for `gprof`. A default build no longer writes a `gmon.out` on every run.
 - **The tools the tests use** (Verilator 5.052, Icarus Verilog 13.0, yosys 0.69 with `read_slang`) have install scripts in `third_party` (H11d, H11g; `install_all.sh --no-tools` skips them). Without them, the tests that need them are skipped.
 - **The Docker image** (`docker/build.sh [ref]`) includes Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
+- **The warning and error logs** (`warning.log`, `error.log`) are appended at a constant cost per message (H21; found in H19): before, every message rewrote the whole file, so a run that emitted many warnings slowed down as the logs grew. The files' format is unchanged.
 - **The test suite** has grown from 35 to about 230 tests, with independent oracles: brute-force enumeration, iverilog and Verilator simulation, Spot, and hand-labelled fixtures (the report's validation chapter).
 
 ## Known limitations
 - **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are future work (H20, planned, not scheduled).
-- **The warning and error logs** (`warning.log`, `error.log`) are JSON arrays rewritten at their end on every message: in a working directory where they have grown large, a run that emits many warnings slows down (found in H19; delete them, or run in a fresh directory).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
 - **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions; on several thousand assertions they can take tens of minutes.
 - **Ties in the decision tree** are decided by the last bit of a floating-point score. Platforms agree because they now round the same way (H12); a change of `libm` could still change a choice with `ENT`.
@@ -121,3 +121,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H18 | operators and printing as in C and SystemVerilog (D-034) |
 | H19 | evaluation and conversions as in SystemVerilog (D-035) |
 | H20 | (future work) missing operators: `%`, `**`, reductions, `~^` |
+| H21 | leftovers from H19: log writes at a constant cost |

@@ -1147,3 +1147,17 @@ The tests were written first and committed failing in `4634c49`.
 - **Setup:** `eval/run_eval.py` with the committed manifest (paths moved from `/home/sam` to `/Users/sam`), trivergence's AssertLLM2 data at `f66fd20` and the traces copied from the Linux machine; configurations C6 and C7, timeout 600 s. Three runs: the committed Linux results (`eval/results/assertllm2/results.csv`, HARM `v3-154-gc1735ca`), `dev` before H18 (`b05dcc7`, built in a worktree) and H19 (`a7146b5`; the binary prints `v3-255-g4634c49 (dirty)`, built from the working tree before the commit).
 - **Result:** the three runs agree on every design and configuration: the same number of assertions, the same coverage, the same three timeouts (`aes_cipher` C6 and C7, `uart_to_bus` C7). H13–H19 change nothing on these designs, which use unsigned logic, comparisons and Boolean operators. Only the counts were compared (`run_eval.py` keeps no assertion text).
 - **Times** differ (H19 faster on most runs) but are not comparable: the two Mac builds were configured differently and ran one after the other; the benchmark above is the measurement.
+
+## H21: leftovers from H19 (2026-10-10, macOS 15.3.2 arm64, Homebrew g++-13 13.3.0)
+The tests were written first and committed in `8c69628`: `LogTest.appendCostDoesNotGrowWithTheFile` failing; `sameBytesAsBefore` and `unterminatedFileKeepsTheOldBehaviour` passing (they pin the bytes the old code writes).
+
+| Test | Result |
+|---|---|
+| A1 `LogTest.appendCostDoesNotGrowWithTheFile`: 2,000 warnings on a `warning.log` of 50,000 records, under 2 s, one valid array of 52,000 records | pass, 0.07 s (before: 602.5 s, failing) |
+| A2 `LogTest.sameBytesAsBefore`: three warnings and two errors (one with `errno`) give the old code's bytes, times aside | pass, before and after |
+| A3 `LogTest.unterminatedFileKeepsTheOldBehaviour`: a file cut after a record's first line, one ending `x]`, one ending `]` without a newline: the last line replaced, as before | pass, before and after |
+| A4 the earlier `LogTest` tests; full `ctest` on the Mac | pass (the concurrency tests: 8.0 s each before, 0.25 s and 0.04 s now); 245 of 245 in 1,910 s, `h14_doc_coverage` included; the H0 baselines byte-identical |
+
+- **L2:** the Z3 comment on division now gives the reason it stays opaque (Z3's division by zero gives all ones or ±1; HARM gives 0 or x, D-035). No code change.
+- **L3:** `.gitignore` ignores `build-*/`; no tracked path matches it.
+- **Linux:** not scheduled (the user, 2026-10-10).

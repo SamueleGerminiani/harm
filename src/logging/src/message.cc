@@ -12,7 +12,9 @@
 #include <fcntl.h>
 #include <fstream>
 #include <mutex>
+#include <sstream>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace hlog {
@@ -44,11 +46,40 @@ public:
   }
   LogLock(const LogLock &) = delete;
   LogLock &operator=(const LogLock &) = delete;
+  int fd() const { return _fd; }
 
 private:
   std::lock_guard<std::mutex> _guard;
   int _fd;
 };
+// H21: appends one record to the JSON array in file, holding lock. A file that ends with the line
+// "]" gets the record written over that line, so a message costs the same however long the log is;
+// the bytes are those of the read-modify-write below, which stays for an empty file and for a file
+// that does not end so (edited by hand, or cut by a crash)
+void appendRecord(const LogLock &lock, const char *file, const std::string &record) {
+  int fd = lock.fd();
+  struct stat st;
+  if (fd >= 0 && fstat(fd, &st) == 0 && st.st_size >= 2) {
+    off_t size = st.st_size;
+    char tail[3] = {0, 0, 0};
+    off_t from = size >= 3 ? size - 3 : 0;
+    ssize_t n = pread(fd, tail, size - from, from);
+    bool endsWithBracketLine =
+        n == size - from && tail[n - 2] == ']' && tail[n - 1] == '\n' && (n == 2 || tail[0] == '\n');
+    if (endsWithBracketLine) {
+      std::string text = ",\n" + record + "]\n";
+      if (pwrite(fd, text.data(), text.size(), size - 2) == (ssize_t)text.size()) {
+        return;
+      }
+    }
+  }
+  if (!isFileEmpty(file)) {
+    deleteLastLine(file);
+    std::ofstream(file, std::ios::app) << ",\n" << record << "]\n";
+  } else {
+    std::ofstream(file, std::ios::app) << "[\n" << record << "]\n";
+  }
+}
 } // namespace
 
 //number of active ScopedThrowOnError in this thread
@@ -74,23 +105,9 @@ void dumpErrorToFile(std::string message, int custom_errno,
   }
   LogLock lock("error.log");
 
-  if (!isFileEmpty("error.log")) {
-    deleteLastLine("error.log");
-    std::ofstream file;
-    file.open("error.log", std::ios::app);
-    file << ",\n";
-    file.close();
-  } else {
-    std::ofstream file;
-    file.open("error.log", std::ios::app);
-    file << "[\n";
-    file.close();
-  }
-
   removeDoubleQuotes(message);
 
-  std::ofstream file;
-  file.open("error.log", std::ios::app);
+  std::ostringstream file;
   file << "{\n";
   file << "\"time\" : \"" << NowTime() << "\"," << std::endl;
   file << "\"message\" : \"" << message << "\"";
@@ -117,9 +134,7 @@ void dumpErrorToFile(std::string message, int custom_errno,
 
   file << "}\n";
 
-  file << "]\n";
-
-  file.close();
+  appendRecord(lock, "error.log", file.str());
 }
 
 void dumpWarningToFile(std::string message) {
@@ -128,30 +143,15 @@ void dumpWarningToFile(std::string message) {
   }
   LogLock lock("warning.log");
 
-  if (!isFileEmpty("warning.log")) {
-    deleteLastLine("warning.log");
-    std::ofstream file;
-    file.open("warning.log", std::ios::app);
-    file << ",\n";
-    file.close();
-  } else {
-    std::ofstream file;
-    file.open("warning.log", std::ios::app);
-    file << "[\n";
-    file.close();
-  }
-
   removeDoubleQuotes(message);
 
-  std::ofstream file;
-  file.open("warning.log", std::ios::app);
+  std::ostringstream file;
   file << "{\n";
   file << "\"time\" : \"" << NowTime() << "\"," << std::endl;
   file << "\"message\" : \"" << message << "\"";
   file << "}\n";
-  file << "]\n";
 
-  file.close();
+  appendRecord(lock, "warning.log", file.str());
 }
 
 void _harm_internal_messageInfo(const std::string &message) {
