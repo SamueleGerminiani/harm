@@ -184,10 +184,11 @@ TEST(BitwiseBoolTest, inTemplatesAndSva) {
 
 TEST(BitwiseBoolTest, notAtomsStillRejected) {
   TracePtr tr = makeTrace(allRows());
+  // H18 (D-034): with ! binding as in SystemVerilog, these are legal: (!a) ^ b, (a && b) ^ c, a ^ b
+  // (their values: OperatorPrecedenceTest). H17 rejected them only because of the old precedence.
   for (std::string exp : {"(a && b) ^ c", "!a ^ b", "(a) ^ b"}) {
     std::string error;
-    EXPECT_EQ(hparser::tryParseProposition(exp, tr, error), nullptr) << exp;
-    EXPECT_FALSE(error.empty()) << exp;
+    EXPECT_NE(hparser::tryParseProposition(exp, tr, error), nullptr) << exp << ": " << error;
   }
   // what worked before is unchanged, parenthesised bools included (a first version, a grammar
   // predicate, broke them: ANTLR ignores a predicate past the first token of a decision)

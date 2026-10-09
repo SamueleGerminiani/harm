@@ -481,3 +481,12 @@ if(PYTHON3_FOUND)
         set_tests_properties(h17_${mode} PROPERTIES LABELS regression)
     endforeach()
 endif()
+
+# ---- H18: operators as in C and SystemVerilog (D-034) ------------------------------------------------
+if(PYTHON3_FOUND)
+    foreach(mode fixture examples)
+        add_test(NAME h18_operators_${mode}
+            COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} ${mode})
+        set_tests_properties(h18_operators_${mode} PROPERTIES LABELS regression)
+    endforeach()
+endif()

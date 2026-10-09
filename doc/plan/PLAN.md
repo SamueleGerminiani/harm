@@ -360,6 +360,6 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H16 | `--check-dump-eval` file names: overwrites, long names exit, no mapping back (trivergence T12 A5 finding) | done |
 | H15 | Proposition table export (`--dump-prop-table`), for the miner portfolio's SAT miner | done |
 | H17 | Findings left open by H15/H16: bitwise operators on `bool`, float exclusions, `"file": null` test, sorted trace directories | done |
-| H18 | Operator precedence and printing as in C and SystemVerilog (audit) | planned (`H18_PLAN.md`, findings and split awaiting approval) |
+| H18 | Operator precedence and printing as in C and SystemVerilog (audit) | in-progress (plan approved 2026-10-09) |
 | H19 | Evaluation and conversions (shifts, signedness, division by zero, casts, literal printing) | todo (after H18) |
 | H20 | Missing SystemVerilog operators (optional) | todo |

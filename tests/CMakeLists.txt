@@ -46,6 +46,7 @@ addTest("AtomPremiseTest" ./atomPremiseTests.cc )
 addTest("ScoreTest" ./scoreTests.cc )
 addTest("BitwiseBoolTest" ./bitwiseBoolTests.cc )
 addTest("CheckDumpTest" ./checkDumpTests.cc )
+addTest("OperatorPrecedenceTest" ./operatorPrecedenceTests.cc )
 
 
 add_subdirectory(regression)
