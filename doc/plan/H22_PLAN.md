@@ -1,6 +1,6 @@
 # H22 plan: HARM's hints from the RTL (`harm-coi --hints`)
 
-*Status: draft for the user's approval (2026-10-11). Branch `ms/H22-coi-hints` from `dev` @ `0663902`. Asked by the user from the miner portfolio's P1 pilot: "can we start by generating hints for harm using the coi? Then we will decide if it worth merging with LLM hints". Effort: about 3 d (harm-coi 2 d; the portfolio's switch and the measurement 1 d). The portfolio's full P1 runs wait for it.*
+*Status: approved by the user (2026-10-11, Q1–Q5 as recommended). Branch `ms/H22-coi-hints` from `dev` @ `0663902`. Asked by the user from the miner portfolio's P1 pilot: "can we start by generating hints for harm using the coi? Then we will decide if it worth merging with LLM hints". Effort: about 3 d (harm-coi 2 d; the portfolio's switch and the measurement 1 d). The portfolio's full P1 runs wait for it.*
 
 ## Why
 In trivergence, HARM's hints (propositions, templates, signal roles) come from an LLM reading the spec (trivergence `docs/PROJECT_OVERVIEW.md` §3.1). Without a spec (the miner portfolio, GoldMine-style use), harm-coi gives today:
