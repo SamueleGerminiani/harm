@@ -1,0 +1,11 @@
+# H22 hints, hand-written from rtl/arbiter.sv
+role rst input control
+role req input control
+role gnt comb control
+role prio state control
+prop !prio -> state
+prop gnt[0] -> comb
+prop gnt[1] -> comb
+prop prio -> state
+prop req == 2'd3 -> -
+prop rst -> -
