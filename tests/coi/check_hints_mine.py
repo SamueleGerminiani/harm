@@ -33,6 +33,7 @@ def main():
         out = Path(a.out) / f"h22_{name}_{use}"
         out.mkdir(parents=True, exist_ok=True)
         env = {**os.environ, "PYTHONPATH": str(ROOT / "tools" / "harm-coi" / "src")}
+        (out / "info.json").unlink(missing_ok=True)
         subprocess.run([a.python, "-m", "harm_coi", "--top", name, "--files", *map(str, sorted((f / "rtl").glob("*.sv"))),
                         "--vcd-scope", "tb::dut", "--vcd-recursion", r, "--vcd", str(f / "trace.vcd"),
                         "--hints", str(out / "hints.json"), "--hints-use", use, "--emit-config", str(out / "cfg.xml"),
@@ -42,10 +43,24 @@ def main():
                             "--conf", str(out / "cfg.xml"), "--max-threads", "1", "--psilent", "--isilent",
                             "--dump-assertion-info", str(out / "info.json")], capture_output=True, text=True)
         if h.returncode != 0:
-            bad.append(f"{use}: HARM exit {h.returncode}: {h.stderr[-300:]}")
+            # accepted only if the configuration of today (no --hints) fails the same way (hier: a parameter
+            # named W, a HARM keyword; multipath: no RTL predicates at all)
+            subprocess.run([a.python, "-m", "harm_coi", "--top", name, "--files",
+                            *map(str, sorted((f / "rtl").glob("*.sv"))), "--vcd-scope", "tb::dut", "--vcd-recursion", r,
+                            "--vcd", str(f / "trace.vcd"), "--emit-config", str(out / "default.xml"),
+                            "-o", str(out / "coi.json")], check=True, env=env)
+            d = subprocess.run([a.harm, "--vcd", str(f / "trace.vcd"), "--clk", "clk", "--vcd-ss", "tb::dut",
+                                "--vcd-r", r, "--conf", str(out / "default.xml"), "--max-threads", "1", "--psilent",
+                                "--isilent"], capture_output=True, text=True)
+            msg = lambda p: re.findall(r"Message: (.*?)\x1b|Message: (.*)$", p.stdout + p.stderr, re.M)  # noqa: E731
+            if d.returncode == 0 or msg(d) != msg(h):
+                bad.append(f"{use}: HARM exit {h.returncode}, the default configuration does not fail the same way")
+            else:
+                print(f"{name} {use}: HARM fails as with the default configuration: {msg(h)[:1]}")
             continue
         n = 0
-        for x in json.loads((out / "info.json").read_text())["assertions"]:
+        info = out / "info.json"  # HARM writes no dump when mining yields nothing to qualify (as before H22)
+        for x in json.loads(info.read_text())["assertions"] if info.exists() else []:
             n += 1
             cons = {v for leaf in x["leaves"] if not leaf["antecedent"] for v in leaf["variables"]}
             rs = {roles.get(re.sub(r"\[[0-9]+\]$", "", v), "unknown") for v in cons}

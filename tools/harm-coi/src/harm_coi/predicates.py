@@ -28,7 +28,8 @@ HARM_MAX_LOGIC_BITS = 511
 #                      | ("not", p) | ("and", [p...]) | ("or", [p...])
 @dataclass
 class Harvest:
-    preds: dict = field(default_factory=lambda: defaultdict(lambda: {"targets": set(), "src": set()}))
+    preds: dict = field(default_factory=lambda: defaultdict(
+        lambda: {"targets": set(), "src": set(), "signals": set(), "kinds": set()}))
     dropped: list = field(default_factory=list)   # (reason, src)
     widths: dict = field(default_factory=dict)    # atom -> width of the signal it reads
 
@@ -185,6 +186,8 @@ class Harvester:
             return
         entry = self.out.preds[text]
         entry["src"].add(where)
+        entry["signals"] |= {self.name((a[2] if a[0] == "cmp" else a)[1]) for a in self.atoms(p)}  # H22: what it reads
+        entry["kinds"].add(kind)
         entry["targets"] |= {self.vis[t] for t in targets if t in self.vis}
 
     def condition(self, e, targets, kind="condition"):
@@ -352,9 +355,12 @@ class Harvester:
             self.stmt(s.stmt)
 
 
-def harvest(design, comp, vis):
-    """(sorted predicate records for coi.json, dropped list)"""
+def harvest(design, comp, vis, extra=None):
+    """(sorted predicate records for coi.json, dropped list); `extra`, if given, gets each predicate's signals and
+    harvesting kinds (H22), which coi.json does not carry"""
     h = Harvester(design.extractor, comp, vis).run()
+    if extra is not None:
+        extra.update({t: {"signals": e["signals"], "kinds": e["kinds"]} for t, e in h.preds.items()})
     records = []
     for text in sorted(h.preds):
         e = h.preds[text]
@@ -363,18 +369,31 @@ def harvest(design, comp, vis):
     return records, h.dropped
 
 
-def emit_config(path, records, coi_path):
+def emit_config(path, records, coi_path, hints=None, use="all"):
     """a starter HARM configuration (D-023): one context, the predicates with origin "rtl", the
-    cone in rank mode, and --generate-config's templates and sorts"""
+    cone in rank mode, and --generate-config's templates and sorts. With `hints` (H22): each predicate's
+    placement; with use="all" also a template per timing class that has a consequent (one class, one domain)"""
     import os
     from xml.sax.saxutils import quoteattr
     rel = os.path.relpath(coi_path, os.path.dirname(os.path.abspath(path)) or ".")
     lines = ["<harm>", "    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->",
              '    <context name="default">']
+    place = {p["expr"]: p for p in hints["propositions"]} if hints else {}
     for r in records:
-        lines.append(f'        <prop exp={quoteattr(r["expr"])} loc="a, c, dt" origin="rtl"/>')
-    lines += [f"        <coi file={quoteattr(rel)} mode=\"rank\"/>",
-              '        <template dtLimits="5D,3W,15A,-0.1E,U" exp="G({..#1&amp;..}|-&gt; P0)"/>',
+        loc = "a, c, dt"
+        if hints:
+            p = place[r["expr"]]
+            loc = ", ".join(p["loc"] if use == "all" else ["a", "c", "dt"] if p["consequent"] else ["a", "dt"])
+        lines.append(f'        <prop exp={quoteattr(r["expr"])} loc="{loc}" origin="rtl"/>')
+    lines.append(f"        <coi file={quoteattr(rel)} mode=\"rank\"/>")
+    if hints and use == "all":
+        used = {c for p in hints["propositions"] for c in p["consequent"]}
+        for c, d in hints["classes"].items():
+            if c in used:
+                lines.append(f'        <template dtLimits="{d["dtLimits"]}" exp={quoteattr(d["template"])}/>')
+    else:
+        lines.append('        <template dtLimits="5D,3W,15A,-0.1E,U" exp="G({..#1&amp;..}|-&gt; P0)"/>')
+    lines += [
               '        <sort name="causality" exp="1-afct/traceLength"/>',
               '        <sort name="frequency" exp="atct/traceLength"/>',
               "    </context>", "</harm>", ""]

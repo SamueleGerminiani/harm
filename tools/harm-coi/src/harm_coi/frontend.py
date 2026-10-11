@@ -62,6 +62,7 @@ class Design:
     clock_uses: set          # atoms used as clocks of processes (before propagation)
     top_inputs: set               # atoms of the top's input ports
     extractor: object = None      # for predicate harvesting (H10)
+    asyncs: set = field(default_factory=set)   # asynchronous controls of registers (H22)
 
 
 def elaborate(top, files, defines=(), includes=()):
@@ -139,6 +140,7 @@ class Extractor:
         self.driven = set()
         self.sub_cache = {}
         self.top_inputs = set()
+        self.asyncs = set()                     # asynchronous controls of registers (H22: reset roles)
 
     # ------------------------------------------------------------------ names
     def path_of(self, sym):
@@ -531,6 +533,7 @@ class Extractor:
             return
         clock, edge = clocks[0][0][0], clocks[0][1]
         asyncs = {a for l, _ in ev if l is not clocks[0][0] for a in l}
+        self.asyncs |= asyncs
         p = Process(clock=clock, edge=edge, targets=set(ctx.assigned))
         self.processes.append(p)
         self.clock_uses.add(clock)
@@ -744,4 +747,4 @@ def extract(top, am):
     x.run()
     return Design(edges=x.edges, signals=x.signals, params=x.params, unknown=x.unknown,
                   processes=x.processes, clock_uses=x.clock_uses, top_inputs=x.top_inputs,
-                  extractor=x)
+                  extractor=x, asyncs=x.asyncs)
