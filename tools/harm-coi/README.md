@@ -13,7 +13,8 @@ python3.12 -m venv .venv
 ```
 harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include DIR]...
          --vcd-scope <tb::dut> --vcd-recursion <r> [--vcd <trace.vcd>] [--clock <clk>]
-         [--max-depth 3] [--edges edges.txt] [--predicates] [--emit-config cfg.xml] [-v] -o coi.json
+         [--max-depth 3] [--edges edges.txt] [--predicates] [--emit-config cfg.xml]
+         [--hints hints.json [--hints-use all|placement] [--reset NAME]...] [-v] -o coi.json
 ```
 - `--vcd-scope` and `--vcd-recursion` are HARM's `--vcd-ss` and `--vcd-r`. Names are HARM's: relative to the scope, `::` between sub-scopes (`g[1]::w`, `bus::valid`, `c::mode`), D-013.
 - **`--vcd` (recommended): the trace decides which signals are visible.**
@@ -88,6 +89,14 @@ The emitted `counter.xml` has these four predicates as propositions with `origin
   - `--generate-config`'s template and sorts.
 
   For GoldMine-style mining, change the mode to `filter` (and `depth`, H8).
+
+## Hints from the RTL (`--hints`, H22, D-036)
+`--hints FILE` writes `hints.json` (`doc/schemas/hints.v1.json`): what an LLM would give HARM from a spec, here from the RTL, by roles and timing shape only (never which signal may explain which).
+- **roles:** `input`, `reset` (`--reset NAME`, or an asynchronous control of a register), `const`, `clock`, `unknown`, `comb` (a source at depth 0, resets aside), `state` (every source at depth ≥ 1); `control` when a harvested condition, case label or loop condition reads the signal;
+- **placement:** a predicate that reads only inputs, resets or constants is never a consequent (`loc="a, dt"`); the others keep `c` and get their classes' domains;
+- **classes:** comb (and unknown) targets get `G({..#1&..}|-> P0(1))`, state targets `G({..#1&..}|=> P0(2))`, with the starter's `dtLimits`.
+
+With `--emit-config`, the configuration is written from the hints: all of them (`--hints-use all`), or the placement only (`--hints-use placement`, the starter's single template). Without `--hints`, the output is unchanged. Checked by hand-written expectations on the fixtures (`expected_hints.txt`), an independent oracle (`tests/coi/hints_oracle.py`) and a mining check (`tests/coi/check_hints_mine.py`, `ctest -L coi`).
 
 ## Unknown, never dropped
 A signal goes to `unknown` (HARM treats it as in every cone, D-017) when:

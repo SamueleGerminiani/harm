@@ -369,4 +369,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H19 | Evaluation and conversions as in SystemVerilog (shifts, signedness, `>>`, division by zero, casts, CSV types, literal printing) | done |
 | H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | future work (plan in `H20_PLAN.md`, not scheduled) |
 | H21 | Leftovers from H19: log writes at a constant cost, a stale Z3 comment, `build-*/` ignored | done |
-| H22 | HARM's hints from the RTL (`harm-coi --hints`: roles, consequent placement, per-class templates), asked from the miner portfolio's P1 pilot | in-progress (`H22_PLAN.md`, approved 2026-10-11) |
+| H22 | HARM's hints from the RTL (`harm-coi --hints`: roles, consequent placement, per-class templates), asked from the miner portfolio's P1 pilot | awaiting-review (implementation and tests done; measurement pending in the miner portfolio) |
