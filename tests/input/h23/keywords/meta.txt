@@ -1,0 +1,5 @@
+design = keywords
+top = keywords
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk

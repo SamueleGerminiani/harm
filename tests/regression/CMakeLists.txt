@@ -232,6 +232,16 @@ if(HARM_COI_OK)
                                  FIXTURES_REQUIRED h5_coi_${design})
         endif()
     endforeach()
+    # H23 R2 and R5: signals named after HARM keywords (escaped references, D-037)
+    add_test(NAME h23_mine_keywords
+        COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_keywords_mine.py
+                ${CMAKE_SOURCE_DIR}/tests/input/h23/keywords --expect-relations
+                --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
+    add_test(NAME h23_mine_hier
+        COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_keywords_mine.py
+                ${CMAKE_SOURCE_DIR}/tests/input/coi/hier --no-predicates
+                --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
+    set_tests_properties(h23_mine_keywords h23_mine_hier PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)
         add_test(NAME h5_reproduce_constructs
             COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py reproduce

@@ -30,9 +30,11 @@ HARM refuses any trace whose variables include one of its keywords (`proposition
 | R2 | HARM mines on it, with propositions over those signals **and** templates that use the operators `X`, `W`, `G`, `F`, `R`, `until`, `next` in the same formulas; every expected assertion is found, none has a keyword read as a variable or the reverse | R1's expectations |
 | R3 | The parser on hand-written formulas: `\W ` is the variable, `W` the operator, in propositions and templates; a bare keyword-named variable in a formula is an error that names the escape | expected parse trees |
 | R4 | SVA output prints plain names; HARM's own syntax prints `\W `, and reading it back gives the same assertion | round trip |
-| R5 | harm-coi on `keywords` and `hier`: the escaped form in the emitted propositions and `hints.json`; `hier` now mines (`h22_mine_hier` expects assertions instead of the failure shared with `dev`) | hand-written; ctest |
+| R5 | harm-coi on `keywords`: the escaped form in the emitted propositions. `hier`: HARM gets past the variable declarations and stops as on any design without RTL predicates (`multipath`: "DT placeholder domain is empty!") | hand-written; ctest (`h23_mine_keywords`, `h23_mine_hier`) |
 | R6 | `ctest -L "coi|regression"`: the H0 baselines byte-identical (no design in them has such a name) | ctest |
 | R7 | Portfolio: HARM on `hier` through `portfolio refine` yields candidates; their SVA passes the portfolio's subset check and OpenFPV's trace check | pytest (container) |
+
+**Found while writing the tests (2026-10-12):** `hier` has no RTL predicate (pure dataflow: `q <= d` through a generate chain), so harm-coi gives HARM no proposition, with or without hints. H23 removes the `W` stop, but `hier` still mines nothing: it then fails as `multipath` does. Mining such designs needs propositions from elsewhere (LLM hints, or propositions over the signals themselves), outside H23. R5 is stated accordingly.
 
 ## Documents
 DECISIONS D-037 (escaped references, Q1–Q3); README (writing such names in configurations); harm-coi README; VALIDATION H23; PLAN row; TRIVERGENCE_IMPACT (facts: a hint naming such a signal is written `\W `; traces with such names no longer stop HARM).
