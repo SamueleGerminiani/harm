@@ -168,3 +168,15 @@ def test_relations_need_hints(tmp_path):
                    "--clock", "clk", "--emit-config", str(tmp_path / "c.xml"), "-o", str(tmp_path / "coi.json"),
                    "--relations"])
     assert rc == 2
+
+
+def test_registered_conditional_expression_keeps_parentheses(tmp_path):
+    # HARM cannot parse $past(c ? a : b, 1) (D1's lfsr, 2026-10-12): the conditional stays parenthesised
+    props, _, _ = emit(tmp_path, """
+        module m(input logic clk, rst, load, input logic [7:0] seed, output logic [7:0] q);
+          always_ff @(posedge clk)
+            if (rst) q <= 8'd1;
+            else if (load) q <= (seed == 8'd0) ? 8'd1 : seed;
+        endmodule
+    """, "--reset", "rst")
+    assert props["q == $past(((seed == 8'd0) ? 8'd1 : seed), 1)"] == ["c", "2"]
