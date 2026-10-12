@@ -242,6 +242,28 @@ if(HARM_COI_OK)
                 ${CMAKE_SOURCE_DIR}/tests/input/coi/hier --no-predicates
                 --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
     set_tests_properties(h23_mine_keywords h23_mine_hier PROPERTIES LABELS coi)
+    # H24: harm-coi --relations (D-038). R4: the unconditional relations hold on the traces (an independent
+    # evaluator); R5, R6, R10: HARM mines the expected assertions on copies of the miner portfolio's D1 designs
+    set(H24 ${CMAKE_SOURCE_DIR}/tests/input/h24)
+    set(H24_CHECK ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_relations_mine.py
+        --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
+    foreach(design alu updown regbank pipemul satacc)
+        add_test(NAME h24_relations_oracle_${design} COMMAND ${H24_CHECK} ${H24}/${design} --oracle)
+        set_tests_properties(h24_relations_oracle_${design} PROPERTIES LABELS coi)
+    endforeach()
+    add_test(NAME h24_mine_alu COMMAND ${H24_CHECK} ${H24}/alu
+             --expect [=[op == 3'b1 \|-> r == .*a - b]=] --expect [=[^always \(!rst \|=> y == .*\$past\(r]=])
+    add_test(NAME h24_mine_updown COMMAND ${H24_CHECK} ${H24}/updown
+             --expect [=[down.*\|=> unf\)$]=] --expect [=[up.*\|=> ovf\)$]=])
+    add_test(NAME h24_mine_regbank COMMAND ${H24_CHECK} ${H24}/regbank
+             --expect [=[^always \(\$fell\(rst\) \|-> cfg1 == 8'b1010\)$]=])
+    add_test(NAME h24_numeric_delta COMMAND ${H24_CHECK} ${H24}/updown
+             --expect [=[\|=> cnt - \$past\(cnt\) == ]=])
+    add_test(NAME h24_numeric_filter COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
+             --extra [=[<numeric clustering="K,4Max,==" exp="m3 - $past(m2, 1)" loc="c, 2"/>]=]
+             --expect [=[m3 - \$past\(m2\) == 16'b0]=])
+    set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_numeric_filter
+                         PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)
         add_test(NAME h5_reproduce_constructs
             COMMAND ${PYTHON3_FOUND} ${CMAKE_SOURCE_DIR}/tests/coi/perturb.py reproduce

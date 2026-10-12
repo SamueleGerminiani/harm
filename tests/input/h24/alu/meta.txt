@@ -1,0 +1,7 @@
+design = alu
+top = alu
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+reset = rst
+# copied from the miner portfolio's D1 corpus (corpus/d1/alu, 2026-10-12): rtl, tb.sv, stim.svh; trace.vcd is its golden trace
