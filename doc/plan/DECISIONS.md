@@ -413,3 +413,11 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
   - the plan's `input` included an input's depth-0 copies (as the portfolio's `runner/structure.py` defines them). A signal with a single depth-0 source that is an input is not always a copy: `y_loop = |v` and `bus.data = v[2:0]` (constructs) are functions of it, and consequents on them can be proved. They are `comb`;
   - a predicate that may be a consequent keeps `c` besides its class domains, so a template without domains (an LLM's) still takes it after a merge;
   - `--reset` must name a visible top input (an error otherwise).
+
+## D-037: signals named after HARM keywords, escaped references (2026-10-12, H23, approved by the user: Q1–Q3 as recommended)
+- **Why:** HARM refused any trace with a variable named after one of its keywords (`The keyword W is reserved (in variable declaration)`), whether or not a formula used it: a parameter `W` stopped the fixture `hier`, and names such as `next`, `X` or `true` are legal SystemVerilog. The temporal grammar's `F`, `R` and `intersect` were not in the list: a variable with one of those names was substituted where the operator was meant.
+- **Rule (Q1 (a), Q2 (a)):** declaring such a variable is allowed; a formula writes it as a SystemVerilog escaped identifier, `\W `; a bare keyword keeps its meaning. The list (`src/utils/include/harmKeywords.hh`, the old list with `F`, `R`, `intersect`) is shared by the parser, the printer and harm-coi (`tests/test_keywords.py` compares the two). Any variable may be written escaped.
+- **Printing:** SVA prints the plain name; HARM's own syntax (SpotLTL, PSL) the escaped form, so `--dump-to` output reads back. Spot never sees variable names (propositions reach it as placeholders), so its input is unchanged.
+- **Errors:** in a proposition, a bare name that is a variable and not a proposition word (`true`, `false`, `and`, `or`, `not`, `inside`) is an error naming the escape. In a temporal formula a bare keyword is the operator.
+- **Found while writing the tests:** `hier` has no RTL predicate (pure dataflow), so after H23 it gets past the declarations and stops as `multipath` does (no proposition); mining it needs propositions from elsewhere.
+

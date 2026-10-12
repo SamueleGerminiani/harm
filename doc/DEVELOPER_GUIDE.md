@@ -147,6 +147,7 @@ A Python package (pyslang 12.0.0, D-006), independent of HARM's C++: it communic
 | `cone.py` | maps the design's signals to HARM's names, computes the closure up to `--max-depth`, and propagates `unknown` (D-005, D-013, D-019) |
 | `vcd.py` | the signal names HARM sees in a VCD under a scope |
 | `predicates.py` | harvests the RTL's predicates and writes them as HARM propositions (D-023) |
+| `hints.py` | signal roles, proposition placement and per-class templates from `coi.json` and the harvested predicates (`--hints`, D-036) |
 
 Tests: `tools/harm-coi/tests/` (pytest), and the `coi` label of `ctest`. The rule for cones is "too large, never too small": what cannot be modelled goes to `unknown`, which HARM treats as in every cone.
 

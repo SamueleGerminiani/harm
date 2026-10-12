@@ -84,6 +84,8 @@ D-032 & bitwise operators on \code|bool| operands & H17 \\
 D-033 & trace directories in path order & H17 \\
 D-034 & operators bind and convert as in C and SystemVerilog & H18 \\
 D-035 & evaluation and conversions as in SystemVerilog & H19 \\
+D-036 & hints from the RTL, \code|hints| v1 & H22 \\
+D-037 & signals named after HARM keywords: escaped references & H23 \\
 \bottomrule
 \end{longtable}
 
@@ -130,5 +132,7 @@ H18 & operators and printing as in C and SystemVerilog & precedence of \code|!|,
 H19 & evaluation and conversions as in SystemVerilog & shifts and divisions that stopped HARM; C's signedness rules for \code|logic| \\
 H20 & (future work) missing operators & --- \\
 H21 & leftovers from H19: log writes at a constant cost & logs rewritten whole on every message \\
+H22 & hints from the RTL (\code|harm-coi --hints|: roles, consequent placement, per-class templates) & --- \\
+H23 & signals named after HARM keywords (\code|\textbackslash W |) & a keyword-named variable stopped HARM; \code|F|, \code|R|, \code|intersect| missing from the keyword list \\
 \bottomrule
 \end{longtable}

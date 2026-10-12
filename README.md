@@ -339,6 +339,9 @@ Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (whe
 ### Invalid propositions
 By default, a proposition that cannot be parsed stops HARM. With **`--skip-invalid-props`**, it is skipped with a warning (`Invalid proposition skipped`) and mining continues with the others.
 
+### Signals named after HARM keywords (D-037)
+A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`, `next`, `until`, `always`, `eventually`, `s_eventually`, `nexttime`, `substr`, `first_match`, `intersect`, `inside`, `and`, `or`, `not`, `true`, `false`). In a formula (a proposition, a template, an assertion file), write such a variable as a SystemVerilog escaped identifier: a backslash, the name and a blank, `\W `. A bare keyword keeps its meaning (`W` is the weak until, `true` the constant), so `G(\W  -> X \next )` reads the variables `W` and `next` with the operators `G` and `X`. In a proposition, a bare name that is a variable and not a proposition word (`true`, `false`, `and`, `or`, `not`, `inside`) stops HARM with a message naming the escape. Any other variable may be written escaped too (`\a ` is `a`). SVA output prints the plain name (`W` is a legal SystemVerilog name); HARM's own syntax (`--dump-to`, read back with `--ass-file`) prints the escaped form. harm-coi writes such signals escaped in the propositions it emits.
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**

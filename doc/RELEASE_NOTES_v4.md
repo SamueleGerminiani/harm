@@ -41,6 +41,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **Bitwise operators on CSV `bool` operands** (H17, D-032): `a ^ b`, `~a & c`, `a ^ q4`, as in SystemVerilog (v3 stopped with a parse error).
 - **Operators bind and convert as in C and SystemVerilog** (H18, D-034): `!x == y` is `(!x) == y`; `x & y == y` is `x & (y == y)`; a comparison is a number (`(a < b) + 1`, `x < y < z`, `(x > 0) == y` compares numbers); unary `-` and `+`; `x-1` without blanks; `bool` operands of arithmetic and comparisons. The README has the precedence table.
 - **Evaluation as in SystemVerilog** (H19, D-035): signed/unsigned rules, context-determined widths, 32-bit decimal literals, `>>>`/`<<<`, shifts and divisions by zero that never stop HARM, 4-state `integer`/`time`, literals that print as they re-parse. The README describes each rule.
+- **Hints from the RTL** (H22, D-036): `harm-coi --hints FILE` writes signal roles, each proposition's placement and one template per target class (`--hints-use all|placement`); without `--hints` harm-coi's output is unchanged.
+- **Signals named after HARM keywords** (H23, D-037): a variable named `W`, `X`, `next`, `true`, … no longer stops HARM; write it `\W ` in a formula (a bare keyword keeps its meaning); SVA prints the plain name.
 
 ## New options
 | Option | What it does |
@@ -122,3 +124,5 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H19 | evaluation and conversions as in SystemVerilog (D-035) |
 | H20 | (future work) missing operators: `%`, `**`, reductions, `~^` |
 | H21 | leftovers from H19: log writes at a constant cost |
+| H22 | hints from the RTL: `harm-coi --hints` (D-036) |
+| H23 | signals named after HARM keywords: escaped references `\W ` (D-037) |

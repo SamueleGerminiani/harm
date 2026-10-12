@@ -115,3 +115,7 @@ A signal goes to `unknown` (HARM treats it as in every cone, D-017) when:
   - a simulation non-influence check;
   - an optional cross-check against yosys (label `xcheck`): it runs when CMake finds a yosys with `read_slang` (`third_party/install_yosys.sh` builds yosys 0.69 with it), and is skipped otherwise.
 - Configure CMake with `-DHARM_COI_PYTHON=<venv>/bin/python`.
+
+## Signals named after HARM keywords (H23, D-037)
+A signal whose name is a HARM keyword (`W`, `X`, `next`, `true`, …; the list is HARM's `src/utils/include/harmKeywords.hh`) is written as a SystemVerilog escaped identifier in the emitted propositions (`<prop exp="\W  &amp;&amp; \substr " …/>`, and `hints.json`'s `propositions`), so HARM reads the variable and not the operator. Roles and signal lists keep the plain name.
+
