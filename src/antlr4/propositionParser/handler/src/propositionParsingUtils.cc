@@ -1,4 +1,6 @@
 
+#include "harmKeywords.hh"
+#include <unordered_set>
 #include <algorithm>
 #include <cctype>
 #include <unordered_map>
@@ -259,20 +261,6 @@ tryParseProposition(std::string formula, const harm::TracePtr &trace,
   }
 }
 
-static std::vector<std::string> reservedKeywords = {
-    "inside",      "true",   "false",      "substr",   "and",
-    "or",          "not",    "eventually", "s_eventually", "nexttime", "next",
-    "X",           "until",  "W",          "always",   "G",
-    "first_match", ".substr"};
-void checkReservedKeywords(const std::string &formula) {
-  for (const auto &keyword : reservedKeywords) {
-    if (formula == keyword) {
-      messageError(
-          "The keyword " + keyword +
-          " is reserved (in variable declaration): " + formula);
-    }
-  }
-}
 
 namespace {
 bool isIdentifierChar(char c) {
@@ -412,6 +400,30 @@ void markBitwiseBoolOperands(std::string &formula, bool inTemplate) {
 }
 } // namespace
 
+/// H23 (D-037): in a proposition, a variable named after a keyword that is not a proposition word
+/// (true, false, and, or, not, inside are) must be escaped; a bare one is an error naming the escape
+static void checkBareKeywordVariables(const std::string &formula,
+                                      const std::vector<harm::VarDeclaration> &decls) {
+  static const std::unordered_set<std::string> propositionWords = {"true", "false", "and", "or",
+                                                                   "not", "inside"};
+  for (const auto &d : decls) {
+    const std::string &n = d.getName();
+    if (!harm::isKeywordName(n) || propositionWords.count(n)) {
+      continue;
+    }
+    for (size_t p = formula.find(n); p != std::string::npos; p = formula.find(n, p + 1)) {
+      char before = p == 0 ? ' ' : formula[p - 1];
+      size_t end = p + n.size();
+      char after = end < formula.size() ? formula[end] : ' ';
+      if (!isIdentifierChar(before) && before != '\\' && before != '$' && before != '\'' &&
+          before != '.' && !isIdentifierChar(after)) {
+        messageError("'" + n + "' is a HARM keyword and the name of a variable: write the variable as '" +
+                     harm::escapedName(n) + "' (in proposition: " + formula + ")");
+      }
+    }
+  }
+}
+
 void addTypeToExp(std::string &formula,
                   std::vector<harm::VarDeclaration> varDeclarations,
                   bool inTemplate) {
@@ -426,9 +438,16 @@ void addTypeToExp(std::string &formula,
   const std::string startVar = "«";
   const std::string endVar = "»";
 
+  if (!inTemplate) {
+    checkBareKeywordVariables(formula, varDeclarations);
+  }
+  // an escaped identifier ends with a blank: one at the end of the formula is closed here
+  if (formula.find('\\') != std::string::npos) {
+    formula += ' ';
+  }
+
   // gather all the variables in the formula
   for (auto varDec : varDeclarations) {
-    checkReservedKeywords(varDec.getName());
     std::string nameType = "";
     switch (varDec.getType()) {
     case ExpType::Bool:
@@ -457,13 +476,18 @@ void addTypeToExp(std::string &formula,
       break;
     }
 
-    varSubstitutions.push_back(
-        std::make_pair(varDec.getName(), nameType));
+    // H23 (D-037): any variable can be written escaped ('\\a '); one named after a keyword only so
+    const bool keyword = harm::isKeywordName(varDec.getName());
+    varSubstitutions.push_back(std::make_pair(harm::escapedName(varDec.getName()), nameType));
+    if (!keyword) {
+      varSubstitutions.push_back(std::make_pair(varDec.getName(), nameType));
+    }
     //hierarchical names can also be written with '.' (SystemVerilog style) instead of '::'
     if (varDec.getName().find("::") != std::string::npos) {
       std::string dotted = varDec.getName();
       replace("::", ".", dotted);
       varSubstitutions.push_back(std::make_pair(dotted, nameType));
+      varSubstitutions.push_back(std::make_pair(harm::escapedName(dotted), nameType));
     }
 
   } // end var
@@ -476,13 +500,14 @@ void addTypeToExp(std::string &formula,
   //do not allow the subtitution of these keywords
   varSubstitutions.emplace_back("true", "@true");
   varSubstitutions.emplace_back("false", "@false");
-  //do not allow the subtitution of reserved keywords
-  for (const std::string &rk : reservedKeywords) {
+  //do not allow the subtitution of keywords (H23: a variable named after one is written escaped)
+  for (const std::string &rk : harm::keywordNames()) {
     //true and false keywords are already substituted with the @ symbol
     if (rk != "true" && rk != "false") {
       varSubstitutions.emplace_back(rk, rk);
     }
   }
+  varSubstitutions.emplace_back(".substr", ".substr");
   //replace all the variables in the formula (whole identifiers only)
   replaceIdentifiers(varSubstitutions, formula);
   markBitwiseBoolOperands(formula, inTemplate);

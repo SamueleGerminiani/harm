@@ -297,3 +297,8 @@ These are suggestions; the trivergence lead decides them, with a `DECISIONS.md` 
 ## 5. The miner portfolio
 The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner, GoldMine) is planned and developed on the Mac in its own repository, `~/miner-portfolio`, with its own hand-off file (`doc/TRIVERGENCE_HANDOFF.md`). HARM's part is H15 (`--dump-prop-table`).
 
+## H23: signals named after HARM keywords (2026-10-12)
+- A trace with a variable named after a HARM keyword (`X`, `W`, `G`, `F`, `R`, `next`, `true`, `false`, `substr`, …) no longer stops HARM; before H23 one such variable anywhere in the dumped scope stopped the whole design.
+- In a proposition or template given to HARM (an LLM's hints included), such a variable is written `\W ` (SystemVerilog's escaped identifier); a bare keyword is HARM's operator or constant, and a bare keyword-named variable in a proposition stops HARM with a message naming the escape. HARM's SVA output prints the plain name.
+- harm-coi writes such names escaped in its propositions and `hints.json`.
+

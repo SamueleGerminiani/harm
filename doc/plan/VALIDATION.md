@@ -1199,3 +1199,18 @@ The tests were written first and committed failing in `cfeed68`: `tools/harm-coi
   - `placement` only removes candidates: the same mined set as `none` on arbiter, sha3 and ima_adpcm_decoder in `filter` (no input-only predicate reached a consequent); in `io` on ima_adpcm_decoder 181 of 1409 removed, all ranked below the 100 proved.
   - `all` (the templates): in `filter`, final PROVEN up on every design that mines (arbiter 10 → 18, counter 2 → 9, fsm 8 → 25, sha3 101 → 103, ima_adpcm_decoder 10 → 13, wide equal); in `io`, mixed (arbiter 7 → 17, sha3 90 → 65, fsm and ima_adpcm_decoder equal).
   - Nothing to measure (all 6 configurations, not caused by H22): counter in `io`; hier and multipath (the findings above); structs (HARM mines 0); constructs (HARM's only assertions read the reset, which the portfolio drops as vacuous under `disable iff`); wide in `io`.
+
+## H23: signals named after HARM keywords (2026-10-12, macOS 15.3.2 arm64, Apple clang, Python 3.12, pyslang 12.0.0)
+The tests were written first and committed failing in `ae98aa9`: `tests/keywordNameTests.cc` (R3, R4), the fixture `tests/input/h23/keywords` (R1: signals and a parameter named `X`, `W`, `G`, `F`, `R`, `next`, `true`, `false`, `substr`), `tests/coi/check_keywords_mine.py` (R2, R5) as ctest `h23_mine_keywords` and `h23_mine_hier`.
+
+| Test | Result |
+|---|---|
+| R3 the parser: a trace with keyword-named variables parses; `\name ` is the variable for every keyword name; bare `true`/`false` stay constants; a bare keyword-named variable in a proposition is an error naming the escape; `X`, `F`, `W`, `R`, `until`, `next`, `nexttime` read the same with or without variables named after them | pass (`KeywordNameTest`, 7 tests) |
+| R4 SVA prints the plain name; HARM's own syntax prints `\name ` and reads back to the same assertion | pass |
+| R1, R2 `keywords`: harm-coi writes the escaped names in its propositions; HARM mines (28 assertions with `--hints all`), every SVA reads only the design's signals by their plain names; `W |=> next`, `G == 2'b11 |-> R`, `W |-> true` and an assertion with `F` in its consequent are found | pass |
+| R5 `hier`: HARM gets past the declaration of the parameter `W` and stops as on `multipath` ("DT placeholder domain is empty!": no RTL predicate) | pass |
+| harm-coi pytest (with `test_keywords.py`: harm-coi's keyword list equals HARM's header) | 68 passed |
+| R6 `ctest -E ImplicationTest` (254 tests: unit, parser, coi, regression, the H0 baselines byte-identical) | 253 of 254, then 254: `h14_doc_coverage` found H22's and H23's entries missing from the release notes, the report and the developer guide (H22's slipped through its own review); added, the doc tests pass |
+
+- **Deviation found while writing the tests** (D-037, the plan): `hier` has no RTL predicate, so H23 removes its stop but it still mines nothing; R5 says so. The fixture `keywords` gained three registers whose conditions read `F`, `R` and `true`: harm-coi makes propositions only of signals that conditions read, so without them those signals could never be consequents.
+- **Fixed in a test, not in HARM:** R3's comparison of operators printed SVA, which has no release operator; it compares HARM's own syntax instead.

@@ -145,9 +145,9 @@ class Harvester:
     def render(self, p, top=True):
         k = p[0]
         if k == "sig":
-            return self.name(p[1])
+            return escaped(self.name(p[1]))
         if k == "bit":
-            return f"{self.name(p[1])}[{p[2]}]"
+            return f"{escaped(self.name(p[1]))}[{p[2]}]"
         if k == "cmp":
             return f"{self.render(p[2], False)} {p[1]} {p[4]}'d{p[3]}"
         if k == "not":
@@ -353,6 +353,17 @@ class Harvester:
             self.stmt(s.body)
         elif k == TK.Timed:
             self.stmt(s.stmt)
+
+
+# H23 (D-037): HARM's keywords, as in HARM's src/utils/include/harmKeywords.hh (tests/test_keywords.py compares
+# the two); a signal named after one is written as a SystemVerilog escaped identifier
+KEYWORDS = frozenset({"inside", "true", "false", "substr", "and", "or", "not", "eventually", "s_eventually",
+                      "nexttime", "next", "X", "until", "W", "always", "G", "first_match", "F", "R", "intersect"})
+
+
+def escaped(name):
+    """a HARM name as a formula writes it: '\\W ' for a keyword, unchanged otherwise"""
+    return f"\\{name} " if name in KEYWORDS else name
 
 
 def harvest(design, comp, vis, extra=None):
