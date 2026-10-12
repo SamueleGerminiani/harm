@@ -5,7 +5,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from . import __version__, cone, frontend, predicates, vcd
+from . import __version__, cone, frontend, hints, predicates, vcd
 
 
 def generator_version():
@@ -33,6 +33,13 @@ def parser():
                     help="also harvest RTL predicates into coi.json (H10, D-023)")
     ap.add_argument("--emit-config", metavar="FILE.xml",
                     help="write a starter HARM configuration with the predicates (implies --predicates)")
+    ap.add_argument("--hints", metavar="FILE.json",
+                    help="write HARM's hints from the RTL (hints v1, H22): roles, placement, templates per timing "
+                         "class; --emit-config then uses them (implies --predicates)")
+    ap.add_argument("--hints-use", choices=["all", "placement"], default="all",
+                    help="what --emit-config takes from --hints (default all; placement: the placement only)")
+    ap.add_argument("--reset", action="append", default=[], metavar="NAME",
+                    help="a reset input, as HARM names it (--hints; asynchronous controls are found anyway)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -54,9 +61,9 @@ def main(argv=None):
         unknown |= orphans
         names = set(vis.values())
         targets, unknown = cone.closure(names, direct, unknown, a.max_depth)
-        preds, dropped = [], []
-        if a.predicates or a.emit_config:
-            preds, dropped = predicates.harvest(design, comp, vis)
+        preds, dropped, extra = [], [], {}
+        if a.predicates or a.emit_config or a.hints:
+            preds, dropped = predicates.harvest(design, comp, vis, extra)
     except (frontend.FrontendError, ValueError, OSError) as e:
         print(f"harm-coi: {e}", file=sys.stderr)
         return 1
@@ -64,6 +71,14 @@ def main(argv=None):
             "clock": cone.name(clk), "max_depth": a.max_depth,
             "generator": {"name": "harm-coi", "version": generator_version()}}
     doc = {"version": "1", "meta": meta, "targets": targets, "unknown": sorted(unknown), "predicates": preds}
+    h = None
+    if a.hints:
+        try:
+            h = hints.build(doc, design, vis, extra, a.reset)
+        except ValueError as e:
+            print(f"harm-coi: {e}", file=sys.stderr)
+            return 1
+        Path(a.hints).write_text(json.dumps(h, indent=2) + "\n")
     Path(a.output).write_text(json.dumps(doc, indent=2) + "\n")
     if a.edges:
         lines = [f"{k} = {meta[k]}" for k in ("design", "top", "vcd_scope", "vcd_recursion", "clock", "max_depth")]
@@ -72,7 +87,7 @@ def main(argv=None):
         lines += [f"unknown {n}" for n in sorted(unknown)]
         Path(a.edges).write_text("\n".join(lines) + "\n")
     if a.emit_config:
-        predicates.emit_config(a.emit_config, preds, a.output)
+        predicates.emit_config(a.emit_config, preds, a.output, h, a.hints_use)
     if a.verbose:
         for why, where in dropped:
             print(f"harm-coi: predicate dropped at {where}: {why}", file=sys.stderr)

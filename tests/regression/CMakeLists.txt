@@ -208,6 +208,11 @@ if(HARM_COI_OK)
             COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_generator.py ${F}
                     --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
         set_tests_properties(h5_generator_${design} PROPERTIES LABELS coi FIXTURES_SETUP h5_coi_${design})
+        # H22 B5: the hints configuration (--hints-use all and placement) mines, consequents as the hints place them
+        add_test(NAME h22_mine_${design}
+            COMMAND ${HARM_COI_PYTHON} ${CMAKE_SOURCE_DIR}/tests/coi/check_hints_mine.py ${F}
+                    --python ${HARM_COI_PYTHON} --harm $<TARGET_FILE:harm> --out ${H5_OUT})
+        set_tests_properties(h22_mine_${design} PROPERTIES LABELS coi)
         # A3: simulation non-influence, on the generator's output
         if(VERILATOR_FOUND)
             add_test(NAME h5_influence_${design}

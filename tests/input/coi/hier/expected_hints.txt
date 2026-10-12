@@ -1,0 +1,8 @@
+# H22 hints, hand-written from rtl (recursion 1; N and W are parameters dumped as constant signals)
+role N const
+role W const
+role din input
+role g[0]::w state
+role g[1]::w state
+role g[2]::w state
+role dout comb

@@ -269,6 +269,12 @@ What changed in HARM: `doc/plan/H2_PLAN.md`, DECISIONS D-003. HARM now has `--re
 - **Printed literals re-parse to the same value and type**: an unsigned C constant prints as a sized literal (`0x1F` as `8'b11111`); trivergence's normalisation of HARM's SVA may see this new form.
 - **New operators:** `>>>`, `<<<`.
 
+### H22: hints from the RTL (on `ms/H22-coi-hints`; D-036)
+- **What exists:** `harm-coi --hints` writes `hints.json` (`doc/schemas/hints.v1.json`): signal roles (input, reset, const, clock, comb, state, unknown; a `control` flag), each proposition's placement (antecedent only, or consequent with its timing class) and a template per timing class (`|->` for combinational targets, `|=>` for registers). These are the three kinds of hint the LLM gives HARM in trivergence's design, in a file whose records carry `origin: rtl` (an LLM's would carry `origin: llm`).
+- **Only roles and timing shape**, never which signal may explain which: a bug that changes connectivity cannot hide an assertion.
+- **Nothing changes by default:** without `--hints`, harm-coi's output is byte-identical.
+- **Whether to merge with LLM hints** is decided by the user after H22's measurement in the miner portfolio.
+
 ---
 
 ## 3. Proposed changes to trivergence's `docs/plan/PLAN.md`

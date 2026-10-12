@@ -1161,3 +1161,41 @@ The tests were written first and committed in `8c69628`: `LogTest.appendCostDoes
 - **L2:** the Z3 comment on division now gives the reason it stays opaque (Z3's division by zero gives all ones or ±1; HARM gives 0 or x, D-035). No code change.
 - **L3:** `.gitignore` ignores `build-*/`; no tracked path matches it.
 - **Linux:** not scheduled (the user, 2026-10-10).
+
+## H22: hints from the RTL, `harm-coi --hints` (2026-10-11, macOS 15.3.2 arm64, Python 3.12, pyslang 12.0.0)
+The tests were written first and committed failing in `cfeed68`: `tools/harm-coi/tests/test_hints.py` (B1–B4: 30 failing, the 36 earlier tests passing), `tests/coi/check_hints_mine.py` (B5), the hand-written `expected_hints.txt` of the 7 fixtures, the schema and the independent oracle. The default output of `dev` @ `0663902` was stored in `tools/harm-coi/tests/data/h22_default` before any change.
+
+| Test | Result |
+|---|---|
+| B1 roles and `control` on the 7 fixtures (counter, arbiter, fsm, hier, multipath, structs, constructs), equal to the hand-written expectations | pass |
+| B2 placement and classes on the same; `--reset`; the emitted configuration (`all` and `placement`) | pass |
+| B3 `hints.json` valid against `hints.v1.json`; `coi.json` and `--emit-config` without `--hints` byte-identical to `dev` | pass, 7 of 7 |
+| B4 the independent oracle (`tests/coi/hints_oracle.py`, from `coi.json` alone) on the 7 fixtures, and on all 21 designs of the miner portfolio's corpus (its `scripts/h22_oracle_corpus.py`, the portfolio's harm-coi arguments) | pass; 21 of 21 agree |
+| B5 `h22_mine_*` (`ctest -L coi`): HARM mines with the `all` and `placement` configurations; every consequent reads a comb, state or unknown signal; with `all`, `|=>` consequents read a state signal and `|->` ones a comb or unknown signal | pass, 7 of 7 (counter 6 and 8 assertions, arbiter 47 and 42, fsm 49 and 38, constructs 24 and 13, structs 0 and 0) |
+| B6 the portfolio's `refine --miner harm --hints none|placement|all` (its `tests/test_h22_hints.py`): `none` is today's configuration byte for byte; hints in the record and provenance; other miners refuse it | pass, 5 of 5 |
+| `ctest -L "coi|regression"` | 157 of 157 (the H0 baselines byte-identical; HARM's C++ is unchanged) |
+
+- **Deviations** (D-036): an input's depth-0 copies are `comb`, not `input`; a consequent predicate keeps `c` besides its domains; `--reset` must name a visible top input.
+- **Findings, not caused by H22** (the configuration of `dev` fails the same way, and B5 accepts a failure only then):
+  - `hier`: HARM rejects the configuration: "The keyword W is reserved (in variable declaration): W" (a parameter named `W` is dumped as a signal);
+  - `multipath`: no RTL predicates, so HARM stops: "DT placeholder domain is empty!" (with `all`, no template is written and HARM mines nothing, exit 0);
+  - HARM writes no `--dump-assertion-info` file when mining yields nothing to qualify.
+- **On the corpus** (B4's run): most predicates read internal signals, so placement makes few antecedent-only (e.g. sha3 2 of 29, ima_adpcm_decoder 7 of 110, constructs 8 of 9; 0 on uart, uart_to_bus, gaussian, srdy); the templates are the larger change.
+- **Measurement** (Q4, reported): the miner portfolio's `scripts/h22_measure.py` at `6c03d84` (branch `ms/C1-proof-cache`), output `runs/h22/measure/h22.md`. HARM through `refine`, 2 rounds, 100 proofs per round, mining budget 600 s, structure `filter` and `io`, on the 8 RTL fixtures and the two P1 pilot designs; 60 of 60 runs. First-round precision (PROVEN of proved) and final PROVEN, for none / placement / all:
+
+  | design | structure | none | placement | all |
+  |---|---|---|---|---|
+  | arbiter | filter | 9/15, 10 | 9/15, 10 | 18/23, 18 |
+  | arbiter | io | 8/11, 7 | 8/11, 7 | 17/20, 17 |
+  | counter | filter | 1/3, 2 | 1/3, 2 | 1/4, 9 |
+  | fsm | filter | 8/9, 8 | 8/9, 8 | 27/31, 25 |
+  | fsm | io | 3/7, 2 | 3/7, 2 | 1/5, 2 |
+  | wide | filter | 1/1, 1 | 1/1, 1 | 1/2, 1 |
+  | sha3 | filter | 45/100, 101 | 45/100, 101 | 50/100, 103 |
+  | sha3 | io | 31/100, 90 | 31/100, 90 | 21/100, 65 |
+  | ima_adpcm_decoder | filter | 19/100, 10 | 19/100, 10 | 17/100, 13 |
+  | ima_adpcm_decoder | io | 11/100, 10 | 11/100, 9 | 7/100, 10 |
+
+  - `placement` only removes candidates: the same mined set as `none` on arbiter, sha3 and ima_adpcm_decoder in `filter` (no input-only predicate reached a consequent); in `io` on ima_adpcm_decoder 181 of 1409 removed, all ranked below the 100 proved.
+  - `all` (the templates): in `filter`, final PROVEN up on every design that mines (arbiter 10 → 18, counter 2 → 9, fsm 8 → 25, sha3 101 → 103, ima_adpcm_decoder 10 → 13, wide equal); in `io`, mixed (arbiter 7 → 17, sha3 90 → 65, fsm and ima_adpcm_decoder equal).
+  - Nothing to measure (all 6 configurations, not caused by H22): counter in `io`; hier and multipath (the findings above); structs (HARM mines 0); constructs (HARM's only assertions read the reset, which the portfolio drops as vacuous under `disable iff`); wide in `io`.

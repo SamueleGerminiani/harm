@@ -1,0 +1,8 @@
+# H22 hints, hand-written from rtl/multipath.sv
+role a input
+role b input
+role r1 state
+role r2 state
+role rb state
+role y comb
+role z comb

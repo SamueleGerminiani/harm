@@ -1,0 +1,9 @@
+<harm>
+    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin="rtl" -->
+    <context name="default">
+        <coi file="multipath_coi.json" mode="rank"/>
+        <template dtLimits="5D,3W,15A,-0.1E,U" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <sort name="causality" exp="1-afct/traceLength"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>
