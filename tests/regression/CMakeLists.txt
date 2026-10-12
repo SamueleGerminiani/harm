@@ -258,11 +258,12 @@ if(HARM_COI_OK)
     add_test(NAME h24_mine_regbank COMMAND ${H24_CHECK} ${H24}/regbank
              --expect [=[^always \(\$fell\(rst\) \|-> cfg1 == 8'b1010\)$]=])
     add_test(NAME h24_numeric_delta COMMAND ${H24_CHECK} ${H24}/updown
-             --expect [=[\|=> cnt - \$past\(cnt\) == ]=])
-    add_test(NAME h24_numeric_filter COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
-             --extra [=[<numeric clustering="K,4Max,==" exp="m3 - $past(m2, 1)" loc="c, 2"/>]=]
-             --expect [=[m3 - \$past\(m2\) == 16'b0]=])
-    set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_numeric_filter
+             --expect [=[cnt == 4'b0 && up && !down \|=> cnt - \$past\(cnt\) == 4'b1\)$]=])
+    # a fixed antecedent ({!rst}) is not cone-filtered: data registers without a reset keep their relations
+    add_test(NAME h24_fixed_filter COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
+             --expect [=[^always \(!rst \|=> m3 == \$past\(m2\)\)$]=]
+             --expect [=[^always \(!rst \|-> p == m3\)$]=])
+    set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_fixed_filter
                          PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)
         add_test(NAME h5_reproduce_constructs

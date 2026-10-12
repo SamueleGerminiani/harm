@@ -151,8 +151,8 @@ def test_numerics(tmp_path):
           assign p = a * b;
         endmodule
     """, "--reset", "rst")
-    assert nums["cnt - $past(cnt, 1)"] == ("K,6Max,==", ["c", "2"])
-    assert nums["p"] == ("K,8Max,==,><", ["c", "1"])
+    assert nums["cnt - $past(cnt, 1)"] == ("C,10Max,==", ["c", "2"])  # contiguous: one proposition per value
+    assert nums["p"] == ("C,10Max,==", ["c", "1"])  # no open ranges (OpenFPV, F-P9)
 
 
 def test_off_by_default(tmp_path):
