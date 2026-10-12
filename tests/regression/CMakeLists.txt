@@ -263,6 +263,13 @@ if(HARM_COI_OK)
     add_test(NAME h24_fixed_filter COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
              --expect [=[^always \(!rst \|=> m3 == \$past\(m2\)\)$]=]
              --expect [=[^always \(!rst \|-> p == m3\)$]=])
+    # the product at SystemVerilog's width (operands widened); hold relations as $stable; no double negation
+    add_test(NAME h24_mine_pipemul COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
+             --expect [=[^always \(!rst \|=> m2 == \$past\(]=])
+    add_test(NAME h24_stable_satacc COMMAND ${H24_CHECK} ${H24}/satacc --expect [=[\|=> \$stable\(acc\)\)$]=]
+             --reject [=[!!]=])
+    add_test(NAME h24_mine_satacc_clear COMMAND ${H24_CHECK} ${H24}/satacc --expect [=[^always \(clr \|=> acc == 12'b0\)$]=])
+    set_tests_properties(h24_mine_pipemul h24_stable_satacc h24_mine_satacc_clear PROPERTIES LABELS coi)
     set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_fixed_filter
                          PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)

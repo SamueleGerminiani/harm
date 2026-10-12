@@ -186,6 +186,7 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--oracle", action="store_true")
     ap.add_argument("--expect", action="append", default=[])
+    ap.add_argument("--reject", action="append", default=[], help="no assertion may match REGEX")
     ap.add_argument("--extra", action="append", default=[])
     ap.add_argument("--mode", choices=["rank", "filter"], default="rank")
     a = ap.parse_args()
@@ -227,7 +228,7 @@ def main() -> int:
                     bad.append(f"R4: {un(exp)} false at sample {t}")
                     break
         print(f"{name}: R4 checked {n} unconditional relations on {len(tr)} samples")
-    if a.expect:
+    if a.expect or a.reject:
         cmd = [a.harm, "--vcd", str(f / "trace.vcd"), "--clk", meta["clock"], "--vcd-ss", meta["vcd_scope"],
                "--vcd-r", meta["vcd_recursion"], "--conf", str(out / "cfg.xml"), "--max-threads", "2", "--sva",
                "--psilent", "--isilent", "--dump-assertion-info", str(out / "info.json")]  # fmt: skip
@@ -242,6 +243,8 @@ def main() -> int:
         for rx in a.expect:
             if not any(re.search(rx, t) for t in texts):
                 bad.append(f"no assertion matches {rx!r}")
+        for rx in a.reject:
+            bad += [f"{t} matches {rx!r}" for t in texts if re.search(rx, t)][:3]
         print(f"{name}: {len(texts)} assertions")
     for b in bad:
         print(f"{name}: {b}")

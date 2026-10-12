@@ -180,3 +180,42 @@ def test_registered_conditional_expression_keeps_parentheses(tmp_path):
         endmodule
     """, "--reset", "rst")
     assert props["q == $past(((seed == 8'd0) ? 8'd1 : seed), 1)"] == ["c", "2"]
+
+
+def test_hold_relations_as_stable(tmp_path):
+    # a register assigned under a condition keeps its value otherwise: $stable(x), for the decision tree to place
+    props, _, _ = emit(tmp_path, REG, "--reset", "rst")
+    assert props["$stable(z)"] == ["c", "2"]  # z <= a + b under `en`
+    assert "$stable(y)" not in props  # y is assigned every cycle out of reset
+
+
+def test_no_proposition_mixing_the_reset(tmp_path):
+    # with --reset, `rst || clr` only gives vacuous assertions under disable iff: its parts are kept, not it
+    props, _, _ = emit(tmp_path, """
+        module m(input logic clk, rst, clr, input logic [7:0] d, output logic [7:0] q);
+          always_ff @(posedge clk)
+            if (rst || clr) q <= 8'd0;
+            else q <= d;
+        endmodule
+    """, "--reset", "rst")
+    assert "clr" in props and "rst || clr" not in props
+    props, _, _ = emit(tmp_path, """
+        module m(input logic clk, rst, clr, input logic [7:0] d, output logic [7:0] q);
+          always_ff @(posedge clk)
+            if (rst || clr) q <= 8'd0;
+            else q <= d;
+        endmodule
+    """, "--reset", "rst", relations=False)
+    assert "rst || clr" in props  # without --relations harm-coi's output is unchanged
+
+
+def test_widened_operands(tmp_path):
+    # HARM computes a product (a left shift) at its operands' width; SystemVerilog at the context's
+    props, _, _ = emit(tmp_path, """
+        module m(input logic clk, input logic [7:0] a, b, output logic [15:0] p, output logic [9:0] s);
+          assign p = a * b;
+          assign s = a << 2;
+        endmodule
+    """)
+    assert "p == (((a + 16'd0) * b) & 16'd65535)" in props
+    assert "s == (((a + 10'd0) << 2) & 10'd1023)" in props
