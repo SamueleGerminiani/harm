@@ -282,8 +282,10 @@ def widths(design, vis):
 
 # ------------------------------------------------------------------ the configuration's additions
 CLASS = {"comb": "1", "unknown": "1", "state": "2"}
-VALUES = "K,8Max,==,><"
-DELTA = "K,6Max,=="
+# contiguous clustering: one `==` proposition per value (K-means merged the deltas of `updown` into none); no
+# ranges (an open range breaks OpenFPV's model build, portfolio F-P9)
+VALUES = "C,10Max,=="
+DELTA = "C,10Max,=="
 
 
 def extras(rels, hints, preds, extra, wid, resets):
