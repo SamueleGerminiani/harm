@@ -1,3 +1,4 @@
+#include "harmKeywords.hh"
 #include <optional>
 #include <algorithm>
 #include <memory>
@@ -55,6 +56,8 @@ std::string PrinterVisitor::get() {
     std::string name = o.getName();                                  \
     if (_lang == Language::SVA && !clc::legacySvaPrinting) {         \
       replace("::", ".", name);                                      \
+    } else if (_lang != Language::SVA && harm::isKeywordName(name)) { \
+      name = harm::escapedName(name); /* H23: HARM reads it back */  \
     }                                                                \
     _ss << selCol(name, VAR(name));                                  \
   }
