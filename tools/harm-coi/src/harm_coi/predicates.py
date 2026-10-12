@@ -391,6 +391,8 @@ def emit_config(path, records, coi_path, hints=None, use="all", extras=None):
              '    <context name="default">']
     place = {p["expr"]: p for p in hints["propositions"]} if hints else {}
     for r in records:
+        if extras and r["expr"] in extras["drop"]:
+            continue
         loc = "a, c, dt"
         if hints:
             p = place[r["expr"]]

@@ -3,11 +3,13 @@
 - A relation per assignment to a whole visible signal x, outside a clocked process's reset branch (the first if whose
   branch assigns only constants, as the reset values of D-023): `x <= e` in a clocked process gives
   `x == ($past(e, 1) & M)`, a continuous or combinational `x = e` gives `x == (e & M)`. `e` is written in HARM's
-  syntax with SystemVerilog's widths kept: a subexpression that may carry bits above its width (`+ - *`, unary `-`,
+  syntax with SystemVerilog's widths kept (a product or left shift with one operand widened, as HARM computes them at
+  the operands' width): a subexpression that may carry bits above its width (`+ - *`, unary `-`,
   `~`, an RTL `<<`, and `& | ^ ?:` over such) is masked to its width where a context needs the exact value
   (comparison and logical operands, `>>`, a concatenation's part, a condition); the relation is masked to x's width
   when e may carry such bits or is wider. A concatenation is written with shifts and `|` (constant zero parts left
-  out). Signed operands, `/ % **`, replications, reductions and unknown constructs are not translated (dropped).
+  out). Signed comparisons, sign extensions, arithmetic right shifts, `/ % **`, replications, reductions and unknown
+  constructs are not translated (dropped); other signed arithmetic is the same bits as unsigned once masked.
   At most MAX_PER_TARGET relations per target (source order) and MAX_OPS operators per relation.
 - Unconditional (no if or case above the assignment but the reset branch) or conditional; registered or not.
 - Numerics (Q6): a register whose assignment reads it gets its delta `x - $past(x, 1)`; a wide target with no
@@ -25,6 +27,7 @@ MAX_PER_TARGET = 8
 MAX_OPS = 16
 DIRTY_BIN = {BO.Add: "+", BO.Subtract: "-", BO.Multiply: "*", BO.LogicalShiftLeft: "<<",
              BO.ArithmeticShiftLeft: "<<"}  # fmt: skip
+WIDEN = {BO.Multiply, BO.LogicalShiftLeft, BO.ArithmeticShiftLeft}
 BITWISE = {BO.BinaryAnd: "&", BO.BinaryOr: "|", BO.BinaryXor: "^"}
 LOGICAL = {BO.LogicalAnd: "&&", BO.LogicalOr: "||"}
 SHR = {BO.LogicalShiftRight: ">>"}
@@ -42,6 +45,7 @@ class Val:
     compound: bool
     ops: int
     signals: set = field(default_factory=set)
+    hw: int = 0          # the width HARM computes it at, when narrower than `width` (a widening conversion)
 
 
 @dataclass
@@ -62,6 +66,7 @@ class Relations:
         self.vis = vis
         self.found: list[Relation] = []
         self.dropped: list = []
+        self.assigned: list = []   # (target, registered, conditional) of every assignment to a whole signal
 
     # ------------------------------------------------------------------ expressions
     def mask(self, w):
@@ -77,14 +82,17 @@ class Relations:
         k = e.kind
         if k == EK.Conversion:
             inner = e.operand
-            if inner.type.isSigned and inner.type.bitWidth < e.type.bitWidth:
-                raise NotTranslatable("sign extension")
+            if e.type.isSigned and inner.type.isSigned and inner.type.bitWidth < e.type.bitWidth:
+                raise NotTranslatable("sign extension")  # an unsigned context zero-extends: that is translated
             v = self.render(inner)
             if e.type.bitWidth < v.width:      # truncation
                 v = Val(f"({v.text} & {self.mask(e.type.bitWidth)})", e.type.bitWidth, False, True, v.ops + 1,
                         v.signals)  # fmt: skip
-            return Val(v.text, e.type.bitWidth, v.dirty, v.compound, v.ops, v.signals)
+            hw = (v.hw or v.width) if e.type.bitWidth > v.width else 0
+            return Val(v.text, e.type.bitWidth, v.dirty, v.compound, v.ops, v.signals, hw)
         c = self.h.constant(e)
+        if c is not None and k == EK.IntegerLiteral and e.isDeclaredUnsized and c >= 0:
+            return Val(str(c), e.type.bitWidth, False, False, 0)  # an unsized literal (a shift amount)
         if c is not None:
             w = max(1, e.type.bitWidth)
             return Val(f"{w}'d{c % (1 << w)}", w, False, False, 0)
@@ -93,8 +101,6 @@ class Relations:
             if op is None:
                 raise NotTranslatable("operand")
             if op[0] == "sig":
-                if e.type.isSigned:
-                    raise NotTranslatable("signed")
                 n = self.h.name(op[1])
                 return Val(escaped(n), op[2], False, False, 0, {n})
             n = self.h.name(op[1])
@@ -137,13 +143,18 @@ class Relations:
                 return v
             raise NotTranslatable(f"unary {e.op}")
         if k == EK.BinaryOp:
-            if e.left.type.isSigned or e.right.type.isSigned:
-                raise NotTranslatable("signed")
+            # two's complement + - * & | ^ give the same bits signed or not (masked to the width); a comparison of two
+            # signed operands does not, nor an arithmetic right shift (not translated)
+            if e.op in COMPARISONS and e.left.type.isSigned and e.right.type.isSigned:
+                raise NotTranslatable("signed comparison")
             a, b = self.render(e.left), self.render(e.right)
             w = e.type.bitWidth
             sig = a.signals | b.signals
             ops = a.ops + b.ops + 1
             if e.op in DIRTY_BIN:
+                if e.op in WIDEN and (a.hw or a.width) < w:
+                    # HARM computes * and << at the operands' width, SystemVerilog at the context's: widen one
+                    a = Val(f"({a.text} + {w}'d0)", w, a.dirty, True, a.ops + 1, a.signals)
                 return Val(f"({a.text} {DIRTY_BIN[e.op]} {b.text})", w, True, True, ops, sig)
             if e.op in BITWISE:
                 return Val(f"({a.text} {BITWISE[e.op]} {b.text})", w, a.dirty or b.dirty, True, ops, sig)
@@ -174,6 +185,7 @@ class Relations:
             self.dropped.append(("relation: target not visible", where))
             return
         w = op[2]
+        self.assigned.append((target, registered, conditional))
         try:
             v = self.render(a.right)
         except NotTranslatable as ex:
@@ -251,6 +263,12 @@ class Relations:
             elif k == SK.GenerateBlock and not m.isUninstantiated:
                 self.scope(m)
 
+    def holds(self):
+        """registers assigned only under a condition: they keep their value otherwise ($stable)"""
+        cond = {t for t, r, c in self.assigned if r and c}
+        always = {t for t, r, c in self.assigned if r and not c}
+        return sorted(cond - always)
+
     def run(self):
         self.scope(self.x.top.body)
         per, out = {}, []
@@ -289,15 +307,21 @@ VALUES = "C,10Max,=="
 DELTA = "C,10Max,=="
 
 
-def extras(rels, hints, preds, extra, wid, resets):
+def extras(rels, hints, preds, extra, wid, resets, holds=()):
     """What --relations adds to --emit-config: {"props": [(expr, loc)], "loc_add": {expr: [domains]},
     "numerics": [(clustering, exp, loc)], "templates": [template], "domains": {domain}} (the class domains used,
     so that their templates are written)."""
     roles = {k: v["role"] for k, v in hints["roles"].items()}
     place = {p["expr"]: p["loc"] for p in hints["propositions"]}
     reset = resets[0] if resets else None
-    out = {"props": [], "loc_add": {}, "numerics": [], "templates": [], "domains": set()}
+    out = {"props": [], "loc_add": {}, "numerics": [], "templates": [], "domains": set(), "drop": set()}
     have = set(place)
+    # with a reset, a predicate that mixes it with other signals (`rst || clr`) only gives assertions that are vacuous
+    # under disable iff, and the redundancy reduction then removes the useful `clr |=> …`: its parts are kept
+    if resets:
+        rnames = {n for n, _ in resets}
+        out["drop"] = {p["expr"] for p in preds
+                       if extra[p["expr"]]["signals"] & rnames and extra[p["expr"]]["signals"] - rnames}
 
     def add(expr, loc):
         if expr not in have:
@@ -321,6 +345,8 @@ def extras(rels, hints, preds, extra, wid, resets):
         else:
             loc = ["c", "2" if r.registered else "1"]
         add(r.expr, loc)
+    for t in holds:
+        add(f"$stable({escaped(t)})", ["c", "2"])
     # assigned-only signals: 1-bit ones both ways, wide ones as numeric values; register deltas
     read = {s for e in extra.values() for s in e["signals"]}
     for name, w in sorted(wid.items()):

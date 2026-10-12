@@ -400,8 +400,13 @@ void TLMiner::l1Handler(
     }
     for (size_t i = 0; i < propsDT.size(); i++) {
       candidateVariables[i].first = propsDT[i];
-      candidateVariables[i].second =
-          makeGenericExpression<PropositionNot>(propsDT[i]);
+      // the negation of !p is p (H24: no `!!p` in the output)
+      if (auto n = std::dynamic_pointer_cast<PropositionNot>(propsDT[i])) {
+        candidateVariables[i].second = n->getItems()[0];
+      } else {
+        candidateVariables[i].second =
+            makeGenericExpression<PropositionNot>(propsDT[i]);
+      }
     }
 
     NumericDecTreeExp numericCandidates;
