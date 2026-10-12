@@ -189,7 +189,8 @@ class Relations:
             return
         masked = v.dirty or v.width > w
         if registered:
-            core = v.text[1:-1] if v.compound and v.text.startswith("(") and _balanced(v.text[1:-1]) else v.text
+            strip = v.compound and v.text.startswith("(") and _balanced(v.text[1:-1]) and a.right.kind != EK.ConditionalOp
+            core = v.text[1:-1] if strip else v.text  # HARM reads $past((c ? a : b), 1), not $past(c ? a : b, 1)
             past = f"$past({core}, 1)"
             expr = f"{escaped(target)} == ({past} & {self.mask(w)})" if masked else f"{escaped(target)} == {past}"
         else:
