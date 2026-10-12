@@ -85,12 +85,12 @@ def main() -> int:
                     "-o", str(out / "coi.json")], check=True, env=env)
     bad = []
     cfg = (out / "cfg.xml").read_text()
-    for prop in re.findall(r'<proposition exp="([^"]*)"', cfg):
+    for prop in re.findall(r'<prop exp="([^"]*)"', cfg):
         bare = {w for w in IDENT.findall(prop.replace("&amp;", "&")) if w in KEYWORDS}
         if bare:
             bad.append(f"proposition {prop!r} names {sorted(bare)} bare (expected \\name )")
     h = subprocess.run([a.harm, "--vcd", str(f / "trace.vcd"), "--clk", "clk", "--vcd-ss", "tb::dut", "--vcd-r", r,
-                        "--conf", str(out / "cfg.xml"), "--max-threads", "1", "--psilent", "--isilent",
+                        "--conf", str(out / "cfg.xml"), "--max-threads", "1", "--psilent", "--isilent", "--sva",
                         "--dump-assertion-info", str(out / "info.json")], capture_output=True, text=True)
     (out / "harm.log").write_text(h.stdout + h.stderr)
     if h.returncode != 0 or not (out / "info.json").exists():

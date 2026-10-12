@@ -128,9 +128,10 @@ TEST(KeywordNameTest, operatorsUnchanged) {
   for (const std::string f : {"G(a -> X b)", "G(a -> X X b)", "G(a -> F b)", "G(a -> (b until c))",
                               "G(a -> (b W c))", "G(a -> (b R c))", "G(a -> next b)",
                               "always (a ##1 b |-> nexttime c)"}) {
-    std::string expected = sva(f, plain);
+    // HARM's own syntax: SVA has no release operator
+    std::string expected = print(f, plain, Language::SpotLTL);
     ASSERT_EQ(expected.find("PARSE ERROR"), std::string::npos) << f << ": " << expected;
-    EXPECT_EQ(sva(f, kw), expected) << f;
+    EXPECT_EQ(print(f, kw, Language::SpotLTL), expected) << f;
   }
 }
 

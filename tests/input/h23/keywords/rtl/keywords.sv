@@ -32,4 +32,15 @@ module keywords #(
   always_ff @(posedge clk)
     if (next) ok <= 1'b1;
     else ok <= 1'b0;
+  // registers whose conditions read F, R and true, so that harm-coi makes them propositions
+  logic seen_f, seen_r, seen_t;
+  always_ff @(posedge clk)
+    if (F) seen_f <= 1'b1;
+    else seen_f <= 1'b0;
+  always_ff @(posedge clk)
+    if (R) seen_r <= 1'b1;
+    else seen_r <= 1'b0;
+  always_ff @(posedge clk)
+    if (true) seen_t <= 1'b1;
+    else seen_t <= 1'b0;
 endmodule
