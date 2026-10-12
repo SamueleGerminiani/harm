@@ -1,6 +1,6 @@
 # H23 plan: signals whose names are HARM keywords
 
-*Status: draft, for the user's approval. Branch `ms/H23-reserved-names` from `dev` @ `b14c03b`. Asked by the user (2026-10-12) after H22's measurement: the fixture `hier` mines nothing because of a parameter named `W`; "Should we change the W parameter to something else like _W?" Answer: no, the fixture shows a general defect, fixed here. Effort: about 2 d.*
+*Status: approved by the user (2026-10-12, Q1–Q3 as recommended). Branch `ms/H23-reserved-names` from `dev` @ `b14c03b`. Asked by the user (2026-10-12) after H22's measurement: the fixture `hier` mines nothing because of a parameter named `W`; "Should we change the W parameter to something else like _W?" Answer: no, the fixture shows a general defect, fixed here. Effort: about 2 d.*
 
 ## Why
 HARM refuses any trace whose variables include one of its keywords (`propositionParsingUtils.cc`, `checkReservedKeywords`: `X`, `W`, `G`, `next`, `until`, `always`, `and`, `or`, `not`, `true`, `false`, `inside`, `eventually`, `s_eventually`, `nexttime`, `substr`, `first_match`):

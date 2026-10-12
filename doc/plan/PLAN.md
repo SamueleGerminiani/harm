@@ -370,4 +370,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H20 | Missing SystemVerilog operators (optional): `%`, `**`, reductions, XNOR | future work (plan in `H20_PLAN.md`, not scheduled) |
 | H21 | Leftovers from H19: log writes at a constant cost, a stale Z3 comment, `build-*/` ignored | done |
 | H22 | HARM's hints from the RTL (`harm-coi --hints`: roles, consequent placement, per-class templates), asked from the miner portfolio's P1 pilot | done |
-| H23 | Signals whose names are HARM keywords (`W`, `X`, `next`, …): escaped references `\W `, asked by the user after H22 (`hier`) | todo (plan `H23_PLAN.md` awaiting approval) |
+| H23 | Signals whose names are HARM keywords (`W`, `X`, `next`, …): escaped references `\W `, asked by the user after H22 (`hier`) | in-progress |
