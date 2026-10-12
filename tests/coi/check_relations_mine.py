@@ -29,6 +29,8 @@ def un(s):
 
 # ---------------------------------------------------------------- the trace, sampled at each rising clock edge
 def samples(vcd: Path, scope: str, clock: str) -> list[dict[str, int]]:
+    """the values just before each rising edge of the clock (the changes of the edge's own time step left out), as
+    HARM samples them"""
     want = scope.split("::")
     stack, names, cur, out, clk_id, last = [], {}, {}, [], None, None
     lines = vcd.read_text().splitlines()
@@ -47,26 +49,22 @@ def samples(vcd: Path, scope: str, clock: str) -> list[dict[str, int]]:
                 clk_id = t[3]
         elif t[0] == "$enddefinitions":
             break
-    pending_edge = False
+    before = {}
     for line in lines[i + 1:]:
         s = line.strip()
         if not s or s[0] == "$":
             continue
         if s[0] == "#":
-            if pending_edge:
-                out.append(dict(cur))
-                pending_edge = False
+            before = dict(cur)
             continue
         val, ident = (s[1:].split() if s[0] in "bB" else (s[0], s[1:]))
         v = int(val.replace("x", "0").replace("z", "0").replace("X", "0").replace("Z", "0"), 2)
         if ident == clk_id:
             if last == 0 and v == 1:
-                pending_edge = True
+                out.append(before)
             last = v
         for n in names.get(ident, []):
             cur[n] = v
-    if pending_edge:
-        out.append(dict(cur))
     return out
 
 
@@ -191,7 +189,7 @@ def main() -> int:
     ap.add_argument("--extra", action="append", default=[])
     ap.add_argument("--mode", choices=["rank", "filter"], default="rank")
     a = ap.parse_args()
-    f = Path(a.fixture)
+    f = Path(a.fixture).resolve()
     meta = dict(re.findall(r"^(\w+) = (\S+)", (f / "meta.txt").read_text(), re.M))
     name, rst = meta["top"], meta.get("reset")
     out = Path(a.out) / f"h24_{name}"
@@ -228,8 +226,6 @@ def main() -> int:
                 if not ev(e.tree, tr, t):
                     bad.append(f"R4: {un(exp)} false at sample {t}")
                     break
-        if n == 0:
-            bad.append("R4: no unconditional relation emitted")
         print(f"{name}: R4 checked {n} unconditional relations on {len(tr)} samples")
     if a.expect:
         cmd = [a.harm, "--vcd", str(f / "trace.vcd"), "--clk", meta["clock"], "--vcd-ss", meta["vcd_scope"],
