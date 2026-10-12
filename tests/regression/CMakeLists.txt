@@ -265,7 +265,7 @@ if(HARM_COI_OK)
              --expect [=[^always \(!rst \|-> p == m3\)$]=])
     # the product at SystemVerilog's width (operands widened); hold relations as $stable; no double negation
     add_test(NAME h24_mine_pipemul COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
-             --expect [=[^always \(!rst \|=> m2 == \$past\(]=])
+             --expect [=[^always \(!rst \|=> m2 == \(\$past\(\(a1 \+ 16'b0\) \* b1\)]=])
     add_test(NAME h24_stable_satacc COMMAND ${H24_CHECK} ${H24}/satacc --expect [=[\|=> \$stable\(acc\)\)$]=]
              --reject [=[!!]=])
     add_test(NAME h24_mine_satacc_clear COMMAND ${H24_CHECK} ${H24}/satacc --expect [=[^always \(clr \|=> acc == 12'b0\)$]=])
