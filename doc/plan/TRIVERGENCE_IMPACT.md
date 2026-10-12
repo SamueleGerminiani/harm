@@ -302,3 +302,8 @@ The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner,
 - In a proposition or template given to HARM (an LLM's hints included), such a variable is written `\W ` (SystemVerilog's escaped identifier); a bare keyword is HARM's operator or constant, and a bare keyword-named variable in a proposition stops HARM with a message naming the escape. HARM's SVA output prints the plain name.
 - harm-coi writes such names escaped in its propositions and `hints.json`.
 
+
+## H24: relations from the RTL (2026-10-12)
+- `harm-coi --relations` (opt-in during H24) adds propositions with `$past` (`x == ($past(e, 1) & M)`), `$fell`/`$rose` of the reset and numerics; all are in the miner portfolio's SVA subset (`$past`, `$fell`, `$rose` allowed).
+- With it, HARM mines `$fell(rst) |-> <reset value>` and `!rst |=> <relation>`: under `disable iff (rst)` neither is vacuous (an assertion triggered by `rst` high is).
+- In COI `filter` mode a proposition written in a template (`{!rst}`) is no longer cone-filtered.
