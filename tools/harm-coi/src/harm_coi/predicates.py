@@ -401,8 +401,8 @@ def emit_config(path, records, coi_path, hints=None, use="all", extras=None):
             loc = ", ".join([loc] + extras["loc_add"][r["expr"]])
         lines.append(f'        <prop exp={quoteattr(r["expr"])} loc="{loc}" origin="rtl"/>')
     if extras:   # H24, --relations (D-038)
-        for e, loc in extras["props"]:
-            lines.append(f'        <prop exp={quoteattr(e)} loc="{", ".join(loc)}" origin="rtl"/>')
+        for e, loc, origin in extras["props"]:
+            lines.append(f'        <prop exp={quoteattr(e)} loc="{", ".join(loc)}" origin="{origin}"/>')
         for c, e, loc in extras["numerics"]:
             lines.append(f'        <numeric clustering={quoteattr(c)} exp={quoteattr(e)} loc="{", ".join(loc)}" origin="rtl"/>')
     lines.append(f"        <coi file={quoteattr(rel)} mode=\"rank\"/>")

@@ -332,10 +332,10 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
         out["drop"] = {p["expr"] for p in preds
                        if extra[p["expr"]]["signals"] & rnames and extra[p["expr"]]["signals"] - rnames}
 
-    def add(expr, loc):
+    def add(expr, loc, origin="rtl"):
         if expr not in have:
             have.add(expr)
-            out["props"].append((expr, loc))
+            out["props"].append((expr, loc, origin))
             out["domains"] |= {d for d in loc if d in ("1", "2")}
 
     # reset values: also consequents of G({$fell(R)}|-> P0(3)); 1-bit ones in both polarities
@@ -353,9 +353,9 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
             loc = ["c", "4" if r.registered else "5"]
         else:
             loc = ["c", "2" if r.registered else "1"]
-        add(r.expr, loc)
+        add(r.expr, loc, "rtl-relation")
     for t in holds:
-        add(f"$stable({escaped(t)})", ["c", "2"])
+        add(f"$stable({escaped(t)})", ["c", "2"], "rtl-relation")
     # assigned-only signals: 1-bit ones both ways, wide ones as numeric values; register deltas
     read = {s for e in extra.values() for s in e["signals"]}
     for name, w in sorted(wid.items()):
@@ -374,7 +374,7 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
     if reset:
         name, low = reset
         inactive, end = (name, f"$rose({name})") if low else (f"!{name}", f"$fell({name})")
-        used = {d for _, loc in out["props"] for d in loc} | {d for v in out["loc_add"].values() for d in v}
+        used = {d for _, loc, _ in out["props"] for d in loc} | {d for v in out["loc_add"].values() for d in v}
         if "3" in used:
             out["templates"].append(f"G({{{end}}}|-> P0(3))")
         if "4" in used:
