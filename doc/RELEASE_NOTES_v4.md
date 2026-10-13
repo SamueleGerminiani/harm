@@ -43,7 +43,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **Evaluation as in SystemVerilog** (H19, D-035): signed/unsigned rules, context-determined widths, 32-bit decimal literals, `>>>`/`<<<`, shifts and divisions by zero that never stop HARM, 4-state `integer`/`time`, literals that print as they re-parse. The README describes each rule.
 - **Hints from the RTL** (H22, D-036): `harm-coi --hints FILE` writes signal roles, each proposition's placement and one template per target class (`--hints-use all|placement`); without `--hints` harm-coi's output is unchanged.
 - **Signals named after HARM keywords** (H23, D-037): a variable named `W`, `X`, `next`, `true`, … no longer stops HARM; write it `\W ` in a formula (a bare keyword keeps its meaning); SVA prints the plain name.
-- **Relations from the RTL** (H24, D-038): `harm-coi --relations` adds relations from assignments (`x == $past(e)`), the end of reset (`$fell(rst) |-> …`), both polarities of flags and numerics for deltas; in COI `filter` mode a proposition written in the template is no longer filtered.
+- **Relations from the RTL** (H24, D-038): `harm-coi --relations` adds relations from assignments (`x == $past(e)`), the end of reset (`$fell(rst) |-> …`), both polarities of flags and `$stable` for registers held under a condition; in COI `filter` mode a proposition written in the template is no longer filtered.
 
 ## New options
 | Option | What it does |

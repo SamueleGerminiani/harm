@@ -12,8 +12,8 @@
   constructs are not translated (dropped); other signed arithmetic is the same bits as unsigned once masked.
   At most MAX_PER_TARGET relations per target (source order) and MAX_OPS operators per relation.
 - Unconditional (no if or case above the assignment but the reset branch) or conditional; registered or not.
-- Numerics (Q6): a register whose assignment reads it gets its delta `x - $past(x, 1)` (the values of wide signals
-  were dropped: most of ima's mining time for little).
+- No numerics (the user, 2026-10-13): value clusters cost most of ima's mining time, and a register's relation
+  already states its delta (`cnt == ($past(cnt + 4'd1, 1) & 4'd15)` under `up`).
 - Conditional relations and `$stable` go to their own single-cycle decision trees (domains 6, 7).
 """
 from dataclasses import dataclass, field
@@ -311,9 +311,6 @@ def widths(design, vis):
 
 # ------------------------------------------------------------------ the configuration's additions
 CLASS = {"comb": "1", "unknown": "1", "state": "2"}
-# contiguous clustering: one `==` proposition per value (K-means merged the deltas of `updown` into none); no
-# ranges (an open range breaks OpenFPV's model build, portfolio F-P9)
-DELTA = "C,10Max,=="
 DT_FIXED = "5D,3W,15A,-0.1E,U"      # unused (no placeholder in the antecedent), as harm-coi's other templates
 DT_RELATION = "1D,2W,2A,-0.1E,U"   # one cycle, at most two propositions
 
@@ -368,9 +365,6 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
         if w == 1:  # a wide one gets no value numeric: they cost most of ima's mining time (2026-10-13)
             add(escaped(name), ["a", "c", "dt", cls])
             add("!" + escaped(name), ["a", "c", "dt", cls])
-    for t in sorted({r.target for r in rels if r.registered and r.reads_target}):
-        out["numerics"].append((DELTA, f"{escaped(t)} - $past({escaped(t)}, 1)", ["c", "2"]))
-        out["domains"].add("2")
     if reset:
         name, low = reset
         inactive, end = (name, f"$rose({name})") if low else (f"!{name}", f"$fell({name})")

@@ -304,6 +304,6 @@ The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner,
 
 
 ## H24: relations from the RTL (2026-10-12)
-- `harm-coi --relations` (opt-in during H24) adds propositions with `$past` (`x == ($past(e, 1) & M)`), `$fell`/`$rose` of the reset and numerics; all are in the miner portfolio's SVA subset (`$past`, `$fell`, `$rose` allowed).
+- `harm-coi --relations` (opt-in during H24) adds propositions with `$past` (`x == ($past(e, 1) & M)`), `$fell`/`$rose` of the reset; all are in the miner portfolio's SVA subset (`$past`, `$fell`, `$rose` allowed).
 - With it, HARM mines `$fell(rst) |-> <reset value>` and `!rst |=> <relation>`: under `disable iff (rst)` neither is vacuous (an assertion triggered by `rst` high is).
 - In COI `filter` mode a proposition written in a template (`{!rst}`) is no longer cone-filtered.
