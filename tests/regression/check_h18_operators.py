@@ -7,7 +7,8 @@ fixture  (A1, A3): every expression of tests/oracle/fixture_h18/cases.txt: HARM'
 examples (A3): every <prop> and numeric expansion of the example configurations (the H0 regression
          cases) prints to a text that re-parses to the same values and prints the same.
 fixture19 (H19, D-035): the same, on tests/oracle/fixture_h19 (evaluation and conversions).
-Usage: check_h18_operators.py <harm> <repository> fixture|fixture19|examples"""
+fixture25 (H25, D-039): the same, on tests/oracle/fixture_h25 ($signed and $unsigned).
+Usage: check_h18_operators.py <harm> <repository> fixture|fixture19|fixture25|examples"""
 import json
 import re
 import shlex
@@ -52,8 +53,9 @@ def round_trip(trace_args, exp, values, text, d):
     return None
 
 
-if mode in ("fixture", "fixture19"):
-    fx = repo / ("tests/oracle/fixture_h18" if mode == "fixture" else "tests/oracle/fixture_h19")
+if mode in ("fixture", "fixture19", "fixture25"):
+    fx = repo / {"fixture": "tests/oracle/fixture_h18", "fixture19": "tests/oracle/fixture_h19",
+                 "fixture25": "tests/oracle/fixture_h25"}[mode]
     args = ["--csv", str(fx / "trace.csv")]
     cases = [l.split("|", 3) for l in (fx / "cases.txt").read_text().splitlines()]
 

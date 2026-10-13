@@ -1,0 +1,2 @@
+rows=48 (H19's trace) cases=163
+Icarus Verilog version 12.0 (stable) ()
