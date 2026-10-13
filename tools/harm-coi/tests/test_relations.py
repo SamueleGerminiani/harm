@@ -145,8 +145,10 @@ def test_active_low_reset(tmp_path):
     assert props["q == $past(d, 1)"] == ["c", "4"]
 
 
-def test_numerics(tmp_path):
-    _, nums, _ = emit(tmp_path, """
+def test_no_numerics(tmp_path):
+    # no <numeric> (the user, 2026-10-13): value clusters cost most of ima's mining time; the conditional relations
+    # already describe counters (cnt == $past(cnt + 1) under `up`)
+    props, nums, _ = emit(tmp_path, """
         module m(input logic clk, rst, up, input logic [7:0] a, b, output logic [3:0] cnt, output logic [15:0] p);
           always_ff @(posedge clk)
             if (rst) cnt <= 4'd0;
@@ -154,8 +156,8 @@ def test_numerics(tmp_path):
           assign p = a * b;
         endmodule
     """, "--reset", "rst")
-    assert nums["cnt - $past(cnt, 1)"] == ("C,10Max,==", ["c", "2"])  # contiguous: one proposition per value
-    assert "p" not in nums  # no value numerics: they cost most of the mining time on ima (2026-10-13)
+    assert nums == {}
+    assert props["cnt == ($past(cnt + 4'd1, 1) & 4'd15)"] == ["c", "7"]
 
 
 def test_off_by_default(tmp_path):

@@ -258,7 +258,7 @@ if(HARM_COI_OK)
     add_test(NAME h24_mine_regbank COMMAND ${H24_CHECK} ${H24}/regbank
              --expect [=[^always \(\$fell\(rst\) \|-> cfg1 == 8'b1010\)$]=])
     add_test(NAME h24_numeric_delta COMMAND ${H24_CHECK} ${H24}/updown
-             --expect [=[cnt == 4'b0 && up && !down \|=> cnt - \$past\(cnt\) == 4'b1\)$]=])
+             --expect [=[up && !down \|=> cnt == \(\$past\(cnt \+ 4'b1\)]=] --reject [=[\$past\(cnt\) == ]=])
     # a fixed antecedent ({!rst}) is not cone-filtered: data registers without a reset keep their relations
     add_test(NAME h24_fixed_filter COMMAND ${H24_CHECK} ${H24}/pipemul --mode filter
              --expect [=[^always \(!rst \|=> m3 == \$past\(m2\)\)$]=]
