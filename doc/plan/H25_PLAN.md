@@ -1,6 +1,6 @@
 # H25 plan: signed RTL conditions and relations (harm-coi, HARM)
 
-*Status: draft, for the user's approval. Asked by the user (2026-10-13: "yes, plan it") after the finding recorded in D-038: harm-coi turns a signed RTL comparison into an unsigned one. Branch `ms/H25-signed` from `dev` @ `e4c4169`. Effort: about 1.5 d with Q1 (a) (HARM 1 d, harm-coi and the measurement 0.5 d).*
+*Status: approved by the user (2026-10-13: "approved as recommended, go ahead with H25": Q1–Q3 as recommended). Asked by the user (2026-10-13: "yes, plan it") after the finding recorded in D-038: harm-coi turns a signed RTL comparison into an unsigned one. Branch `ms/H25-signed` from `dev` @ `e4c4169`. Effort: about 1.5 d with Q1 (a) (HARM 1 d, harm-coi and the measurement 0.5 d).*
 
 ## Why
 A trace carries no signedness: HARM reads every VCD vector as an unsigned `logic` (`VCDtraceReader.cc`), and harm-coi writes its propositions with unsigned literals. For an RTL signal declared `signed` this changes what a proposition means, or drops it. Checked on HARM's fixture `tests/input/h24/satacc` (a copy of the miner portfolio's D1 design: `logic signed [12:0] sum = acc + x`; `if (sum > 13'sd2047) … else if (sum < -13'sd2047) …`), `dev` @ `e4c4169`:
