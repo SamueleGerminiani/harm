@@ -277,6 +277,10 @@ if(HARM_COI_OK)
     add_test(NAME h25_mine_satacc COMMAND ${H24_CHECK} ${H24}/satacc
              --expect [=[\$signed\(sum\) < -13'sb?d?[0-9]+]=] --expect [=[sum == .*\$signed\(acc\)]=])
     set_tests_properties(h25_relation_satacc h25_mine_satacc PROPERTIES LABELS coi)
+    # H26 C2 (D-040): the saturated values, constants assigned outside the reset branch, are consequents
+    add_test(NAME h26_mine_satacc COMMAND ${H24_CHECK} ${H24}/satacc
+             --expect [=[\$signed\(acc\) == -12'sb11111111111\)$]=] --expect [=[[|]=> acc == 12'b11111111111\)$]=])
+    set_tests_properties(h26_mine_satacc PROPERTIES LABELS coi)
     set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_fixed_filter
                          PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)
