@@ -95,6 +95,9 @@ public:
   virtual void enterNonTemporalFunction(varDeclarationParser::NonTemporalFunctionContext *ctx) = 0;
   virtual void exitNonTemporalFunction(varDeclarationParser::NonTemporalFunctionContext *ctx) = 0;
 
+  virtual void enterSignCast(varDeclarationParser::SignCastContext *ctx) = 0;
+  virtual void exitSignCast(varDeclarationParser::SignCastContext *ctx) = 0;
+
   virtual void enterPfunc_arg(varDeclarationParser::Pfunc_argContext *ctx) = 0;
   virtual void exitPfunc_arg(varDeclarationParser::Pfunc_argContext *ctx) = 0;
 

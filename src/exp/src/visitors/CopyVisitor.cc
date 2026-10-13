@@ -259,6 +259,15 @@ EXPRESSION(LogicLShift, _logic, _logic)
 TYPE_CAST(LogicToBool, _logic, _proposition)
 TYPE_CAST(LogicToFloat, _logic, _float)
 TYPE_CAST(LogicToInt, _logic, _int)
+// H25 (D-039): $signed / $unsigned
+void CopyVisitor::visit(LogicSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  _logic = generatePtr<LogicSignCast>(_logic, o.toSigned());
+}
+void CopyVisitor::visit(IntSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  _int = generatePtr<IntSignCast>(_int, o.toSigned());
+}
 UNARY_FUNCTION(LogicPast, _logic)
 UNARY_FUNCTION(LogicStable, _proposition)
 UNARY_FUNCTION(LogicFell, _proposition)

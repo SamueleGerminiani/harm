@@ -45,14 +45,15 @@ def test_negative_reset_value(tmp_path):
 
 def test_sign_extension_relation(tmp_path):
     props, _, _ = emit(tmp_path, SAT, "--reset", "rst")
-    # acc (12 bits) and x (8 bits) are sign-extended to the 13 bits of the signed sum
-    assert props["sum == ((($signed(acc) + 13'sd0) + ($signed(x) + 13'sd0)) & 13'd8191)"] == ["c", "5"]
+    # acc (12 bits) and x (8 bits) are sign-extended to the 13 bits of the signed sum; each extension is a function's
+    # argument, self-determined, so the relation's unsigned mask does not turn it into a zero extension (11.8.2)
+    assert props["sum == (($unsigned($signed(acc) + 13'sd0) + $unsigned($signed(x) + 13'sd0)) & 13'd8191)"] == ["c", "5"]
 
 
 def test_signed_comparison_and_arithmetic_shift_relations(tmp_path):
     props, _, _ = emit(tmp_path, SAT, "--reset", "rst")
     assert props["big == ($signed(sum) > 13'sd2047)"] == ["c", "5"]
-    assert props["h == (($signed(sum) >>> 2) & 13'd8191)"] == ["c", "5"]
+    assert props["h == $unsigned($signed(sum) >>> 2)"] == ["c", "5"]  # self-determined: arithmetic in any context
     assert props["u == (sum >> 1)"] == ["c", "5"]       # $unsigned: a logical shift, as before
 
 

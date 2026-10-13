@@ -173,7 +173,11 @@ def width(e):
         return e[2] - e[3] + 1
     if k == "const" and e[2] is not None:
         return e[2]
-    if k == "$past":
+    if k in ("$past", "$signed", "$unsigned"):
+        return width(e[1])
+    if k in ("+", "-", "*", "|", "^"):
+        return max(width(e[1]), width(e[2]))
+    if k in ("<<", ">>", ">>>"):
         return width(e[1])
     if k == "&":
         ws = [w for w in (_try_width(e[1]), _try_width(e[2])) if w is not None]
@@ -273,6 +277,31 @@ def main() -> int:
                     bad.append(f"R4: {un(exp)} false at sample {t}")
                     break
         print(f"{name}: R4 checked {n} unconditional relations on {len(tr)} samples")
+        # H25 S3: HARM's own evaluation agrees (the evaluator above has no SystemVerilog contexts: an unsigned context
+        # that turned a sign extension into a zero extension went unseen by it, 2026-10-13)
+        pt = out / "prop_table.json"
+        pt.unlink(missing_ok=True)
+        subprocess.run([a.harm, "--vcd", str(f / "trace.vcd"), "--clk", meta["clock"], "--vcd-ss", meta["vcd_scope"],
+                        "--vcd-r", meta["vcd_recursion"], "--conf", str(out / "cfg.xml"), "--dump-prop-table", str(pt),
+                        "--psilent", "--isilent"], capture_output=True, text=True, cwd=out)  # fmt: skip
+        if not pt.exists():
+            bad.append("S3: HARM wrote no proposition table")
+        else:
+            ps = [p for c in json.loads(pt.read_text())["contexts"] for p in c["propositions"]]
+            xs = re.findall(r'<prop exp="([^"]*)" loc="([^"]*)"', xml)
+            if len(ps) != len(xs):
+                bad.append(f"S3: {len(xs)} propositions in the configuration, {len(ps)} in HARM's table")
+            for (exp, loc), p in zip(xs, ps):
+                dom = [x.strip() for x in loc.split(",")]
+                if "4" not in dom and "5" not in dom:
+                    continue
+                lag = 1 if "4" in dom else 0
+                for t in range(2, min(len(tr), len(p["values"]))):
+                    if rst and tr[t - lag].get(rst, 0):
+                        continue
+                    if p["values"][t] != "1":
+                        bad.append(f"S3: HARM evaluates {un(exp)} false at sample {t}")
+                        break
         rels = [un(x) for x, loc in re.findall(r'<prop exp="([^"]*)" loc="([^"]*)"', xml)
                 if {"4", "5"} & {d.strip() for d in loc.split(",")}]
         for rx in a.expect_relation:

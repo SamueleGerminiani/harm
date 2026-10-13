@@ -159,6 +159,9 @@ private:
       propositionParser::Int_constantContext *ctx) override;
   virtual void
   exitFloatAtom(propositionParser::FloatAtomContext *ctx) override;
+  /// H25 (D-039): $signed(e) / $unsigned(e)
+  virtual void exitSignCast(propositionParser::SignCastContext *ctx) override;
+
   virtual void enterNonTemporalFunction(
       propositionParser::NonTemporalFunctionContext *ctx) override;
   /// D-034: the sizes of the two stacks when a function starts: its result goes to the stack

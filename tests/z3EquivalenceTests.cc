@@ -221,6 +221,44 @@ TEST(Z3EquivalenceTest, soundOnAllAssignmentsOfSmallVariables) {
   EXPECT_EQ(s.missed, 0u);
 }
 
+// H25 (D-039): $signed and $unsigned keep the bits and change the sign; every 4-valued assignment
+// of v2 (2 bits) and v3 (3 bits), 4^5 = 1024 rows (added after the implementation, with S2)
+TEST(Z3EquivalenceTest, signCastsOnAllAssignments) {
+  std::vector<std::pair<std::string, size_t>> vars = {{"v2", 2}, {"v3", 3}};
+  TracePtr trace = logicTrace(vars, 1024);
+  const char digits[] = {'0', '1', 'x', 'z'};
+  for (size_t row = 0; row < 1024; row++) {
+    size_t code = row;
+    for (const auto &[n, w] : vars) {
+      std::string bits;
+      for (size_t b = 0; b < w; b++) {
+        bits += digits[code % 4];
+        code /= 4;
+      }
+      trace->getLogicVariable(n)->assign(row, Logic(bits, w));
+    }
+  }
+  std::vector<std::pair<std::string, std::string>> pairs = {
+      {"$signed(v3) < 0", "v3 >= 3'd4"},
+      {"$signed(v3) > 3'sd1", "v3 == 3'd2 || v3 == 3'd3"},
+      {"$unsigned($signed(v3)) > 3'd3", "v3 > 3'd3"},
+      {"$signed(v2) + 3'sd0 < 0", "v2 > 2'd1"},
+      {"$signed(v3) < $signed(v2)", "$signed(v3) < ($signed(v2) + 3'sd0)"},
+      // a negative constant written -3'sd1 is a unary minus, opaque to the encoding (LogicNeg): Unknown, sound
+      {"$signed(v3) == 3'sb111", "v3 == 3'd7"},
+      {"$signed(v3) < 0", "v3 < 3'd4"},
+      {"$signed(v3) > 0", "v3 > 3'd0"},
+      {"$signed(v2) < $signed(v3)", "v2 < v3"},
+  };
+  Soundness s = checkSoundness(pairs, trace, vars);
+  report("sign casts, exhaustive", s);
+  EXPECT_EQ(s.pairs, pairs.size());
+  EXPECT_EQ(s.unsound, 0u);
+  EXPECT_EQ(s.badCounterexamples, 0u);
+  EXPECT_EQ(s.missed, 0u);
+  EXPECT_EQ(s.trulyEquivalent, 6u);
+}
+
 TEST(Z3EquivalenceTest, soundOnRandomAssignmentsOfWideVariables) {
   std::vector<std::pair<std::string, size_t>> vars = {
       {"q4", 4}, {"r8", 8}, {"t13", 13}, {"u32", 32}};

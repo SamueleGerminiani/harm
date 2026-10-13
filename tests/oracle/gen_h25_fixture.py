@@ -60,11 +60,13 @@ cases += [("extension", e) for e in [
     "($signed(w) + 13'sd0) < 0", "($signed(q) + 8'sd0) == -8'sd1", "($signed(w) + 13'sd0) + ($signed(q) + 13'sd0) < 0",
     "(($signed(w) + 13'sd0) + ($signed(q) + 13'sd0) & 13'd8191) > 13'd4000", "$signed(w) + $signed(q) < 0",
     "$signed(q) + sw < 0", "$signed(w) * $signed(q) < 0", "$signed(w) - 8'sd1 < 0", "-$signed(w) < 0"]]
-# nested casts, selects, concatenations, ternaries, shifts by variable amounts
+# nested casts, selects, concatenations, ternaries, shifts by variable amounts. The ternary's condition is 2-valued:
+# with an x condition HARM takes the else branch (the condition is a proposition, D-011) where SystemVerilog merges
+# the branches; that is not H25's (found while writing S2)
 cases += [("nested", e) for e in [
     "$signed($unsigned(sw)) < 0", "$unsigned($signed(w)) > 8'd127", "$signed(w[7:4]) < 0", "$signed(w[3:0]) == sq",
     "$signed({q, q}) < 0", "$signed(w) >>> am < 0", "$signed(w) >> am < 0", "$unsigned(sw) >>> am > 8'd60",
-    "(w > 8'd10 ? $signed(q) : sq) < 0", "$signed(w & 8'd240) < 0", "$signed(w) < $signed(q)", "$signed(w) < q",
+    "(uch > 8'd10 ? $signed(q) : sq) < 0", "$signed(w & 8'd240) < 0", "$signed(w) < $signed(q)", "$signed(w) < q",
     "$signed(tm) < 0", "$unsigned(ig) > 32'd100"]]
 cases = list(dict.fromkeys(cases))
 

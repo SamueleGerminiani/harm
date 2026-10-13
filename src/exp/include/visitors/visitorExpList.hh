@@ -87,6 +87,8 @@
   VIRTUAL void visit(LogicToBool &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicToFloat &o) OVVERIDE;                      \
   VIRTUAL void visit(LogicToInt &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicSignCast &o) OVVERIDE;                     \
+  VIRTUAL void visit(IntSignCast &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicLShift &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicRShift &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicSetMembership &o) OVVERIDE;                \

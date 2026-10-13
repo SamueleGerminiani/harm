@@ -89,6 +89,9 @@ public:
   virtual void enterNonTemporalFunction(propositionParser::NonTemporalFunctionContext *ctx) = 0;
   virtual void exitNonTemporalFunction(propositionParser::NonTemporalFunctionContext *ctx) = 0;
 
+  virtual void enterSignCast(propositionParser::SignCastContext *ctx) = 0;
+  virtual void exitSignCast(propositionParser::SignCastContext *ctx) = 0;
+
   virtual void enterPfunc_arg(propositionParser::Pfunc_argContext *ctx) = 0;
   virtual void exitPfunc_arg(propositionParser::Pfunc_argContext *ctx) = 0;
 

@@ -91,6 +91,9 @@ public:
   virtual void enterNonTemporalFunction(propositionParser::NonTemporalFunctionContext * /*ctx*/) override { }
   virtual void exitNonTemporalFunction(propositionParser::NonTemporalFunctionContext * /*ctx*/) override { }
 
+  virtual void enterSignCast(propositionParser::SignCastContext * /*ctx*/) override { }
+  virtual void exitSignCast(propositionParser::SignCastContext * /*ctx*/) override { }
+
   virtual void enterPfunc_arg(propositionParser::Pfunc_argContext * /*ctx*/) override { }
   virtual void exitPfunc_arg(propositionParser::Pfunc_argContext * /*ctx*/) override { }
 

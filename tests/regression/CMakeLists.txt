@@ -273,7 +273,7 @@ if(HARM_COI_OK)
     # H25 (D-039). S3: the sign-extension relation of satacc (sum = acc + x, signed) is written and holds on the trace
     # (the independent evaluator reads $signed); S4: HARM mines with the signed condition of the negative saturation
     add_test(NAME h25_relation_satacc COMMAND ${H24_CHECK} ${H24}/satacc --oracle
-             --expect-relation [=[^sum == \(\(\(\$signed\(acc\) \+ 13'sd0\) \+ \(\$signed\(x\) \+ 13'sd0\)\) & 13'd8191\)$]=])
+             --expect-relation [=[^sum == \(\(\$unsigned\(\$signed\(acc\) \+ 13'sd0\) \+ \$unsigned\(\$signed\(x\) \+ 13'sd0\)\) & 13'd8191\)$]=])
     add_test(NAME h25_mine_satacc COMMAND ${H24_CHECK} ${H24}/satacc
              --expect [=[\$signed\(sum\) < -13'sb?d?[0-9]+]=] --expect [=[sum == .*\$signed\(acc\)]=])
     set_tests_properties(h25_relation_satacc h25_mine_satacc PROPERTIES LABELS coi)

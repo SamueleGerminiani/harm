@@ -16,13 +16,13 @@ public:
     CONST_SUFFIX = 5, LOGIC_VARIABLE = 6, BIT_VARIABLE = 7, FLOAT_CONSTANT = 8, 
     FLOAT_VARIABLE = 9, SUBSTR = 10, STRING_CONSTANT = 11, STRING_VARIABLE = 12, 
     LCURLY = 13, RCURLY = 14, LSQUARED = 15, RSQUARED = 16, LROUND = 17, 
-    RROUND = 18, INSIDE = 19, FUNCTION = 20, UINTEGER = 21, FLOAT = 22, 
-    GCC_BINARY = 23, HEX = 24, VERILOG_BASED = 25, FILL_LITERAL = 26, SINGLE_QUOTE = 27, 
-    PLUS = 28, MINUS = 29, TIMES = 30, DIV = 31, GT = 32, GE = 33, LT = 34, 
-    LE = 35, EQ = 36, NEQ = 37, CASE_EQ = 38, CASE_NEQ = 39, QUESTION = 40, 
-    BAND = 41, BOR = 42, BXOR = 43, NEG = 44, ALSHIFT = 45, ARSHIFT = 46, 
-    LSHIFT = 47, RSHIFT = 48, AND = 49, OR = 50, NOT = 51, COL = 52, DCOL = 53, 
-    DOLLAR = 54, RANGE = 55, CLS_TYPE = 56, WS = 57
+    RROUND = 18, INSIDE = 19, SIGN_CAST = 20, FUNCTION = 21, UINTEGER = 22, 
+    FLOAT = 23, GCC_BINARY = 24, HEX = 25, VERILOG_BASED = 26, FILL_LITERAL = 27, 
+    SINGLE_QUOTE = 28, PLUS = 29, MINUS = 30, TIMES = 31, DIV = 32, GT = 33, 
+    GE = 34, LT = 35, LE = 36, EQ = 37, NEQ = 38, CASE_EQ = 39, CASE_NEQ = 40, 
+    QUESTION = 41, BAND = 42, BOR = 43, BXOR = 44, NEG = 45, ALSHIFT = 46, 
+    ARSHIFT = 47, LSHIFT = 48, RSHIFT = 49, AND = 50, OR = 51, NOT = 52, 
+    COL = 53, DCOL = 54, DOLLAR = 55, RANGE = 56, CLS_TYPE = 57, WS = 58
   };
 
   enum {
@@ -32,8 +32,8 @@ public:
     RuleConcatItem = 11, RuleRange = 12, RuleSm_range = 13, RuleMin_dollar = 14, 
     RuleMax_dollar = 15, RuleSm_constant = 16, RuleIntAtom = 17, RuleInt_constant = 18, 
     RuleLogicAtom = 19, RuleLogic_constant = 20, RuleFloatAtom = 21, RuleString = 22, 
-    RuleStringAtom = 23, RuleNonTemporalFunction = 24, RulePfunc_arg = 25, 
-    RuleRelop = 26, RuleCls_op = 27
+    RuleStringAtom = 23, RuleNonTemporalFunction = 24, RuleSignCast = 25, 
+    RulePfunc_arg = 26, RuleRelop = 27, RuleCls_op = 28
   };
 
   explicit propositionParser(antlr4::TokenStream *input);
@@ -78,6 +78,7 @@ public:
   class StringContext;
   class StringAtomContext;
   class NonTemporalFunctionContext;
+  class SignCastContext;
   class Pfunc_argContext;
   class RelopContext;
   class Cls_opContext; 
@@ -252,6 +253,7 @@ public:
     antlr4::tree::TerminalNode *MINUS();
     antlr4::tree::TerminalNode *PLUS();
     NonTemporalFunctionContext *nonTemporalFunction();
+    SignCastContext *signCast();
     IntAtomContext *intAtom();
     LogicAtomContext *logicAtom();
     FloatAtomContext *floatAtom();
@@ -524,6 +526,22 @@ public:
   };
 
   NonTemporalFunctionContext* nonTemporalFunction();
+
+  class  SignCastContext : public antlr4::ParserRuleContext {
+  public:
+    SignCastContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *SIGN_CAST();
+    antlr4::tree::TerminalNode *LROUND();
+    NumericContext *numeric();
+    antlr4::tree::TerminalNode *RROUND();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+   
+  };
+
+  SignCastContext* signCast();
 
   class  Pfunc_argContext : public antlr4::ParserRuleContext {
   public:

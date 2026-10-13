@@ -21,6 +21,7 @@
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Ternary.hh"
+#include "formula/expression/SignCast.hh"
 #include "formula/expression/Substring.hh"
 #include "formula/function/SVAfunction.hh"
 #include "misc.hh"
@@ -587,6 +588,28 @@ void PropositionParserHandler::exitStringAtom(
     messageError("Unknown string atom!" + printErrorMessage());
   }
 }
+void PropositionParserHandler::exitSignCast(
+    propositionParser::SignCastContext *ctx) {
+  // H25 (D-039): the operand's bits and width, the sign changed (IEEE 1800-2017 20.5)
+  const bool toSigned = ctx->SIGN_CAST()->getText() == "$signed";
+  NumericPack np = _numericExpressions.top();
+  _numericExpressions.pop();
+  messageErrorIf(isFill(np), "A fill literal ('0, '1, 'x, 'z) cannot be the "
+                             "argument of '" +
+                                 ctx->SIGN_CAST()->getText() + "'" +
+                                 printErrorMessage());
+  if (np._logExp != nullptr) {
+    _numericExpressions.push(
+        LogicExpressionPtr(generatePtr<LogicSignCast>(np._logExp, toSigned)));
+  } else if (np._intExp != nullptr) {
+    _numericExpressions.push(
+        IntExpressionPtr(generatePtr<IntSignCast>(np._intExp, toSigned)));
+  } else {
+    messageError("Function '" + ctx->SIGN_CAST()->getText() +
+                 "' does not support float arguments" + printErrorMessage());
+  }
+}
+
 void PropositionParserHandler::enterNonTemporalFunction(
     propositionParser::NonTemporalFunctionContext *ctx) {
   _functionStart[ctx] = {_proposition.size(), _numericExpressions.size()};
@@ -1187,6 +1210,11 @@ void PropositionParserHandler::exitBoolean(
 
 void PropositionParserHandler::exitNumeric(
     propositionParser::NumericContext *ctx) {
+  // H25: handled by exitSignCast
+  if (ctx->signCast() != nullptr) {
+    return;
+  }
+
 
   if (ctx->floatAtom() || ctx->intAtom() || ctx->logicAtom() ||
       ctx->concatenation()) {

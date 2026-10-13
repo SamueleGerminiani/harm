@@ -307,3 +307,8 @@ The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner,
 - `harm-coi --relations` (harm-coi's default with `--hints` since H24's sign-off, 2026-10-13; `--no-relations` turns it off) adds propositions with `$past` (`x == ($past(e, 1) & M)`), `$fell`/`$rose` of the reset; all are in the miner portfolio's SVA subset (`$past`, `$fell`, `$rose` allowed).
 - With it, HARM mines `$fell(rst) |-> <reset value>` and `!rst |=> <relation>`: under `disable iff (rst)` neither is vacuous (an assertion triggered by `rst` high is).
 - In COI `filter` mode a proposition written in a template (`{!rst}`) is no longer cone-filtered.
+
+## H25: signed RTL conditions and relations (2026-10-13)
+- HARM's propositions and printed assertions may contain `$signed(e)` and `$unsigned(e)` (SystemVerilog §20.5), and signed literals `w'sdN` (printed `w'sb…`) with a unary minus.
+- harm-coi writes a signed RTL comparison on `$signed` (`$signed(sum) < -13'sb11111111111`); before H25 it was written unsigned (`sum > 13'd2047`, true for negative values) or dropped. Relations may contain `$unsigned($signed(x) + 13'sd0)` (a sign extension).
+- Checked in the miner portfolio (H25 S6): these assertions pass its SVA subset check, OpenFPV's trace check agrees with HARM on D1's `satacc`, and the sign-extension relation is proved on `satacc` and refuted on its bug B01.
