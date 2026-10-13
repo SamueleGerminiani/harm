@@ -60,9 +60,12 @@ REG = """
 def test_registered_relations(tmp_path):
     props, _, tpls = emit(tmp_path, REG, "--reset", "rst")
     assert props["y == ($past(a - b, 1) & 8'd255)"] == ["c", "4"]  # unconditional: the fixed template
-    assert props["z == ($past(a + b, 1) & 8'd255)"] == ["c", "2"]  # under `en`: the decision tree finds it
+    assert props["z == ($past(a + b, 1) & 8'd255)"] == ["c", "7"]  # under `en`: a single-cycle tree finds it
     assert "G({!rst}|=> P0(4))" in tpls
+    assert "G({..#1&..}|=> P0(7))" in tpls and "G({..#1&..}|-> P0(6))" not in tpls  # only the classes used
     assert not any("8'd0" in e and "$past" in e for e in props)  # the reset branch gives no relation
+    xml = (tmp_path / "cfg.xml").read_text()
+    assert 'dtLimits="1D,2W,2A,-0.1E,U" exp="G({..#1&amp;..}|=&gt; P0(7))"' in xml  # single-cycle conditions
 
 
 def test_combinational_relations_case_arms_and_concatenation(tmp_path):
@@ -79,9 +82,9 @@ def test_combinational_relations_case_arms_and_concatenation(tmp_path):
           assign z = (a == b);
         endmodule
     """, "--reset", "rst")
-    assert props["r == ((a + b) & 9'd511)"] == ["c", "1"]
-    assert props["r == (a << 1)"] == ["c", "1"]  # a concatenation is exact: no mask when it fits
-    assert props["r == b"] == ["c", "1"]
+    assert props["r == ((a + b) & 9'd511)"] == ["c", "6"]
+    assert props["r == (a << 1)"] == ["c", "6"]  # a concatenation is exact: no mask when it fits
+    assert props["r == b"] == ["c", "6"]
     assert props["c == ((a << 8) | b)"] == ["c", "5"]
     assert props["z == (a == b)"] == ["c", "5"]
     assert "G({!rst}|-> P0(5))" in tpls
@@ -152,7 +155,7 @@ def test_numerics(tmp_path):
         endmodule
     """, "--reset", "rst")
     assert nums["cnt - $past(cnt, 1)"] == ("C,10Max,==", ["c", "2"])  # contiguous: one proposition per value
-    assert nums["p"] == ("C,10Max,==", ["c", "1"])  # no open ranges (OpenFPV, F-P9)
+    assert "p" not in nums  # no value numerics: they cost most of the mining time on ima (2026-10-13)
 
 
 def test_off_by_default(tmp_path):
@@ -179,13 +182,13 @@ def test_registered_conditional_expression_keeps_parentheses(tmp_path):
             else if (load) q <= (seed == 8'd0) ? 8'd1 : seed;
         endmodule
     """, "--reset", "rst")
-    assert props["q == $past(((seed == 8'd0) ? 8'd1 : seed), 1)"] == ["c", "2"]
+    assert props["q == $past(((seed == 8'd0) ? 8'd1 : seed), 1)"] == ["c", "7"]
 
 
 def test_hold_relations_as_stable(tmp_path):
     # a register assigned under a condition keeps its value otherwise: $stable(x), for the decision tree to place
     props, _, _ = emit(tmp_path, REG, "--reset", "rst")
-    assert props["$stable(z)"] == ["c", "2"]  # z <= a + b under `en`
+    assert props["$stable(z)"] == ["c", "7"]  # z <= a + b under `en`
     assert "$stable(y)" not in props  # y is assigned every cycle out of reset
 
 
