@@ -88,6 +88,7 @@ D-036 & hints from the RTL, \code|hints| v1 & H22 \\
 D-037 & signals named after HARM keywords: escaped references & H23 \\
 D-038 & relations from the RTL (\code|harm-coi --relations|) & H24 \\
 D-039 & signed RTL conditions and relations, \code|\$signed|/\code|\$unsigned| & H25 \\
+D-040 & constants assigned outside a reset branch & H26 \\
 \bottomrule
 \end{longtable}
 
@@ -138,5 +139,6 @@ H22 & hints from the RTL (\code|harm-coi --hints|: roles, consequent placement, 
 H23 & signals named after HARM keywords (\code|\textbackslash W |) & a keyword-named variable stopped HARM; \code|F|, \code|R|, \code|intersect| missing from the keyword list \\
 H24 & relations from the RTL (\code|harm-coi --relations|) & data outputs had no proposition, flags one polarity, reset assertions were vacuous under \code|disable iff|; fixed template propositions were cone-filtered \\
 H25 & signed RTL conditions and relations (\code|\$signed|, \code|\$unsigned|) & signed comparisons written unsigned; negative constants and sign extensions dropped \\
+H26 & constants assigned outside a reset branch as consequents & only the reset branch's constants were propositions \\
 \bottomrule
 \end{longtable}

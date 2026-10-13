@@ -312,3 +312,6 @@ The classical-miner portfolio for trivergence's A3 (HARM, a new SAT-based miner,
 - HARM's propositions and printed assertions may contain `$signed(e)` and `$unsigned(e)` (SystemVerilog §20.5), and signed literals `w'sdN` (printed `w'sb…`) with a unary minus.
 - harm-coi writes a signed RTL comparison on `$signed` (`$signed(sum) < -13'sb11111111111`); before H25 it was written unsigned (`sum > 13'd2047`, true for negative values) or dropped. Relations may contain `$unsigned($signed(x) + 13'sd0)` (a sign extension).
 - Checked in the miner portfolio (H25 S6): these assertions pass its SVA subset check, OpenFPV's trace check agrees with HARM on D1's `satacc`, and the sign-extension relation is proved on `satacc` and refuted on its bug B01.
+
+## H26: constants assigned outside a reset branch (2026-10-13)
+- harm-coi's configuration may contain consequents `x == c` (and `$signed(x) == -w'sdN`) for constants assigned outside the reset branch, so HARM can mine assertions such as `$signed(sum) < -13'sb11111111111 |=> $signed(acc) == -12'sb11111111111`; their syntax is H25's.

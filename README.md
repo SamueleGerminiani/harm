@@ -350,6 +350,7 @@ A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`,
 - **both polarities** of a 1-bit flag's reset-value predicate, and `x`/`!x` for a 1-bit signal that is only assigned;
 - **single-cycle trees for relations:** a conditional relation or `$stable(x)` is a consequent of its own template, `G({..#1&..}|=> P0(7))` (`|->`, domain 6, for combinational logic), with `dtLimits="1D,2W,2A,-0.1E,U"`: the condition guarding an assignment is one cycle's. No `<numeric>` is written.
 - **signed RTL (H25, D-039):** a comparison of two signed operands is written on `$signed` (`$signed(sum) < -13'sd2047`; a negative constant is kept), a sign extension as `$unsigned($signed(x) + 13'sd0)` and a signed `>>>` as `$unsigned($signed(a) >>> n)` (self-determined, so the relation's unsigned mask cannot turn them unsigned); before H25 the first was written unsigned and the others were dropped.
+- **constants (H26, D-040):** a constant assigned to a whole signal outside the reset branch (`acc <= 12'sd2047` under `sum > 13'sd2047`) is a consequent `acc == 12'd2047` in the same single-cycle trees; not for a constant signal, a 1-bit target (both polarities already) or a lookup table (more than 8 distinct constants). Before H26 only the reset branch's constants were propositions.
 
 Such relations restate the RTL: mined from a design, they describe that design, bugs included. They catch a *changed* design (a regression, a mutant); a bug already in the RTL shows only when the statement is compared with the intent (the specification).
 
