@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from pyslang import ast
 
 from .frontend import EK, SK, TK
-from .predicates import COMPARISONS, Harvester, escaped
+from .predicates import COMPARISONS, HARM_MAX_LOGIC_BITS, Harvester, escaped
 
 BO, UO = ast.BinaryOperator, ast.UnaryOperator
 MAX_PER_TARGET = 8
@@ -101,8 +101,12 @@ class Relations:
             if op is None:
                 raise NotTranslatable("operand")
             if op[0] == "sig":
+                if op[2] > HARM_MAX_LOGIC_BITS:
+                    raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
                 n = self.h.name(op[1])
                 return Val(escaped(n), op[2], False, False, 0, {n})
+            if self.h.out.widths.get(op[1], 0) > HARM_MAX_LOGIC_BITS:
+                raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
             return Val(f"{escaped(n)}[{op[2]}]", 1, False, False, 0, {n})
         if k == EK.RangeSelect:
@@ -110,6 +114,8 @@ class Relations:
             hi, lo = self.h.constant(e.left), self.h.constant(e.right)
             if op is None or op[0] != "sig" or hi is None or lo is None or hi < lo:
                 raise NotTranslatable("range select")
+            if op[2] > HARM_MAX_LOGIC_BITS:
+                raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
             return Val(f"{escaped(n)}[{hi}:{lo}]", hi - lo + 1, False, False, 0, {n})
         if k == EK.Concatenation:
@@ -185,6 +191,9 @@ class Relations:
             self.dropped.append(("relation: target not visible", where))
             return
         w = op[2]
+        if w > HARM_MAX_LOGIC_BITS:
+            self.dropped.append((f"relation: target wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit", where))
+            return
         self.assigned.append((target, registered, conditional))
         try:
             v = self.render(a.right)
