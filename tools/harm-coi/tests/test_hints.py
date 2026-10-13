@@ -88,7 +88,7 @@ def test_b2_emitted_config(tmp_path):
     assert '<prop exp="gnt[0]" loc="a, c, dt, 1" origin="rtl"/>' in xml
     assert '<prop exp="!prio" loc="a, c, dt, 2" origin="rtl"/>' in xml
     assert 'exp="G({..#1&amp;..}|-&gt; P0(1))"' in xml and 'exp="G({..#1&amp;..}|=&gt; P0(2))"' in xml
-    run(tmp_path, "arbiter", "--hints-use", "placement")
+    run(tmp_path, "arbiter", "--hints-use", "placement", "--no-relations")  # H22 alone (relations: the default since H24)
     xml = (tmp_path / "arbiter.xml").read_text()
     assert '<prop exp="req == 2\'d3" loc="a, dt" origin="rtl"/>' in xml
     assert '<prop exp="gnt[0]" loc="a, c, dt" origin="rtl"/>' in xml

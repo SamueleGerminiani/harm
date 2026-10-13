@@ -41,10 +41,11 @@ def parser():
     ap.add_argument("--reset", action="append", default=[], metavar="NAME",
                     help="a reset input, as HARM names it (--hints; asynchronous controls are found anyway); "
                          "!NAME for an active-low reset")
-    ap.add_argument("--relations", action="store_true",
-                    help="H24: also propositions from assignments (x == $past(e) / x == e), both polarities of 1-bit "
-                         "flags, assigned-only signals, numerics, and the fixed templates for the end of reset and "
-                         "for unconditional relations (needs --hints and --emit-config)")
+    ap.add_argument("--relations", action=argparse.BooleanOptionalAction, default=None,
+                    help="H24 (D-038): also propositions from assignments (x == $past(e) / x == e, $stable(x)), both "
+                         "polarities of 1-bit flags, assigned-only signals, and the fixed templates for the end of "
+                         "reset and for unconditional relations; the default with --hints and --emit-config, "
+                         "--no-relations restores the output before H24 (--relations needs --hints and --emit-config)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -55,6 +56,8 @@ def main(argv=None):
     if a.relations and not (a.hints and a.emit_config):
         print("harm-coi: --relations needs --hints and --emit-config", file=sys.stderr)
         return 2
+    if a.relations is None:   # the default since H24's sign-off (the user, 2026-10-13)
+        a.relations = bool(a.hints and a.emit_config)
     resets = [(r[1:], True) if r.startswith("!") else (r, False) for r in a.reset]
     if not 0 <= a.max_depth <= 64:
         print("harm-coi: --max-depth must be in 0..64", file=sys.stderr)
