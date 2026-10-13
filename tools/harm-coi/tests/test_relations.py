@@ -36,8 +36,8 @@ def emit(tmp_path, sv, *extra, relations=True):
     args = ["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut", "--vcd-recursion", "0", "--clock", "clk",
             "--emit-config", str(tmp_path / "cfg.xml"), "--hints", str(tmp_path / "hints.json"),
             "-o", str(tmp_path / "coi.json"), *extra]
-    if relations:
-        args.append("--relations")
+    if not relations:
+        args.append("--no-relations")
     assert cli.main(args) == 0
     xml = (tmp_path / "cfg.xml").read_text()
     props = {un(e): [x.strip() for x in loc.split(",")] for e, loc in PROP.findall(xml)}
@@ -160,10 +160,27 @@ def test_no_numerics(tmp_path):
     assert props["cnt == ($past(cnt + 4'd1, 1) & 4'd15)"] == ["c", "7"]
 
 
-def test_off_by_default(tmp_path):
+def test_no_relations_restores_the_old_output(tmp_path):
     props, nums, tpls = emit(tmp_path, REG, "--reset", "rst", relations=False)
     assert not any("$past" in e for e in props) and not nums
     assert not any("$fell" in t or "{!rst}" in t for t in tpls)
+
+
+def test_on_by_default(tmp_path):
+    # H24's sign-off (the user, 2026-10-13): with --hints and --emit-config, relations are harm-coi's default;
+    # --relations is accepted and changes nothing
+    on = emit(tmp_path, REG, "--reset", "rst")
+    assert any("$past" in e for e in on[0]) and any("{!rst}" in t for t in on[2])
+    assert emit(tmp_path, REG, "--reset", "rst", "--relations") == on
+
+
+def test_no_hints_no_relations(tmp_path):
+    # without --hints there is nothing to attach relations to: no relations, and no error (the default is not an ask)
+    src = tmp_path / "m.sv"
+    src.write_text(textwrap.dedent(REG))
+    rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut", "--vcd-recursion", "0",
+                   "--clock", "clk", "--emit-config", str(tmp_path / "c.xml"), "-o", str(tmp_path / "coi.json")])
+    assert rc == 0 and "$past" not in (tmp_path / "c.xml").read_text()
 
 
 def test_relations_need_hints(tmp_path):
@@ -211,7 +228,7 @@ def test_no_proposition_mixing_the_reset(tmp_path):
             else q <= d;
         endmodule
     """, "--reset", "rst", relations=False)
-    assert "rst || clr" in props  # without --relations harm-coi's output is unchanged
+    assert "rst || clr" in props  # with --no-relations harm-coi's output is unchanged
 
 
 def test_widened_operands(tmp_path):
