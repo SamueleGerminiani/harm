@@ -5,7 +5,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from . import __version__, cone, frontend, hints, predicates, vcd
+from . import __version__, cone, frontend, hints, predicates, relations, vcd
 
 
 def generator_version():
@@ -39,7 +39,13 @@ def parser():
     ap.add_argument("--hints-use", choices=["all", "placement"], default="all",
                     help="what --emit-config takes from --hints (default all; placement: the placement only)")
     ap.add_argument("--reset", action="append", default=[], metavar="NAME",
-                    help="a reset input, as HARM names it (--hints; asynchronous controls are found anyway)")
+                    help="a reset input, as HARM names it (--hints; asynchronous controls are found anyway); "
+                         "!NAME for an active-low reset")
+    ap.add_argument("--relations", action=argparse.BooleanOptionalAction, default=None,
+                    help="H24 (D-038): also propositions from assignments (x == $past(e) / x == e, $stable(x)), both "
+                         "polarities of 1-bit flags, assigned-only signals, and the fixed templates for the end of "
+                         "reset and for unconditional relations; the default with --hints and --emit-config, "
+                         "--no-relations restores the output before H24 (--relations needs --hints and --emit-config)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -47,6 +53,12 @@ def parser():
 
 def main(argv=None):
     a = parser().parse_args(argv)
+    if a.relations and not (a.hints and a.emit_config):
+        print("harm-coi: --relations needs --hints and --emit-config", file=sys.stderr)
+        return 2
+    if a.relations is None:   # the default since H24's sign-off (the user, 2026-10-13)
+        a.relations = bool(a.hints and a.emit_config)
+    resets = [(r[1:], True) if r.startswith("!") else (r, False) for r in a.reset]
     if not 0 <= a.max_depth <= 64:
         print("harm-coi: --max-depth must be in 0..64", file=sys.stderr)
         return 2
@@ -74,7 +86,7 @@ def main(argv=None):
     h = None
     if a.hints:
         try:
-            h = hints.build(doc, design, vis, extra, a.reset)
+            h = hints.build(doc, design, vis, extra, [n for n, _ in resets])
         except ValueError as e:
             print(f"harm-coi: {e}", file=sys.stderr)
             return 1
@@ -86,8 +98,14 @@ def main(argv=None):
         lines += [f"{t} <- {s} @{d}" for t in sorted(direct) if t not in unknown for s, d in sorted(direct[t])]
         lines += [f"unknown {n}" for n in sorted(unknown)]
         Path(a.edges).write_text("\n".join(lines) + "\n")
+    ext = None
+    if a.relations:
+        rel = relations.Relations(design, comp, vis)
+        rels = rel.run()
+        dropped += rel.dropped
+        ext = relations.extras(rels, h, preds, extra, relations.widths(design, vis), resets, rel.holds())
     if a.emit_config:
-        predicates.emit_config(a.emit_config, preds, a.output, h, a.hints_use)
+        predicates.emit_config(a.emit_config, preds, a.output, h, a.hints_use, ext)
     if a.verbose:
         for why, where in dropped:
             print(f"harm-coi: predicate dropped at {where}: {why}", file=sys.stderr)

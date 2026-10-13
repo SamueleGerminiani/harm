@@ -342,6 +342,15 @@ By default, a proposition that cannot be parsed stops HARM. With **`--skip-inval
 ### Signals named after HARM keywords (D-037)
 A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`, `next`, `until`, `always`, `eventually`, `s_eventually`, `nexttime`, `substr`, `first_match`, `intersect`, `inside`, `and`, `or`, `not`, `true`, `false`). In a formula (a proposition, a template, an assertion file), write such a variable as a SystemVerilog escaped identifier: a backslash, the name and a blank, `\W `. A bare keyword keeps its meaning (`W` is the weak until, `true` the constant), so `G(\W  -> X \next )` reads the variables `W` and `next` with the operators `G` and `X`. In a proposition, a bare name that is a variable and not a proposition word (`true`, `false`, `and`, `or`, `not`, `inside`) stops HARM with a message naming the escape. Any other variable may be written escaped too (`\a ` is `a`). SVA output prints the plain name (`W` is a legal SystemVerilog name); HARM's own syntax (`--dump-to`, read back with `--ass-file`) prints the escaped form. harm-coi writes such signals escaped in the propositions it emits.
 
+### Relations from the RTL (harm-coi, D-038)
+`harm-coi --hints FILE --emit-config CFG` (with `--reset R`, or `--reset !R` for an active-low reset) adds to the configuration by default (`--no-relations` turns it off and writes what harm-coi wrote before H24):
+- **relations from assignments:** `x <= e` in a clocked process gives `x == ($past(e, 1) & M)`, `assign x = e` gives `x == (e & M)` (`M` the mask of `x`'s width, written only where SystemVerilog would truncate);
+- **fixed templates:** an unconditional relation goes to `G({!R}|=> P0(4))` (registered) or `G({!R}|-> P0(5))` (combinational), so it is mined without unrelated antecedents; the reset values also go to `G({$fell(R)}|-> P0(3))`, the first cycle after the reset, which `disable iff (R)` does not switch off;
+- **both polarities** of a 1-bit flag's reset-value predicate, and `x`/`!x` for a 1-bit signal that is only assigned;
+- **single-cycle trees for relations:** a conditional relation or `$stable(x)` is a consequent of its own template, `G({..#1&..}|=> P0(7))` (`|->`, domain 6, for combinational logic), with `dtLimits="1D,2W,2A,-0.1E,U"`: the condition guarding an assignment is one cycle's. No `<numeric>` is written.
+
+Such relations restate the RTL: mined from a design, they describe that design, bugs included. They catch a *changed* design (a regression, a mutant); a bug already in the RTL shows only when the statement is compared with the intent (the specification).
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**
@@ -554,6 +563,7 @@ An assertion without antecedent propositions (e.g. an invariant) scores 1. Examp
 - **The other metrics** (`coiDepthFit`, `coiUnknown`) are still computed and can be used to sort.
 - **Statistics:** HARM reports the search space before and after pruning, and `--dump-assertion-info` records it under `coiFilter`.
 - **Assumes the RTL is correct.** Behaviour that an RTL bug removed or added cannot be mined, and HARM warns about it once. Use `mode="rank"` when looking for bugs.
+- **A proposition written in the template itself** (`G({!rst}|=> P0)`, `G({$fell(rst)}|-> P0)`) is not filtered, only what placeholders load (H24, D-038).
 - **Not "rank mode minus out-of-cone assertions."** For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. The guarantee is that filter mode gives the same result as rank mode on a configuration from which you deleted, for each consequent, the propositions outside its cone. See D-017 and D-018.
 
 **`depth="any|bounded|exact"`** (filter mode only; default `any`) also uses the depths of the cone. An antecedent proposition is checked at its distance `d`, in cycles, from each consequent proposition:

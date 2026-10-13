@@ -79,10 +79,18 @@ bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi,
   for (const auto &[ph, pp] : t->get_acphToPP()) {
     shared.insert(pp->get());
   }
+  // H24 (D-038): only what a placeholder loads is filtered; a proposition written in the template itself
+  // ({!rst}, {$fell(rst)}) is the author's choice, not a mined antecedent
+  std::unordered_set<const Proposition *> loaded;
+  for (const auto &[ph, pp] : t->get_aphToPP()) {
+    loaded.insert(pp->get());
+  }
+  auto fixed = [&](const Proposition *p) { return !loaded.count(p); };
   if (depth == CoiDepth::Any) {
     std::vector<std::string> con = consequentVariables(t);
     for (const auto &p : t->getLoadedPropositionsAnt()) {
-      if (!shared.count(p.get()) && !coi.inCone(variablesOf(p), con)) {
+      if (!shared.count(p.get()) && !fixed(p.get()) &&
+          !coi.inCone(variablesOf(p), con)) {
         return false;
       }
     }
@@ -92,7 +100,7 @@ bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi,
   // leafOffsets reads the loaded propositions through the placeholders of the template
   auto leaves = leafOffsets(t->getTemplateFormula());
   for (const auto &l : leaves) {
-    if (!l.inAntecedent || shared.count(l.prop.get())) {
+    if (!l.inAntecedent || shared.count(l.prop.get()) || fixed(l.prop.get())) {
       continue;
     }
     std::vector<ConsequentLeaf> con;
@@ -392,8 +400,13 @@ void TLMiner::l1Handler(
     }
     for (size_t i = 0; i < propsDT.size(); i++) {
       candidateVariables[i].first = propsDT[i];
-      candidateVariables[i].second =
-          makeGenericExpression<PropositionNot>(propsDT[i]);
+      // the negation of !p is p (H24: no `!!p` in the output)
+      if (auto n = std::dynamic_pointer_cast<PropositionNot>(propsDT[i])) {
+        candidateVariables[i].second = n->getItems()[0];
+      } else {
+        candidateVariables[i].second =
+            makeGenericExpression<PropositionNot>(propsDT[i]);
+      }
     }
 
     NumericDecTreeExp numericCandidates;

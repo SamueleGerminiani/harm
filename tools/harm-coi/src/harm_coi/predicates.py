@@ -380,7 +380,7 @@ def harvest(design, comp, vis, extra=None):
     return records, h.dropped
 
 
-def emit_config(path, records, coi_path, hints=None, use="all"):
+def emit_config(path, records, coi_path, hints=None, use="all", extras=None):
     """a starter HARM configuration (D-023): one context, the predicates with origin "rtl", the
     cone in rank mode, and --generate-config's templates and sorts. With `hints` (H22): each predicate's
     placement; with use="all" also a template per timing class that has a consequent (one class, one domain)"""
@@ -391,19 +391,32 @@ def emit_config(path, records, coi_path, hints=None, use="all"):
              '    <context name="default">']
     place = {p["expr"]: p for p in hints["propositions"]} if hints else {}
     for r in records:
+        if extras and r["expr"] in extras["drop"]:
+            continue
         loc = "a, c, dt"
         if hints:
             p = place[r["expr"]]
             loc = ", ".join(p["loc"] if use == "all" else ["a", "c", "dt"] if p["consequent"] else ["a", "dt"])
+        if extras and r["expr"] in extras["loc_add"]:
+            loc = ", ".join([loc] + extras["loc_add"][r["expr"]])
         lines.append(f'        <prop exp={quoteattr(r["expr"])} loc="{loc}" origin="rtl"/>')
+    if extras:   # H24, --relations (D-038)
+        for e, loc, origin in extras["props"]:
+            lines.append(f'        <prop exp={quoteattr(e)} loc="{", ".join(loc)}" origin="{origin}"/>')
+        for c, e, loc in extras["numerics"]:
+            lines.append(f'        <numeric clustering={quoteattr(c)} exp={quoteattr(e)} loc="{", ".join(loc)}" origin="rtl"/>')
     lines.append(f"        <coi file={quoteattr(rel)} mode=\"rank\"/>")
     if hints and use == "all":
         used = {c for p in hints["propositions"] for c in p["consequent"]}
+        if extras:
+            used |= {c for c, d in hints["classes"].items() if str(d["domain"]) in extras["domains"]}
         for c, d in hints["classes"].items():
             if c in used:
                 lines.append(f'        <template dtLimits="{d["dtLimits"]}" exp={quoteattr(d["template"])}/>')
     else:
         lines.append('        <template dtLimits="5D,3W,15A,-0.1E,U" exp="G({..#1&amp;..}|-&gt; P0)"/>')
+    for dt, t in (extras or {}).get("templates", []):
+        lines.append(f'        <template dtLimits="{dt}" exp={quoteattr(t)}/>')
     lines += [
               '        <sort name="causality" exp="1-afct/traceLength"/>',
               '        <sort name="frequency" exp="atct/traceLength"/>',

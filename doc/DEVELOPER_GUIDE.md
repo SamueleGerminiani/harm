@@ -148,6 +148,7 @@ A Python package (pyslang 12.0.0, D-006), independent of HARM's C++: it communic
 | `vcd.py` | the signal names HARM sees in a VCD under a scope |
 | `predicates.py` | harvests the RTL's predicates and writes them as HARM propositions (D-023) |
 | `hints.py` | signal roles, proposition placement and per-class templates from `coi.json` and the harvested predicates (`--hints`, D-036) |
+| `relations.py` | relations from assignments, rendered with SystemVerilog's widths, and what `--relations` adds to the configuration (D-038) |
 
 Tests: `tools/harm-coi/tests/` (pytest), and the `coi` label of `ctest`. The rule for cones is "too large, never too small": what cannot be modelled goes to `unknown`, which HARM treats as in every cone.
 
