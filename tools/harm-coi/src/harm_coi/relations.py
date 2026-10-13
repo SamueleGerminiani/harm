@@ -12,8 +12,9 @@
   constructs are not translated (dropped); other signed arithmetic is the same bits as unsigned once masked.
   At most MAX_PER_TARGET relations per target (source order) and MAX_OPS operators per relation.
 - Unconditional (no if or case above the assignment but the reset branch) or conditional; registered or not.
-- Numerics (Q6): a register whose assignment reads it gets its delta `x - $past(x, 1)`; a wide target with no
-  harvested predicate gets its values `x`.
+- Numerics (Q6): a register whose assignment reads it gets its delta `x - $past(x, 1)` (the values of wide signals
+  were dropped: most of ima's mining time for little).
+- Conditional relations and `$stable` go to their own single-cycle decision trees (domains 6, 7).
 """
 from dataclasses import dataclass, field
 
@@ -312,8 +313,9 @@ def widths(design, vis):
 CLASS = {"comb": "1", "unknown": "1", "state": "2"}
 # contiguous clustering: one `==` proposition per value (K-means merged the deltas of `updown` into none); no
 # ranges (an open range breaks OpenFPV's model build, portfolio F-P9)
-VALUES = "C,10Max,=="
 DELTA = "C,10Max,=="
+DT_FIXED = "5D,3W,15A,-0.1E,U"      # unused (no placeholder in the antecedent), as harm-coi's other templates
+DT_RELATION = "1D,2W,2A,-0.1E,U"   # one cycle, at most two propositions
 
 
 def extras(rels, hints, preds, extra, wid, resets, holds=()):
@@ -347,27 +349,25 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
         if " " not in bare and "==" not in e:
             comp = bare if e.startswith("!") else "!" + e
             add(comp, place[e] + (["3"] if reset else []))
-    # relations
+    # relations: unconditional ones to the fixed templates (with a reset), the others to their own single-cycle trees:
+    # the condition guarding an assignment is one cycle's (2026-10-13: deeper trees made ima's mining 4x slower)
     for r in rels:
         if reset and not r.conditional:
             loc = ["c", "4" if r.registered else "5"]
         else:
-            loc = ["c", "2" if r.registered else "1"]
+            loc = ["c", "7" if r.registered else "6"]
         add(r.expr, loc, "rtl-relation")
     for t in holds:
-        add(f"$stable({escaped(t)})", ["c", "2"], "rtl-relation")
+        add(f"$stable({escaped(t)})", ["c", "7"], "rtl-relation")
     # assigned-only signals: 1-bit ones both ways, wide ones as numeric values; register deltas
     read = {s for e in extra.values() for s in e["signals"]}
     for name, w in sorted(wid.items()):
         cls = CLASS.get(roles.get(name, ""))
         if cls is None or name in read:
             continue
-        if w == 1:
+        if w == 1:  # a wide one gets no value numeric: they cost most of ima's mining time (2026-10-13)
             add(escaped(name), ["a", "c", "dt", cls])
             add("!" + escaped(name), ["a", "c", "dt", cls])
-        else:
-            out["numerics"].append((VALUES, escaped(name), ["c", cls]))
-            out["domains"].add(cls)
     for t in sorted({r.target for r in rels if r.registered and r.reads_target}):
         out["numerics"].append((DELTA, f"{escaped(t)} - $past({escaped(t)}, 1)", ["c", "2"]))
         out["domains"].add("2")
@@ -376,9 +376,14 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
         inactive, end = (name, f"$rose({name})") if low else (f"!{name}", f"$fell({name})")
         used = {d for _, loc, _ in out["props"] for d in loc} | {d for v in out["loc_add"].values() for d in v}
         if "3" in used:
-            out["templates"].append(f"G({{{end}}}|-> P0(3))")
+            out["templates"].append((DT_FIXED, f"G({{{end}}}|-> P0(3))"))
         if "4" in used:
-            out["templates"].append(f"G({{{inactive}}}|=> P0(4))")
+            out["templates"].append((DT_FIXED, f"G({{{inactive}}}|=> P0(4))"))
         if "5" in used:
-            out["templates"].append(f"G({{{inactive}}}|-> P0(5))")
+            out["templates"].append((DT_FIXED, f"G({{{inactive}}}|-> P0(5))"))
+    used = {d for _, loc, _ in out["props"] for d in loc}
+    if "6" in used:
+        out["templates"].append((DT_RELATION, "G({..#1&..}|-> P0(6))"))
+    if "7" in used:
+        out["templates"].append((DT_RELATION, "G({..#1&..}|=> P0(7))"))
     return out

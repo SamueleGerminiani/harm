@@ -415,8 +415,8 @@ def emit_config(path, records, coi_path, hints=None, use="all", extras=None):
                 lines.append(f'        <template dtLimits="{d["dtLimits"]}" exp={quoteattr(d["template"])}/>')
     else:
         lines.append('        <template dtLimits="5D,3W,15A,-0.1E,U" exp="G({..#1&amp;..}|-&gt; P0)"/>')
-    for t in (extras or {}).get("templates", []):
-        lines.append(f'        <template dtLimits="5D,3W,15A,-0.1E,U" exp={quoteattr(t)}/>')
+    for dt, t in (extras or {}).get("templates", []):
+        lines.append(f'        <template dtLimits="{dt}" exp={quoteattr(t)}/>')
     lines += [
               '        <sort name="causality" exp="1-afct/traceLength"/>',
               '        <sort name="frequency" exp="atct/traceLength"/>',
