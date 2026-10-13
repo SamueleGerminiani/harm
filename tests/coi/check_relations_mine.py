@@ -14,6 +14,7 @@
   check_relations_mine.py FIXTURE_DIR --python PY --harm HARM --out DIR [--oracle] [--expect REGEX ...]
                           [--expect-relation REGEX ...] [--extra XML_LINE ...] [--mode rank|filter]"""
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -242,7 +243,10 @@ def main() -> int:
     f = Path(a.fixture).resolve()
     meta = dict(re.findall(r"^(\w+) = (\S+)", (f / "meta.txt").read_text(), re.M))
     name, rst = meta["top"], meta.get("reset")
-    out = Path(a.out) / f"h24_{name}"
+    # one directory per invocation: several ctests run on the same fixture in parallel (ctest -j), and shared files
+    # (cfg.xml, info.json) made them fail together (H25, 2026-10-13)
+    tag = hashlib.sha1(" ".join(sys.argv[1:]).encode()).hexdigest()[:8]
+    out = Path(a.out) / f"h24_{name}_{tag}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "info.json").unlink(missing_ok=True)
     env = {**os.environ, "PYTHONPATH": str(ROOT / "tools" / "harm-coi" / "src")}
