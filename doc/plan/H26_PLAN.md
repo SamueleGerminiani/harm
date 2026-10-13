@@ -1,6 +1,6 @@
 # H26 plan: constants assigned outside a reset branch (harm-coi)
 
-*Status: draft, for the user's approval. Asked by the user (2026-10-13: "yes, plan the constant-assignment follow-up for satacc/B04") after H25's measurement. Branch `ms/H26-constants` from `dev` @ `213d50c`. Effort: about 1 d (harm-coi 0.5 d, the measurement 0.5 d).*
+*Status: approved by the user (2026-10-13: "approved as recommended, go ahead with H26": Q1–Q3 as recommended). Asked by the user (2026-10-13: "yes, plan the constant-assignment follow-up for satacc/B04") after H25's measurement. Branch `ms/H26-constants` from `dev` @ `213d50c`. Effort: about 1 d (harm-coi 0.5 d, the measurement 0.5 d).*
 
 ## Why
 harm-coi makes a proposition of a register's constant value only in the reset branch (H10's reset values, D-023). A constant assigned anywhere else gives none: H24's relations skip an assignment whose right side is a constant, assuming "a reset value or a constant comparison already" (`relations.py`), which is true only in the reset branch. On D1's `satacc`:
