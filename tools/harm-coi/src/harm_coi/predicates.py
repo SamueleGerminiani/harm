@@ -24,7 +24,8 @@ MIRROR = {"==": "==", "!=": "!=", "<": ">", "<=": ">=", ">": "<", ">=": "<="}
 HARM_MAX_LOGIC_BITS = 511
 
 
-# ---- predicate trees: ("sig", atom) | ("bit", atom, i) | ("cmp", op, operand, value, width)
+# ---- predicate trees: ("sig", atom) | ("bit", atom, i) | ("cmp", op, operand, value, width[, signed])
+# signed (H25, D-039): the RTL compares the signal as signed and the value is the signed constant
 #                      | ("not", p) | ("and", [p...]) | ("or", [p...])
 @dataclass
 class Harvest:
@@ -90,12 +91,14 @@ class Harvester:
             e = e.operand
         if e.kind == EK.BinaryOp and e.op in COMPARISONS:
             op = COMPARISONS[e.op]
+            # H25: a comparison is signed when both its operands are (IEEE 1800-2017 11.8.1)
+            signed = e.left.type.isSigned and e.right.type.isSigned
             for a, b, o in ((e.left, e.right, op), (e.right, e.left, MIRROR[op])):
                 opnd = self.operand(a)
                 v = self.constant(b)
                 if opnd is not None and v is not None:
                     w = opnd[2] if opnd[0] == "sig" else 1
-                    return self.cmp(o, opnd, v % (1 << w) if v >= 0 else v % (1 << w), w, v)
+                    return self.cmp(o, opnd, v % (1 << w) if v >= 0 else v % (1 << w), w, v, signed)
             return None
         if e.kind == EK.BinaryOp and e.op in (BO.LogicalAnd, BO.LogicalOr):
             l, r = self.pred(e.left), self.pred(e.right)
@@ -116,7 +119,12 @@ class Harvester:
             return opnd if opnd[0] == "bit" else ("sig", opnd[1])
         return None
 
-    def cmp(self, op, opnd, v, w, raw):
+    def cmp(self, op, opnd, v, w, raw, signed=False):
+        if signed and w > 1 and opnd[0] == "sig" and (raw < 0 or op not in ("==", "!=")):
+            # H25 (D-039): an ordering, or a negative constant, read as signed: $signed(x) < -w'sdN
+            if not -(1 << (w - 1)) <= raw < (1 << (w - 1)):
+                return None                 # the constant does not fit the signed signal: always true/false
+            return ("cmp", op, ("sig", opnd[1]), raw, w, True)
         if raw < 0 or raw >= (1 << w):
             return None                     # the constant does not fit the signal: always true/false
         atom = opnd if opnd[0] == "bit" else ("sig", opnd[1])
@@ -148,6 +156,8 @@ class Harvester:
             return escaped(self.name(p[1]))
         if k == "bit":
             return f"{escaped(self.name(p[1]))}[{p[2]}]"
+        if k == "cmp" and len(p) > 5 and p[5]:
+            return f"$signed({self.render(p[2], False)}) {p[1]} {signed_literal(p[3], p[4])}"
         if k == "cmp":
             return f"{self.render(p[2], False)} {p[1]} {p[4]}'d{p[3]}"
         if k == "not":
@@ -303,7 +313,7 @@ class Harvester:
             values.append((a, opnd, v))
         for a, opnd, v in values:
             w = opnd[2] if opnd[0] == "sig" else 1
-            self.add(self.cmp("==", opnd, v, w, v), {opnd[1]}, self.src(a), "reset value")
+            self.add(self.cmp("==", opnd, v, w, v, a.left.type.isSigned), {opnd[1]}, self.src(a), "reset value")
 
     def first_if(self, s):
         if s.kind == TK.Conditional:
@@ -359,6 +369,16 @@ class Harvester:
 # the two); a signal named after one is written as a SystemVerilog escaped identifier
 KEYWORDS = frozenset({"inside", "true", "false", "substr", "and", "or", "not", "eventually", "s_eventually",
                       "nexttime", "next", "X", "until", "W", "always", "G", "first_match", "F", "R", "intersect"})
+
+
+def signed_literal(v, w):
+    """H25: a signed constant of width w as HARM and SystemVerilog read it: w'sdN, -w'sdN, or the most negative value
+    in binary (w'sdN would not fit)"""
+    if v >= 0:
+        return f"{w}'sd{v}"
+    if -v < (1 << (w - 1)):
+        return f"-{w}'sd{-v}"
+    return f"{w}'sb1{'0' * (w - 1)}"
 
 
 def escaped(name):

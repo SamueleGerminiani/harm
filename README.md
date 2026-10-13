@@ -305,6 +305,7 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 | Fill literals | `q4 == '1`, `r8 !== 'z` | `'0 '1 'x 'z` take the width of the other operand. A fill literal must meet a sized operand. |
 | Concatenation | `{go, s} == 3'b110` | At least two items. Items can be logic, int (with its declared width) or bool variables. Unsized integer constants are not allowed (use e.g. `4'd3`). |
 | Replication | `{2{q4}}`, `{4{1'b0}}` | |
+| Sign casts (H25, D-039) | `$signed(sum) < -13'sd2047`, `$unsigned(sw) > 8'd200` | IEEE 1800-2017 §20.5: the argument's bits and width, the sign changed; the argument is self-determined. A VCD vector is unsigned in HARM, so `$signed(x)` is how a proposition reads a signal the RTL declares `signed`. |
 | Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
 | Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
 | Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` (and, since D-034, of every numeric operator) is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so they are not bitwise inline there. See D-032, D-034. |
@@ -348,6 +349,7 @@ A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`,
 - **fixed templates:** an unconditional relation goes to `G({!R}|=> P0(4))` (registered) or `G({!R}|-> P0(5))` (combinational), so it is mined without unrelated antecedents; the reset values also go to `G({$fell(R)}|-> P0(3))`, the first cycle after the reset, which `disable iff (R)` does not switch off;
 - **both polarities** of a 1-bit flag's reset-value predicate, and `x`/`!x` for a 1-bit signal that is only assigned;
 - **single-cycle trees for relations:** a conditional relation or `$stable(x)` is a consequent of its own template, `G({..#1&..}|=> P0(7))` (`|->`, domain 6, for combinational logic), with `dtLimits="1D,2W,2A,-0.1E,U"`: the condition guarding an assignment is one cycle's. No `<numeric>` is written.
+- **signed RTL (H25, D-039):** a comparison of two signed operands is written on `$signed` (`$signed(sum) < -13'sd2047`; a negative constant is kept), a sign extension as `$unsigned($signed(x) + 13'sd0)` and a signed `>>>` as `$unsigned($signed(a) >>> n)` (self-determined, so the relation's unsigned mask cannot turn them unsigned); before H25 the first was written unsigned and the others were dropped.
 
 Such relations restate the RTL: mined from a design, they describe that design, bugs included. They catch a *changed* design (a regression, a mutant); a bug already in the RTL shows only when the statement is compared with the intent (the specification).
 

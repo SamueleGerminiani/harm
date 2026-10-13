@@ -11,6 +11,7 @@ SET(EXP_SRCS
     src/formula/expression/Substring.cc
     src/formula/expression/SetMembership.cc
     src/formula/expression/TypeCast.cc
+    src/formula/expression/SignCast.cc
     src/formula/function/Function.cc
     #temporal
     src/formula/temporal/BooleanLayer.cc

@@ -270,6 +270,13 @@ if(HARM_COI_OK)
              --reject [=[!!]=])
     add_test(NAME h24_mine_satacc_clear COMMAND ${H24_CHECK} ${H24}/satacc --expect [=[^always \(clr \|=> acc == 12'b0\)$]=])
     set_tests_properties(h24_mine_pipemul h24_stable_satacc h24_mine_satacc_clear PROPERTIES LABELS coi)
+    # H25 (D-039). S3: the sign-extension relation of satacc (sum = acc + x, signed) is written and holds on the trace
+    # (the independent evaluator reads $signed); S4: HARM mines with the signed condition of the negative saturation
+    add_test(NAME h25_relation_satacc COMMAND ${H24_CHECK} ${H24}/satacc --oracle
+             --expect-relation [=[^sum == \(\(\$unsigned\(\$signed\(acc\) \+ 13'sd0\) \+ \$unsigned\(\$signed\(x\) \+ 13'sd0\)\) & 13'd8191\)$]=])
+    add_test(NAME h25_mine_satacc COMMAND ${H24_CHECK} ${H24}/satacc
+             --expect [=[\$signed\(sum\) < -13'sb?d?[0-9]+]=] --expect [=[sum == .*\$signed\(acc\)]=])
+    set_tests_properties(h25_relation_satacc h25_mine_satacc PROPERTIES LABELS coi)
     set_tests_properties(h24_mine_alu h24_mine_updown h24_mine_regbank h24_numeric_delta h24_fixed_filter
                          PROPERTIES LABELS coi)
     if(VERILATOR_FOUND)
@@ -543,4 +550,8 @@ if(PYTHON3_FOUND)
     add_test(NAME h19_evaluation_fixture
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} fixture19)
     set_tests_properties(h19_evaluation_fixture PROPERTIES LABELS "regression;parser")
+    # H25 S2: $signed and $unsigned evaluate as in SystemVerilog (Icarus Verilog), print and re-parse (D-039)
+    add_test(NAME h25_signed_fixture
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} fixture25)
+    set_tests_properties(h25_signed_fixture PROPERTIES LABELS "regression;parser")
 endif()

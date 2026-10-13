@@ -448,6 +448,21 @@ EXP_OPE(LogicRShift)
 TYPE_CAST(LogicToFloat)
 TYPE_CAST(LogicToBool)
 TYPE_CAST(LogicToInt)
+// H25 (D-039): $signed(e) / $unsigned(e), a primary; its operand is printed with no enclosing operator
+#define SIGN_CAST(NODE)                                              \
+  void PrinterVisitor::visit(expression::NODE &o) {                  \
+    std::string name = std::string(o.functionName()) + "(";          \
+    _ss << selCol(name, FUN(name));                                  \
+    bool right = _rightOperand;                                      \
+    _rightOperand = false;                                           \
+    _ope_stack.push(ope::ope::NoOp);                                 \
+    o.getItem()->acceptVisitor(*this);                               \
+    _ope_stack.pop();                                                \
+    _rightOperand = right;                                           \
+    _ss << selCol(")", FUN(")"));                                    \
+  }
+SIGN_CAST(LogicSignCast)
+SIGN_CAST(IntSignCast)
 UNARY_FUNCTION(LogicPast)
 UNARY_FUNCTION(LogicStable)
 UNARY_FUNCTION(LogicRose)

@@ -7,8 +7,12 @@
 - R5, R6, R10 (--expect REGEX, repeatable): HARM, with the emitted configuration (and --extra lines, and the cone's
   mode set by --mode), mines an assertion whose SVA text matches each REGEX.
 
+- H25 S3 (--expect-relation REGEX, with --oracle): an unconditional relation matches REGEX. The evaluator reads
+  `$signed(e)` / `$unsigned(e)` (e's bits at its own width, the sign changed: a signal's width from the VCD, a select's,
+  a sized literal's, a masked value's), `>>>` (arithmetic on a signed value) and `w'sdN` literals (H25, D-039).
+
   check_relations_mine.py FIXTURE_DIR --python PY --harm HARM --out DIR [--oracle] [--expect REGEX ...]
-                          [--extra XML_LINE ...] [--mode rank|filter]"""
+                          [--expect-relation REGEX ...] [--extra XML_LINE ...] [--mode rank|filter]"""
 import argparse
 import json
 import os
@@ -33,6 +37,7 @@ def samples(vcd: Path, scope: str, clock: str) -> list[dict[str, int]]:
     HARM samples them"""
     want = scope.split("::")
     stack, names, cur, out, clk_id, last = [], {}, {}, [], None, None
+    WIDTHS.clear()
     lines = vcd.read_text().splitlines()
     i = 0
     for i, line in enumerate(lines):
@@ -45,6 +50,7 @@ def samples(vcd: Path, scope: str, clock: str) -> list[dict[str, int]]:
             stack.pop()
         elif t[0] == "$var" and stack == want:
             names.setdefault(t[3], []).append(t[4])
+            WIDTHS[t[4]] = int(t[2])
             if t[4] == clock:
                 clk_id = t[3]
         elif t[0] == "$enddefinitions":
@@ -69,8 +75,9 @@ def samples(vcd: Path, scope: str, clock: str) -> list[dict[str, int]]:
 
 
 # ---------------------------------------------------------------- HARM's proposition syntax, evaluated
-TOK = re.compile(r"\s*(\d+'s?[dbh][0-9a-fA-F_]+|\d+|\$past|\$fell|\$rose|[A-Za-z_][\w$]*|<<|>>|==|!=|<=|>=|&&|\|\||[()\[\]:?,+\-*&|^~!<>])")
-BIN = [("||",), ("&&",), ("|",), ("^",), ("&",), ("==", "!="), ("<", "<=", ">", ">="), ("<<", ">>"), ("+", "-"), ("*",)]
+WIDTHS: dict[str, int] = {}
+TOK = re.compile(r"\s*(\d+'s?[dbh][0-9a-fA-F_]+|\d+|\$past|\$fell|\$rose|\$signed|\$unsigned|[A-Za-z_][\w$]*|<<<|>>>|<<|>>|==|!=|<=|>=|&&|\|\||[()\[\]:?,+\-*&|^~!<>])")
+BIN = [("||",), ("&&",), ("|",), ("^",), ("&",), ("==", "!="), ("<", "<=", ">", ">="), ("<<", ">>", ">>>"), ("+", "-"), ("*",)]
 
 
 class Expr:
@@ -145,15 +152,53 @@ class Expr:
                 n = int(self.eat())
             self.eat(")")
             return (t, e, n)
+        if t in ("$signed", "$unsigned"):
+            self.eat("(")
+            e = self.ternary()
+            self.eat(")")
+            return (t, e)
         if m := re.fullmatch(r"(\d+)'(s?)([dbh])([0-9a-fA-F_]+)", t):
-            return ("const", int(m.group(4).replace("_", ""), {"d": 10, "b": 2, "h": 16}[m.group(3)]))
+            return ("const", int(m.group(4).replace("_", ""), {"d": 10, "b": 2, "h": 16}[m.group(3)]), int(m.group(1)))
         if t.isdigit():
-            return ("const", int(t))
+            return ("const", int(t), None)
         return ("sig", t)
+
+
+def width(e):
+    """the self-determined width of a `$signed`/`$unsigned` operand, as harm-coi writes them"""
+    k = e[0]
+    if k == "sig":
+        return WIDTHS[e[1]]
+    if k == "sel":
+        return e[2] - e[3] + 1
+    if k == "const" and e[2] is not None:
+        return e[2]
+    if k in ("$past", "$signed", "$unsigned"):
+        return width(e[1])
+    if k in ("+", "-", "*", "|", "^"):
+        return max(width(e[1]), width(e[2]))
+    if k in ("<<", ">>", ">>>"):
+        return width(e[1])
+    if k == "&":
+        ws = [w for w in (_try_width(e[1]), _try_width(e[2])) if w is not None]
+        if ws:
+            return max(ws)
+    raise ValueError(f"no width for {e}")
+
+
+def _try_width(e):
+    try:
+        return width(e)
+    except ValueError:
+        return None
 
 
 def ev(e, tr, t):
     k = e[0]
+    if k in ("$signed", "$unsigned"):
+        w = width(e[1])
+        v = ev(e[1], tr, t) & ((1 << w) - 1)
+        return v - (1 << w) if k == "$signed" and v >> (w - 1) else v
     if k == "const":
         return e[1]
     if k == "sig":
@@ -172,9 +217,12 @@ def ev(e, tr, t):
         v = ev(e[1], tr, t)
         return {"u!": int(not v), "u~": ~v, "u-": -v}[k]
     a, b = ev(e[1], tr, t), ev(e[2], tr, t)
-    return {"||": int(bool(a or b)), "&&": int(bool(a and b)), "|": a | b, "^": a ^ b, "&": a & b,
-            "==": int(a == b), "!=": int(a != b), "<": int(a < b), "<=": int(a <= b), ">": int(a > b),
-            ">=": int(a >= b), "<<": a << b, ">>": a >> b, "+": a + b, "-": a - b, "*": a * b}[k]
+    ops = {"||": lambda: int(bool(a or b)), "&&": lambda: int(bool(a and b)), "|": lambda: a | b,
+           "^": lambda: a ^ b, "&": lambda: a & b, "==": lambda: int(a == b), "!=": lambda: int(a != b),
+           "<": lambda: int(a < b), "<=": lambda: int(a <= b), ">": lambda: int(a > b), ">=": lambda: int(a >= b),
+           "<<": lambda: a << b, ">>": lambda: a >> b, ">>>": lambda: a >> b, "+": lambda: a + b,
+           "-": lambda: a - b, "*": lambda: a * b}  # fmt: skip
+    return ops[k]()
 
 
 # ---------------------------------------------------------------- the run
@@ -187,6 +235,7 @@ def main() -> int:
     ap.add_argument("--oracle", action="store_true")
     ap.add_argument("--expect", action="append", default=[])
     ap.add_argument("--reject", action="append", default=[], help="no assertion may match REGEX")
+    ap.add_argument("--expect-relation", action="append", default=[])
     ap.add_argument("--extra", action="append", default=[])
     ap.add_argument("--mode", choices=["rank", "filter"], default="rank")
     a = ap.parse_args()
@@ -228,6 +277,36 @@ def main() -> int:
                     bad.append(f"R4: {un(exp)} false at sample {t}")
                     break
         print(f"{name}: R4 checked {n} unconditional relations on {len(tr)} samples")
+        # H25 S3: HARM's own evaluation agrees (the evaluator above has no SystemVerilog contexts: an unsigned context
+        # that turned a sign extension into a zero extension went unseen by it, 2026-10-13)
+        pt = out / "prop_table.json"
+        pt.unlink(missing_ok=True)
+        subprocess.run([a.harm, "--vcd", str(f / "trace.vcd"), "--clk", meta["clock"], "--vcd-ss", meta["vcd_scope"],
+                        "--vcd-r", meta["vcd_recursion"], "--conf", str(out / "cfg.xml"), "--dump-prop-table", str(pt),
+                        "--psilent", "--isilent"], capture_output=True, text=True, cwd=out)  # fmt: skip
+        if not pt.exists():
+            bad.append("S3: HARM wrote no proposition table")
+        else:
+            ps = [p for c in json.loads(pt.read_text())["contexts"] for p in c["propositions"]]
+            xs = re.findall(r'<prop exp="([^"]*)" loc="([^"]*)"', xml)
+            if len(ps) != len(xs):
+                bad.append(f"S3: {len(xs)} propositions in the configuration, {len(ps)} in HARM's table")
+            for (exp, loc), p in zip(xs, ps):
+                dom = [x.strip() for x in loc.split(",")]
+                if "4" not in dom and "5" not in dom:
+                    continue
+                lag = 1 if "4" in dom else 0
+                for t in range(2, min(len(tr), len(p["values"]))):
+                    if rst and tr[t - lag].get(rst, 0):
+                        continue
+                    if p["values"][t] != "1":
+                        bad.append(f"S3: HARM evaluates {un(exp)} false at sample {t}")
+                        break
+        rels = [un(x) for x, loc in re.findall(r'<prop exp="([^"]*)" loc="([^"]*)"', xml)
+                if {"4", "5"} & {d.strip() for d in loc.split(",")}]
+        for rx in a.expect_relation:
+            if not any(re.search(rx, r) for r in rels):
+                bad.append(f"S3: no unconditional relation matches {rx!r}")
     if a.expect or a.reject:
         cmd = [a.harm, "--vcd", str(f / "trace.vcd"), "--clk", meta["clock"], "--vcd-ss", meta["vcd_scope"],
                "--vcd-r", meta["vcd_recursion"], "--conf", str(out / "cfg.xml"), "--max-threads", "2", "--sva",

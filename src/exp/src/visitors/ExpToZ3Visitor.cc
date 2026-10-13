@@ -705,6 +705,17 @@ void ExpToZ3Visitor::visit(LogicToBool &o) {
 }
 OPAQUE_FLOAT(LogicToFloat)
 OPAQUE_INT(LogicToInt)
+// H25 (D-039): the same bits and width, the sign changed
+void ExpToZ3Visitor::visit(LogicSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  LTerm t = popLogic();
+  t.sgn = o.toSigned();
+  _logics.push_back(t);
+}
+void ExpToZ3Visitor::visit(IntSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  _ints.push_back(intNorm(popInt(), o.getType()));
+}
 OPAQUE_LOGIC(LogicLShift) // out-of-range shift amounts abort HARM
 OPAQUE_LOGIC(LogicRShift)
 void ExpToZ3Visitor::visit(LogicSetMembership &o) {

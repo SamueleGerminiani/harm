@@ -8,8 +8,13 @@
   `~`, an RTL `<<`, and `& | ^ ?:` over such) is masked to its width where a context needs the exact value
   (comparison and logical operands, `>>`, a concatenation's part, a condition); the relation is masked to x's width
   when e may carry such bits or is wider. A concatenation is written with shifts and `|` (constant zero parts left
-  out). Signed comparisons, sign extensions, arithmetic right shifts, `/ % **`, replications, reductions and unknown
-  constructs are not translated (dropped); other signed arithmetic is the same bits as unsigned once masked.
+  out). `/ % **`, replications, reductions, an unsigned `>>>` and unknown constructs are not translated (dropped);
+  signed arithmetic is the same bits as unsigned once masked. H25 (D-039): a sign extension is written
+  `$unsigned($signed(e) + w'sd0)`, a signed `>>>` `$unsigned($signed(a) >>> n)`: a function's argument is
+  self-determined, so an unsigned context (the relation's mask, an unsigned operand) cannot turn them unsigned, as it
+  would `$signed(e) + w'sd0` alone (IEEE 1800-2017 11.8.2); a signed comparison is `$signed(a) < $signed(b)` (a
+  constant as `w'sdN`; sign-extending conversions of its operands are left to the comparison); the RTL's own
+  `$signed`/`$unsigned` calls are their argument's bits, their sign being in the conversions and comparisons above.
   At most MAX_PER_TARGET relations per target (source order) and MAX_OPS operators per relation.
 - Unconditional (no if or case above the assignment but the reset branch) or conditional; registered or not.
 - No numerics (the user, 2026-10-13): value clusters cost most of ima's mining time, and a register's relation
@@ -21,7 +26,7 @@ from dataclasses import dataclass, field
 from pyslang import ast
 
 from .frontend import EK, SK, TK
-from .predicates import COMPARISONS, HARM_MAX_LOGIC_BITS, Harvester, escaped
+from .predicates import COMPARISONS, HARM_MAX_LOGIC_BITS, Harvester, escaped, signed_literal
 
 BO, UO = ast.BinaryOperator, ast.UnaryOperator
 MAX_PER_TARGET = 8
@@ -73,6 +78,22 @@ class Relations:
     def mask(self, w):
         return f"{w}'d{(1 << w) - 1}"
 
+    def signed(self, v: Val) -> str:
+        """v's bits read as signed (H25)"""
+        return f"$signed({v.text})"
+
+    def signed_operand(self, e) -> Val:
+        """an operand of a signed comparison (H25): a constant as w'sdN, anything else on $signed; a sign extension
+        is left to the comparison, which extends a signed operand to its width"""
+        c = self.h.constant(e)
+        if c is not None:
+            return Val(signed_literal(c, max(1, e.type.bitWidth)), e.type.bitWidth, False, c < 0, 0)
+        while (e.kind == EK.Conversion and e.type.isSigned and e.operand.type.isSigned
+               and e.operand.type.bitWidth <= e.type.bitWidth):  # fmt: skip
+            e = e.operand
+        v = self.clean(self.render(e))
+        return Val(self.signed(v), v.width, False, True, v.ops + 1, v.signals)
+
     def clean(self, v: Val) -> Val:
         """v with no bit above its width"""
         if not v.dirty:
@@ -84,7 +105,13 @@ class Relations:
         if k == EK.Conversion:
             inner = e.operand
             if e.type.isSigned and inner.type.isSigned and inner.type.bitWidth < e.type.bitWidth:
-                raise NotTranslatable("sign extension")  # an unsigned context zero-extends: that is translated
+                # H25: a sign extension (an unsigned context zero-extends: the widening below)
+                n = e.type.bitWidth
+                c = self.h.constant(e)
+                if c is not None:
+                    return Val(f"{n}'d{c % (1 << n)}", n, False, False, 0)
+                v = self.clean(self.render(inner))
+                return Val(f"$unsigned({self.signed(v)} + {n}'sd0)", n, False, True, v.ops + 3, v.signals)
             v = self.render(inner)
             if e.type.bitWidth < v.width:      # truncation
                 v = Val(f"({v.text} & {self.mask(e.type.bitWidth)})", e.type.bitWidth, False, True, v.ops + 1,
@@ -151,9 +178,15 @@ class Relations:
             raise NotTranslatable(f"unary {e.op}")
         if k == EK.BinaryOp:
             # two's complement + - * & | ^ give the same bits signed or not (masked to the width); a comparison of two
-            # signed operands does not, nor an arithmetic right shift (not translated)
+            # signed operands does not, nor an arithmetic right shift: H25 writes them on $signed operands
             if e.op in COMPARISONS and e.left.type.isSigned and e.right.type.isSigned:
-                raise NotTranslatable("signed comparison")
+                a, b = self.signed_operand(e.left), self.signed_operand(e.right)
+                return Val(f"({a.text} {COMPARISONS[e.op]} {b.text})", 1, False, True, a.ops + b.ops + 1,
+                           a.signals | b.signals)  # fmt: skip
+            if e.op == BO.ArithmeticShiftRight and e.left.type.isSigned:
+                a, b = self.clean(self.render(e.left)), self.clean(self.render(e.right))
+                return Val(f"$unsigned({self.signed(a)} >>> {b.text})", e.type.bitWidth, False, True, a.ops + b.ops + 2,
+                           a.signals | b.signals)  # fmt: skip
             a, b = self.render(e.left), self.render(e.right)
             w = e.type.bitWidth
             sig = a.signals | b.signals
@@ -170,6 +203,9 @@ class Relations:
                 sym = SHR.get(e.op) or COMPARISONS.get(e.op) or LOGICAL[e.op]
                 return Val(f"({a.text} {sym} {b.text})", w, False, True, a.ops + b.ops + 1, sig)
             raise NotTranslatable(f"operator {e.op}")
+        if k == EK.Call and e.isSystemCall and e.subroutineName in ("$signed", "$unsigned") and len(e.arguments) == 1:
+            # H25: the RTL's own $signed / $unsigned: the argument's bits, the sign changed
+            return self.clean(self.render(e.arguments[0]))
         if k == EK.ConditionalOp:
             if len(e.conditions) != 1 or e.conditions[0].pattern is not None:
                 raise NotTranslatable("condition")

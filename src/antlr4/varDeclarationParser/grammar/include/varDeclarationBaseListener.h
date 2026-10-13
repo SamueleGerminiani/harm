@@ -97,6 +97,9 @@ public:
   virtual void enterNonTemporalFunction(varDeclarationParser::NonTemporalFunctionContext * /*ctx*/) override { }
   virtual void exitNonTemporalFunction(varDeclarationParser::NonTemporalFunctionContext * /*ctx*/) override { }
 
+  virtual void enterSignCast(varDeclarationParser::SignCastContext * /*ctx*/) override { }
+  virtual void exitSignCast(varDeclarationParser::SignCastContext * /*ctx*/) override { }
+
   virtual void enterPfunc_arg(varDeclarationParser::Pfunc_argContext * /*ctx*/) override { }
   virtual void exitPfunc_arg(varDeclarationParser::Pfunc_argContext * /*ctx*/) override { }
 

@@ -62,6 +62,7 @@ numeric
     : numeric range
     | unop=(NEG | NOT | MINUS | PLUS) numeric
     | nonTemporalFunction
+    | signCast
     | numeric artop=(TIMES | DIV) numeric
     | numeric artop=(PLUS | MINUS) numeric
     | numeric logop=(LSHIFT | RSHIFT | ALSHIFT | ARSHIFT) numeric
@@ -210,6 +211,11 @@ INSIDE
     ;
 
 
+SIGN_CAST
+: '$signed'
+| '$unsigned'
+;
+
 FUNCTION
 : '$stable'
 | '$past'
@@ -218,6 +224,9 @@ FUNCTION
 ;
 
 nonTemporalFunction: FUNCTION LROUND pfunc_arg (',' pfunc_arg)* RROUND;
+
+// H25 (D-039): $signed(e) and $unsigned(e) (IEEE 1800-2017 20.5): e's bits and width, the sign changed
+signCast: SIGN_CAST LROUND numeric RROUND;
 pfunc_arg: numeric |  boolean;
 
 //==== Token VARIABLE ==========================================================
