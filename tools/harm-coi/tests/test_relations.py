@@ -219,3 +219,15 @@ def test_widened_operands(tmp_path):
     """)
     assert "p == (((a + 16'd0) * b) & 16'd65535)" in props
     assert "s == (((a + 10'd0) << 2) & 10'd1023)" in props
+
+
+def test_wider_than_harm_reads_is_dropped(tmp_path):
+    # HARM keeps at most 511 bits of a signal (H11c): a relation reading a wider one is dropped (sha3, 2026-10-13)
+    props, _, _ = emit(tmp_path, """
+        module m(input logic clk, input logic [1599:0] f, output logic [511:0] o, output logic [7:0] p);
+          assign o = f[1599:1088];
+          assign p = f[7:0];
+        endmodule
+    """)
+    assert not any(e.startswith("o == ") for e in props)
+    assert not any(e.startswith("p == ") for e in props)
