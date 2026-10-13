@@ -231,3 +231,13 @@ def test_wider_than_harm_reads_is_dropped(tmp_path):
     """)
     assert not any(e.startswith("o == ") for e in props)
     assert not any(e.startswith("p == ") for e in props)
+
+
+def test_relation_origin(tmp_path):
+    # H24 levels: propositions read from assignments carry origin="rtl-relation", the others origin="rtl"
+    emit(tmp_path, REG, "--reset", "rst")
+    xml = (tmp_path / "cfg.xml").read_text()
+    origins = dict((un(e), o) for e, o in re.findall(r'<prop exp="([^"]*)" loc="[^"]*" origin="([^"]*)"', xml))
+    assert origins["y == ($past(a - b, 1) & 8'd255)"] == "rtl-relation"
+    assert origins["$stable(z)"] == "rtl-relation"
+    assert origins["rst"] == "rtl"
