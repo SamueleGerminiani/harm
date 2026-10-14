@@ -390,7 +390,7 @@ def widths(design, vis):
 # ------------------------------------------------------------------ the configuration's additions
 CLASS = {"comb": "1", "unknown": "1", "state": "2"}
 DT_FIXED = "5D,3W,15A,-0.1E,U"      # unused (no placeholder in the antecedent), as harm-coi's other templates
-DT_RELATION = "1D,2W,2A,-0.1E,U"   # one cycle, at most two propositions
+DT_RELATION = "1D,3W,3A,-0.1E,U"   # one cycle, at most three propositions (H26 (a): satacc/B04)
 
 
 def extras(rels, hints, preds, extra, wid, resets, holds=(), constants=()):

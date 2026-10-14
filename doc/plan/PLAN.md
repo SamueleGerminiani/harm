@@ -373,4 +373,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H23 | Signals whose names are HARM keywords (`W`, `X`, `next`, …): escaped references `\W `, asked by the user after H22 (`hier`) | done |
 | H24 | harm-coi `--relations` (the default with `--hints` since the sign-off): data relations from assignments, both polarities of 1-bit flags, `$fell(reset)`; asked by the user after the portfolio's D1 scorecard | done (approved by the user 2026-10-13) |
 | H25 | Signed RTL conditions and relations: harm-coi wrote signed comparisons as unsigned and dropped negative constants and sign extensions (found in H24, D-038); `$signed` in HARM (plan Q1) | done (approved by the user 2026-10-13) |
-| H26 | Constants assigned outside a reset branch as propositions (with the relations; lookup tables capped), for D1's `satacc/B04` | in-progress (plan approved 2026-10-13) |
+| H26 | Constants assigned outside a reset branch as propositions (with the relations; lookup tables capped), for D1's `satacc/B04` | awaiting-review (VALIDATION 2026-10-14) |
