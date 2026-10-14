@@ -45,6 +45,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **Signals named after HARM keywords** (H23, D-037): a variable named `W`, `X`, `next`, `true`, … no longer stops HARM; write it `\W ` in a formula (a bare keyword keeps its meaning); SVA prints the plain name.
 - **Relations from the RTL** (H24, D-038): `harm-coi` with `--hints` adds by default (`--no-relations` turns it off) relations from assignments (`x == $past(e)`), the end of reset (`$fell(rst) |-> …`), both polarities of flags and `$stable` for registers held under a condition; in COI `filter` mode a proposition written in the template is no longer filtered.
 - **Signed RTL** (H25, D-039): `$signed(e)` and `$unsigned(e)` in propositions (SystemVerilog §20.5); harm-coi writes a signed RTL comparison on `$signed` (`$signed(sum) < -13'sd2047`; before: written unsigned, or dropped with a negative constant) and translates sign extensions and signed `>>>` in relations.
+- **Constants** (H26, D-040): with the relations, a constant assigned outside the reset branch (`acc <= 12'sd2047` under a condition) is a consequent `acc == 12'd2047`; lookup tables (more than 8 distinct constants) are left out.
 
 ## New options
 | Option | What it does |
@@ -130,3 +131,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H23 | signals named after HARM keywords: escaped references `\W ` (D-037) |
 | H24 | relations from the RTL: `harm-coi --relations`, the default with `--hints`; `--no-relations` (D-038) |
 | H25 | signed RTL conditions and relations: `$signed`/`$unsigned` (D-039) |
+| H26 | constants assigned outside a reset branch as consequents (D-040) |

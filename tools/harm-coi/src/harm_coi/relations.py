@@ -20,6 +20,10 @@
 - No numerics (the user, 2026-10-13): value clusters cost most of ima's mining time, and a register's relation
   already states its delta (`cnt == ($past(cnt + 4'd1, 1) & 4'd15)` under `up`).
 - Conditional relations and `$stable` go to their own single-cycle decision trees (domains 6, 7).
+- H26 (D-040): a constant assigned to a whole signal outside the reset branch gives the consequent `x == c` (H25's
+  `$signed(x) == -w'sdN` for a negative constant of a signed target), in the same trees; not for a constant signal
+  (its only assignment is that constant), a 1-bit target (both polarities already) or a lookup table (more than
+  MAX_CONSTANTS distinct constants).
 """
 from dataclasses import dataclass, field
 
@@ -31,6 +35,7 @@ from .predicates import COMPARISONS, HARM_MAX_LOGIC_BITS, Harvester, escaped, si
 BO, UO = ast.BinaryOperator, ast.UnaryOperator
 MAX_PER_TARGET = 8
 MAX_OPS = 16
+MAX_CONSTANTS = 8
 DIRTY_BIN = {BO.Add: "+", BO.Subtract: "-", BO.Multiply: "*", BO.LogicalShiftLeft: "<<",
              BO.ArithmeticShiftLeft: "<<"}  # fmt: skip
 WIDEN = {BO.Multiply, BO.LogicalShiftLeft, BO.ArithmeticShiftLeft}
@@ -73,6 +78,8 @@ class Relations:
         self.found: list[Relation] = []
         self.dropped: list = []
         self.assigned: list = []   # (target, registered, conditional) of every assignment to a whole signal
+        self.constants: list = []  # H26: (target, width, value, registered, signed, where) of constant assignments
+        self.constant_props: list = []  # H26: (expr, domain), after run()
 
     # ------------------------------------------------------------------ expressions
     def mask(self, w):
@@ -232,6 +239,10 @@ class Relations:
             self.dropped.append((f"relation: target wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit", where))
             return
         self.assigned.append((target, registered, conditional))
+        c = self.h.constant(a.right)
+        if c is not None:
+            self.constants.append((target, w, c, registered, a.left.type.isSigned, where))
+            return
         try:
             v = self.render(a.right)
         except NotTranslatable as ex:
@@ -327,6 +338,37 @@ class Relations:
                 continue
             per[r.target] = n + 1
             out.append(r)
+        self.constant_props = self.constants_as_props()
+        return out
+
+    def constants_as_props(self):
+        """H26: the consequents `x == c` of the constants assigned outside the reset branch (D-040)"""
+        by = {}
+        for t, w, c, reg, sgn, where in self.constants:
+            by.setdefault(t, []).append((w, c, reg, sgn, where))
+        n_assign = {}
+        for t, _, _ in self.assigned:
+            n_assign[t] = n_assign.get(t, 0) + 1
+        out = []
+        for t, items in by.items():
+            w = items[0][0]
+            values = {c % (1 << w) for _, c, _, _, _ in items}
+            if w == 1:
+                continue                        # both polarities already (H24)
+            if len(values) == 1 and n_assign[t] == len(items):
+                continue                        # a constant signal
+            if len(values) > MAX_CONSTANTS:
+                self.dropped.append((f"constant: more than {MAX_CONSTANTS} distinct constants for {t} (a table)",
+                                     items[0][4]))  # fmt: skip
+                continue
+            for _, c, reg, sgn, _ in items:
+                if sgn and c < 0:
+                    expr = f"$signed({escaped(t)}) == {signed_literal(c, w)}"
+                else:
+                    expr = f"{escaped(t)} == {w}'d{c % (1 << w)}"
+                dom = "7" if reg else "6"
+                if (expr, dom) not in out:
+                    out.append((expr, dom))
         return out
 
 
@@ -348,10 +390,10 @@ def widths(design, vis):
 # ------------------------------------------------------------------ the configuration's additions
 CLASS = {"comb": "1", "unknown": "1", "state": "2"}
 DT_FIXED = "5D,3W,15A,-0.1E,U"      # unused (no placeholder in the antecedent), as harm-coi's other templates
-DT_RELATION = "1D,2W,2A,-0.1E,U"   # one cycle, at most two propositions
+DT_RELATION = "1D,3W,3A,-0.1E,U"   # one cycle, at most three propositions (H26 (a): satacc/B04)
 
 
-def extras(rels, hints, preds, extra, wid, resets, holds=()):
+def extras(rels, hints, preds, extra, wid, resets, holds=(), constants=()):
     """What --relations adds to --emit-config: {"props": [(expr, loc)], "loc_add": {expr: [domains]},
     "numerics": [(clustering, exp, loc)], "templates": [template], "domains": {domain}} (the class domains used,
     so that their templates are written)."""
@@ -392,6 +434,17 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
         add(r.expr, loc, "rtl-relation")
     for t in holds:
         add(f"$stable({escaped(t)})", ["c", "7"], "rtl-relation")
+    # H26: constants assigned outside the reset branch; a proposition already written gains the placement
+    for expr, dom in constants:
+        if expr in place:
+            if dom not in place[expr] and dom not in out["loc_add"].get(expr, []):
+                out["loc_add"].setdefault(expr, []).append(dom)
+        elif expr in have:
+            for e, loc, _ in out["props"]:
+                if e == expr and dom not in loc:
+                    loc.append(dom)
+        else:
+            add(expr, ["c", dom], "rtl-relation")
     # assigned-only signals: 1-bit ones both ways, wide ones as numeric values; register deltas
     read = {s for e in extra.values() for s in e["signals"]}
     for name, w in sorted(wid.items()):
@@ -411,7 +464,7 @@ def extras(rels, hints, preds, extra, wid, resets, holds=()):
             out["templates"].append((DT_FIXED, f"G({{{inactive}}}|=> P0(4))"))
         if "5" in used:
             out["templates"].append((DT_FIXED, f"G({{{inactive}}}|-> P0(5))"))
-    used = {d for _, loc, _ in out["props"] for d in loc}
+    used = {d for _, loc, _ in out["props"] for d in loc} | {d for v in out["loc_add"].values() for d in v}
     if "6" in used:
         out["templates"].append((DT_RELATION, "G({..#1&..}|-> P0(6))"))
     if "7" in used:

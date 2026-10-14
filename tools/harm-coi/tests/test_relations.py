@@ -65,7 +65,8 @@ def test_registered_relations(tmp_path):
     assert "G({..#1&..}|=> P0(7))" in tpls and "G({..#1&..}|-> P0(6))" not in tpls  # only the classes used
     assert not any("8'd0" in e and "$past" in e for e in props)  # the reset branch gives no relation
     xml = (tmp_path / "cfg.xml").read_text()
-    assert 'dtLimits="1D,2W,2A,-0.1E,U" exp="G({..#1&amp;..}|=&gt; P0(7))"' in xml  # single-cycle conditions
+    # single-cycle conditions of up to three propositions (H26 (a): satacc/B04 needs `en && !clr && sum < …`)
+    assert 'dtLimits="1D,3W,3A,-0.1E,U" exp="G({..#1&amp;..}|=&gt; P0(7))"' in xml
 
 
 def test_combinational_relations_case_arms_and_concatenation(tmp_path):

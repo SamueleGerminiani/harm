@@ -103,7 +103,8 @@ def main(argv=None):
         rel = relations.Relations(design, comp, vis)
         rels = rel.run()
         dropped += rel.dropped
-        ext = relations.extras(rels, h, preds, extra, relations.widths(design, vis), resets, rel.holds())
+        ext = relations.extras(rels, h, preds, extra, relations.widths(design, vis), resets, rel.holds(),
+                               rel.constant_props)
     if a.emit_config:
         predicates.emit_config(a.emit_config, preds, a.output, h, a.hints_use, ext)
     if a.verbose:

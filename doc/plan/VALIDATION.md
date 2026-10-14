@@ -1254,3 +1254,22 @@ The tests were written first and committed failing (`f60982b`): `tools/harm-coi/
 - **Added to the plan's scope:** the RTL's own `$signed`/`$unsigned` calls are translated (S1's `$unsigned(sum) >> 1` needed it; before H25 every system call was dropped).
 - **Not H25's, recorded (D-039):** HARM's `?:` with an x condition takes the else branch (D-011) where SystemVerilog merges the branches (S2's case uses a 2-valued condition); `-w'sdN` is a unary minus, opaque to Z3 (sound); a constant assigned outside a reset branch (`acc <= -12'sd2047`) gives no proposition, which is why `satacc/B04` (saturation at −2048) is still missed.
 - **Found after the merge, fixed:** the five `satacc` ctests (three of H24, two of H25) wrote to one directory, so under `ctest -j8` they could fail together (1 of 4 parallel runs on `dev`); `check_relations_mine.py` now uses one directory per invocation: 0 failures in 12 parallel runs.
+
+## H26: constants assigned outside a reset branch (2026-10-14, macOS 15.3.2 arm64, g++-13, Python 3.12, pyslang 12.0.0)
+The tests were written first and committed failing (`60b200e`: `tools/harm-coi/tests/test_constants.py` (C1), ctest `h26_mine_satacc` (C2); then for (a) the limit in `test_relations.py`).
+
+| Test | Result |
+|---|---|
+| C1 harm-coi: a registered constant under a condition gives `x == c` in domain 7 (`acc == 12'd2047`), a negative one of a signed target `$signed(acc) == -12'sd2047`, a combinational one domain 6 (`y == 8'd5`, `y == 8'd9`); a constant signal (`assign k = 4'd3`) nothing; a reset value assigned again gains domain 7, written once; a target with 9 distinct constants none, `-v` says why; `--no-relations` none | pass (harm-coi: 98) |
+| C2 HARM mines `… \|=> $signed(acc) == -12'sb11111111111` and `… \|=> acc == 12'b11111111111` on `satacc` | pass |
+| C3 the H0 baselines and every earlier test unchanged | pass (`ctest`: 272 of 272) |
+| C4 (portfolio) D1 and D1b with HARM and relations, against H25 (`runs/d1/h25-*` in `~/miner-portfolio-h24`) | D1 46/49, D1b 41/49: no change. HARM mined the negative saturation in round 0, and OpenFPV refuted it: a counterexample with `clr` high in the same cycle; the true guard `en && !clr && $signed(sum) < -13'sd2047` has three propositions, the relation trees allowed two |
+| (a) the relation trees take three (`1D,3W,3A`; the user, 2026-10-14), measured | below |
+
+**(a), measured** (HARM `ms/H26-constants` + the limit, `exp/H26-3A`; the portfolio as in C4):
+- Mining, HARM alone on the machine, the same configurations with each limit: sha3 39.9 / 38.9 s, ima_adpcm_encoder 294.3 / 291.7 s, uart 10.7 / 11.2 s, D1 `satacc` 0.4 / 0.5 s, `traffic` 39.4 / 39.6 s; assertions +6, +5, +6, +2, +2.
+- D1: **47/49** (gained `satacc/B04`, none lost; the final set has `!clr && $signed(sum) < -13'sb11111111111 && en |=> $signed(acc) == -12'sb11111111111`); 10.4 min (9.7 with two); candidates over D1 3,389 (3,345). Still missed: `fifo/B04`, `skidbuf/B01`.
+- D1b: 41/49, no change (one round per bug, D1b's Q1: the three-proposition guard needs the counterexample of a first round); median first rank 5.0, mean precision 0.115 (0.120).
+- The C4 cost run on P1's designs reused cached proofs, so it is no cost measure; its assertion counts (sha3 1,069, uart 511, ima 720) are within 6% of H24's.
+
+- **Found:** `--reduce implies --atom-premises` is not the bottleneck of a D1 run; C1's cache audit is (22.6 of 28.2 loop-minutes with a warm cache; the portfolio's W1 now skips it in development runs).
