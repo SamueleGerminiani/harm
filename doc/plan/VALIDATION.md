@@ -1273,3 +1273,24 @@ The tests were written first and committed failing (`60b200e`: `tools/harm-coi/t
 - The C4 cost run on P1's designs reused cached proofs, so it is no cost measure; its assertion counts (sha3 1,069, uart 511, ima 720) are within 6% of H24's.
 
 - **Found:** `--reduce implies --atom-premises` is not the bottleneck of a D1 run; C1's cache audit is (22.6 of 28.2 loop-minutes with a warm cache; the portfolio's W1 now skips it in development runs).
+
+## H27: pinned and checked third-party downloads (2026-10-15, macOS 15.3.2 arm64 and Ubuntu 22.04 x86_64)
+The tests were written first and committed failing (`1e21d0a`); the implementation is `163e021`.
+- **`third_party/fetch.sh`:** `fetch <url> <sha256> <file>` downloads over HTTPS with the certificate checked (curl, else wget; curl also takes `file://` for the tests). It keeps the file only if its SHA-256 matches, and otherwise fails, naming both values.
+- **Checksums:** Spot 2.9.7 (now over https), Boost 1.83.0 (its value matches the one boost.io publishes), Z3 4.13.4, Verilator 5.052, Icarus `v13_0`, yosys 0.69. The values are from the downloads of 2026-10-15, written into each script.
+- **antlr4:** the checkout of tag `4.13.2` must be commit `cc82115a4e7f53d71d9d905caa2c2dfa4da58899`, so a moved tag is refused.
+- **Errexit:** `set -euo pipefail` in every script. Boost's clang probe no longer uses `grep -q`, which under pipefail could read as false.
+- **`install_all.sh`** stops at the first failing script and names it.
+- **Tests:** `h27_fetch`, `h27_pins` and `h27_install_all_stops` pass.
+
+**T4, fresh installs from a clone of the branch:**
+
+| | macOS (arm64, g++-13) | Linux (Ubuntu 22.04, 32 cores, cmake 3.31; trivergence's session) |
+|---|---|---|
+| `install_all.sh --no-tools` | exit 0, 656 s | exit 0, 386 s (with another job running) |
+| antlr4 | "HEAD is now at cc82115a4 … prepare release 4.13.2" | the same |
+| HARM | builds, `HARM v3-331-g163e021` | builds, `HARM v3-331-g163e021` |
+| H27's tests and `h11g` | 4/4 | 4/4 |
+
+- **Why** (from the plan): trivergence's first image build of the miners failed late, as a CMake error, because `wget` was missing and `install_all.sh` went on. Its second build, with the portfolio's recipe running each script with errexit, succeeded.
+- **HARM's fast tests** (`ctest -LE slow`) on the fresh macOS build passed (1,587 s), except `h14_doc_coverage`: H27 was not yet in the release notes and the report. Both are updated (the report's sources; the PDF is rebuilt with a release, as since H21), and the check passes.

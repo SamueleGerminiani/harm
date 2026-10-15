@@ -78,6 +78,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **One compiler for everything** (D-010): HARM and the libraries in `third_party` must be built with the same C++ compiler. The install scripts record it, and CMake warns on a mismatch.
 - **`-ffp-contract=off`** for everything HARM's CMake builds (H12), so that floating-point scores round the same way on every platform.
 - **Profiling is opt-in** (H13): `-DHARM_PROFILE=ON` builds for `gprof`. A default build no longer writes a `gmon.out` on every run.
+- **Checked downloads** (H27): every third-party tarball is downloaded over HTTPS with its certificate checked and kept only if its SHA-256 matches (`third_party/fetch.sh`); antlr4's tag `4.13.2` must be its known commit; every install script stops at its first error, and `install_all.sh` at the first failing script, naming it.
 - **The tools the tests use** (Verilator 5.052, Icarus Verilog 13.0, yosys 0.69 with `read_slang`) have install scripts in `third_party` (H11d, H11g; `install_all.sh --no-tools` skips them). Without them, the tests that need them are skipped.
 - **The Docker image** (`docker/build.sh [ref]`) includes Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
 - **The warning and error logs** (`warning.log`, `error.log`) are appended at a constant cost per message (H21; found in H19): before, every message rewrote the whole file, so a run that emitted many warnings slowed down as the logs grew. The files' format is unchanged.
@@ -132,3 +133,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H24 | relations from the RTL: `harm-coi --relations`, the default with `--hints`; `--no-relations` (D-038) |
 | H25 | signed RTL conditions and relations: `$signed`/`$unsigned` (D-039) |
 | H26 | constants assigned outside a reset branch as consequents (D-040) |
+| H27 | pinned and checked third-party downloads: SHA-256 for every tarball, antlr4's tag commit, errexit in the install scripts |
