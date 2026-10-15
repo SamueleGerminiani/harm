@@ -453,6 +453,12 @@ add_test(NAME h11d_tool_lookup
 add_test(NAME h11g_tools_common_flex
     COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_tools_common.sh ${CMAKE_SOURCE_DIR})
 
+# ---- H27: pinned and checked third-party downloads -------------------------------------------------
+add_test(NAME h27_fetch COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_fetch.sh ${CMAKE_SOURCE_DIR})
+add_test(NAME h27_pins COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_pins.sh ${CMAKE_SOURCE_DIR})
+add_test(NAME h27_install_all_stops
+    COMMAND bash ${CMAKE_SOURCE_DIR}/tests/regression/check_install_all.sh ${CMAKE_SOURCE_DIR})
+
 # ---- H12: the same assertions on every platform (finding F-M2) ------------------------------------
 # A1: structs mines Linux x86_64's count (macOS arm64 gave 1,800 before H12: FMA in the DT score)
 if(PYTHON3_FOUND)
