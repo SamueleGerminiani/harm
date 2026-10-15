@@ -1339,3 +1339,5 @@ The tests were written first and committed failing (`b5e9a92`).
   - The failure was `LogTest.concurrentThreadsKeepOneValidLog`, a SIGSEGV. It is intermittent: run alone, it passed 4 of 5 times, and `--repeat until-fail:30` crashed again. On the Mac it passed 60 of 60.
   - The cause predates H29 (H11f's test; H29 does not touch logging). `message.cc` writes the console text outside its log mutex, and the test redirects `std::cout` to one shared `ostringstream`, which its 8 threads then write at once: a data race in the test's sink, not in HARM's runs. It is reported to the user as a separate fix.
   - i2c_slave with this binary: 125 s in total (642 s at `bf490b0`); the step checks 1,192,278 pairs in 89.9 s and drops 1,744; 4,737 kept, the same as on the Mac.
+
+**H29 signed off by the user 2026-10-16** ("I approve H29 and F7C"); merged into `dev`. The LogTest race stays open, as a separate fix.
