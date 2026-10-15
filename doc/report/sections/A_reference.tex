@@ -140,5 +140,6 @@ H23 & signals named after HARM keywords (\code|\textbackslash W |) & a keyword-n
 H24 & relations from the RTL (\code|harm-coi --relations|) & data outputs had no proposition, flags one polarity, reset assertions were vacuous under \code|disable iff|; fixed template propositions were cone-filtered \\
 H25 & signed RTL conditions and relations (\code|\$signed|, \code|\$unsigned|) & signed comparisons written unsigned; negative constants and sign extensions dropped \\
 H26 & constants assigned outside a reset branch as consequents & only the reset branch's constants were propositions \\
+H27 & pinned and checked third-party downloads (SHA-256, antlr4's tag commit, errexit) & downloads were version-pinned only, three without a certificate check; a failed download surfaced later as a CMake error \\
 \bottomrule
 \end{longtable}

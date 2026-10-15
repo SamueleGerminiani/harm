@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail  # H27: a failed step stops the script
 # Z3 SMT solver (used by HARM for proposition equivalence, H2). Built from source with the same
 # compiler as HARM: a system or Homebrew Z3 may use another C++ runtime (D-010).
 
@@ -29,7 +30,10 @@ fi
 echo "Building with CC=$CC CXX=$CXX ($("$CXX" --version | head -1))${SDKROOT:+ SDKROOT=$SDKROOT}"
 
 Z3_VERSION=4.13.4
-wget --no-check-certificate https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3_VERSION}.tar.gz
+here="$(cd "$(dirname "$0")" && pwd)"
+source "$here/fetch.sh"
+Z3_SHA256=4071977e66e9f3d239b7b098ceddfe62ffdf3c71e345e9524a4a5001d1f4adf3  # H27: from the download of 2026-10-15
+fetch "https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3_VERSION}.tar.gz" "$Z3_SHA256" "z3-${Z3_VERSION}.tar.gz"
 tar -xf z3-${Z3_VERSION}.tar.gz && rm z3-${Z3_VERSION}.tar.gz
 cd z3-z3-${Z3_VERSION}
 mkdir build && cd build

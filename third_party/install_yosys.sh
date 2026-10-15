@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail  # H27: a failed step stops the script
 # yosys with read_slang (the H5 cross-check), from the release tarball, which includes slang and
 # sv-elab (built in since yosys 0.67). Needs C++20: GCC >= 11, Clang >= 17 or Xcode >= 16.4.
 # Usage: install_yosys.sh [install prefix]   (default: third_party/yosys)
@@ -18,7 +19,8 @@ PY="$(command -v "${PYTHON:-python3}" || true)"   # an absolute path: CMake igno
 }
 work="$(mktemp -d)"
 cd "$work"
-tools_fetch "https://github.com/YosysHQ/yosys/releases/download/v${YOSYS_VERSION}/yosys.tar.gz" y.tar.gz
+YOSYS_SHA256=6dad6412cae417f5a53e2c943c2aee160162cfc1bdd31669230da1b7e3522571  # H27: from the download of 2026-10-15
+tools_fetch "https://github.com/YosysHQ/yosys/releases/download/v${YOSYS_VERSION}/yosys.tar.gz" "$YOSYS_SHA256" y.tar.gz
 mkdir yosys && tar -xf y.tar.gz -C yosys && rm y.tar.gz
 cd yosys
 cmake -B build . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$installPrefix" \
