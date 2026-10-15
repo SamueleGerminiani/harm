@@ -1304,3 +1304,5 @@ The test was written first and committed failing; the change is one argument.
   - harm-coi's whole suite: 100 passed.
   - On `i2c_slave` itself the 3 errors are gone.
 - **Release notes and report** list H28 (`h14_doc_coverage` passes).
+
+**H27 and H28 signed off by the user 2026-10-15** ("Sign off all three": H27, H28 and the miner portfolio's GoldMine fix); merged into `dev`.
