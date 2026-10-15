@@ -246,6 +246,17 @@ void fillCoiMetrics(const std::vector<AssertionPtr> &assertions,
   }
 }
 
+/// --reduce implies (H29): per context, the pairs to check, the cap, whether the step was
+/// skipped, the assertions dropped and the seconds taken, as JSON objects for --dump-assertion-info
+std::map<std::string, std::string> &implicationRecords() {
+  static std::map<std::string, std::string> records;
+  return records;
+}
+std::mutex &implicationRecordsGuard() {
+  static std::mutex guard;
+  return guard;
+}
+
 /// --dump-assertion-info: one JSON record per kept assertion, all contexts in one file
 void dumpAssertionInfo(const Context &context,
                        const std::vector<AssertionPtr> &assertions) {
@@ -323,6 +334,19 @@ void dumpAssertionInfo(const Context &context,
     }
     out << "},\n";
   }
+  {
+    std::lock_guard<std::mutex> lockRecords(implicationRecordsGuard());
+    const auto &imp = implicationRecords();
+    if (!imp.empty()) {
+      out << "  \"implication\": {";
+      bool first = true;
+      for (const auto &[name, rec] : imp) {
+        out << (first ? "" : ", ") << jsonString(name) << ": " << rec;
+        first = false;
+      }
+      out << "},\n";
+    }
+  }
   out << "  \"assertions\": [\n";
   for (size_t i = 0; i < records.size(); i++) {
     out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
@@ -342,16 +366,32 @@ void applyImplicationReduction(const Context &context,
   AtomPremises premises;
   premises.enabled = clc::atomPremises;
   premises.maxQueries = clc::atomPremisesMax;
-  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs, premises);
+  bool skipped = false;
+  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs, premises,
+                                   clc::impliesMaxPairs, &skipped);
   double seconds = std::chrono::duration<double>(
                        std::chrono::steady_clock::now() - start)
                        .count();
   std::stringstream secs;
   secs << std::fixed << std::setprecision(2) << seconds;
-  messageInfo("Implication: dropped " + std::to_string(before - assertions.size()) +
-              " of " + std::to_string(before) + " assertions (keep " +
-              clc::keep + ", " + std::to_string(pairs) + " pairs checked in " +
-              secs.str() + "s)");
+  if (skipped) {
+    messageInfo("Implication: skipped, " + std::to_string(pairs) + " pairs > " +
+                std::to_string(clc::impliesMaxPairs) + " (--implies-max-pairs)");
+  } else {
+    messageInfo("Implication: dropped " + std::to_string(before - assertions.size()) +
+                " of " + std::to_string(before) + " assertions (keep " +
+                clc::keep + ", " + std::to_string(pairs) + " pairs checked in " +
+                secs.str() + "s)");
+  }
+  {
+    std::lock_guard<std::mutex> lockRecords(implicationRecordsGuard());
+    implicationRecords()[context._name] =
+        "{\"pairs\": " + std::to_string(pairs) +
+        ", \"maxPairs\": " + std::to_string(clc::impliesMaxPairs) +
+        ", \"skipped\": " + (skipped ? "true" : "false") +
+        ", \"dropped\": " + std::to_string(before - assertions.size()) +
+        ", \"seconds\": " + secs.str() + "}";
+  }
   if (clc::dumpImplications.empty()) {
     return;
   }

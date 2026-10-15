@@ -1306,3 +1306,38 @@ The test was written first and committed failing; the change is one argument.
 - **Release notes and report** list H28 (`h14_doc_coverage` passes).
 
 **H27 and H28 signed off by the user 2026-10-15** ("Sign off all three": H27, H28 and the miner portfolio's GoldMine fix); merged into `dev`.
+
+## H29: the pairs of `--reduce implies` (2026-10-15, macOS 15.3.2 arm64)
+The tests were written first and committed failing (`b5e9a92`).
+- **Why:** trivergence's F7 tools tests time out (600 s) for harm and harm-rel on AssertLLM2's `i2c_slave`. On Linux with no budget HARM took 642 s, 607 of them in `--reduce implies` (5,710,870 pairs among 6,481 assertions). Any shared atom linked a pair, and the reset that most antecedents read linked nearly all of them.
+- **Change:**
+  - `reduceByImplication` checks only the pairs sharing a consequent atom, or whose consequent atoms a proved fact links. It counts them exactly in O(n) memory and stores them only up to the cap.
+  - `--implies-max-pairs N` (default 2,000,000; 0: no cap): above N the step is skipped for that context, HARM says so, and the equivalence step's result is kept.
+  - `--dump-assertion-info` gains `"implication": {context: {pairs, maxPairs, skipped, dropped, seconds}}`.
+- **Measurement first** (a scratch build counting both pair sets; through the miner portfolio's adapter on its corpus, 8 fixtures and 12 D1 designs, harm and harm-rel):
+  - the new filter keeps the same sets in all 40 runs; total time 210 s → 76 s; the corpus's largest case, traffic (harm-rel), 305,674 → 58,875 pairs and 94 → 26 s;
+  - checking HARM's finite model before Spot's automata gave the same sets but was slower (365 s in total): not done.
+- **i2c_slave** (trivergence's inputs: `config.xml`, `coi.json`, 3 golden VCDs; its command, 4 threads):
+
+| | pairs | step | total | dropped | kept |
+|---|---|---|---|---|---|
+| `bf490b0` (Linux, trivergence) | 5,710,870 | 607 s | 642 s | 1,831 | 4,650 |
+| `bf490b0` (Mac) | 5,710,870 | 479 s | 509 s | 1,831 | 4,650 |
+| H29 (Mac) | 1,192,278 | 70 s | 99 s | 1,744 | 4,737 |
+
+  H29's kept set contains `bf490b0`'s 4,650 and 87 more (implications whose consequents share no atom, through vacuity or facts). Nothing it keeps less. Under the cap, so reduced.
+- **The default cap:** at least 2× the corpus's largest count under the new filter (58,875) and below what `i2c_slave` needed before (5.7 M): 2,000,000. At `i2c_slave`'s rate it bounds the step at about 2 minutes on the Mac and 3.5 on trivergence's Linux.
+- **Tests:**
+  - `h29_implies_pairs` (`tests/input/h29`, where every antecedent reads `!rst` or x1..x3): 58 pairs checked of 184 that share any atom, counted from `--reduce equiv`'s output; cap 1 skips and keeps `--reduce equiv`'s 20; cap 0 and cap 58 give the same 10 as no cap;
+  - `h29_needs_reduce_implies`;
+  - H3's and H3b's expected sets unchanged;
+  - `ctest` on macOS: 277 of 277 passed;
+  - the miner portfolio's corpus with this binary: the same kept sets as `bf490b0` in all 40 runs.
+- **Release notes, README, report** (options table, reduction cost, milestones) list H29; `h14_doc_coverage` passes.
+- **Linux** (Ubuntu 22.04 x86_64, 32 cores; trivergence's session, the portfolio clone, incremental build `v3-340-g1544636`):
+  - `ctest -j8`: 276 of 277 passed in 2,106 s (`h14_report_builds` skipped). Both H29 tests passed.
+  - The failure was `LogTest.concurrentThreadsKeepOneValidLog`, a SIGSEGV. It is intermittent: run alone, it passed 4 of 5 times, and `--repeat until-fail:30` crashed again. On the Mac it passed 60 of 60.
+  - The cause predates H29 (H11f's test; H29 does not touch logging). `message.cc` writes the console text outside its log mutex, and the test redirects `std::cout` to one shared `ostringstream`, which its 8 threads then write at once: a data race in the test's sink, not in HARM's runs. It is reported to the user as a separate fix.
+  - i2c_slave with this binary: 125 s in total (642 s at `bf490b0`); the step checks 1,192,278 pairs in 89.9 s and drops 1,744; 4,737 kept, the same as on the Mac.
+
+**H29 signed off by the user 2026-10-16** ("I approve H29 and F7C"); merged into `dev`. The LogTest race stays open, as a separate fix.

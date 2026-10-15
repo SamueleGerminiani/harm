@@ -45,13 +45,16 @@ struct ImplicationRecord {
 
 /// @brief --reduce implies (D-004, D-008): drop assertions related by implication to kept ones.
 /// keep = "stronger" (default), "weaker" or "ranked" (by _finalScore, best first). The order of
-/// the kept assertions is the input order.
+/// the kept assertions is the input order. Only the pairs that share a consequent atom, or whose
+/// consequent atoms a proved fact links, are checked (H29). With maxPairs > 0 and more pairs than
+/// that, nothing is checked and the input is returned (*skipped is set).
 std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &assertions,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records = nullptr,
                     unsigned z3TimeoutMs = 1000,
                     size_t *pairsChecked = nullptr,
-                    const AtomPremises &premises = AtomPremises());
+                    const AtomPremises &premises = AtomPremises(),
+                    size_t maxPairs = 0, bool *skipped = nullptr);
 
 } // namespace harm

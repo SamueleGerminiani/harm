@@ -784,6 +784,8 @@ $ cat $OUT/implications.json
 {"context": "default", "dropped": "G({a && d} -> c)", "kept": ["G(a -> c)", "G(d -> c)"], "relation": "implied"},
 {"context": "default", "dropped": "G({b && d} -> c)", "kept": ["G(d -> c)"], "relation": "implied"}
 ```
+* **`--implies-max-pairs <N>`** (with `--reduce implies`; default 2000000, `0`: no cap)
+    Only the pairs of assertions that share a consequent atom (or whose consequent atoms a proved fact links) are checked (H29). When a context has more than `N` such pairs, HARM skips the implication step for it and says so; the equivalence step still runs, so the kept assertions are those of `--reduce equiv`. `--dump-assertion-info` records, per context, `"implication": {"pairs", "maxPairs", "skipped", "dropped", "seconds"}`.
 * **`--atom-premises`** (with `--reduce implies`), **`--atom-premises-max <N>`** (default 2000)
     Also use facts between the comparisons inside propositions, proved with Z3 under HARM's semantics (x/z included):
     - implications, e.g. `cnt > 9` implies `cnt > 8`;

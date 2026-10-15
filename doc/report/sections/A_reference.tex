@@ -12,6 +12,7 @@ Option & Effect (section) \\
 \opt{keep} \code+stronger|weaker|ranked+ & with \code|implies|: which side of an implication is kept (\cref{sec:implies}) \\
 \opt{atom-premises} & with \code|implies|: facts between comparisons, proved with Z3 (\cref{sec:premises}) \\
 \opt{atom-premises-max} \code|<N>| & at most $N$ Z3 queries for those facts (default 2{,}000) \\
+\opt{implies-max-pairs} \code|<N>| & with \code|implies|: skip the implication step for a context with more than $N$ pairs (default 2{,}000{,}000; 0: no cap), recorded in \opt{dump-assertion-info} (\cref{sec:implies}) \\
 \opt{dump-implications} \code|<file>| & the dropped assertions and what implies them, as JSON \\
 \opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON \\
 \opt{dump-coi-report} \code|<file>| & the out-of-cone report (\cref{sec:coi}) \\
@@ -142,5 +143,6 @@ H25 & signed RTL conditions and relations (\code|\$signed|, \code|\$unsigned|) &
 H26 & constants assigned outside a reset branch as consequents & only the reset branch's constants were propositions \\
 H27 & pinned and checked third-party downloads (SHA-256, antlr4's tag commit, errexit) & downloads were version-pinned only, three without a certificate check; a failed download surfaced later as a CMake error \\
 H28 & \code|harm-coi|'s default timescale (\code|1ns/1ps|) & a design mixing files with and without \code|`timescale| did not elaborate \\
+H29 & the pairs of \code|--reduce implies| (a shared consequent atom; \opt{implies-max-pairs}) & any shared atom linked a pair, so the reset in every antecedent linked nearly all: \code|i2c_slave| spent 607 of 642\,s there \\
 \bottomrule
 \end{longtable}

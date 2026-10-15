@@ -1,0 +1,19 @@
+<harm>
+    <!-- H29: every assertion's antecedent reads !rst or x1..x3, so before H29 nearly every pair
+         shared an atom and was checked (184 of 190); since H29 only the pairs sharing a consequent
+         atom are (58). On reduce.csv, y1 == x1 and y2 == x1 || x2 after reset, and y3 holds
+         whenever x3 does. --reduce equiv keeps 20 assertions, --reduce implies 10 (the 3-premise
+         ones are implied by 2-premise ones with the same consequent). -->
+    <context name="default">
+        <prop exp="!rst" loc="a"/>
+        <prop exp="x1" loc="a"/>
+        <prop exp="x2" loc="a"/>
+        <prop exp="x3" loc="a"/>
+        <prop exp="y1" loc="c"/>
+        <prop exp="y2" loc="c"/>
+        <prop exp="y3" loc="c"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; P2)"/>
+        <template exp="G(P0 &amp;&amp; P1 &amp;&amp; P2 -&gt; P3)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

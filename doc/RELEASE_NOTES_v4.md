@@ -52,6 +52,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 |---|---|
 | `--reduce syntactic\|equiv\|implies` | remove redundant assertions: identical (default), equivalent propositions (Z3, H2), or implied assertions (Spot plus HARM's finite-trace model, H3) |
 | `--keep stronger\|weaker\|ranked` | with `implies`: which side of an implication is kept |
+| `--implies-max-pairs <N>` | with `implies`: skip the implication step for a context with more than `N` pairs to check (default 2,000,000; `0`: no cap), recorded in `--dump-assertion-info` (H29) |
 | `--atom-premises`, `--atom-premises-max <N>` | with `implies`: also use facts between comparisons (`cnt > 9` ⇒ `cnt > 8`, exclusive FSM states; H3b) |
 | `--dump-implications <file>` | the dropped assertions and what implies them, as JSON |
 | `--dump-assertion-info <file>` | every kept assertion with its metrics, propositions, cycle offsets and origins, as JSON |
@@ -89,7 +90,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 ## Known limitations
 - **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are future work (H20, planned, not scheduled).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
-- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions; on several thousand assertions they can take tens of minutes.
+- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Since H29 only pairs sharing a consequent atom are checked (AssertLLM2's `i2c_slave`, 6,481 assertions: 1.2 M pairs instead of 5.7 M, 71 s instead of 479 s on an M-series Mac, 87 more assertions kept), and `--implies-max-pairs` (default 2,000,000) skips the step for larger contexts.
 - **Ties in the decision tree** are decided by the last bit of a floating-point score. Platforms agree because they now round the same way (H12); a change of `libm` could still change a choice with `ENT`.
 - **Some formulas the grammar accepts cannot be evaluated** (e.g. `F X X (a W c)`), and a trace signal named like an operator (`W`) cannot be loaded. Both predate v4.
 - **The `camellia` example's configuration is not valid XML** (a raw `&`); `sub_platform` is the same design and runs.
@@ -137,3 +138,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H26 | constants assigned outside a reset branch as consequents (D-040) |
 | H27 | pinned and checked third-party downloads: SHA-256 for every tarball, antlr4's tag commit, errexit in the install scripts |
 | H28 | harm-coi's default timescale `1ns/1ps`: designs mixing files with and without `timescale` elaborate |
+| H29 | the pairs of `--reduce implies`: a shared consequent atom links a pair; `--implies-max-pairs` skips and records |
