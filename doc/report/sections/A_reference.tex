@@ -141,5 +141,6 @@ H24 & relations from the RTL (\code|harm-coi --relations|) & data outputs had no
 H25 & signed RTL conditions and relations (\code|\$signed|, \code|\$unsigned|) & signed comparisons written unsigned; negative constants and sign extensions dropped \\
 H26 & constants assigned outside a reset branch as consequents & only the reset branch's constants were propositions \\
 H27 & pinned and checked third-party downloads (SHA-256, antlr4's tag commit, errexit) & downloads were version-pinned only, three without a certificate check; a failed download surfaced later as a CMake error \\
+H28 & \code|harm-coi|'s default timescale (\code|1ns/1ps|) & a design mixing files with and without \code|`timescale| did not elaborate \\
 \bottomrule
 \end{longtable}

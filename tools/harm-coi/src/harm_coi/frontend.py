@@ -69,7 +69,7 @@ def elaborate(top, files, defines=(), includes=()):
     """Parse and elaborate with slang's own command line handling. Raises FrontendError."""
     d = driver.Driver()
     d.addStandardArgs()
-    args = ["harm-coi", "--top", top]
+    args = ["harm-coi", "--top", top, "--timescale", "1ns/1ps"]  # H28: the default for a file without one, as trivergence and OpenFPV
     args += [f"-D{x}" for x in defines] + [f"-I{x}" for x in includes] + list(files)
     if not d.parseCommandLine(shlex.join(args), driver.CommandLineOptions()) or not d.processOptions():
         raise FrontendError("invalid front-end options")

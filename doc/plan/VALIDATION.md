@@ -1294,3 +1294,15 @@ The tests were written first and committed failing (`1e21d0a`); the implementati
 
 - **Why** (from the plan): trivergence's first image build of the miners failed late, as a CMake error, because `wget` was missing and `install_all.sh` went on. Its second build, with the portfolio's recipe running each script with errexit, succeeded.
 - **HARM's fast tests** (`ctest -LE slow`) on the fresh macOS build passed (1,587 s), except `h14_doc_coverage`: H27 was not yet in the release notes and the report. Both are updated (the report's sources; the PDF is rebuilt with a release, as since H21), and the check passes.
+
+## H28: harm-coi's default timescale (2026-10-15, macOS 15.3.2 arm64, Python 3.12, pyslang 12.0.0)
+The test was written first and committed failing; the change is one argument.
+- **Why:** trivergence's F7 tools run (its finding F7-F2). harm-coi failed on AssertLLM2's `i2c_slave` with "design element does not have a time scale defined but others in the design do" (3 errors), because some of its files declare a `timescale` and the others do not. Reproduced on the Mac.
+- **Change:** `frontend.elaborate` passes slang `--timescale 1ns/1ps`, the default for a file without one, as trivergence (`triad_core.rtl_files.slang_args`) and OpenFPV do. A file's own `timescale` still governs it.
+- **Tests:**
+  - `tests/test_timescale.py`: two files, one with `` `timescale 1ns/1ps `` (and one with `1ps/1ps`) and one without; both elaborate. They raised `FrontendError` before.
+  - harm-coi's whole suite: 100 passed.
+  - On `i2c_slave` itself the 3 errors are gone.
+- **Release notes and report** list H28 (`h14_doc_coverage` passes).
+
+**H27 and H28 signed off by the user 2026-10-15** ("Sign off all three": H27, H28 and the miner portfolio's GoldMine fix); merged into `dev`.
