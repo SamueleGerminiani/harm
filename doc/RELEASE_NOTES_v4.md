@@ -72,6 +72,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **What it does:** reads SystemVerilog RTL (with pyslang) and writes `coi.json`, the cone of every signal, with depths. With `--predicates` it also writes the RTL's own predicates (conditions, case labels, FSM states, comparisons, reset values). `--emit-config` writes a ready-to-run HARM configuration from them.
 - **Install:** Python ≥ 3.11, `pip install -e tools/harm-coi`. See `tools/harm-coi/README.md`.
 
+- **Default timescale** (H28): `harm-coi` gives slang `--timescale 1ns/1ps`, the default for a file without a `timescale`, as trivergence and OpenFPV do; a design that mixes files with and without one (AssertLLM2's `i2c_slave`) no longer fails to elaborate.
+
 ## Build, platforms and tests
 - **Linux and macOS** (arm64): HARM builds and passes the same tests on both (H11b: the Linux build, F-L1), and mines the same assertions (H12).
 - **Z3** is a new optional dependency (`third_party/install_z3.sh`, CMake option `HARM_WITH_Z3`, default ON).
@@ -134,3 +136,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H25 | signed RTL conditions and relations: `$signed`/`$unsigned` (D-039) |
 | H26 | constants assigned outside a reset branch as consequents (D-040) |
 | H27 | pinned and checked third-party downloads: SHA-256 for every tarball, antlr4's tag commit, errexit in the install scripts |
+| H28 | harm-coi's default timescale `1ns/1ps`: designs mixing files with and without `timescale` elaborate |
