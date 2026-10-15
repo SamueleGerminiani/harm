@@ -375,3 +375,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H25 | Signed RTL conditions and relations: harm-coi wrote signed comparisons as unsigned and dropped negative constants and sign extensions (found in H24, D-038); `$signed` in HARM (plan Q1) | done (approved by the user 2026-10-13) |
 | H26 | Constants assigned outside a reset branch as propositions (with the relations; lookup tables capped), for D1's `satacc/B04` | done (approved by the user 2026-10-14) |
 | H27 | Pinned and checked third-party downloads: one fetch helper with SHA-256, the antlr4 commit pinned, errexit everywhere, `install_all.sh` stops at the first failure; asked after trivergence's first image build | in progress (approved by the user 2026-10-15) |
+| H28 | harm-coi's default timescale (`--timescale 1ns/1ps`, as trivergence and OpenFPV): a design mixing files with and without `timescale` elaborates (trivergence's F7-F2, AssertLLM2's i2c_slave) | in progress (approved by the user 2026-10-15) |
