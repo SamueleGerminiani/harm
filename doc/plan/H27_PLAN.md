@@ -1,6 +1,6 @@
 # H27 plan: pinned and checked third-party downloads
 
-*Status: proposed 2026-10-15. Asked by the user (2026-10-15: "OK", on the miner portfolio's question whether HARM's downloads should be pinned) after trivergence's first image build with the portfolio's `scripts/build_miners.sh` (its F7). Branch `ms/H27-pinned-downloads` from `dev` @ `6f736fa`. Effort: about half a day, then one fresh install on Linux and on macOS.*
+*Status: approved by the user 2026-10-15 ("go ahead with harm h27"). Asked by the user (2026-10-15: "OK", on the miner portfolio's question whether HARM's downloads should be pinned) after trivergence's first image build with the portfolio's `scripts/build_miners.sh` (its F7). Branch `ms/H27-pinned-downloads` from `dev` @ `6f736fa`. Effort: about half a day, then one fresh install on Linux and on macOS.*
 
 ## Why
 trivergence builds HARM into its toolchain image from these scripts. Its first build showed two problems:
