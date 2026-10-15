@@ -409,6 +409,19 @@ if(PYTHON3_FOUND)
     set_tests_properties(h3b_atom_premises PROPERTIES LABELS regression)
 endif()
 
+# ---- H29: the pairs of --reduce implies (a shared consequent atom; --implies-max-pairs) -----------
+set(H29 ${CMAKE_SOURCE_DIR}/tests/input/h29)
+add_test(NAME h29_needs_reduce_implies
+    COMMAND $<TARGET_FILE:harm> --csv ${H29}/reduce.csv --conf ${H29}/reduce.xml --implies-max-pairs 5 --psilent)
+set_tests_properties(h29_needs_reduce_implies PROPERTIES LABELS regression
+    PASS_REGULAR_EXPRESSION "--implies-max-pairs needs --reduce implies")
+if(PYTHON3_FOUND)
+    add_test(NAME h29_implies_pairs
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_implies_pairs.py $<TARGET_FILE:harm>
+                ${H29}/reduce.csv ${H29}/reduce.xml)
+    set_tests_properties(h29_implies_pairs PROPERTIES LABELS regression)
+endif()
+
 # ---- H11: --version (A5) --------------------------------------------------------------------------
 add_test(NAME h11_version COMMAND $<TARGET_FILE:harm> --version)
 set_tests_properties(h11_version PROPERTIES LABELS regression
