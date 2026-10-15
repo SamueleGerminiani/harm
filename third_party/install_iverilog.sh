@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail  # H27: a failed step stops the script
 # Icarus Verilog (the 4-state fixture generator, H1), from the release sources.
 # Usage: install_iverilog.sh [install prefix]   (default: third_party/iverilog)
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -9,7 +10,8 @@ tools_setup iverilog "${1:-}"
 tools_require autoconf make flex bison gperf
 work="$(mktemp -d)"
 cd "$work"
-tools_fetch "https://github.com/steveicarus/iverilog/archive/refs/tags/${IVERILOG_TAG}.tar.gz" i.tar.gz
+IVERILOG_SHA256=c897bbfa9848688982c6d5c30529fc29d68df0b9ff22ffa73bad89db73a7ce49  # H27: from the download of 2026-10-15
+tools_fetch "https://github.com/steveicarus/iverilog/archive/refs/tags/${IVERILOG_TAG}.tar.gz" "$IVERILOG_SHA256" i.tar.gz
 tar -xf i.tar.gz && rm i.tar.gz
 cd "iverilog-${IVERILOG_TAG#v}"
 sh autoconf.sh

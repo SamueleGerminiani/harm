@@ -37,6 +37,8 @@ cd antlr4_tmp/runtime/Cpp
 mkdir build && cd build
 git fetch --all --tags --prune
 git checkout 4.13.2
+ANTLR_COMMIT=cc82115a4e7f53d71d9d905caa2c2dfa4da58899  # H27: tag 4.13.2's commit; a moved tag is refused
+[ "$(git rev-parse HEAD)" = "$ANTLR_COMMIT" ] || { echo "install_antlr.sh: tag 4.13.2 is $(git rev-parse HEAD), expected $ANTLR_COMMIT" >&2; exit 1; }
 cmake -DCMAKE_C_COMPILER="$CC" -DCMAKE_CXX_COMPILER="$CXX" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$installPrefix" -DCMAKE_CXX_STANDARD=17 ..
 make -j"$NThreads"
 make install

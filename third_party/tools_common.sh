@@ -53,10 +53,8 @@ tools_require() {
 }
 
 # tools_fetch <url> <archive> : download into the current directory
+# tools_fetch <url> <sha256> <file>: H27's checked download (fetch.sh)
+source "$(dirname "${BASH_SOURCE[0]}")/fetch.sh"
 tools_fetch() {
-    if command -v wget >/dev/null; then
-        wget -q --no-check-certificate "$1" -O "$2"
-    else
-        curl -sSL "$1" -o "$2"
-    fi
+    fetch "$1" "$2" "$3"
 }

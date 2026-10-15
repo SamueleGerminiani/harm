@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail  # H27: a failed step stops the script
 
 NThreads=1
 
@@ -28,12 +29,15 @@ if [[ "$OSTYPE" == "darwin"* && -z "${SDKROOT:-}" ]]; then
 fi
 echo "Building with CC=$CC CXX=$CXX ($("$CXX" --version | head -1))${SDKROOT:+ SDKROOT=$SDKROOT}"
 
-wget --no-check-certificate https://archives.boost.io/release/1.83.0/source/boost_1_83_0.tar.gz
+here="$(cd "$(dirname "$0")" && pwd)"
+source "$here/fetch.sh"
+BOOST_SHA256=c0685b68dd44cc46574cce86c4e17c0f611b15e195be9848dfd0769a0a207628  # H27: boost.io's published value
+fetch https://archives.boost.io/release/1.83.0/source/boost_1_83_0.tar.gz "$BOOST_SHA256" boost_1_83_0.tar.gz
 tar -xvf boost_1_83_0.tar.gz
 cd boost_1_83_0
 bash bootstrap.sh
 # b2 ignores CC/CXX: select the toolset explicitly; only regex is a compiled library used by HARM
-if "$CXX" --version | grep -qi clang; then
+if "$CXX" --version 2>/dev/null | grep -i clang >/dev/null; then  # no -q: under pipefail an early exit fails the pipe
     toolset=clang
 else
     toolset=gcc
