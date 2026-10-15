@@ -80,6 +80,8 @@ extern std::string harmVersion;
 ///--atom-premises, --atom-premises-max (H3b, D-025)
 extern bool atomPremises;
 extern size_t atomPremisesMax;
+///--implies-max-pairs (H29): --reduce implies is skipped for a context with more pairs; 0: no cap
+extern size_t impliesMaxPairs;
 ///--dump-coi-report (H9, D-022)
 extern std::string dumpCoiReport;
 ///--dump-vac-ass

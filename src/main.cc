@@ -336,6 +336,10 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::atomPremises = true;
     messageErrorIf(clc::reduce != "implies", "--atom-premises needs --reduce implies");
   }
+  if (result.count("implies-max-pairs")) {
+    clc::impliesMaxPairs = result["implies-max-pairs"].as<size_t>();
+    messageErrorIf(clc::reduce != "implies", "--implies-max-pairs needs --reduce implies");
+  }
   if (result.count("atom-premises-max")) {
     clc::atomPremisesMax = result["atom-premises-max"].as<size_t>();
     messageErrorIf(!clc::atomPremises, "--atom-premises-max needs --atom-premises");

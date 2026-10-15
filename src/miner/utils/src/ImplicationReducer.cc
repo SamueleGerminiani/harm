@@ -558,6 +558,7 @@ struct Abstracted {
   spot::formula f;     // infinite-word semantics
   HarmModel harm;      // HARM's finite-trace semantics
   std::set<std::string> atoms;
+  std::set<std::string> consequentAtoms; // H29: the atoms of the consequent's leaves
   spot::twa_graph_ptr aut, negAut; // translated lazily
 };
 
@@ -682,6 +683,15 @@ Abstracted abstractFormula(
       a.atoms.insert(tokens.at(at.get()));
     }
   }
+  for (const auto &l : leafOffsets(te)) {
+    if (!l.inAntecedent) {
+      std::vector<PropositionPtr> atoms;
+      collectAtoms(l.prop, atoms);
+      for (const auto &at : atoms) {
+        a.consequentAtoms.insert(tokens.at(at.get()));
+      }
+    }
+  }
   std::string text = temp2StringSubst(te, Language::SpotLTL, subst);
   spot::parsed_formula pf = spot::parse_infix_psl(text);
   if (!pf.errors.empty()) {
@@ -787,7 +797,7 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records,
                     unsigned z3TimeoutMs, size_t *pairsChecked,
-                    const AtomPremises &premises) {
+                    const AtomPremises &premises, size_t maxPairs, bool *skipped) {
   const size_t n = in.size();
   std::vector<TemporalExpressionPtr> formulas;
   for (const auto &a : in) {
@@ -803,39 +813,72 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
     text.push_back(a->toString());
   }
 
-  // pairs that share an atom (sound, incomplete: F4)
+  // H29: the pairs that share a consequent atom, or whose consequent atoms a fact links (H3b).
+  // Sound and incomplete (F4): a pair left out is an implication not found, never a wrong drop.
+  // A ⇒ B with no such link holds only if B is vacuous under A or its consequent follows from
+  // its own antecedent. Counted exactly in O(n) memory; stored only up to maxPairs
   std::map<std::string, std::vector<size_t>> byAtom;
   for (size_t i = 0; i < n; i++) {
     if (abs[i].ok && abs[i].safety) {
-      for (const auto &at : abs[i].atoms) {
+      for (const auto &at : abs[i].consequentAtoms) {
         byAtom[at].push_back(i);
       }
     }
   }
-  std::set<std::pair<size_t, size_t>> candidates;
-  for (const auto &[at, idx] : byAtom) {
-    for (size_t x = 0; x < idx.size(); x++) {
-      for (size_t y = x + 1; y < idx.size(); y++) {
-        candidates.emplace(idx[x], idx[y]);
-      }
+  std::map<std::string, std::set<std::string>> linked;
+  for (const auto &f : facts.list) {
+    if (byAtom.count(f.p) && byAtom.count(f.q)) {
+      linked[f.p].insert(f.q);
+      linked[f.q].insert(f.p);
     }
   }
-  // H3b: also the pairs linked only by a fact between their atoms
-  for (const auto &f : facts.list) {
-    auto pi = byAtom.find(f.p), qi = byAtom.find(f.q);
-    if (pi == byAtom.end() || qi == byAtom.end()) {
+  std::vector<std::pair<size_t, size_t>> candidates;
+  std::vector<size_t> seenBy(n, n);
+  size_t count = 0;
+  bool store = true;
+  auto visit = [&](size_t i, const std::vector<size_t> &group) {
+    for (size_t j : group) {
+      if (j == i || seenBy[j] == i) {
+        continue;
+      }
+      seenBy[j] = i;
+      if (j < i) {
+        continue; // counted from j
+      }
+      count++;
+      if (!store) {
+        continue;
+      }
+      if (maxPairs > 0 && count > maxPairs) {
+        store = false;
+        std::vector<std::pair<size_t, size_t>>().swap(candidates);
+      } else {
+        candidates.emplace_back(i, j);
+      }
+    }
+  };
+  for (size_t i = 0; i < n; i++) {
+    if (!(abs[i].ok && abs[i].safety)) {
       continue;
     }
-    for (size_t x : pi->second) {
-      for (size_t y : qi->second) {
-        if (x != y) {
-          candidates.emplace(std::min(x, y), std::max(x, y));
+    for (const auto &at : abs[i].consequentAtoms) {
+      visit(i, byAtom[at]);
+      auto l = linked.find(at);
+      if (l != linked.end()) {
+        for (const auto &q : l->second) {
+          visit(i, byAtom[q]);
         }
       }
     }
   }
   if (pairsChecked != nullptr) {
-    *pairsChecked = candidates.size();
+    *pairsChecked = count;
+  }
+  if (skipped != nullptr) {
+    *skipped = !store;
+  }
+  if (!store) {
+    return in;
   }
   std::vector<std::vector<bool>> imp(n, std::vector<bool>(n, false));
   std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
