@@ -1425,3 +1425,5 @@ Ready for the user's sign-off.
 - **T3 on Linux:** default arguments, `--max-threads 4`: the step runs (2,289,548 pairs, 189 s, 2,550 dropped), 8,491 kept; the sorted assertion list's sha256 `4a222e05…` equals the Mac's. HARM 268 s in all (H32, step skipped: 88 s); max RSS 221 MB.
 
 Ready for the user's sign-off.
+
+**H33 signed off by the user 2026-10-16** ("ok, I approve"); merged into `dev`.

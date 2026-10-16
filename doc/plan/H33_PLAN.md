@@ -1,6 +1,6 @@
 # H33 plan: no default cap on `--reduce implies`
 
-*Status: approved by the user 2026-10-16 ("I approve H33, remove the cap"). Owner: the portfolio's Mac session. Branch `ms/H33-implies-no-cap` from `dev` @ `b60a8f4` (H32 merged). Effort: about an hour, plus a Linux run.*
+*Status: signed off by the user 2026-10-16 ("ok, I approve"); approved by the user 2026-10-16 ("I approve H33, remove the cap"). Owner: the portfolio's Mac session. Branch `ms/H33-implies-no-cap` from `dev` @ `b60a8f4` (H32 merged). Effort: about an hour, plus a Linux run.*
 
 ## Why
 `--implies-max-pairs` (H29) skips the implication step for a context with more than 2,000,000 pairs by default. harm-rel on AssertLLM2's `i2c_slave` has 2.29 M pairs, so its step is skipped and all 11,041 assertions go to formal proof (trivergence's F7 test: 50 minutes). The user asked whether the reduction is always cheaper than proving what it drops; the miner portfolio measured it (2026-10-16, scratch script, not committed):
