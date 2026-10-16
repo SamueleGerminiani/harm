@@ -1341,3 +1341,19 @@ The tests were written first and committed failing (`b5e9a92`).
   - i2c_slave with this binary: 125 s in total (642 s at `bf490b0`); the step checks 1,192,278 pairs in 89.9 s and drops 1,744; 4,737 kept, the same as on the Mac.
 
 **H29 signed off by the user 2026-10-16** ("I approve H29 and F7C"); merged into `dev`. The LogTest race stays open, as a separate fix.
+
+## H30: one message at a time on the console (2026-10-16; owner the portfolio's Mac session)
+- **Why:** on Linux, H11f's `LogTest.concurrentThreadsKeepOneValidLog` crashed now and then (H29's run: 1 of 277). `messageInfo`, `messageWarning` and `messageError` printed outside any lock, and the test's 8 threads printed into one shared `std::ostringstream`, which is not thread-safe. In HARM's own runs `std::cout` is stdout, which does not crash, but the characters of messages from several threads could interleave.
+- **Change:** each message's text is built in a local string, then written and flushed under a new `consoleMutex` in `message.cc`. This mutex is separate from `logMutex`, so printing never waits for a log file's `flock`. The order (log file, then console) and the printed bytes are unchanged; the line breaks that were `std::endl` are `\n` with one flush at the end.
+- **Tests** (written first, committed failing in `e1a47e6`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `consoleWarningsDoNotInterleave`: 8 threads × 200 warnings into a stream buffer that notices overlapping writers | failed every run (about 1,300 overlaps; 0 of 1,600 whole blocks) | pass |
+| T2 | `consoleInfosDoNotInterleave`, the same for infos | failed every run | pass |
+| T3 | `concurrentThreadsKeepOneValidLog` also checks its sink: 1,600 whole warnings | passed on the Mac (the race is rare there) | pass |
+| T4 | `consoleTextIsUnchanged` (info, warning) and `LogTestDeathTest.consoleErrorTextIsUnchanged` | pass | pass |
+| T6 | Mac: whole `ctest -j8` | | 277 of 277 tests, no failure (1,889 s); `ctest -R LogTest --repeat until-fail:50` passed |
+
+- **Docs:** release notes (milestone row), the report's introduction (39 milestones, H0–H30), its portability section (F-L9) and its milestone table.
+- **T5 (Linux):** pending, through trivergence's session.
