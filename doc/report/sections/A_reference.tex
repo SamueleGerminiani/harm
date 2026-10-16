@@ -144,5 +144,6 @@ H26 & constants assigned outside a reset branch as consequents & only the reset 
 H27 & pinned and checked third-party downloads (SHA-256, antlr4's tag commit, errexit) & downloads were version-pinned only, three without a certificate check; a failed download surfaced later as a CMake error \\
 H28 & \code|harm-coi|'s default timescale (\code|1ns/1ps|) & a design mixing files with and without \code|`timescale| did not elaborate \\
 H29 & the pairs of \code|--reduce implies| (a shared consequent atom; \opt{implies-max-pairs}) & any shared atom linked a pair, so the reset in every antecedent linked nearly all: \code|i2c_slave| spent 607 of 642\,s there \\
+H30 & one message at a time on the console & messages were printed outside any lock: from several threads their characters could interleave, and a test pointing \code|std::cout| at one string stream crashed now and then on Linux \\
 \bottomrule
 \end{longtable}
