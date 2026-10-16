@@ -1357,3 +1357,24 @@ The tests were written first and committed failing (`b5e9a92`).
 
 - **Docs:** release notes (milestone row), the report's introduction (39 milestones, H0–H30), its portability section (F-L9) and its milestone table.
 - **T5 (Linux):** pending, through trivergence's session.
+
+## H31: the report brought up to date (2026-10-16, macOS 15.3.2 arm64; documentation only)
+- **Why:** the user asked to update the report with what changed since it was written. The committed PDF dated from 2026-10-10 (no H21–H30); `harm-coi`'s features since H10 were one-line bullets under the portability section's "Smaller changes"; the limitations contradicted H23 and H29; the validation section counted 233 tests.
+- **Change:**
+  - `06_harm_coi.tex`: hints (H22), relations (H24, with a runnable example on `counter`), signed RTL (H25), constants (H26), elaboration (H23, H28); the bullets in `07_portability.tex` replaced by a pointer;
+  - `01_introduction.tex`: "What is new" (harm-coi's hints and relations, the dumps for other tools, the bound on implication pairs, operators as in SystemVerilog), the figure's `--hints`;
+  - `09_limitations.tex`: the reduction cost after H29, the H23 limit removed, parallel implication checks as future work;
+  - `08_validation.tex`: the oracles of H15, H16, H18, H19, H22, H24/H25, H25 and H29, mutation rows for H15 and H18, 277 tests;
+  - `A_reference.tex`: `harm-coi`'s options; H31's row; release notes' H31 row;
+  - the PDF rebuilt (31 pages).
+- **Tests** (written first, committed failing in `d926f8c`; in `check_coverage.py`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | every `harm-coi` option in the reference | 19 missing | pass |
+| T2 | H5, H5a, H10, H22, H24, H25, H26, H28 cited in the `harm-coi` section | 5 missing | pass |
+| T3 | the committed PDF cites every milestone on the board | 10 missing (H22–H31) | pass |
+| T4 | `ctest -L doc`: `h14_report_builds`, `h14_doc_coverage`, `h14_doc_examples` (14 examples, harm-coi's included) | | 3 of 3 |
+| T5 | read-through of the rendered PDF (pdftotext): the new section, introduction, limitations, validation and reference tables | | one example line wrapped badly, fixed; every claim checked against VALIDATION and DECISIONS (the D1 counts restated as tuning and held-out bugs) |
+
+- No private path or secret in the diff or the PDF's text. HARM's code is unchanged, so no Linux run.
