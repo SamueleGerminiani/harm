@@ -71,6 +71,27 @@ struct DTSolution {
     }
   }
 
+  ///the text that identifies the solution among the known ones (AntecedentGenerator); its
+  ///propositions in the order of sortByWidth()
+  std::string key(bool multidimensional) const {
+    DTSolution s = *this;
+    s.sortByWidth();
+    std::string res;
+    if (multidimensional) {
+      for (auto &pack : s._solution) {
+        for (auto &p : pack) {
+          res += prop2String(p) + "$";
+        }
+        res += "$";
+      }
+    } else {
+      for (auto &p : s.getUnidimensionalSolution()) {
+        res += prop2String(p) + "$";
+      }
+    }
+    return res;
+  }
+
   std::string toString() const {
     std::string res;
     for (size_t i = 0; i < _solution.size(); i++) {
