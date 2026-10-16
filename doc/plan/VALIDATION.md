@@ -1384,3 +1384,19 @@ Ready for the user's sign-off.
 - No private path or secret in the diff or the PDF's text. HARM's code is unchanged, so no Linux run.
 
 **H31 signed off by the user 2026-10-16** ("I sign off H31"). It merges into `dev` after H30, on whose branch it is based.
+
+## H32: the decision tree's known solutions in text order (2026-10-16; owner the portfolio's Mac session)
+- **Why:** trivergence's F7 parity test on miner portfolio v1.0.2: harm-rel on AssertLLM2's `i2c_slave` kept 11,039 and 11,037 assertions from byte-identical inputs (`--max-threads 4`).
+- **Investigation** (scratch builds; H32_PLAN has the steps): not Z3 (the slowest of 3,736 queries 6 ms, none timed out, work counts equal between runs); reproduced on the Mac in 3 of 16 full runs, always the same family `X ##1 clearStartStopDet |-> CurrState_SISt == 4'b1111`; one permutation never varied (200 of 200), 13 consequents varied in 8 of 40. The tree's log showed one candidate stored in one run and skipped as known in another: `isKnownSolution` keyed the antecedent after sorting its propositions by address (`sortByWidth()`).
+- **Change:** `DTSolution::key` (new, used by `isKnownSolution`) lists the propositions in text order; `sortByWidth` has no default order. Docs: release notes, the report (41 milestones, a "same assertions in every run" item in the portability section, the milestone table), PDF rebuilt.
+- **Tests** (written first, committed failing in `387d2d1`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `DTSolutionTest.keyIgnoresObjectOrder`: the same two texts in objects of opposite address order give one key, in text order | fail (`true$false$$` against `false$true$$`) | pass |
+| T2 | `i2c_slave` harm-rel with trivergence's inputs (not committed), `--max-threads 4`, two to four runs at once: 8 full runs; the 13-consequent cut 40 runs | 3 of 16 full and 8 of 40 cut runs differed | 8 of 8 identical (11,041); 40 of 40 identical (1,434) |
+| T3 | `ctest -j8` on macOS, the H0 baselines included | | 277 of 277 (1,940 s) |
+| T4 | the miner portfolio's corpus (8 fixtures and 12 D1 designs, harm and harm-rel, 2 runs each), kept sets against HARM before H32 | | 80 of 80 identical |
+
+- `i2c_slave`'s 11,041 are the usual 11,037 and the 4 of the family, now always found (they are kept whenever the tree reaches them, as it did in some runs before); nothing lost.
+- **T3 on Linux and T5** (trivergence's F7 tests on the next portfolio release): pending.
