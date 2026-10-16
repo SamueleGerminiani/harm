@@ -53,3 +53,49 @@ always (cnt == 4'b1001 && en ##1 1'b1 |-> cnt == 4'b0)
 always (rst ##1 1'b1 |-> cnt == 4'b0)
 \end{lstlisting}
 For GoldMine-style mining, the mode is changed to \code|filter|, with \code|depth| as needed.
+
+\subsection{Hints from the RTL (H22, D-036)}\label{sec:hints}
+Predicates give HARM an alphabet, but every target still gets the same template, and every proposition may sit on either side of an implication. In trivergence an LLM supplies the rest from the specification: signal roles, where a proposition may go, templates. \code|--hints FILE.json| writes the same kinds of hint from the RTL, in a file an LLM could also write (\file{doc/schemas/hints.v1.json}; each entry says \code|origin: rtl| or \code|llm|), so that the two sources can be compared and merged. The ground rule is that hints shape roles and timing only, never which signal may explain which: a bug that cuts or adds a connection cannot hide an assertion, as the cone filter can.
+\begin{itemize}
+\item \textbf{Roles.} Each visible signal is an \code|input| (a top input port), a \code|reset| (named by \code|--reset|, or an asynchronous control), a \code|const|, a \code|clock|, \code|unknown| (as in the cone file), \code|comb| (a source at depth~0) or \code|state| (every source at depth $\ge 1$), with a flag \code|control| when an RTL condition reads it.
+\item \textbf{Placement.} A predicate may be a consequent only if it reads a \code|comb|, \code|state| or \code|unknown| signal. An assertion whose consequent reads only inputs, resets or constants fails any formal check unless it is a tautology, so such predicates are antecedents only (\code|loc="a, dt"|).
+\item \textbf{Templates.} One per class of target: \code+G({..#1&..}|-> P0(1))+ for combinational and unknown targets, \code+G({..#1&..}|=> P0(2))+ for registers, which show their inputs one cycle later.
+\end{itemize}
+\code|--emit-config| then writes the configuration from the hints file, all of it (\code|--hints-use all|, the default) or the placement only (\code|--hints-use placement|). Without \code|--hints| the output is byte-identical to that of \ms{H10}. An independent oracle recomputes the hints from \code|coi.json| alone; it agrees on the 7 fixtures and on all 21 designs of the miner portfolio's corpus. On the portfolio's measurement, the templates raised the proved assertions on every design that mines in the \code|filter| mode (\texttt{fsm} 8 to 25, \texttt{arbiter} 10 to 18).
+
+\subsection{Relations from the RTL (H24, D-038)}\label{sec:relations}
+On the miner portfolio's D1 corpus (12 small designs with 49 planted bugs; a bug counts as caught when a formal tool refutes, on the buggy design, an assertion mined on the correct one), HARM caught 14 of the 37 bugs used for tuning. Traced bug by bug, the misses came from the alphabet, not the mining: signals that are only assigned had no proposition, data relations had none, 1-bit flags had one polarity, and reset assertions (\code+rst |=> ...+) are vacuous under the \code|disable iff (rst)| that trivergence's checks use. With \code|--hints| and \code|--emit-config|, \texttt{harm-coi} therefore also writes \emph{relations} (\code|origin="rtl-relation"|), each with its own domain and template:
+\begin{itemize}
+\item an unconditional assignment as an equation, with SystemVerilog's widths kept (\code|wrap == (en && (cnt == 4'd9))|), under \code+G({!rst}|-> P0(5))+ for combinational targets and \code+G({!rst}|=> P0(4))+ for registers, whose right-hand side is read one cycle earlier with \code|$past|;
+\item a register's value at the end of reset, under \code+G({$fell(rst)}|-> P0(3))+;
+\item a conditional assignment's equation and, for a register assigned under a condition, \code|$stable(x)|, in single-cycle decision trees (\code|1D,3W,3A|) that find the condition;
+\item both polarities of a 1-bit flag.
+\end{itemize}
+On the \texttt{counter} fixture:
+% example
+\begin{lstlisting}
+$ harm-coi --top counter --files tests/input/coi/counter/rtl/counter.sv \
+    --vcd-scope tb::dut --vcd-recursion 0 --vcd tests/input/coi/counter/trace.vcd \
+    --predicates --reset rst --hints $OUT/hints.json \
+    --emit-config $OUT/counter.xml -o $OUT/coi.json
+$ grep -E 'rtl-relation|fell' $OUT/counter.xml
+<prop exp="wrap == (en &amp;&amp; (cnt == 4'd9))" loc="c, 5" origin="rtl-relation"/>
+<prop exp="$stable(cnt)" loc="c, 7" origin="rtl-relation"/>
+<template dtLimits="5D,3W,15A,-0.1E,U" exp="G({$fell(rst)}|-&gt; P0(3))"/>
+$ harm --vcd tests/input/coi/counter/trace.vcd --clk clk --vcd-ss tb::dut --vcd-r 0 \
+    --conf $OUT/counter.xml --sva --dont-print-ass --dump-to $OUT/counter.txt > /dev/null
+$ grep -E 'past|stable|fell' $OUT/counter.txt | head -3
+always (!rst && en |=> cnt == ($past((cnt == 4'b1001 ? 4'b0 : cnt + 4'b1)) & 4'b1111))
+always (!en && !rst |=> $stable(cnt))
+always (cnt == 4'b0 && en |=> cnt == ($past((cnt == 4'b1001 ? 4'b0 : cnt + 4'b1)) & 4'b1111))
+\end{lstlisting}
+Relations restate the RTL. They catch a design that has changed since it was mined, which is what trivergence and the portfolio's bug hunts ask; they cannot catch a bug that the mined RTL already has. With relations, HARM caught 34 of the 37 tuning bugs and 11 of the 12 held out, 45 of 49 (\ms{H24}); 46 after \ms{H25} and 47 after \ms{H26}, losing none it caught before; on the portfolio's three larger designs the mining loop took 1.1 to 2.5 times longer. Relations became the default with \code|--hints| at \ms{H24}'s sign-off; \code|--no-relations| restores the earlier output. Two oracles check them: every unconditional relation must hold at every cycle of the golden trace after reset, by an evaluator written for the test and, since \ms{H25}, by HARM's own evaluation. Numeric hints (value clusters) were tried and dropped: on D1 they caught nothing the relations missed.
+
+\subsection{Signed RTL (H25, D-039)}
+A trace carries no signedness: HARM reads a VCD vector as an unsigned \code|logic|. \texttt{harm-coi} therefore wrote the signed comparison \code|sum > 13'sd2047| as \code|sum > 13'd2047|, true for every negative \code|sum|, and dropped comparisons with negative constants and relations with a sign extension. HARM now reads SystemVerilog's \code|$signed(e)| and \code|$unsigned(e)| (IEEE~1800-2017, 20.5): it evaluates them with D-035's rules, encodes them for Z3 and prints them as written. \texttt{harm-coi} writes a comparison of signed operands on \code|$signed| with a signed constant, a sign extension as \code|$unsigned($signed(x) + 13'sd0)|, a signed shift as \code|$unsigned($signed(a) >>> n)|, and the RTL's own casts. The \code|$unsigned| around an extension matters: alone, \code|$signed(x) + 13'sd0| sits in the relation's unsigned context and is zero-extended, by SystemVerilog and by HARM alike. HARM evaluated that first rendering false on 289 of 502 samples, which the trace oracle, computing with unbounded integers, did not see; this is why HARM's own evaluation became the relations' second oracle. 163 expressions with casts agree with Icarus Verilog, and Z3 is checked on every 4-valued assignment of 9 pairs with casts.
+
+\subsection{Constants outside the reset branch (H26, D-040)}
+\ms{H10} made a proposition of a constant only in a reset branch. A constant assigned elsewhere, such as a saturated value (\code|acc <= 12'sd2047|), now gives \code|acc == 12'd2047| as a consequent of the relations' trees (\ms{H25}'s form when it is negative). A constant signal, a 1-bit target (both polarities exist already) and a target with more than 8 distinct constants (a lookup table: \texttt{aes\_cipher} has 5{,}121) are left out. The trees take three propositions since \ms{H26}: the guard that a formal tool required for the negative saturation, \code|en && !clr && $signed(sum) < -13'sd2047|, has three. Mining time was unchanged within noise.
+
+\subsection{Elaboration (H23, H28)}
+\texttt{harm-coi} gives slang the default timescale \code|--timescale 1ns/1ps|, as trivergence and OpenFPV do, so a design that mixes files with and without a \code|`timescale| directive elaborates (\ms{H28}); a file's own directive still governs it. HARM's keyword list (\ms{H23}) is shared with \texttt{harm-coi}, which writes a signal named after a HARM keyword as an escaped identifier (\code|\W |).

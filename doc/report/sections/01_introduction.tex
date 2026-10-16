@@ -22,10 +22,11 @@ HARM v4 was developed for two uses.
 \subsection{What is new}
 \begin{itemize}
 \item \textbf{Default output} (\cref{sec:default}): deterministic order; valid SystemVerilog; correct brackets in Spot LTL; SystemVerilog vector indices; bug fixes.
-\item \textbf{Proposition language and semantics} (\cref{sec:language}): SystemVerilog literals and operators, invariant templates, skipping invalid propositions, HARM's rule for unknown (\code|x|/\code|z|) values, and the end-of-trace semantics of a simulator as an option.
-\item \textbf{Semantic redundancy reduction} (\cref{sec:reduction}): equivalent propositions (Z3), implied assertions (Spot and an exact model of HARM's evaluation), and facts between comparisons.
+\item \textbf{Proposition language and semantics} (\cref{sec:language}): SystemVerilog literals and operators, invariant templates, skipping invalid propositions, HARM's rule for unknown (\code|x|/\code|z|) values, and the end-of-trace semantics of a simulator as an option. Operators also bind, evaluate and print as in SystemVerilog, with its widths, signedness, \code|$signed| and \code|$unsigned|, and a signal may be named after a HARM keyword (\cref{sec:smaller}).
+\item \textbf{Semantic redundancy reduction} (\cref{sec:reduction}): equivalent propositions (Z3), implied assertions (Spot and an exact model of HARM's evaluation), facts between comparisons, and a bound on the pairs checked.
 \item \textbf{Cones of influence} (\cref{sec:coi}): a file format, a rank mode that scores assertions by structural plausibility, a filter mode that prunes the search, with or without depths, and a report of the propositions outside each cone.
-\item \textbf{\texttt{harm-coi}} (\cref{sec:harmcoi}): a generator of cones and RTL predicates from SystemVerilog.
+\item \textbf{\texttt{harm-coi}} (\cref{sec:harmcoi}): a generator of cones, RTL predicates and hints from SystemVerilog: signal roles, where each proposition may go, templates per kind of target, and relations that restate the RTL's assignments (signed arithmetic included), which let HARM catch 47 of the 49 bugs of the miner portfolio's D1 corpus.
+\item \textbf{Interfaces for other tools}: JSON dumps of each kept assertion (with the implication step's record), of the dropped ones, of the out-of-cone report and of every proposition's value at every cycle (\cref{sec:reference}), so that trivergence and the miner portfolio need no VCD reader or evaluator of their own.
 \item \textbf{Determinism and portability} (\cref{sec:portability}): one toolchain, Linux and macOS with identical results, the test tools in \file{third_party/}, profiling as an option.
 \item \textbf{Validation} (\cref{sec:validation}): the oracles behind each component, and the tests of the oracles.
 \end{itemize}
@@ -53,7 +54,7 @@ HARM v4 was developed for two uses.
 \draw[arr] (coi) -- (json);
 \draw[arr] (rtl) -- (sim);
 \draw[arr] (sim) -- (vcd);
-\draw[arr,dashed] (coi.north) |- node[above,pos=0.75,font=\scriptsize]{\texttt{-{}-emit-config}} (cfg.west);
+\draw[arr,dashed] (coi.north) |- node[above,pos=0.75,font=\scriptsize]{\texttt{-{}-emit-config}, \texttt{-{}-hints}} (cfg.west);
 \draw[arr] (json.east) -- (json.east -| harm.west);
 \draw[arr] (cfg.east) -- ++(4mm,0) |- ($(harm.west)+(0,9mm)$);
 \draw[arr] (vcd.east) -- ++(4mm,0) |- ($(harm.west)+(0,-9mm)$);

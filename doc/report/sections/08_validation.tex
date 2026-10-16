@@ -28,6 +28,14 @@ Out-of-cone report (H9) & hand-written reports, and the rule recomputed in Pytho
 Predicates (H10) & hand-labelled predicates per fixture; Z3 finds no duplicates; no predicate is constant on its trace & pass, 26 predicates \\
 Vector indices (H11c) & Verilator prints 14 selects on four vectors every cycle; HARM evaluates the same selects & equal on all $41\times14$ \\
 Same results on two platforms (H12) & the fixture table (46 runs) on macOS and Linux, compared count by count & 46 of 46 equal \\
+Proposition table (H15) & check mode's evaluation, and a VCD reader and evaluator written for the test, cell by cell & equal on every cell \\
+\opt{check-dump-eval} files (H16) & every row recomputed in Python from the CSV trace & equal, 12 assertions $\times$ 8 rows \\
+Operators (H18) & Icarus Verilog on 1{,}212 expressions (every pair of 17 binary operators, unary prefixes, 7 operand types), cross-checked with IEEE~1800-2017 and C11 & 861 agree on every row; the other 351 deferred to H19 by written rules \\
+Evaluation (H19) & Icarus Verilog under HARM's x/z rule on 2{,}337 expressions (signedness, shifts, divisions by zero, x/z in arithmetic, literals) & pass; two Icarus bugs found and avoided \\
+Hints (H22) & an oracle that recomputes roles, placement and classes from \code|coi.json| alone & equal on 7 fixtures and 21 corpus designs \\
+Relations (H24, H25) & every unconditional relation evaluated at every cycle of the golden trace by an evaluator written for the test and, since H25, by HARM's own evaluation & hold on 5 fixtures; H25's first sign extension caught (false on 289 of 502 samples) \\
+Sign casts (H25) & Icarus Verilog on 163 expressions with \code|$signed|/\code|$unsigned|; Z3 against every 4-valued assignment of 9 pairs & 163 of 163; no unsound answer \\
+Implication pairs (H29) & the kept sets of the earlier filter on the miner portfolio's corpus; a hand-counted fixture & equal in 40 of 40 runs; 58 pairs, as counted \\
 \bottomrule
 \end{longtable}
 
@@ -56,6 +64,8 @@ H8 & distance off by one & unit tests and 12 end-to-end checks \\
 H8 & the tree's index ignored & 11 end-to-end checks \\
 H9 & unknown variables counted as out & the unknown-signal fixture \\
 H10 & literal width + 1 & 4 fixtures, unit tests \\
+H15 & values written one cycle late & the VCD test, against both oracles \\
+H18 & the old precedence of \code|!| & the operator fixture (23 cases) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -64,7 +74,7 @@ H10 & literal width + 1 & 4 fixtures, unit tests \\
 Writing tests first means some expectations turn out wrong. They were changed only with a recorded reason, and none to make an implementation pass. Examples: \ms{H5}'s blocking-temporary expectation (\cref{sec:harmcoi}); an \ms{H1} expectation that encoded the SVA precedence bug (\code|s_eventually b_1 until b_2| for \code|F b_1 W b_2|); an \ms{H1c} hand label (\code|!(b W c)| is a strong until, not safety); an \ms{H6} expected order with two equal scores in the wrong order (\code|X| sorts before \code|r| in ASCII, which is the D-001 tie-break).
 
 \subsection{The test suite}
-v3 had 35 tests; v4 has 233, run by \code|ctest| in about 32 minutes on either machine. They include the frozen regression baselines of every example (\ms{H0}), the determinism checks, the unit tests, the oracles above, and the documentation checks of this report (\ms{H14}). Tests that need a tool (Verilator, Icarus, yosys, \texttt{harm-coi}'s Python) are registered only when it is found.
+v3 had 35 tests; v4 has 277, run by \code|ctest -j8| in about 32 minutes on the Mac and 35 on the Linux machine. They include the frozen regression baselines of every example (\ms{H0}), the determinism checks, the unit tests, the oracles above, and the documentation checks of this report (\ms{H14}). Tests that need a tool (Verilator, Icarus, yosys, \texttt{harm-coi}'s Python) are registered only when it is found.
 
 \subsection{Not validated}
 \begin{itemize}

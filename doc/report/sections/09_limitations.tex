@@ -3,11 +3,11 @@
 \paragraph{Known limitations.}
 \begin{itemize}
 \item \textbf{Unknown values.} On cycles where a signal has \code|x| or \code|z| bits, HARM's verdicts can differ from a simulator's (\cref{sec:xz}). An option with SystemVerilog's semantics was withdrawn (D-024): it would break the complementarity of a proposition and its negation that the decision trees and the reductions rely on.
-\item \textbf{Reduction cost.} \opt{reduce} \code|implies| and \opt{atom-premises} grow with the square of the number of assertions. On outputs of a few thousand assertions they can take tens of minutes.
+\item \textbf{Reduction cost.} \opt{reduce} \code|implies| and \opt{atom-premises} grow with the square of the number of assertions. Since \ms{H29} only pairs that share a consequent atom are checked (on AssertLLM2's \texttt{i2c\_slave}, 6{,}481 assertions: 1.2\,M pairs instead of 5.7\,M, and 125\,s in all instead of 642\,s on Linux), and above \opt{implies-max-pairs} (2{,}000{,}000 by default) the implication step is skipped for the context and the skip recorded, so a very large output keeps the assertions that \code|equiv| keeps. The pairs are checked one at a time: Spot's BDD dictionary is global and not thread-safe.
 \item \textbf{Ties in the decision tree} are decided by the last bit of a floating-point score. Platforms agree because they now round the same operations the same way (\cref{sec:fma}); a different \code|libm| could still change a choice under the entropy heuristic. Rounding-independent tie-breaking would change every platform's results, and was left for a later decision.
 \item \textbf{Cones are signal-level.} A write to one bit of a register makes the whole register depend on itself; the schema reserves a per-bit field that is not used. The out-of-cone report does not use depths.
 \item \textbf{Mining on real designs.} On the AssertLLM2 designs used in the evaluation, the decision-tree template that \opt{generate-config} writes, over every signal, timed out within 10 minutes on every design tried, so the evaluation there ran only the configurations built from the RTL's predicates (\texttt{harm-coi} \code|--emit-config|), which have far fewer propositions.
-\item \textbf{Older limits, unchanged.} Some formulas the grammar accepts cannot be evaluated (\code|F X X (a W c)|, for which Spot gives a non-deterministic automaton); a trace signal named like an operator (\code|W|) cannot be loaded; the \texttt{camellia} example's configuration is not valid XML.
+\item \textbf{Older limits, unchanged.} Some formulas the grammar accepts cannot be evaluated (\code|F X X (a W c)|, for which Spot gives a non-deterministic automaton); the \texttt{camellia} example's configuration is not valid XML.
 \end{itemize}
 
 \paragraph{The evaluation and the release.} The measurements of what each configuration does on the fixtures, the examples and ten AssertLLM2 designs (D-026) are in \file{eval/results/} and are not part of this report. The release itself, merging \texttt{dev} into \texttt{main} with the tag \texttt{v4} (D-027), is deferred until the maintainers decide; until then, all fixes stay on \texttt{dev} (D-012).
@@ -15,7 +15,7 @@
 \paragraph{Future work.}
 \begin{itemize}
 \item the SystemVerilog operators HARM does not read yet: \code|%|, \code|**|, the reductions (\code|&v|, \code+|v+, \ldots) and \code|~^| (\ms{H20}, planned in \file{doc/plan/H20_PLAN.md}), and the functions \code|$onehot|, \code|$countones| and \code|$isunknown|;
-\item a faster implication reduction for large outputs;
+\item checking implication pairs in parallel (in processes, each with its own Spot dictionary), so that large outputs need not reach the cap;
 \item depths in the out-of-cone report (``in the cone, but not at the specification's delay'');
 \item a comparison with GoldMine on the designs it supports;
 \item diversity-aware selection under \opt{max-ass}, using USM-T's syntactic similarity;
