@@ -1421,4 +1421,7 @@ Ready for the user's sign-off.
 
 - No corpus design reaches the old cap (the largest, `d1-traffic` harm, has 41,632 pairs), so the corpus's output is unchanged.
 - Doc checks: `check.sh` (the PDF builds), `check_coverage.py`, `run_examples.py` (14 examples) pass. No private path or secret in the diff or the PDF's text.
-- **T2 on Linux:** pending (asked of trivergence's session).
+- **T2 on Linux** (Ubuntu 22.04 x86_64, trivergence's session, the portfolio clone at `cc7ff8f`): `ctest -j8` 277 tests, 0 failed, 1 skipped (`h14_report_builds`: no LaTeX), 2,107 s.
+- **T3 on Linux:** default arguments, `--max-threads 4`: the step runs (2,289,548 pairs, 189 s, 2,550 dropped), 8,491 kept; the sorted assertion list's sha256 `4a222e05…` equals the Mac's. HARM 268 s in all (H32, step skipped: 88 s); max RSS 221 MB.
+
+Ready for the user's sign-off.
