@@ -139,3 +139,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H27 | pinned and checked third-party downloads: SHA-256 for every tarball, antlr4's tag commit, errexit in the install scripts |
 | H28 | harm-coi's default timescale `1ns/1ps`: designs mixing files with and without `timescale` elaborate |
 | H29 | the pairs of `--reduce implies`: a shared consequent atom links a pair; `--implies-max-pairs` skips and records |
+| H30 | one message at a time on the console: messages from several threads no longer interleave |

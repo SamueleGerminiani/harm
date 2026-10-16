@@ -27,6 +27,16 @@ std::mutex logMutex;
 // a log write that fails reports through messageError, which writes the log again: such a nested
 // write is skipped (the message is still printed), instead of waiting for its own lock
 thread_local bool inLogWrite = false;
+// H30: a message is printed whole, one at a time: HARM's threads print through the same std::cout,
+// whose characters could otherwise interleave (and a std::cout pointed at a string stream, as in
+// the tests, is not thread-safe at all). Apart from logMutex, so printing never waits for a flock.
+std::mutex consoleMutex;
+
+void printWhole(std::ostream &out, const std::string &text) {
+  std::lock_guard<std::mutex> guard(consoleMutex);
+  out << text;
+  out.flush();
+}
 
 class LogLock {
 public:
@@ -156,10 +166,11 @@ void dumpWarningToFile(std::string message) {
 
 void _harm_internal_messageInfo(const std::string &message) {
   if (clc::isilent == 0) {
-    std::cout << "\e[1m[INFO] " << NowTime() << " - "
-              << "Message: " << message << std::endl
-              << "\033[0m";
-    std::cout.flush();
+    std::ostringstream text;
+    text << "\e[1m[INFO] " << NowTime() << " - "
+         << "Message: " << message << "\n"
+         << "\033[0m";
+    printWhole(std::cout, text.str());
   }
 }
 
@@ -169,13 +180,13 @@ void _harm_internal_messageWarning(const std::string &file,
   dumpWarningToFile(message);
 
   if (clc::wsilent == 0) {
-    std::cout << "\033[1;33m[WARNING] " << NowTime() << " - "
-              << "File: " << file << " -- "
-              << "Line: " << line << std::endl
-              << "\tMessage: " << message << std::endl
-              << "\033[0m";
-
-    std::cout.flush();
+    std::ostringstream text;
+    text << "\033[1;33m[WARNING] " << NowTime() << " - "
+         << "File: " << file << " -- "
+         << "Line: " << line << "\n"
+         << "\tMessage: " << message << "\n"
+         << "\033[0m";
+    printWhole(std::cout, text.str());
   }
 }
 
@@ -189,13 +200,13 @@ void _harm_internal_messageError(const std::string &file,
 
   dumpErrorToFile(message);
 
-  std::cerr << "\033[1;31m[ERROR] " << NowTime() << " - "
-            << "File: " << file << " "
-            << "at line " << line << std::endl
-            << "Message: " << message << std::endl
-            << "\033[0m";
-
-  std::cerr.flush();
+  std::ostringstream text;
+  text << "\033[1;31m[ERROR] " << NowTime() << " - "
+       << "File: " << file << " "
+       << "at line " << line << "\n"
+       << "Message: " << message << "\n"
+       << "\033[0m";
+  printWhole(std::cerr, text.str());
   assert(0);
   exit(1);
 }
