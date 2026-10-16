@@ -1356,4 +1356,6 @@ The tests were written first and committed failing (`b5e9a92`).
 | T6 | Mac: whole `ctest -j8` | | 277 of 277 tests, no failure (1,889 s); `ctest -R LogTest --repeat until-fail:50` passed |
 
 - **Docs:** release notes (milestone row), the report's introduction (39 milestones, H0–H30), its portability section (F-L9) and its milestone table.
-- **T5 (Linux):** pending, through trivergence's session.
+- **T5 (Linux):** Ubuntu 22.04 x86_64, trivergence's session, the portfolio clone at `0cdce5a`, incremental build: `ctest -R LogTest --repeat until-fail:50` passed all 50 repeats (27 s; before H30 it crashed within 30); `ctest -j8`: 277 tests, 0 failed, 276 passed (10 of them on their expected-error regex), 1 skipped (`h14_report_builds`: no LaTeX on that machine); 2,062 s. The clone was returned to `f230470` (v1.0.2's pin).
+
+Ready for the user's sign-off.
