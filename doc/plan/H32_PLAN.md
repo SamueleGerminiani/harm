@@ -34,7 +34,7 @@ The key is a canonical text after the change, so two antecedents with the same p
 | T5 | trivergence's F7 tools tests on the next portfolio release, including the A4 parity test on `i2c_slave` | its acceptance |
 
 ## If the output changes
-If T3 or T4 shows assertions that change on a fixture or a corpus design, the change is a change of default output. It is recorded as a decision (D-041) with the changed sets, and the baselines are updated only with the user's approval.
+If T3 or T4 shows assertions that change on a fixture or a corpus design, the change is a change of default output. It is recorded as a new decision with the changed sets, and the baselines are updated only with the user's approval.
 
 ## After H32 (not in this milestone)
 - The miner portfolio needs a release with HARM's pin moved past H32 (a small portfolio milestone, v1.0.3, its own plan), so that trivergence can rerun its F7 tests.
