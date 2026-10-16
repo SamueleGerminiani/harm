@@ -1378,3 +1378,5 @@ The tests were written first and committed failing (`b5e9a92`).
 | T5 | read-through of the rendered PDF (pdftotext): the new section, introduction, limitations, validation and reference tables | | one example line wrapped badly, fixed; every claim checked against VALIDATION and DECISIONS (the D1 counts restated as tuning and held-out bugs) |
 
 - No private path or secret in the diff or the PDF's text. HARM's code is unchanged, so no Linux run.
+
+**H31 signed off by the user 2026-10-16** ("I sign off H31"). It merges into `dev` after H30, on whose branch it is based.

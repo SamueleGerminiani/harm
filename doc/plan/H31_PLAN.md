@@ -1,6 +1,6 @@
 # H31 plan: the report brought up to date
 
-*Status: approved by the user 2026-10-16 ("U approve"). Owner: the portfolio's Mac session. Branch `ms/H31-report` from `ms/H30-console-lock` @ `0cdce5a` (both edit the report; H31 merges after H30). Documentation only: HARM's code does not change. Effort: about half a day.*
+*Status: signed off by the user 2026-10-16 ("I sign off H31"); approved by the user 2026-10-16 ("U approve"). Owner: the portfolio's Mac session. Branch `ms/H31-report` from `ms/H30-console-lock` @ `0cdce5a` (both edit the report; H31 merges after H30). Documentation only: HARM's code does not change. Effort: about half a day.*
 
 ## Why
 The user asked to update HARM's report with what changed since it was written. The committed `harm_v4.pdf` dates from 2026-10-10: it lacks H21 to H30. In the text:
