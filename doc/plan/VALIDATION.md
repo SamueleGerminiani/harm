@@ -1406,3 +1406,19 @@ Ready for the user's sign-off.
 Ready for the user's sign-off.
 
 **H32 signed off by the user 2026-10-16** ("I sign off H32"); merged into `dev`.
+
+## H33: no default cap on `--reduce implies` (2026-10-16; owner the portfolio's Mac session)
+- **Why:** the user asked whether HARM's implication step is always cheaper than proving what it drops. The miner portfolio measured it (scratch script, OpenFPV bound 20, timeout 120 s, 36 runs of its corpus: 8 fixtures and 10 D1 designs, harm and harm-rel; `d1-traffic` not measured, its prover hung): the step checked 40,583 pairs in 9.2 s and dropped 384 assertions whose proof takes 964 s of prover time (all 1,772 candidates: 4,237 s). 4 of the 384 were proved while the assertion kept in their place was refuted. The user decided: "I approve H33, remove the cap" (D-041).
+- **Change:** `--implies-max-pairs` defaults to 0 (no cap); a cap set by the user works as in H29. Docs: README, release notes, the report (reduction cost, limitations, options and decisions tables, 42 milestones), PDF rebuilt (32 pages).
+- **Tests** (written first, committed failing in `108767c`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `h29_implies_pairs`: `--reduce implies` without a cap records `maxPairs` 0 | fail (`maxPairs` 2000000) | pass |
+| T2 | `ctest -j8` on macOS, the H0 baselines included | | 277 of 277 |
+| T3 | `i2c_slave` harm-rel with trivergence's inputs (not committed), default arguments, `--max-threads 4` | step skipped (2,289,548 pairs > 2,000,000), 11,041 kept | step runs: 2,289,548 pairs, 134 s, 2,550 dropped, 8,491 kept, the same set as the earlier run with `--implies-max-pairs 0`; HARM 202 s in all |
+| T4 | trivergence's F7 tests on the next portfolio release | | pending |
+
+- No corpus design reaches the old cap (the largest, `d1-traffic` harm, has 41,632 pairs), so the corpus's output is unchanged.
+- Doc checks: `check.sh` (the PDF builds), `check_coverage.py`, `run_examples.py` (14 examples) pass. No private path or secret in the diff or the PDF's text.
+- **T2 on Linux:** pending (asked of trivergence's session).
