@@ -392,27 +392,13 @@ bool AntecedentGenerator::isKnownSolution(
   } else {
     solution = dto->getSolution();
   }
-  solution.sortByWidth();
+  std::string key = solution.key(dto->isMultiDimensional());
 
-  std::stringstream ss;
-  if (dto->isMultiDimensional()) {
-    for (auto &pack : solution.getMultidimensionalSolution()) {
-      for (auto &p : pack) {
-        ss << prop2String(p) << "$";
-      }
-      ss << "$";
-    }
-  } else {
-    for (auto &p : solution.getUnidimensionalSolution()) {
-      ss << prop2String(p) << "$";
-    }
-  }
-
-  if (_knownSolutions.count(ss.str())) {
+  if (_knownSolutions.count(key)) {
     return true;
   }
   if (!checkOnly) {
-    _knownSolutions.insert(ss.str());
+    _knownSolutions.insert(key);
   }
 
   return false;

@@ -44,8 +44,10 @@ struct DTSolution {
   std::vector<PropositionPtr> &operator[](size_t i) {
     return _solution[i];
   }
-  ///sort the solutions following the width 'dimension' of the solution
-  void sortByWidth(bool usingStringRepresentation = false) {
+  ///sort the solutions following the width 'dimension' of the solution; without the string
+  ///representation the order is the propositions' addresses, which differ from run to run
+  ///(H32): it must not reach the output or a key
+  void sortByWidth(bool usingStringRepresentation) {
     if (!usingStringRepresentation) {
       for (auto &s : _solution) {
         std::sort(s.begin(), s.end());
@@ -69,6 +71,28 @@ struct DTSolution {
         s = sorted;
       }
     }
+  }
+
+  ///the text that identifies the solution among the known ones (AntecedentGenerator); its
+  ///propositions in text order (H32), so that the same antecedent has one key whatever objects
+  ///it is built from
+  std::string key(bool multidimensional) const {
+    DTSolution s = *this;
+    s.sortByWidth(true);
+    std::string res;
+    if (multidimensional) {
+      for (auto &pack : s._solution) {
+        for (auto &p : pack) {
+          res += prop2String(p) + "$";
+        }
+        res += "$";
+      }
+    } else {
+      for (auto &p : s.getUnidimensionalSolution()) {
+        res += prop2String(p) + "$";
+      }
+    }
+    return res;
   }
 
   std::string toString() const {

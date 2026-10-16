@@ -141,3 +141,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H29 | the pairs of `--reduce implies`: a shared consequent atom links a pair; `--implies-max-pairs` skips and records |
 | H30 | one message at a time on the console: messages from several threads no longer interleave |
 | H31 | the report brought up to date: `harm-coi`'s hints, relations, signed RTL and constants in its own section; limitations, validation and reference current; the PDF rebuilt |
+| H32 | the decision tree's known solutions keyed in text order: the same assertions in every run, whatever the threads do |
