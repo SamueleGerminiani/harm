@@ -1,6 +1,6 @@
 # H30 plan: one message at a time on the console
 
-*Status: approved by the user 2026-10-16 ("I approve it"). Owner: the portfolio's Mac session. Asked by the user 2026-10-16 ("yes, plan the LogTest fix"), after H29's Linux run. Branch `ms/H30-console-lock` from `dev` @ `f230470`. Effort: about two hours, plus a Linux run.*
+*Status: signed off by the user 2026-10-16 ("I sign off H30"); approved by the user 2026-10-16 ("I approve it"). Owner: the portfolio's Mac session. Asked by the user 2026-10-16 ("yes, plan the LogTest fix"), after H29's Linux run. Branch `ms/H30-console-lock` from `dev` @ `f230470`. Effort: about two hours, plus a Linux run.*
 
 ## Why
 On Linux, `LogTest.concurrentThreadsKeepOneValidLog` (H11f) crashes now and then with SIGSEGV: 1 of 277 tests in H29's run; run alone it passed 4 of 5 times, and `--repeat until-fail:30` crashed. It passed 60 of 60 on the Mac.
