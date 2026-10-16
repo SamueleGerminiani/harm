@@ -144,6 +144,28 @@ for c in sorted(cited):
     if not (root / path).exists():
         failures.append(f"cited path does not exist: {c}")
 
+# ---- H31: harm-coi in the report; the committed PDF is current --------------------------------------------
+sections = root / "doc/report/sections"
+reference = (sections / "A_reference.tex").read_text() if (sections / "A_reference.tex").exists() else ""
+cli = (root / "tools/harm-coi/src/harm_coi/cli.py").read_text()
+for o in sorted(set(re.findall(r'add_argument\((?:"-\w", )?"--([a-z][a-z-]*)"', cli))):
+    if not re.search(rf"--{re.escape(o)}(?![a-z-])", reference):
+        failures.append(f"report reference: harm-coi option --{o} not found")
+coi_section = (sections / "06_harm_coi.tex").read_text() if (sections / "06_harm_coi.tex").exists() else ""
+for m in ("H5", "H5a", "H10", "H22", "H24", "H25", "H26", "H28"):
+    if not re.search(rf"\b{m}\b", coi_section):
+        failures.append(f"harm-coi section: milestone {m} not cited")
+pdf = root / "doc/report/harm_v4.pdf"
+try:
+    pdf_text = subprocess.run(["pdftotext", str(pdf), "-"], capture_output=True, text=True, check=True).stdout
+except (OSError, subprocess.CalledProcessError):
+    pdf_text = None
+    print("note: pdftotext not found or the PDF unreadable; the committed PDF not checked")
+if pdf_text is not None:
+    for m in milestones:
+        if not re.search(rf"\b{m}\b", pdf_text):
+            failures.append(f"committed PDF: milestone {m} not cited (rebuild doc/report)")
+
 # ---- result ---------------------------------------------------------------------------------------------
 print(f"new options: {len(new_options)}; new XML names: {len(xml - listed('v3_xml_names.txt'))}; "
       f"new metric variables: {len(mvars - listed('v3_metric_variables.txt'))}; milestones: {len(milestones)}; "

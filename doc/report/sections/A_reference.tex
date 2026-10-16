@@ -23,6 +23,32 @@ Option & Effect (section) \\
 \bottomrule
 \end{longtable}
 
+\subsection{The options of \texttt{harm-coi}}
+\begin{longtable}{@{}P{0.34\textwidth}P{0.58\textwidth}@{}}
+\toprule
+Option & Effect (section) \\
+\midrule
+\endhead
+\code|--top NAME| & the top module, the design under the trace's scope (required) \\
+\code|--files F ...| & the SystemVerilog sources (required) \\
+\code|--define NAME[=VALUE]|, \code|--include DIR| & preprocessor macros and include directories, repeatable \\
+\code|--vcd-scope S| & the scope of the top instance in the trace, as HARM's \opt{vcd-ss} (required) \\
+\code|--vcd-recursion N| & as HARM's \opt{vcd-r} (required) \\
+\code|--vcd FILE| & the trace: its signal names are the visible ones (\cref{sec:harmcoi}) \\
+\code|--clock NAME| & the sampling clock, as HARM names it (default: inferred) \\
+\code|--max-depth N| & the depth of the cones' closure (default 3) \\
+\code|--edges FILE| & also write the direct edges \\
+\code|-o|, \code|--output FILE| & the cone file, \code|coi.json| (required) \\
+\code|--predicates| & harvest the RTL's conditions as propositions (\cref{sec:predicates}) \\
+\code|--emit-config FILE.xml| & write a ready-to-run HARM configuration \\
+\code|--hints FILE.json| & write roles, placement and templates, and use them in \code|--emit-config| (\cref{sec:hints}) \\
+\code!--hints-use all|placement! & with \code|--hints|: the configuration takes all the hints (default) or the placement only \\
+\code|--reset NAME| & a reset input, repeatable (\cref{sec:hints}) \\
+\code|--relations|, \code|--no-relations| & relations from the RTL; on by default with \code|--hints| and \code|--emit-config| (\cref{sec:relations}) \\
+\code|-v|, \code|--verbose| & print why each signal is unknown and why each predicate was dropped \\
+\bottomrule
+\end{longtable}
+
 \subsection{New configuration elements and metric variables}
 \begin{longtable}{@{}P{0.38\textwidth}P{0.54\textwidth}@{}}
 \toprule
@@ -145,5 +171,6 @@ H27 & pinned and checked third-party downloads (SHA-256, antlr4's tag commit, er
 H28 & \code|harm-coi|'s default timescale (\code|1ns/1ps|) & a design mixing files with and without \code|`timescale| did not elaborate \\
 H29 & the pairs of \code|--reduce implies| (a shared consequent atom; \opt{implies-max-pairs}) & any shared atom linked a pair, so the reset in every antecedent linked nearly all: \code|i2c_slave| spent 607 of 642\,s there \\
 H30 & one message at a time on the console & messages were printed outside any lock: from several threads their characters could interleave, and a test pointing \code|std::cout| at one string stream crashed now and then on Linux \\
+H31 & the report brought up to date & \code|harm-coi|'s features since H10 were one-line bullets; limitations contradicted by H23 and H29; the PDF predated H21 \\
 \bottomrule
 \end{longtable}
