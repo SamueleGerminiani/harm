@@ -1,6 +1,6 @@
 # H32 plan: the decision tree's known solutions in text order
 
-*Status: approved by the user 2026-10-16 ("I approve H32"). Owner: the portfolio's Mac session. Asked by the user 2026-10-16 ("ok, plan the fix as H32") after the investigation of trivergence's F7 parity failure. Branch `ms/H32-dt-known-order` from `dev` @ `8217f1c`. Effort: about half a day, plus a Linux run.*
+*Status: signed off by the user 2026-10-16 ("I sign off H32"); approved by the user 2026-10-16 ("I approve H32"). Owner: the portfolio's Mac session. Asked by the user 2026-10-16 ("ok, plan the fix as H32") after the investigation of trivergence's F7 parity failure. Branch `ms/H32-dt-known-order` from `dev` @ `8217f1c`. Effort: about half a day, plus a Linux run.*
 
 ## Why
 trivergence's F7 tools tests on miner portfolio v1.0.2 passed 4 of 5. The one failure is the strict parity test for harm-rel on AssertLLM2's `i2c_slave`. HARM ran twice on byte-identical inputs (3 VCDs, `config.xml`, `coi.json`, `hints.json`, the same arguments, `--max-threads 4`) and kept 11,039 assertions in one run and 11,037 in the other.

@@ -1404,3 +1404,5 @@ Ready for the user's sign-off.
 - **T5** (trivergence's F7 tests on the next portfolio release): pending.
 
 Ready for the user's sign-off.
+
+**H32 signed off by the user 2026-10-16** ("I sign off H32"); merged into `dev`.
