@@ -1399,4 +1399,8 @@ Ready for the user's sign-off.
 | T4 | the miner portfolio's corpus (8 fixtures and 12 D1 designs, harm and harm-rel, 2 runs each), kept sets against HARM before H32 | | 80 of 80 identical |
 
 - `i2c_slave`'s 11,041 are the usual 11,037 and the 4 of the family, now always found (they are kept whenever the tree reaches them, as it did in some runs before); nothing lost.
-- **T3 on Linux and T5** (trivergence's F7 tests on the next portfolio release): pending.
+- **T3 on Linux** (Ubuntu 22.04 x86_64, trivergence's session, the portfolio clone at `36d8674`): `ctest -j8` 277 tests, 0 failed, 1 skipped (`h14_report_builds`: no LaTeX), 2,099 s.
+- **T2 on Linux:** harm-rel on trivergence's `i2c_slave` inputs, `--max-threads 4`, 4 runs two at a time: all 11,041 assertions, sorted lists identical (sha256 `269d8f7a…`), the same 4 additions over v1.0.2's 11,037 as on the Mac, nothing missing; 88 s each.
+- **T5** (trivergence's F7 tests on the next portfolio release): pending.
+
+Ready for the user's sign-off.
