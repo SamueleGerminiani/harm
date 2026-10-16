@@ -52,7 +52,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 |---|---|
 | `--reduce syntactic\|equiv\|implies` | remove redundant assertions: identical (default), equivalent propositions (Z3, H2), or implied assertions (Spot plus HARM's finite-trace model, H3) |
 | `--keep stronger\|weaker\|ranked` | with `implies`: which side of an implication is kept |
-| `--implies-max-pairs <N>` | with `implies`: skip the implication step for a context with more than `N` pairs to check (default 2,000,000; `0`: no cap), recorded in `--dump-assertion-info` (H29) |
+| `--implies-max-pairs <N>` | with `implies`: skip the implication step for a context with more than `N` pairs to check (default `0`: no cap, H33), recorded in `--dump-assertion-info` (H29) |
 | `--atom-premises`, `--atom-premises-max <N>` | with `implies`: also use facts between comparisons (`cnt > 9` ⇒ `cnt > 8`, exclusive FSM states; H3b) |
 | `--dump-implications <file>` | the dropped assertions and what implies them, as JSON |
 | `--dump-assertion-info <file>` | every kept assertion with its metrics, propositions, cycle offsets and origins, as JSON |
@@ -90,7 +90,7 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 ## Known limitations
 - **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are future work (H20, planned, not scheduled).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
-- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Since H29 only pairs sharing a consequent atom are checked (AssertLLM2's `i2c_slave`, 6,481 assertions: 1.2 M pairs instead of 5.7 M, 71 s instead of 479 s on an M-series Mac, 87 more assertions kept), and `--implies-max-pairs` (default 2,000,000) skips the step for larger contexts.
+- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Since H29 only pairs sharing a consequent atom are checked (AssertLLM2's `i2c_slave`, 6,481 assertions: 1.2 M pairs instead of 5.7 M, 71 s instead of 479 s on an M-series Mac, 87 more assertions kept), and `--implies-max-pairs N` skips the step for larger contexts. There is no cap by default (H33): the miner portfolio measured the step at about 1% of the prover time it saves (36 runs: 9 s of reduction against 964 s of proving the 384 dropped assertions), and on `i2c_slave` harm-rel (2.29 M pairs) it takes 139 s and drops 2,550 of 11,041 assertions.
 - **Ties in the decision tree** are decided by the last bit of a floating-point score. Platforms agree because they now round the same way (H12); a change of `libm` could still change a choice with `ENT`.
 - **Some formulas the grammar accepts cannot be evaluated** (e.g. `F X X (a W c)`), and a trace signal named like an operator (`W`) cannot be loaded. Both predate v4.
 - **The `camellia` example's configuration is not valid XML** (a raw `&`); `sub_platform` is the same design and runs.
@@ -142,3 +142,4 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H30 | one message at a time on the console: messages from several threads no longer interleave |
 | H31 | the report brought up to date: `harm-coi`'s hints, relations, signed RTL and constants in its own section; limitations, validation and reference current; the PDF rebuilt |
 | H32 | the decision tree's known solutions keyed in text order: the same assertions in every run, whatever the threads do |
+| H33 | no default cap on `--reduce implies` (`--implies-max-pairs` defaults to 0) |

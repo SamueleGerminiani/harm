@@ -5,6 +5,7 @@
       assertions, and is below the count of pairs sharing any atom
   T3  --implies-max-pairs 1: the step is skipped and recorded; the kept set is --reduce equiv's
   T4  --implies-max-pairs 0, or a cap at the count: the same as without a cap
+  H33 without --implies-max-pairs there is no cap (the record's maxPairs is 0)
 Usage: check_implies_pairs.py <harm> <csv> <config>
 """
 import itertools
@@ -48,6 +49,8 @@ kept = {a["text"] for a in info["assertions"]}
 print(f"T1 implies: {len(kept)} kept, record {rec}")
 ok &= rec is not None and rec["pairs"] == cons_pairs and rec["skipped"] is False
 ok &= rec is not None and rec["dropped"] == len(before) - len(kept) and len(kept) < len(before)
+# H33: no cap by default (the reduction costs far less than proving what it drops)
+ok &= rec is not None and rec["maxPairs"] == 0
 
 info, out = run("implies", "--implies-max-pairs", "1")
 rec1 = info.get("implication", {}).get("default")
