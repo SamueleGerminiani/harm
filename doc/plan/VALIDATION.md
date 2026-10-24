@@ -1444,3 +1444,5 @@ Ready for the user's sign-off.
 
 - **On `i2c_slave`'s RTL** (no trace, `--vcd-recursion 16`): 18 nets merged, among them trivergence's `sdaOut`, `writeEn`, `clearStartStopDet`, `startStopDetState` and `rst` (`rst`, `u_i2cSlave::rst`); `u_i2cSlave::u_serialInterface::rst` (driven by `rstSyncToClk | startEdgeDet`) is not.
 - **On `i2c_slave` with traces** (Linux, the portfolio's AL1 T7, F7's stimulus): harm 4,737 → 3,439 assertions, 28 → 23 variables; harm-rel 8,491 → 5,857, 48 → 39; the same 18 classes.
+
+**H34 signed off by trivergence's lead 2026-10-24** for the user (the user, 2026-10-24: "Do what trivergence tells you to do"), at `c1f4b70`, after being told of the portfolio corpus shortfall (AL1 T7) and `i2c_slave`'s part F; merged into `dev`.
