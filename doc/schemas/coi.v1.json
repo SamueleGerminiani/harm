@@ -156,6 +156,17 @@
           }
         }
       }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "H34 (--aliases): kept name -> the names merged into it (one net through whole-signal port connections or assignments)",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      }
     }
   }
 }

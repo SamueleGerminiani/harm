@@ -46,6 +46,9 @@ def parser():
                          "polarities of 1-bit flags, assigned-only signals, and the fixed templates for the end of "
                          "reset and for unconditional relations; the default with --hints and --emit-config, "
                          "--no-relations restores the output before H24 (--relations needs --hints and --emit-config)")
+    ap.add_argument("--aliases", action="store_true",
+                    help="one name per net: the visible names of a whole-signal port connection or `assign a = b` "
+                         "become the shallowest one, recorded in coi.json's `aliases` (H34, D-042)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -69,7 +72,10 @@ def main(argv=None):
         vcd_names = vcd.visible_names(a.vcd, a.vcd_scope, a.vcd_recursion) if a.vcd else None
         vis, orphans = cone.visible_names(design, a.vcd_recursion, vcd_names, clk)
         vis = {x: n for x, n in vis.items() if x != clk}   # the clock is neither target nor source
-        direct, unknown = cone.direct_edges(design, vis, clock_nodes, a.max_depth)
+        aliases = None
+        if a.aliases:
+            vis, aliases = cone.alias_classes(design, vis, clock_nodes)
+        direct, unknown = cone.direct_edges(design, vis, clock_nodes, a.max_depth, merged=a.aliases)
         unknown |= orphans
         names = set(vis.values())
         targets, unknown = cone.closure(names, direct, unknown, a.max_depth)
@@ -83,6 +89,8 @@ def main(argv=None):
             "clock": cone.name(clk), "max_depth": a.max_depth,
             "generator": {"name": "harm-coi", "version": generator_version()}}
     doc = {"version": "1", "meta": meta, "targets": targets, "unknown": sorted(unknown), "predicates": preds}
+    if aliases:
+        doc["aliases"] = aliases
     h = None
     if a.hints:
         try:
@@ -97,6 +105,7 @@ def main(argv=None):
         lines += [f"target {n}" for n in sorted(names - unknown) if not direct.get(n)]
         lines += [f"{t} <- {s} @{d}" for t in sorted(direct) if t not in unknown for s, d in sorted(direct[t])]
         lines += [f"unknown {n}" for n in sorted(unknown)]
+        lines += [f"alias {k} = {', '.join(v)}" for k, v in (aliases or {}).items()]
         Path(a.edges).write_text("\n".join(lines) + "\n")
     ext = None
     if a.relations:

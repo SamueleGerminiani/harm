@@ -354,6 +354,12 @@ A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`,
 
 Such relations restate the RTL: mined from a design, they describe that design, bugs included. They catch a *changed* design (a regression, a mutant); a bug already in the RTL shows only when the statement is compared with the intent (the specification).
 
+### One name per net (`harm-coi --aliases`, H34, D-042)
+A net that crosses a module port is dumped once per scope (`u_i2cSlave::sdaOut` and `u_i2cSlave::u_serialInterface::sdaOut`). Without `--aliases` each copy is its own signal, and HARM mines their equality and repeats other assertions once per copy. With `--aliases`, harm-coi gives the copies one name:
+- **one net:** a port connection, `assign a = b` or `wire a = b` whose other side is a plain reference to one signal of an equivalent type (struct fields pair one by one), when nothing else drives the driven side and neither side is unknown or on the clock's path. An operator (`.rst(a | b)`), a select, a concatenation, a constant, a width change or an inout port is not one net. Trace values are never used;
+- **the name kept** is the shallowest visible one (fewest scope levels), ties broken by string order. Predicates, hints, relations and cones use it, so the copies' predicates are one, and `assign a = b` gives no relation;
+- **recorded** in `coi.json`'s `aliases`, `{kept: [merged names]}`, and in `--edges` (`alias kept = merged, ...`).
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**

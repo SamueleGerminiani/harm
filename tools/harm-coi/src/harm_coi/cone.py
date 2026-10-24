@@ -6,7 +6,9 @@
    produce are unknown); otherwise every atom at most `recursion` sub-scopes below the top.
 3. Direct edges between visible names: paths through invisible signals are collapsed, their
    delays summed.
-4. The closure up to max_depth, with the same rule as tests/coi/closure.py: every path depth up
+4. With --aliases (H34, D-042): the visible names of one net (whole-signal port connections and `assign a = b`,
+   nothing else driving the driven side, nothing unknown or on the clock's path) become its shallowest name.
+5. The closure up to max_depth, with the same rule as tests/coi/closure.py: every path depth up
    to max_depth, and `saturated` when the source also reaches the target through a deeper path.
    A target whose cone reaches an unknown signal within max_depth is itself unknown.
 """
@@ -89,8 +91,45 @@ def visible_names(design, recursion, vcd_names, clk):
     return m, orphan
 
 
-def direct_edges(design, vis, clock_nodes, max_depth):
-    """Edges between visible names, collapsing invisible atoms; and the unknown visible names."""
+def alias_classes(design, vis, clock_nodes):
+    """(the name map with every visible name of a net replaced by its shallowest one, ties broken by string order;
+    {kept name: [merged names]}) (H34). A class is left as it is when one of its names is shared by an atom outside
+    it (a struct dumped as one vector)."""
+    parent = {}
+
+    def find(a):
+        parent.setdefault(a, a)
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    bad = set(design.unknown) | set(clock_nodes)
+    for t, s in design.alias_pairs:
+        if t in bad or s in bad or design.edges.get(t) != {(s, 0)}:
+            continue
+        parent[find(t)] = find(s)
+    groups = defaultdict(set)
+    for a in list(parent):
+        groups[find(a)].add(a)
+    by_name = defaultdict(set)
+    for a, n in vis.items():
+        by_name[n].add(a)
+    out, aliases = dict(vis), {}
+    for members in groups.values():
+        names = sorted({vis[a] for a in members if a in vis}, key=lambda n: (n.count("::"), n))
+        if len(names) < 2 or any(by_name[n] - members for n in names):
+            continue
+        for a in members:
+            if a in vis:
+                out[a] = names[0]
+        aliases[names[0]] = names[1:]
+    return out, dict(sorted(aliases.items()))
+
+
+def direct_edges(design, vis, clock_nodes, max_depth, merged=False):
+    """Edges between visible names, collapsing invisible atoms; and the unknown visible names. `merged` (H34): a
+    zero-delay edge between two atoms of one name (a merged net) is no edge."""
     edges = design.edges
     limit = max_depth + 1
     out = defaultdict(set)
@@ -109,7 +148,8 @@ def direct_edges(design, vis, clock_nodes, max_depth):
                 continue
             seen.add((s, d))
             if s in vis:
-                out[n].add((vis[s], min(d, limit)))
+                if not (merged and d == 0 and vis[s] == n):
+                    out[n].add((vis[s], min(d, limit)))
             elif s in design.unknown:
                 if d <= max_depth:
                     unknown.add(n)          # the cone goes through a signal we cannot model

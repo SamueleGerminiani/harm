@@ -97,7 +97,7 @@ def test_t3_earlier_fixtures(tmp_path, name):
     on, on_xml = run(tmp_path, d, "--aliases", tag="on")
     assert on.pop("aliases", {}) == EARLIER_ALIASES.get(name, {})
     if name not in EARLIER_ALIASES:
-        assert on == off and on_xml == off_xml.replace(str(tmp_path / "off_coi.json"), str(tmp_path / "on_coi.json"))
+        assert on == off and on_xml == off_xml.replace('file="off_coi.json"', 'file="on_coi.json"')
 
 
 # T5: the same bytes under two hash seeds
