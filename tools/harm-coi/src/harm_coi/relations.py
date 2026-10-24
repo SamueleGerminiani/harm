@@ -253,6 +253,9 @@ class Relations:
             return
         if not v.signals:
             return                              # a constant: a reset value or a constant comparison already
+        if not registered and v.text == escaped(target):
+            self.dropped.append(("relation: the target itself (a merged net, H34)", where))
+            return
         if v.ops > MAX_OPS:
             self.dropped.append((f"relation: more than {MAX_OPS} operators", where))
             return

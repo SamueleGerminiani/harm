@@ -45,6 +45,7 @@ Option & Effect (section) \\
 \code!--hints-use all|placement! & with \code|--hints|: the configuration takes all the hints (default) or the placement only \\
 \code|--reset NAME| & a reset input, repeatable (\cref{sec:hints}) \\
 \code|--relations|, \code|--no-relations| & relations from the RTL; on by default with \code|--hints| and \code|--emit-config| (\cref{sec:relations}) \\
+\code|--aliases| & one name per net: the visible names of a whole-signal port connection or \code|assign a = b| become the shallowest one, listed in \code|coi.json|'s \code|aliases| (\cref{sec:aliases}) \\
 \code|-v|, \code|--verbose| & print why each signal is unknown and why each predicate was dropped \\
 \bottomrule
 \end{longtable}
@@ -117,6 +118,7 @@ D-038 & relations from the RTL (\code|harm-coi --relations|) & H24 \\
 D-039 & signed RTL conditions and relations, \code|\$signed|/\code|\$unsigned| & H25 \\
 D-040 & constants assigned outside a reset branch & H26 \\
 D-041 & no default cap on \code|--reduce implies| & H33 \\
+D-042 & one name per port-connected net (\code|harm-coi --aliases|) & H34 \\
 \bottomrule
 \end{longtable}
 
@@ -175,5 +177,6 @@ H30 & one message at a time on the console & messages were printed outside any l
 H31 & the report brought up to date & \code|harm-coi|'s features since H10 were one-line bullets; limitations contradicted by H23 and H29; the PDF predated H21 \\
 H32 & the decision tree's known solutions keyed in text order & the key sorted an antecedent's propositions by address: with several threads, the same antecedent was known in one run and new in another (harm-rel on \code|i2c_slave|: 11{,}037 or 11{,}041 assertions from identical inputs) \\
 H33 & no default cap on \code|--reduce implies| & the 2{,}000{,}000-pair cap skipped the step where it saves most: harm-rel on \code|i2c_slave| has 2.29\,M pairs, and the step costs about 1\% of the prover time it saves \\
+H34 & one name per port-connected net (\code|harm-coi --aliases|) & a net that crosses module ports was one signal per scope: on \code|i2c_slave| HARM mined the copies' equality and repeated assertions per copy (4{,}737 assertions, 3{,}854 distinct texts without the prefixes) \\
 \bottomrule
 \end{longtable}

@@ -1427,3 +1427,22 @@ Ready for the user's sign-off.
 Ready for the user's sign-off.
 
 **H33 signed off by the user 2026-10-16** ("ok, I approve"); merged into `dev`.
+
+## H34: one HARM name per port-connected net (`harm-coi --aliases`) (2026-10-24; owner the portfolio's Mac session)
+- **Why:** trivergence's F7 run on AssertLLM2's `i2c_slave` (harm): 4,737 assertions over 28 variables, 5 signals under two scopes each; HARM mined the copies' equality and repeated assertions per copy (3,854 distinct texts without the prefixes). trivergence's lead approved the plan for the user (the user, 2026-10-24: "Do what trivergence tells you to do"), as part of the miner portfolio's AL1 (D-042).
+- **Change:** `harm-coi --aliases` (off by default): a whole-signal port connection or `assign a = b` (`wire a = b`) of equivalent types, the driven side with no other source, neither side unknown or on the clock's path, is one net; its visible names become the shallowest one (then string order) in predicates, hints, relations and cones; the zero-delay self edge is dropped and `assign a = b` gives no relation; `coi.json` gains `aliases` (schema updated), `--edges` lists them. Docs: README, D-042, the report (harm-coi section, options, decisions and milestones tables, 43 milestones), PDF rebuilt (32 pages).
+- **Tests** (written first, committed failing in `e9981b9`; fixture `tests/input/h34/aliases`, its trace by Verilator, seed 1):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | the fixture's classes: input-port, output-port and `assign` copies, a chain of three; not merged: an operator, a part-select, a constant, a width change, an inout, the clock's copies | fail (no `--aliases`) | pass |
+| T2 | no predicate names a copy, no duplicate predicate text, no relation `a == a`, no zero-delay self edge | fail | pass |
+| T3 | without `--aliases`: the copies' names, no `aliases`; the earlier fixtures with `--aliases`: `hier` `{dout: [g[2]::w]}`, `multipath` `{rb: [z]}`, `constructs` `{a: [bus::valid], g: [k], o: [u::o]}` (by hand from the RTL), the 4 others byte-identical to their output without the flag | fail | pass |
+| T5 | two hash seeds give the same bytes | fail | pass |
+| T6 | `ctest -j8` on macOS | | 276 of 277 in the full run (2,059 s); `h14_doc_coverage` failed until the report documented `--aliases` and D-042 (`d835112`), then passed; harm-coi's pytest (`h5_unit`) 111 passed |
+| T6 | Linux (trivergence's session, at `d835112`) | | 277 of 277 passed, 1 skipped (`h14_report_builds`); `h14_doc_coverage` passed (2,104 s, other jobs running) |
+
+- **On `i2c_slave`'s RTL** (no trace, `--vcd-recursion 16`): 18 nets merged, among them trivergence's `sdaOut`, `writeEn`, `clearStartStopDet`, `startStopDetState` and `rst` (`rst`, `u_i2cSlave::rst`); `u_i2cSlave::u_serialInterface::rst` (driven by `rstSyncToClk | startEdgeDet`) is not.
+- **On `i2c_slave` with traces** (Linux, the portfolio's AL1 T7, F7's stimulus): harm 4,737 → 3,439 assertions, 28 → 23 variables; harm-rel 8,491 → 5,857, 48 → 39; the same 18 classes.
+
+**H34 signed off by trivergence's lead 2026-10-24** for the user (the user, 2026-10-24: "Do what trivergence tells you to do"), at `c1f4b70`, after being told of the portfolio corpus shortfall (AL1 T7) and `i2c_slave`'s part F; merged into `dev`.

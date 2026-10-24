@@ -63,6 +63,7 @@ class Design:
     top_inputs: set               # atoms of the top's input ports
     extractor: object = None      # for predicate harvesting (H10)
     asyncs: set = field(default_factory=set)   # asynchronous controls of registers (H22)
+    alias_pairs: list = field(default_factory=list)  # (driven atom, source atom): one net, if nothing else drives it (H34)
 
 
 def elaborate(top, files, defines=(), includes=()):
@@ -141,6 +142,7 @@ class Extractor:
         self.sub_cache = {}
         self.top_inputs = set()
         self.asyncs = set()                     # asynchronous controls of registers (H22: reset roles)
+        self.alias_pairs = []                   # H34 (D-042): whole-signal connections, (driven, source) atoms
 
     # ------------------------------------------------------------------ names
     def path_of(self, sym):
@@ -307,6 +309,24 @@ class Extractor:
             ctx.fail(f"unsupported assignment target: {expr.syntax}")
         return [], set()
 
+    def plain(self, expr):
+        """(path, type) when expr is a plain reference to a whole module-level signal: no select, concatenation,
+        operator, constant or implicit conversion (H34); an output port's `ext = port` gives its left side"""
+        if expr is not None and expr.kind == EK.Assignment:
+            expr = expr.left
+        if expr is None or expr.kind not in (EK.NamedValue, EK.HierarchicalValue, EK.MemberAccess):
+            return None
+        r = self.resolve(expr)
+        return (r[1], r[2]) if r is not None and r[0] == "sig" else None
+
+    def alias(self, driven, source):
+        """record a whole-signal connection of equivalent types, leaf by leaf (H34)"""
+        if driven is None or source is None or not driven[1].isEquivalent(source[1]):
+            return
+        a, b = self.leaves(*driven), self.leaves(*source)
+        if len(a) == len(b):
+            self.alias_pairs += zip(a, b)
+
     # ------------------------------------------------------------------ structure
     def run(self):
         self.declare(self.top.body)
@@ -356,6 +376,7 @@ class Extractor:
                 if m.initializer is not None:        # wire w = expr;
                     ctx = Ctx(clocked=False)
                     self.drive(self.leaves(self.path_of(m), m.type), self.reads(m.initializer, ctx), ctx)
+                    self.alias((self.path_of(m), m.type), self.plain(m.initializer))
             elif k == SK.ContinuousAssign:
                 self.continuous(m.assignment)
             elif k == SK.ProceduralBlock:
@@ -407,6 +428,7 @@ class Extractor:
         outs, idx = self.lvalues(a.left, ctx)
         src = self.reads(a.right, ctx) | idx
         self.drive([atom for atom, _, is_local in outs if not is_local], src, ctx)
+        self.alias(self.plain(a.left), self.plain(a.right))
 
     def instance(self, inst):
         self.walk(inst.body)
@@ -423,8 +445,10 @@ class Extractor:
             ctx = Ctx(clocked=False)
             if d == ast.ArgumentDirection.In:
                 self.drive(inner, self.reads(ext, ctx), ctx)
+                self.alias((self.path_of(isym), isym.type), self.plain(ext))
             elif d == ast.ArgumentDirection.Out:
                 self.drive(self.written_by(ext), inner, ctx)
+                self.alias(self.plain(ext), (self.path_of(isym), isym.type))
             else:
                 for t in inner + self.written_by(ext):
                     self.add_unknown(t, f"{d.name} port {port.name}")
@@ -747,4 +771,4 @@ def extract(top, am):
     x.run()
     return Design(edges=x.edges, signals=x.signals, params=x.params, unknown=x.unknown,
                   processes=x.processes, clock_uses=x.clock_uses, top_inputs=x.top_inputs,
-                  extractor=x, asyncs=x.asyncs)
+                  extractor=x, asyncs=x.asyncs, alias_pairs=x.alias_pairs)

@@ -447,3 +447,10 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
 ## D-041: no default cap on `--reduce implies` (2026-10-16, H33, decided by the user: "I approve H33, remove the cap")
 - **Why:** the user asked whether the reduction is always cheaper than proving what it drops. The miner portfolio measured it with OpenFPV (bound 20, timeout 120 s) on its corpus, 36 runs: the step took 9.2 s and dropped 384 assertions whose proof takes 964 s of prover time; 4 of the 384 were proved while the assertion kept in their place was refuted. harm-rel on AssertLLM2's `i2c_slave` has 2.29 M pairs, above H29's default cap of 2,000,000; without the cap the step takes 139 s on an M-series Mac and drops 2,550 of 11,041 assertions.
 - **Rule:** `--implies-max-pairs` defaults to 0 (no cap). A cap set by the user works as in H29 and is recorded.
+
+## D-042: one name per port-connected net (2026-10-24, H34, approved by trivergence's lead for the user: "Do what trivergence tells you to do")
+- **Why:** on AssertLLM2's `i2c_slave` (harm, trivergence's F7 run) 5 signals appear under two scopes each; HARM mined the copies' equality (`u_i2cSlave.sdaOut |-> u_i2cSlave.u_serialInterface.sdaOut`) and repeated assertions per copy: 4,737 assertions over 28 variables, 3,854 distinct once the prefixes are collapsed.
+- **Rule:** with `--aliases`, two atoms are one net only when the RTL makes them so: a whole-signal port connection or `assign a = b` (`wire a = b`) of equivalent types, the driven side with no other source, neither side unknown or on the clock's path; never on trace values. The kept name is the shallowest visible one, ties broken by string order; a class whose name a struct vector shares with an atom outside it is left as it is.
+- **Not:** a connection through logic (`.rst(rstSyncToClk | startEdgeDet)` in `i2c_slave` keeps `u_serialInterface::rst` apart), a select, a constant, a width change, an inout port.
+- **Switch:** `--aliases`, off by default (HARM v4's features are opt-in); the miner portfolio passes it from AL1 (`v1.0.9`).
+
