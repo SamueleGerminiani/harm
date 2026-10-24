@@ -1440,6 +1440,7 @@ Ready for the user's sign-off.
 | T3 | without `--aliases`: the copies' names, no `aliases`; the earlier fixtures with `--aliases`: `hier` `{dout: [g[2]::w]}`, `multipath` `{rb: [z]}`, `constructs` `{a: [bus::valid], g: [k], o: [u::o]}` (by hand from the RTL), the 4 others byte-identical to their output without the flag | fail | pass |
 | T5 | two hash seeds give the same bytes | fail | pass |
 | T6 | `ctest -j8` on macOS | | 276 of 277 in the full run (2,059 s); `h14_doc_coverage` failed until the report documented `--aliases` and D-042 (`d835112`), then passed; harm-coi's pytest (`h5_unit`) 111 passed |
-| T6 | Linux | | pending (trivergence's session) |
+| T6 | Linux (trivergence's session, at `d835112`) | | 277 of 277 passed, 1 skipped (`h14_report_builds`); `h14_doc_coverage` passed (2,104 s, other jobs running) |
 
 - **On `i2c_slave`'s RTL** (no trace, `--vcd-recursion 16`): 18 nets merged, among them trivergence's `sdaOut`, `writeEn`, `clearStartStopDet`, `startStopDetState` and `rst` (`rst`, `u_i2cSlave::rst`); `u_i2cSlave::u_serialInterface::rst` (driven by `rstSyncToClk | startEdgeDet`) is not.
+- **On `i2c_slave` with traces** (Linux, the portfolio's AL1 T7, F7's stimulus): harm 4,737 → 3,439 assertions, 28 → 23 variables; harm-rel 8,491 → 5,857, 48 → 39; the same 18 classes.
