@@ -360,6 +360,17 @@ A net that crosses a module port is dumped once per scope (`u_i2cSlave::sdaOut` 
 - **the name kept** is the shallowest visible one (fewest scope levels), ties broken by string order. Predicates, hints, relations and cones use it, so the copies' predicates are one, and `assign a = b` gives no relation;
 - **recorded** in `coi.json`'s `aliases`, `{kept: [merged names]}`, and in `--edges` (`alias kept = merged, ...`).
 
+### Clock domains (`harm-coi --domains`, H35, D-043)
+harm-coi samples one clock. `--domains FILE` maps a design's clock domains first, without choosing one (`-o` is then optional):
+- **domains:** one per clock root, a process's clock followed back through wires and ports, with its edges, its registers and its resets (the roots of their asynchronous controls). A clock made by logic or a register (a divider, a gate) is `derived`, `from` the domains it comes from;
+- **crossings:** a register of another domain that reaches a domain's register through wires and logic, `{signal, from, to, into}`;
+- **synchronizers:** a register fed through wires only by one foreign register, followed by a register fed only by it (the 2-flop chain), `{clock, from, first, second}`;
+- **with `--reset NAME`**, each domain lists the given resets its registers read; `unclocked` lists the registers whose clock cannot be told.
+
+`coi.json` and the other outputs are unchanged. The schema is `doc/schemas/domains.v1.json`.
+
+**One domain (`--cut-domains`, H36, D-044).** Without it, a register on another clock is `unknown`, and HARM treats unknown signals as in every cone, so they are mined on the sampling clock's ticks (assertions over two clocks). With it, every signal of another domain is cut: its registers, its clock, the top inputs only it reads and the signals computed only from those are no target, source, predicate, hint or relation, and the cones stop at them (`coi.json`'s `cut` lists them). A register fed from another domain, such as a synchronizer's first stage, is mined from its own domain's sources. On a single-clock design nothing changes.
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**

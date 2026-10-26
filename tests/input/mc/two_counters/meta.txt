@@ -1,0 +1,6 @@
+design = two_counters
+top = two_counters
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk_a
+max_depth = 3

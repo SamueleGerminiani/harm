@@ -5,7 +5,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from . import __version__, cone, frontend, hints, predicates, relations, vcd
+from . import __version__, cone, domains, frontend, hints, predicates, relations, vcd
 
 
 def generator_version():
@@ -28,7 +28,7 @@ def parser():
     ap.add_argument("--clock", help="the sampling clock, as HARM names it (default: inferred)")
     ap.add_argument("--max-depth", type=int, default=3)
     ap.add_argument("--edges", help="also write the direct edges, in edges.txt format")
-    ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("-o", "--output", help="coi.json (required unless --domains is given)")
     ap.add_argument("--predicates", action="store_true",
                     help="also harvest RTL predicates into coi.json (H10, D-023)")
     ap.add_argument("--emit-config", metavar="FILE.xml",
@@ -49,6 +49,14 @@ def parser():
     ap.add_argument("--aliases", action="store_true",
                     help="one name per net: the visible names of a whole-signal port connection or `assign a = b` "
                          "become the shallowest one, recorded in coi.json's `aliases` (H34, D-042)")
+    ap.add_argument("--domains", metavar="FILE.json",
+                    help="write the clock-domain map (domains v1, H35, D-043): every clock root with its registers, "
+                         "derived clocks, crossings, synchronizers and resets; without -o, a design with several "
+                         "clocks is mapped and nothing else is written")
+    ap.add_argument("--cut-domains", action="store_true",
+                    help="mine the sampling clock's domain only: every signal of another domain (its registers, its "
+                         "clock, the inputs only it reads, the signals computed only from those) is no target, "
+                         "source, predicate or hint, and the cones stop at it; listed in coi.json's `cut` (H36, D-044)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -56,6 +64,9 @@ def parser():
 
 def main(argv=None):
     a = parser().parse_args(argv)
+    if not (a.output or a.domains):
+        print("harm-coi: -o is required (unless --domains is given)", file=sys.stderr)
+        return 2
     if a.relations and not (a.hints and a.emit_config):
         print("harm-coi: --relations needs --hints and --emit-config", file=sys.stderr)
         return 2
@@ -68,10 +79,24 @@ def main(argv=None):
     try:
         comp, top, am = frontend.elaborate(a.top, a.files, a.define, a.include)
         design = frontend.extract(top, am)
-        clk, clock_nodes = cone.resolve_clocks(design, a.clock)
+        if a.domains:
+            dmap = domains.build(design, a.top, [n for n, _ in resets])
+            Path(a.domains).write_text(json.dumps(dmap, indent=2) + "\n")
+            if not a.output:
+                return 0
+        pre = {t: set(s) for t, s in design.edges.items()} if a.cut_domains else None
+        clk, clock_nodes = cone.resolve_clocks(design, a.clock, others_unknown=not a.cut_domains)
+        cut = domains.foreign(design, clk, pre) if a.cut_domains else set()
         vcd_names = vcd.visible_names(a.vcd, a.vcd_scope, a.vcd_recursion) if a.vcd else None
         vis, orphans = cone.visible_names(design, a.vcd_recursion, vcd_names, clk)
         vis = {x: n for x, n in vis.items() if x != clk}   # the clock is neither target nor source
+        cut_names = []
+        if cut:   # H36: a name is cut when every atom it names is
+            by_name = {}
+            for x, n in vis.items():
+                by_name.setdefault(n, set()).add(x)
+            cut_names = sorted(n for n, xs in by_name.items() if xs <= cut)
+            vis = {x: n for x, n in vis.items() if n not in set(cut_names)}
         aliases = None
         if a.aliases:
             vis, aliases = cone.alias_classes(design, vis, clock_nodes)
@@ -91,6 +116,8 @@ def main(argv=None):
     doc = {"version": "1", "meta": meta, "targets": targets, "unknown": sorted(unknown), "predicates": preds}
     if aliases:
         doc["aliases"] = aliases
+    if cut_names:
+        doc["cut"] = cut_names
     h = None
     if a.hints:
         try:

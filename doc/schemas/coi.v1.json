@@ -167,6 +167,13 @@
         },
         "minItems": 1
       }
+    },
+    "cut": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "H36 (--cut-domains): the visible names of other clock domains, cut from the targets, sources, predicates and hints"
     }
   }
 }

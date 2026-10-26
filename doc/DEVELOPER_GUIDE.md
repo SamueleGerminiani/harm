@@ -145,6 +145,7 @@ A Python package (pyslang 12.0.0, D-006), independent of HARM's C++: it communic
 | `cli.py` | the command line; writes `coi.json`, `--edges`, `--emit-config` |
 | `frontend.py` | elaborates the RTL with pyslang and extracts the direct dependencies (data and control), with their register delays |
 | `cone.py` | maps the design's signals to HARM's names, computes the closure up to `--max-depth`, and propagates `unknown` (D-005, D-013, D-019) |
+| `domains.py` | the clock-domain map for `--domains`: clock roots with their registers, derived clocks, crossings, synchronizers and resets (H35, D-043) |
 | `vcd.py` | the signal names HARM sees in a VCD under a scope |
 | `predicates.py` | harvests the RTL's predicates and writes them as HARM propositions (D-023) |
 | `hints.py` | signal roles, proposition placement and per-class templates from `coi.json` and the harvested predicates (`--hints`, D-036) |

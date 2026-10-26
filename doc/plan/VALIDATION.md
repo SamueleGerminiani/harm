@@ -1446,3 +1446,23 @@ Ready for the user's sign-off.
 - **On `i2c_slave` with traces** (Linux, the portfolio's AL1 T7, F7's stimulus): harm 4,737 → 3,439 assertions, 28 → 23 variables; harm-rel 8,491 → 5,857, 48 → 39; the same 18 classes.
 
 **H34 signed off by trivergence's lead 2026-10-24** for the user (the user, 2026-10-24: "Do what trivergence tells you to do"), at `c1f4b70`, after being told of the portfolio corpus shortfall (AL1 T7) and `i2c_slave`'s part F; merged into `dev`.
+
+## H35 and H36: the clock-domain map (`--domains`) and one domain (`--cut-domains`) (2026-10-26; owner the portfolio's Mac session)
+- **Why:** the miner portfolio's MC1 (the user, 2026-10-26; D1: a domain reads no other domain's register). Measured while building it: with `--clock X`, a register on another clock is `unknown`, which HARM treats as in every cone, so it was mined on X's ticks (`two_counters` on clk_a: `cnt_b == 4'b1111 ##3 cnt_a == 4'b1111 |=> cnt_a == 4'b1111`; `clk_b` a target). H36 was planned for MC1's second stage and moved to the first.
+- **Change:** `--domains` (D-043, schema `domains.v1.json`); `--cut-domains` (D-044, `coi.json`'s `cut`). Docs: README, guide, report (45 milestones), PDF rebuilt (33 pages).
+- **Tests** (written first, committed failing in `cf457de`, `fe83197`; fixtures `tests/input/mc`, the traces by Verilator with two unrelated clocks, 10 and 7 ns):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| H35 T1 | the maps of `two_counters`, `cdc_fifo`, `derived`, `raw_cross`, by hand from the RTL, valid against the schema | fail (no `--domains`) | pass |
+| H35 T2 | the 7 single-clock fixtures: one domain, `coi.json` byte-identical with and without `--domains` | fail | pass |
+| H35 T3, T4 | `--reset` gives the resets each domain reads; two hash seeds, same bytes | fail | pass |
+| H36 T1 | `two_counters` on clk_a: `cut` is exactly clk_b's domain; nothing names one; nothing unknown | fail (no `--cut-domains`) | pass |
+| H36 T2 | `cdc_fifo` on rclk: the write side cut, the read side's synchronizer and logic mined targets (all unknown before) | fail | pass |
+| H36 T3, T4 | without the flag unchanged; the 7 single-clock fixtures byte-identical with it; two hash seeds | fail | pass |
+| T5 | `ctest -j6` on macOS at `3bc50e5` | | 277 of 277 (2,064 s); harm-coi's pytest 135 passed |
+| T5 | Linux (trivergence's session, at `1c1f0f8`) | | 277 of 277 (`h14_report_builds` skipped: no LaTeX); harm-coi's h5_unit 135 |
+
+- **On AssertLLM2's 23 multi-clock designs** (RTL only, Mac): 17 are mapped and 6 stop at elaboration errors. The 17 have 77 domains, 37 of them derived (`openmsp430`'s clock gates are 35), 4,041 crossings and 75 synchronizers.
+
+**H35 and H36 signed off by the user 2026-10-26** ("Yes, go"), at `dfc8e6a`, as part of the miner portfolio's MC1a; merged into `dev`.

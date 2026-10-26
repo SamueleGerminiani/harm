@@ -35,8 +35,9 @@ def clock_root(atom, edges):
         seen.append(s)
 
 
-def resolve_clocks(design, clock_name):
-    """Fix the register delays; returns (clock atom, set of atoms on clock paths)."""
+def resolve_clocks(design, clock_name, others_unknown=True):
+    """Fix the register delays; returns (clock atom, set of atoms on clock paths). `others_unknown` False (H36,
+    --cut-domains): a register on another clock keeps no sources but is not unknown (it is cut from the names)."""
     edges = design.edges
     roots = {}
     chain_nodes = set()
@@ -68,9 +69,11 @@ def resolve_clocks(design, clock_name):
                         new.add((s, d))
                 edges[t] = new
         else:
-            reason = "register on another clock" if roots[id(p)] != clk else "register on both clock edges"
+            other = roots[id(p)] != clk
+            reason = "register on another clock" if other else "register on both clock edges"
             for t in p.targets:
-                design.unknown.setdefault(t, reason)
+                if others_unknown or not other:
+                    design.unknown.setdefault(t, reason)
                 edges[t] = set()
     chain_nodes.add(clk)
     return clk, chain_nodes
