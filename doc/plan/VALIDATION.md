@@ -1461,6 +1461,6 @@ Ready for the user's sign-off.
 | H36 T2 | `cdc_fifo` on rclk: the write side cut, the read side's synchronizer and logic mined targets (all unknown before) | fail | pass |
 | H36 T3, T4 | without the flag unchanged; the 7 single-clock fixtures byte-identical with it; two hash seeds | fail | pass |
 | T5 | `ctest -j6` on macOS at `3bc50e5` | | 277 of 277 (2,064 s); harm-coi's pytest 135 passed |
-| T5 | Linux | | pending (trivergence's session) |
+| T5 | Linux (trivergence's session, at `1c1f0f8`) | | 277 of 277 (`h14_report_builds` skipped: no LaTeX); harm-coi's h5_unit 135 |
 
 - **On AssertLLM2's 23 multi-clock designs** (RTL only, Mac): 17 are mapped and 6 stop at elaboration errors. The 17 have 77 domains, 37 of them derived (`openmsp430`'s clock gates are 35), 4,041 crossings and 75 synchronizers.
