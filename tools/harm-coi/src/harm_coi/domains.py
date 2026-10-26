@@ -78,3 +78,44 @@ def build(design, top, resets=()):
     unclocked = sorted(name(a) for a, why in design.unknown.items() if why == UNCLOCKED)
     return {"version": "1", "top": top, "clocks": clocks, "crossings": crossings, "synchronizers": syncs,
             "unclocked": unclocked}
+
+
+def foreign(design, clk, edges):
+    """H36 (D-044): the atoms of every domain other than `clk`'s: the other domains' registers, the other clocks and
+    their paths, the top inputs read only by other domains' registers, and the signals computed only from those.
+    `edges`: the design's edges before resolve_clocks (which empties the other domains' registers)."""
+    own, cut = set(), set()
+    for p in design.processes:
+        r, chain = clock_root(p.clock, edges)
+        if r == clk:
+            own |= p.targets
+        else:
+            cut |= p.targets
+            cut |= set(chain)
+    cut -= own                                    # a register of clk's domain used as another clock stays
+
+    def leaves(a):
+        """The registers and top inputs that a combinational signal reads, through wires and logic."""
+        out, seen, stack = set(), {a}, [s for s, _ in edges.get(a, ())]
+        while stack:
+            s = stack.pop()
+            if s in seen:
+                continue
+            seen.add(s)
+            if s in own or s in cut or s in design.top_inputs or not edges.get(s):
+                out.add(s)
+            else:
+                stack += [x for x, _ in edges.get(s, ())]
+        return out
+
+    readers = {}
+    for t in own | cut:
+        if t in own or t in cut:
+            for leaf in leaves(t):
+                readers.setdefault(leaf, set()).add(t)
+    cut |= {i for i in design.top_inputs if i in readers and readers[i] <= cut and i not in own}
+    for a in sorted(design.signals - own - cut - design.top_inputs):
+        lv = leaves(a)
+        if lv and lv <= cut:
+            cut.add(a)
+    return cut

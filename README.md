@@ -369,6 +369,8 @@ harm-coi samples one clock. `--domains FILE` maps a design's clock domains first
 
 `coi.json` and the other outputs are unchanged. The schema is `doc/schemas/domains.v1.json`.
 
+**One domain (`--cut-domains`, H36, D-044).** Without it, a register on another clock is `unknown`, and HARM treats unknown signals as in every cone, so they are mined on the sampling clock's ticks (assertions over two clocks). With it, every signal of another domain is cut: its registers, its clock, the top inputs only it reads and the signals computed only from those are no target, source, predicate, hint or relation, and the cones stop at them (`coi.json`'s `cut` lists them). A register fed from another domain, such as a synchronizer's first stage, is mined from its own domain's sources. On a single-clock design nothing changes.
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**

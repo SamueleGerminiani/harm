@@ -71,7 +71,8 @@ def test_t2_cdc_fifo(tmp_path):
     doc, xml, hints = run(tmp_path, MC / "cdc_fifo", "--cut-domains", "--aliases")
     write_side = {"mem0", "mem1", "mem2", "mem3", "wbin", "wfull", "wptr", "u_r2w::q", "u_r2w::q1", "wclk", "winc",
                   "wdata", "wrst_n", "wbin_next", "wq2_rptr", "u_w2r::d"}
-    read_side = {"rbin", "rptr", "rempty", "rdata", "u_w2r::q", "u_w2r::q1"}
+    read_side = {"rbin", "rptr", "rempty", "rdata", "rq2_wptr", "u_w2r::q1"}   # rq2_wptr: u_w2r::q's kept name
+    assert doc["aliases"]["rq2_wptr"] == ["u_w2r::q"]
     assert write_side <= set(doc["cut"]) and not read_side & set(doc["cut"])
     assert not named(doc, xml, hints) & write_side
     assert read_side <= set(doc["targets"]), sorted(set(doc["unknown"]) & read_side)   # today: all unknown

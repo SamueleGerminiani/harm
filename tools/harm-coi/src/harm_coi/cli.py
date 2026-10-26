@@ -53,6 +53,10 @@ def parser():
                     help="write the clock-domain map (domains v1, H35, D-043): every clock root with its registers, "
                          "derived clocks, crossings, synchronizers and resets; without -o, a design with several "
                          "clocks is mapped and nothing else is written")
+    ap.add_argument("--cut-domains", action="store_true",
+                    help="mine the sampling clock's domain only: every signal of another domain (its registers, its "
+                         "clock, the inputs only it reads, the signals computed only from those) is no target, "
+                         "source, predicate or hint, and the cones stop at it; listed in coi.json's `cut` (H36, D-044)")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -80,10 +84,19 @@ def main(argv=None):
             Path(a.domains).write_text(json.dumps(dmap, indent=2) + "\n")
             if not a.output:
                 return 0
-        clk, clock_nodes = cone.resolve_clocks(design, a.clock)
+        pre = {t: set(s) for t, s in design.edges.items()} if a.cut_domains else None
+        clk, clock_nodes = cone.resolve_clocks(design, a.clock, others_unknown=not a.cut_domains)
+        cut = domains.foreign(design, clk, pre) if a.cut_domains else set()
         vcd_names = vcd.visible_names(a.vcd, a.vcd_scope, a.vcd_recursion) if a.vcd else None
         vis, orphans = cone.visible_names(design, a.vcd_recursion, vcd_names, clk)
         vis = {x: n for x, n in vis.items() if x != clk}   # the clock is neither target nor source
+        cut_names = []
+        if cut:   # H36: a name is cut when every atom it names is
+            by_name = {}
+            for x, n in vis.items():
+                by_name.setdefault(n, set()).add(x)
+            cut_names = sorted(n for n, xs in by_name.items() if xs <= cut)
+            vis = {x: n for x, n in vis.items() if n not in set(cut_names)}
         aliases = None
         if a.aliases:
             vis, aliases = cone.alias_classes(design, vis, clock_nodes)
@@ -103,6 +116,8 @@ def main(argv=None):
     doc = {"version": "1", "meta": meta, "targets": targets, "unknown": sorted(unknown), "predicates": preds}
     if aliases:
         doc["aliases"] = aliases
+    if cut_names:
+        doc["cut"] = cut_names
     h = None
     if a.hints:
         try:
