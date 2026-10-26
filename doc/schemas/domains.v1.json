@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SamueleGerminiani/harm/doc/schemas/domains.v1.json",
+  "title": "HARM clock-domain map, version 1",
+  "description": "The clock domains of a design (H35, D-043), written by harm-coi --domains from the RTL alone. Names are RTL paths below the top, with '::' between scopes. Lists are sorted.",
+  "type": "object",
+  "required": ["version", "top", "clocks", "crossings", "synchronizers", "unclocked"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": "1"},
+    "top": {"type": "string", "description": "the top module"},
+    "clocks": {
+      "type": "array",
+      "description": "one domain per clock root, sorted by name",
+      "items": {
+        "type": "object",
+        "required": ["name", "edges", "derived", "from", "registers", "resets", "reads_resets"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "description": "the clock root: a process's clock followed back through single-source wires and ports"},
+          "edges": {"type": "array", "items": {"enum": ["pos", "neg", "both"]}, "description": "the edges its registers use"},
+          "derived": {"type": "boolean", "description": "the root is driven by logic or by a register (a gate, a divider)"},
+          "from": {"type": "array", "items": {"type": "string"}, "description": "for a derived clock: the domains it is made from"},
+          "registers": {"type": "array", "items": {"type": "string"}},
+          "resets": {"type": "array", "items": {"type": "string"}, "description": "the roots of its registers' asynchronous controls"},
+          "reads_resets": {"type": "array", "items": {"type": "string"}, "description": "of the resets given with --reset, those its registers read (asynchronously or through their logic)"}
+        }
+      }
+    },
+    "crossings": {
+      "type": "array",
+      "description": "a register of one domain reaching a register of another through wires and logic, sorted by (to, into, signal)",
+      "items": {
+        "type": "object",
+        "required": ["signal", "from", "to", "into"],
+        "additionalProperties": false,
+        "properties": {
+          "signal": {"type": "string", "description": "the foreign register"},
+          "from": {"type": "string", "description": "its domain"},
+          "to": {"type": "string", "description": "the receiving domain"},
+          "into": {"type": "string", "description": "the receiving register"}
+        }
+      }
+    },
+    "synchronizers": {
+      "type": "array",
+      "description": "2-flop chains: first is fed through wires only by one foreign register, second only by first; sorted by (clock, first, second)",
+      "items": {
+        "type": "object",
+        "required": ["clock", "from", "first", "second"],
+        "additionalProperties": false,
+        "properties": {
+          "clock": {"type": "string"},
+          "from": {"type": "string"},
+          "first": {"type": "string"},
+          "second": {"type": "string"}
+        }
+      }
+    },
+    "unclocked": {"type": "array", "items": {"type": "string"}, "description": "registers whose clock cannot be told from their asynchronous controls"}
+  }
+}

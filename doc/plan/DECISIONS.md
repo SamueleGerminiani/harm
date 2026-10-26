@@ -454,3 +454,9 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
 - **Not:** a connection through logic (`.rst(rstSyncToClk | startEdgeDet)` in `i2c_slave` keeps `u_serialInterface::rst` apart), a select, a constant, a width change, an inout port.
 - **Switch:** `--aliases`, off by default (HARM v4's features are opt-in); the miner portfolio passes it from AL1 (`v1.0.9`).
 
+## D-043: the clock-domain map (2026-10-26, H35, the user's request as part of the miner portfolio's MC1)
+- **Why:** harm-coi samples one clock; with several it refuses unless `--clock` is given, and then every register on another clock is unknown, with everything it feeds. 23 of AssertLLM2's 83 designs list more than one clock. Mining each domain on its own clock (the portfolio's MC1) first needs the domains.
+- **Rule:** `--domains FILE` (domains v1) lists one domain per clock root (a process's clock followed back through single-source wires and ports, as `clock_root`), with its edges, registers and the roots of its asynchronous controls. A root driven by logic or a register is derived, `from` the domains it is made from. A crossing is another domain's register reaching a domain's register through wires and logic; a synchronizer is a register fed only through wires by one foreign register, followed by a register fed only by it. With `--reset`, each domain also lists the given resets its registers read.
+- **Not:** no change to `coi.json` or any other output; no cone is cut at a domain boundary (H36). A synchronizer other than the 2-flop chain (handshake, pulse) is a crossing only.
+- **Switch:** `--domains`, off by default; `-o` is optional with it, so a design with several clocks is mapped without choosing one.
+

@@ -5,7 +5,7 @@ fixture's RTL (tests/input/mc):
   - a crossing is a register of another domain that reaches a domain's register through wires and logic;
   - a synchronizer is a register fed only by a foreign register through wires, followed by a register fed only by it;
   - a domain's resets are the asynchronous controls of its registers, followed back to their roots.
-T1 the four fixtures' maps; T2 single-clock designs: one domain, and coi.json unchanged by --domains; T3 --reset gives
+T1 the four fixtures' maps, valid against doc/schemas/domains.v1.json; T2 single-clock designs: one domain, and coi.json unchanged by --domains; T3 --reset gives
 the resets each domain reads; T4 determinism."""
 import json
 import os
@@ -13,6 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import jsonschema
 import pytest
 
 from harm_coi import cli
@@ -78,6 +79,7 @@ def domains(tmp_path, name, *extra):
 @pytest.mark.parametrize("name", sorted(EXPECTED))
 def test_t1_maps(tmp_path, name):
     doc = domains(tmp_path, name)
+    jsonschema.validate(doc, json.loads((ROOT / "doc" / "schemas" / "domains.v1.json").read_text()))
     assert doc.pop("version") == "1"
     assert doc.pop("top") == name
     assert doc == EXPECTED[name]

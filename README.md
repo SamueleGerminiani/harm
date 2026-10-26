@@ -360,6 +360,15 @@ A net that crosses a module port is dumped once per scope (`u_i2cSlave::sdaOut` 
 - **the name kept** is the shallowest visible one (fewest scope levels), ties broken by string order. Predicates, hints, relations and cones use it, so the copies' predicates are one, and `assign a = b` gives no relation;
 - **recorded** in `coi.json`'s `aliases`, `{kept: [merged names]}`, and in `--edges` (`alias kept = merged, ...`).
 
+### Clock domains (`harm-coi --domains`, H35, D-043)
+harm-coi samples one clock. `--domains FILE` maps a design's clock domains first, without choosing one (`-o` is then optional):
+- **domains:** one per clock root, a process's clock followed back through wires and ports, with its edges, its registers and its resets (the roots of their asynchronous controls). A clock made by logic or a register (a divider, a gate) is `derived`, `from` the domains it comes from;
+- **crossings:** a register of another domain that reaches a domain's register through wires and logic, `{signal, from, to, into}`;
+- **synchronizers:** a register fed through wires only by one foreign register, followed by a register fed only by it (the 2-flop chain), `{clock, from, first, second}`;
+- **with `--reset NAME`**, each domain lists the given resets its registers read; `unclocked` lists the registers whose clock cannot be told.
+
+`coi.json` and the other outputs are unchanged. The schema is `doc/schemas/domains.v1.json`.
+
 ### ⚠️ Important Warnings
 
 > **VCD Traces & Hierarchies**

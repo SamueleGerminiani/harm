@@ -5,7 +5,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from . import __version__, cone, frontend, hints, predicates, relations, vcd
+from . import __version__, cone, domains, frontend, hints, predicates, relations, vcd
 
 
 def generator_version():
@@ -28,7 +28,7 @@ def parser():
     ap.add_argument("--clock", help="the sampling clock, as HARM names it (default: inferred)")
     ap.add_argument("--max-depth", type=int, default=3)
     ap.add_argument("--edges", help="also write the direct edges, in edges.txt format")
-    ap.add_argument("-o", "--output", required=True)
+    ap.add_argument("-o", "--output", help="coi.json (required unless --domains is given)")
     ap.add_argument("--predicates", action="store_true",
                     help="also harvest RTL predicates into coi.json (H10, D-023)")
     ap.add_argument("--emit-config", metavar="FILE.xml",
@@ -49,6 +49,10 @@ def parser():
     ap.add_argument("--aliases", action="store_true",
                     help="one name per net: the visible names of a whole-signal port connection or `assign a = b` "
                          "become the shallowest one, recorded in coi.json's `aliases` (H34, D-042)")
+    ap.add_argument("--domains", metavar="FILE.json",
+                    help="write the clock-domain map (domains v1, H35, D-043): every clock root with its registers, "
+                         "derived clocks, crossings, synchronizers and resets; without -o, a design with several "
+                         "clocks is mapped and nothing else is written")
     ap.add_argument("-v", "--verbose", action="store_true",
                     help="print why each signal is unknown and why each predicate was dropped")
     return ap
@@ -56,6 +60,9 @@ def parser():
 
 def main(argv=None):
     a = parser().parse_args(argv)
+    if not (a.output or a.domains):
+        print("harm-coi: -o is required (unless --domains is given)", file=sys.stderr)
+        return 2
     if a.relations and not (a.hints and a.emit_config):
         print("harm-coi: --relations needs --hints and --emit-config", file=sys.stderr)
         return 2
@@ -68,6 +75,11 @@ def main(argv=None):
     try:
         comp, top, am = frontend.elaborate(a.top, a.files, a.define, a.include)
         design = frontend.extract(top, am)
+        if a.domains:
+            dmap = domains.build(design, a.top, [n for n, _ in resets])
+            Path(a.domains).write_text(json.dumps(dmap, indent=2) + "\n")
+            if not a.output:
+                return 0
         clk, clock_nodes = cone.resolve_clocks(design, a.clock)
         vcd_names = vcd.visible_names(a.vcd, a.vcd_scope, a.vcd_recursion) if a.vcd else None
         vis, orphans = cone.visible_names(design, a.vcd_recursion, vcd_names, clk)
