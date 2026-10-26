@@ -1464,3 +1464,5 @@ Ready for the user's sign-off.
 | T5 | Linux (trivergence's session, at `1c1f0f8`) | | 277 of 277 (`h14_report_builds` skipped: no LaTeX); harm-coi's h5_unit 135 |
 
 - **On AssertLLM2's 23 multi-clock designs** (RTL only, Mac): 17 are mapped and 6 stop at elaboration errors. The 17 have 77 domains, 37 of them derived (`openmsp430`'s clock gates are 35), 4,041 crossings and 75 synchronizers.
+
+**H35 and H36 signed off by the user 2026-10-26** ("Yes, go"), at `dfc8e6a`, as part of the miner portfolio's MC1a; merged into `dev`.
