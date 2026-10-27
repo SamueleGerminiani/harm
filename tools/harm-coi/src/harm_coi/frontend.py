@@ -51,6 +51,7 @@ class Process:
     edge: str                     # 'pos', 'neg' or 'both'
     targets: set = field(default_factory=set)
     asyncs: frozenset = frozenset()   # its asynchronous controls (H35)
+    async_edges: tuple = ()           # (atom, edge) of each asynchronous control (H37)
 
 
 @dataclass
@@ -559,7 +560,8 @@ class Extractor:
         clock, edge = clocks[0][0][0], clocks[0][1]
         asyncs = {a for l, _ in ev if l is not clocks[0][0] for a in l}
         self.asyncs |= asyncs
-        p = Process(clock=clock, edge=edge, targets=set(ctx.assigned), asyncs=frozenset(asyncs))
+        p = Process(clock=clock, edge=edge, targets=set(ctx.assigned), asyncs=frozenset(asyncs),
+                    async_edges=tuple(sorted({(a, e) for l, e in ev if l is not clocks[0][0] for a in l})))
         self.processes.append(p)
         self.clock_uses.add(clock)
         for t, srcs in ctx.assigned.items():

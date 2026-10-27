@@ -6,8 +6,8 @@
 2. A crossing is a register of another domain that reaches a domain's register through wires and logic.
 3. A synchronizer is a register whose sources (not itself, not its asynchronous controls) lead through wires only to
    one foreign register, followed by a register whose only such source is the first.
-4. A domain's resets are its registers' asynchronous controls, followed back to their roots; with `resets`, also
-   which of them its registers read at all.
+4. A domain's resets are its registers' asynchronous controls, followed back to their roots, with their edges (H37:
+   `neg` is active low); with `resets`, also which of them its registers read at all.
 """
 from .cone import clock_root, name
 
@@ -21,9 +21,11 @@ def build(design, top, resets=()):
     doms = {}                                  # root -> {"edges", "registers", "resets"}
     for p in design.processes:
         r = clock_root(p.clock, edges)[0]
-        d = doms.setdefault(r, {"edges": set(), "registers": set(), "resets": set()})
+        d = doms.setdefault(r, {"edges": set(), "registers": set(), "resets": set(), "reset_edges": {}})
         d["edges"].add(p.edge)
         d["resets"] |= {clock_root(a, edges)[0] for a in p.asyncs}
+        for a, e in p.async_edges:   # H37: a reset's polarity is its event control's edge
+            d["reset_edges"].setdefault(clock_root(a, edges)[0], set()).add(e)
         for t in p.targets:
             root[t] = r
             asyncs[t] = p.asyncs
@@ -72,7 +74,9 @@ def build(design, top, resets=()):
                         syncs.append({"clock": name(r), "from": name(f), "first": name(t), "second": name(t2)})
         clocks.append({"name": name(r), "edges": sorted(d["edges"]), "derived": bool(frm),
                        "from": sorted(name(x) for x in frm), "registers": sorted(name(x) for x in d["registers"]),
-                       "resets": sorted(name(x) for x in d["resets"]), "reads_resets": sorted(reads)})
+                       "resets": sorted(name(x) for x in d["resets"]),
+                       "reset_edges": {name(x): sorted(e) for x, e in sorted(d["reset_edges"].items(), key=lambda i: name(i[0]))},
+                       "reads_resets": sorted(reads)})
     crossings.sort(key=lambda c: (c["to"], c["into"], c["signal"]))
     syncs.sort(key=lambda s: (s["clock"], s["first"], s["second"]))
     unclocked = sorted(name(a) for a, why in design.unknown.items() if why == UNCLOCKED)

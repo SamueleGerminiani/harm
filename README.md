@@ -365,6 +365,7 @@ harm-coi samples one clock. `--domains FILE` maps a design's clock domains first
 - **domains:** one per clock root, a process's clock followed back through wires and ports, with its edges, its registers and its resets (the roots of their asynchronous controls). A clock made by logic or a register (a divider, a gate) is `derived`, `from` the domains it comes from;
 - **crossings:** a register of another domain that reaches a domain's register through wires and logic, `{signal, from, to, into}`;
 - **synchronizers:** a register fed through wires only by one foreign register, followed by a register fed only by it (the 2-flop chain), `{clock, from, first, second}`;
+- **reset edges (H37, D-045):** `reset_edges` gives each asynchronous reset's edge (`neg`: active low);
 - **with `--reset NAME`**, each domain lists the given resets its registers read; `unclocked` lists the registers whose clock cannot be told.
 
 `coi.json` and the other outputs are unchanged. The schema is `doc/schemas/domains.v1.json`.
