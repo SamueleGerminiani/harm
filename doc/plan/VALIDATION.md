@@ -1466,3 +1466,18 @@ Ready for the user's sign-off.
 - **On AssertLLM2's 23 multi-clock designs** (RTL only, Mac): 17 are mapped and 6 stop at elaboration errors. The 17 have 77 domains, 37 of them derived (`openmsp430`'s clock gates are 35), 4,041 crossings and 75 synchronizers.
 
 **H35 and H36 signed off by the user 2026-10-26** ("Yes, go"), at `dfc8e6a`, as part of the miner portfolio's MC1a; merged into `dev`.
+
+## H37: each asynchronous reset's edge in the domain map (`reset_edges`) (2026-10-27; owner the portfolio's Mac session)
+- **Why:** the miner portfolio's MC1b (its D2): a domain's `disable iff` needs its reset's polarity, which H35's map did not record.
+- **Change:** each domain of `--domains` gains `reset_edges`, `{reset root: [edges]}`, its keys the domain's `resets` (D-045; schema `domains.v1.json`). Docs: README, report (46 milestones), PDF rebuilt.
+- **Tests** (written first, committed failing in `d237efd`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `tests/input/mc`'s four fixtures: `reset_edges` as written by hand (`two_counters` pos, `cdc_fifo` neg, synchronous resets none), valid against the schema, keys equal to `resets` | fail (no `reset_edges`) | pass |
+| T2 | H35's tests updated for the field; `ctest -j8` on macOS at `cd0f1d2` | | 277 of 277; harm-coi's pytest 139 passed |
+| T2 | Linux (trivergence's session, at `cd0f1d2`, 2026-10-27/28) | | 277 of 277; harm-coi 139 passed |
+
+- **In use:** the portfolio's MC1b mines every domain with this reset (T10 on AssertLLM2's multi-clock designs, the portfolio's VALIDATION).
+
+**H37 signed off by the user 2026-10-28**, at `cd0f1d2`, as part of the miner portfolio's MC1b; merged into `dev`.
