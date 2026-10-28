@@ -867,7 +867,9 @@ namespace VCDParser {
 
           if (new_signal->lindex != -1 || new_signal->rindex != -1) {
             if (new_signal->size == 1) {
-              if (!((new_signal->lindex == -1) || (new_signal->rindex == -1))) {
+              // H38: a 1-bit [k:k] (Verilator's `wire [1:1] x`) is a vector of range [k:k]
+              if (!((new_signal->lindex == -1) || (new_signal->rindex == -1) ||
+                    new_signal->lindex == new_signal->rindex)) {
                 std::cout << "!((new_signal->lindex == -1) || "
                              "(new_signal->rindex == -1))"
                           << "\n";

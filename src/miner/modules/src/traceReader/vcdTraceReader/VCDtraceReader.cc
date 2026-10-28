@@ -593,9 +593,12 @@ TracePtr VCDtraceReader::readTrace(const std::string file) {
           vars.push_back(vd);
           break;
         } else {
-          // boolean: logic of size 1
-          vars.push_back(toVarDeclaration(n_ss.first, type, 1,
-                                          _config._forceInt));
+          // boolean: logic of size 1; declared [k:k] (H38) it keeps that range, so x[k] selects it
+          VarDeclaration vd = toVarDeclaration(n_ss.first, type, 1, _config._forceInt);
+          if (s->lindex >= 0 && s->rindex >= 0) {
+            vd.setRange(s->lindex, s->rindex);
+          }
+          vars.push_back(vd);
         }
       }
     }
