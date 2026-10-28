@@ -1496,3 +1496,5 @@ Ready for the user's sign-off.
 
 - **In use:** the portfolio's FX1 T9: harm, harm-rel and the satminer arms read `pci_bridge` and `rtftextcontroller` (`rtftextcontroller`: harm 0 → 502 on the main clock); harm-rel on `pci_bridge`, every domain, ends in `timeout` (615 s, no candidate) instead of the index error.
 - **Linux** (the trivergence session, 2026-10-28, at `e60ee08`): `ctest -j8` 278 of 278; harm-coi 144 passed.
+
+**H38 signed off by the user 2026-10-28**, at `0955268`, as part of the miner portfolio's FX1; merged into `dev`.
