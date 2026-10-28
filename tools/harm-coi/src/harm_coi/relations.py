@@ -143,7 +143,7 @@ class Relations:
             if self.h.out.widths.get(op[1], 0) > HARM_MAX_LOGIC_BITS:
                 raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
-            return Val(f"{escaped(n)}[{op[2]}]", 1, False, False, 0, {n})
+            return Val(f"{escaped(n)}[{self.h.index(op[1], op[2])}]", 1, False, False, 0, {n})
         if k == EK.RangeSelect:
             op = self.h.operand(e.value)
             hi, lo = self.h.constant(e.left), self.h.constant(e.right)
@@ -152,7 +152,10 @@ class Relations:
             if op[2] > HARM_MAX_LOGIC_BITS:
                 raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
-            return Val(f"{escaped(n)}[{hi}:{lo}]", hi - lo + 1, False, False, 0, {n})
+            w, hi, lo = hi - lo + 1, self.h.index(op[1], hi), self.h.index(op[1], lo)
+            if hi < lo:
+                raise NotTranslatable("range select")  # the kept name's range ascends (H38)
+            return Val(f"{escaped(n)}[{hi}:{lo}]", w, False, False, 0, {n})
         if k == EK.Concatenation:
             parts = [self.clean(self.render(o)) for o in e.operands]
             total = sum(p.width for p in parts)
