@@ -1481,3 +1481,20 @@ Ready for the user's sign-off.
 - **In use:** the portfolio's MC1b mines every domain with this reset (T10 on AssertLLM2's multi-clock designs, the portfolio's VALIDATION).
 
 **H37 signed off by the user 2026-10-28**, at `cd0f1d2`, as part of the miner portfolio's MC1b; merged into `dev`.
+
+## H38: a 1-bit VCD variable with a nonzero index; a top port kept as its net's name; selects rebased to the kept name's range (2026-10-28; owner the portfolio's Mac session)
+- **Why:** the miner portfolio's FX1 (parts C and H; its MC1b T10 and T9). AssertLLM2's `pci_bridge` and `rtftextcontroller` stopped in HARM's VCD reader on `$var wire 1 P! i0 [1:1] $end`; `pci_bridge`'s reset `pci_rst_i` was merged into a top-level wire, so `--reset pci_rst_i` was "not a visible top input"; and once the VCD read, harm-rel stopped on `pci_bridge`'s `pci_clk_i` with "Index 31 is outside the declared range [19:19] of 'conf_wb_am1_out'" (a merged name's select kept the submodule's index).
+- **Change:** see H38_PLAN.md. A 1-bit `[k:k]` variable reads as a vector of range `[k:k]`; the kept name of a net is its shallowest visible name, then a top input, then a top output, then string order (D-042 amended); a bit or range select of a merged name is rebased to the kept name's declared range, in predicates and relations.
+- **Tests** (written first, committed failing in `775bebf`, `af4e844`, `976d802`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `tests/input/h38/bit_index.vcd`: values by name and by the declared index; another index is an error | fail (abort) | pass |
+| T2 | `tests/input/h38/ports`: `rst_i` and `o` kept over `a_rst` and `aa_q`; `--reset rst_i` accepted; H34's expectations updated (three classes) | fail | pass |
+| T2b | `tests/input/h38/ranges`: `m[31]` of `[31:31]` is `am[19]`, `w[6:5]` of `[7:4]` is `aw[2:1]` | fail (`am[31]`, `aw[6:5]`) | pass |
+| T3 | `ctest -j8` on macOS at `83344f5` | | 278 of 278; harm-coi's pytest 144 passed |
+
+- **In use:** the portfolio's FX1 T9: harm, harm-rel and the satminer arms read `pci_bridge` and `rtftextcontroller` (`rtftextcontroller`: harm 0 → 502 on the main clock); harm-rel on `pci_bridge`, every domain, ends in `timeout` (615 s, no candidate) instead of the index error.
+- **Linux** (the trivergence session, 2026-10-28, at `e60ee08`): `ctest -j8` 278 of 278; harm-coi 144 passed.
+
+**H38 signed off by the user 2026-10-28**, at `0955268`, as part of the miner portfolio's FX1; merged into `dev`.

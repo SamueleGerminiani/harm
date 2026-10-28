@@ -66,6 +66,7 @@ class Design:
     extractor: object = None      # for predicate harvesting (H10)
     asyncs: set = field(default_factory=set)   # asynchronous controls of registers (H22)
     alias_pairs: list = field(default_factory=list)  # (driven atom, source atom): one net, if nothing else drives it (H34)
+    top_outputs: set = field(default_factory=set)  # atoms of the top's output ports (H38: kept names)
 
 
 def elaborate(top, files, defines=(), includes=()):
@@ -143,6 +144,7 @@ class Extractor:
         self.driven = set()
         self.sub_cache = {}
         self.top_inputs = set()
+        self.top_outputs = set()
         self.asyncs = set()                     # asynchronous controls of registers (H22: reset roles)
         self.alias_pairs = []                   # H34 (D-042): whole-signal connections, (driven, source) atoms
 
@@ -336,6 +338,9 @@ class Extractor:
             if m.kind == SK.Port and m.direction == ast.ArgumentDirection.In and m.internalSymbol:
                 s = m.internalSymbol
                 self.top_inputs.update(self.leaves(self.path_of(s), s.type))
+            elif m.kind == SK.Port and m.direction == ast.ArgumentDirection.Out and m.internalSymbol:
+                s = m.internalSymbol
+                self.top_outputs.update(self.leaves(self.path_of(s), s.type))
         self.walk(self.top.body)
         self.check_drivers()
 
@@ -774,4 +779,4 @@ def extract(top, am):
     x.run()
     return Design(edges=x.edges, signals=x.signals, params=x.params, unknown=x.unknown,
                   processes=x.processes, clock_uses=x.clock_uses, top_inputs=x.top_inputs,
-                  extractor=x, asyncs=x.asyncs, alias_pairs=x.alias_pairs)
+                  extractor=x, asyncs=x.asyncs, alias_pairs=x.alias_pairs, top_outputs=x.top_outputs)

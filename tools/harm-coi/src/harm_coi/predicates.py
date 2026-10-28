@@ -42,6 +42,19 @@ class Harvester:
         self.ctx = ast.EvalContext(extractor.top)
         self.vis = vis                             # atom -> visible HARM name
         self.out = Harvest()
+        # H38: the declared range of each signal, and of each visible name's own signal (an alias's kept name)
+        self.ranges = {path: typ.fixedRange for path, typ, _ in extractor.sig.values()
+                       if typ.isPackedArray and typ.hasFixedRange}
+        self.kept = {n: self.ranges.get(a) for a, n in vis.items() if "::".join(a) == n}
+
+    def index(self, atom, i):
+        """bit i of atom's declared range, as an index of atom's visible name (H38): an alias's kept name can be
+        declared with another range (pci_bridge32: `[19:19]` at the top, `[31:31]` in a submodule)"""
+        r, k = self.ranges.get(atom), self.kept.get(self.vis.get(atom))
+        if r is None or k is None or (r.left, r.right) == (k.left, k.right):
+            return i
+        pos = i - r.right if r.left >= r.right else r.right - i
+        return k.right + pos if k.left >= k.right else k.right - pos
 
     # ------------------------------------------------------------------ constants
     def constant(self, e):
@@ -155,7 +168,7 @@ class Harvester:
         if k == "sig":
             return escaped(self.name(p[1]))
         if k == "bit":
-            return f"{escaped(self.name(p[1]))}[{p[2]}]"
+            return f"{escaped(self.name(p[1]))}[{self.index(p[1], p[2])}]"
         if k == "cmp" and len(p) > 5 and p[5]:
             return f"$signed({self.render(p[2], False)}) {p[1]} {signed_literal(p[3], p[4])}"
         if k == "cmp":
