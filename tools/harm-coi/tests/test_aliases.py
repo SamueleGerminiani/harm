@@ -2,7 +2,8 @@
 is written by hand from the RTL in the test or in the fixture:
   - a port connection or `assign a = b` whose other side is a plain reference to one signal of an equivalent type is
     one net; an operator, a select, a constant, a width change or an inout is not;
-  - the kept name is the shallowest visible name of the class, ties broken by string order.
+  - the kept name is the shallowest visible name of the class, then a top input port, then a top output port, then
+    string order (H38).
 T1 the classes on tests/input/h34/aliases; T2 the emitted configuration on it; T3 the output without --aliases, and
 the classes of the earlier fixtures; T5 determinism."""
 import json
@@ -29,12 +30,12 @@ ALIASES = {"x": ["u_mid::a", "u_mid::u_leaf::a"],
            "rst": ["u_mid::rst", "u_mid::u_leaf::rst"],
            "q": ["u_mid::q", "u_mid::u_leaf::q"],
            "r": ["u_mid::r", "u_mid::u_leaf::r"],
-           "w": ["y"]}  # w = y: both at the top, w first in string order
+           "y": ["w"]}  # w = y: both at the top, y the input port (H38)
 NOT_MERGED = ["u_or::a", "u_or::rst", "u_or::d", "u_wide::a", "u_wide::rst", "u_wide::d", "io", "u_pad::io",
               "u_mid::clk", "u_mid::u_leaf::clk"]
 EARLIER_ALIASES = {"hier": {"dout": ["g[2]::w"]},           # assign dout = g[N-1].w (the stages' ports: invisible)
-                   "multipath": {"rb": ["z"]},               # assign z = rb
-                   "constructs": {"a": ["bus::valid"], "g": ["k"], "o": ["u::o"]}}  # assign bus.valid = a, g = k, .o(o)
+                   "multipath": {"z": ["rb"]},               # assign z = rb (z the output port, H38)
+                   "constructs": {"a": ["bus::valid"], "k": ["g"], "o": ["u::o"]}}  # assign bus.valid = a, g = k (k the input, H38), .o(o)
 
 
 def un(s):
