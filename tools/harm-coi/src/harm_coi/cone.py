@@ -95,7 +95,8 @@ def visible_names(design, recursion, vcd_names, clk):
 
 
 def alias_classes(design, vis, clock_nodes):
-    """(the name map with every visible name of a net replaced by its shallowest one, ties broken by string order;
+    """(the name map with every visible name of a net replaced by its shallowest one, then a top input port, then a
+    top output port (H38), ties broken by string order;
     {kept name: [merged names]}) (H34). A class is left as it is when one of its names is shared by an atom outside
     it (a struct dumped as one vector)."""
     parent = {}
@@ -118,9 +119,12 @@ def alias_classes(design, vis, clock_nodes):
     by_name = defaultdict(set)
     for a, n in vis.items():
         by_name[n].add(a)
+    ins = {vis[a] for a in design.top_inputs if a in vis}
+    outs = {vis[a] for a in getattr(design, "top_outputs", ()) if a in vis}
+    rank = lambda n: (n.count("::"), 0 if n in ins else 1 if n in outs else 2, n)  # noqa: E731
     out, aliases = dict(vis), {}
     for members in groups.values():
-        names = sorted({vis[a] for a in members if a in vis}, key=lambda n: (n.count("::"), n))
+        names = sorted({vis[a] for a in members if a in vis}, key=rank)
         if len(names) < 2 or any(by_name[n] - members for n in names):
             continue
         for a in members:
