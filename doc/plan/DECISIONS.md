@@ -466,3 +466,7 @@ Index `i` of a decision-tree operator (`dtNext<i>`, `..#N&..` level `i`) is at a
 - **Not:** a signal computed from both domains stays (its cone stops at the other domain's part); a top input driven on another clock by the testbench but read by this domain stays (the RTL cannot show it).
 - **Switch:** `--cut-domains`, off by default; on a single-clock design it changes nothing.
 
+## D-045: reset edges in the domain map (2026-10-27, H37, the miner portfolio's MC1b)
+- **Why:** the portfolio takes a domain's reset from D-043's map (its MC1 D2) and needs its polarity to write the domain's `disable iff`.
+- **Rule:** each domain lists `reset_edges`, `{reset root: [edges]}`: the edge of each asynchronous control's event (`negedge rst_n`: `neg`, active low). A synchronous reset is not an asynchronous control and has no entry.
+

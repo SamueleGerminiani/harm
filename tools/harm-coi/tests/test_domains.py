@@ -23,9 +23,9 @@ SRC = Path(__file__).resolve().parents[1] / "src"
 MC = ROOT / "tests" / "input" / "mc"
 
 
-def dom(name, edges=("pos",), registers=(), resets=(), derived=False, frm=(), reads=()):
+def dom(name, edges=("pos",), registers=(), resets=(), derived=False, frm=(), reads=(), redge="pos"):
     return {"name": name, "edges": list(edges), "derived": derived, "from": list(frm), "registers": list(registers),
-            "resets": list(resets), "reads_resets": list(reads)}
+            "resets": list(resets), "reset_edges": {r: [redge] for r in resets}, "reads_resets": list(reads)}
 
 
 EXPECTED = {
@@ -34,9 +34,9 @@ EXPECTED = {
                    dom("clk_b", ("pos",), ["cnt_b", "wrap_b"], ["rst_b"])],
         "crossings": [], "synchronizers": [], "unclocked": []},
     "cdc_fifo": {
-        "clocks": [dom("rclk", ("pos",), ["rbin", "rdata", "rempty", "rptr", "u_w2r::q", "u_w2r::q1"], ["rrst_n"]),
+        "clocks": [dom("rclk", ("pos",), ["rbin", "rdata", "rempty", "rptr", "u_w2r::q", "u_w2r::q1"], ["rrst_n"], redge="neg"),
                    dom("wclk", ("pos",), ["mem0", "mem1", "mem2", "mem3", "u_r2w::q", "u_r2w::q1", "wbin", "wfull",
-                                          "wptr"], ["wrst_n"])],
+                                          "wptr"], ["wrst_n"], redge="neg")],
         "crossings": [  # sorted by (to, into, signal)
             {"signal": "mem0", "from": "wclk", "to": "rclk", "into": "rdata"},
             {"signal": "mem1", "from": "wclk", "to": "rclk", "into": "rdata"},

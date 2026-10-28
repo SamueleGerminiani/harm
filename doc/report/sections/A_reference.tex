@@ -123,6 +123,7 @@ D-041 & no default cap on \code|--reduce implies| & H33 \\
 D-042 & one name per port-connected net (\code|harm-coi --aliases|) & H34 \\
 D-043 & the clock-domain map (\code|harm-coi --domains|) & H35 \\
 D-044 & mine one clock domain (\code|harm-coi --cut-domains|) & H36 \\
+D-045 & reset edges in the domain map & H37 \\
 \bottomrule
 \end{longtable}
 
@@ -184,5 +185,6 @@ H33 & no default cap on \code|--reduce implies| & the 2{,}000{,}000-pair cap ski
 H34 & one name per port-connected net (\code|harm-coi --aliases|) & a net that crosses module ports was one signal per scope: on \code|i2c_slave| HARM mined the copies' equality and repeated assertions per copy (4{,}737 assertions, 3{,}854 distinct texts without the prefixes) \\
 H35 & the clock-domain map (\code|harm-coi --domains|) & \code|harm-coi| samples one clock and makes every register on another clock unknown; 23 of AssertLLM2's 83 designs list more than one clock, and mining each domain on its own clock needs the domains first \\
 H36 & mine one clock domain (\code|harm-coi --cut-domains|) & a register on another clock was unknown, which HARM treats as in every cone, so it was mined on the sampling clock's ticks (\code|two_counters| on \code|clk_a|: assertions over both clocks) \\
+H37 & reset edges in the domain map & a domain's reset came without its polarity, needed for its \code|disable iff| when each domain is mined on its own clock \\
 \bottomrule
 \end{longtable}
