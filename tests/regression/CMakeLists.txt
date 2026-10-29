@@ -422,6 +422,14 @@ if(PYTHON3_FOUND)
     set_tests_properties(h29_implies_pairs PROPERTIES LABELS regression)
 endif()
 
+# ---- H39: --deadline and --mine-deadline (the miner portfolio's HX1) ------------------------------
+if(PYTHON3_FOUND)
+    add_test(NAME h39_deadline
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_deadline.py $<TARGET_FILE:harm>
+                ${H29}/reduce.csv ${H29}/reduce.xml)
+    set_tests_properties(h39_deadline PROPERTIES LABELS regression)
+endif()
+
 # ---- H11: --version (A5) --------------------------------------------------------------------------
 add_test(NAME h11_version COMMAND $<TARGET_FILE:harm> --version)
 set_tests_properties(h11_version PROPERTIES LABELS regression

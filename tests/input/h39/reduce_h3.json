@@ -1,0 +1,33 @@
+{
+ "kept": [
+  "G(a -> c)",
+  "G(d -> c)"
+ ],
+ "implications": [
+  {
+   "context": "default",
+   "dropped": "G({a && b} -> c)",
+   "kept": [
+    "G(a -> c)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({a && d} -> c)",
+   "kept": [
+    "G(a -> c)",
+    "G(d -> c)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({b && d} -> c)",
+   "kept": [
+    "G(d -> c)"
+   ],
+   "relation": "implied"
+  }
+ ]
+}
