@@ -19,6 +19,10 @@ CASES = {
     "h3_ranked": ("h3", ["--keep", "ranked"]),
     "h3b_premises": ("h3b", ["--atom-premises"]),
     "h29_premises": ("h29", ["--atom-premises"]),
+    # H39: the pairs in worker processes give the one-process result (the records written at H38)
+    "h29_workers3": ("h29", ["--implies-workers", "3"], "h29"),
+    "h3_ranked_workers2": ("h3", ["--keep", "ranked", "--implies-workers", "2"], "h3_ranked"),
+    "h29_premises_workers4": ("h29", ["--atom-premises", "--implies-workers", "4"], "h29_premises"),
 }
 
 
@@ -35,9 +39,11 @@ def run(fixture, extra):
 
 
 ok = True
-for name, (fixture, extra) in CASES.items():
+for name, (fixture, extra, *golden) in CASES.items():
     got = run(fixture, extra)
-    f = inp / "h39" / f"reduce_{name}.json"
+    f = inp / "h39" / f"reduce_{golden[0] if golden else name}.json"
+    if write and golden:
+        continue
     if write:
         f.write_text(json.dumps(got, indent=1) + "\n")
         print(f"{name}: written, {len(got['kept'])} kept, {len(got['implications'])} dropped")
