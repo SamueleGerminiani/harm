@@ -1,5 +1,7 @@
 
 #pragma once
+#include <atomic>
+#include <chrono>
 #include <stddef.h>
 #include <string>
 #include <vector>
@@ -82,6 +84,10 @@ extern bool atomPremises;
 extern size_t atomPremisesMax;
 ///--implies-max-pairs (H29): --reduce implies is skipped for a context with more pairs; 0 (the default since H33): no cap
 extern size_t impliesMaxPairs;
+///--deadline, --mine-deadline (H39): seconds from HARM's start; < 0: none. The implication step
+///stops checking pairs at the deadline; mining starts no template or permutation after its own
+extern double deadline;
+extern double mineDeadline;
 ///--dump-coi-report (H9, D-022)
 extern std::string dumpCoiReport;
 ///--dump-vac-ass
@@ -145,5 +151,17 @@ extern size_t traceLength;
 extern size_t nFaults;
 /// --check-dump-eval: one index.json record per dumped assertion, in check order (D-030)
 extern std::vector<std::string> checkDumpEvalIndex;
+/// H39: HARM's start, and mining's progress against --mine-deadline
+extern std::chrono::steady_clock::time_point start;
+extern std::atomic<size_t> permutationsDone;
+extern std::atomic<size_t> permutationsTotal;
+extern std::atomic<size_t> templatesNotStarted;
+extern std::atomic<bool> mineCut;
+/// H39: seconds since HARM's start
+double elapsed();
+/// H39: true once mining's deadline has passed (and records the cut)
+bool mineDeadlinePassed();
+/// H39: the implication step's deadline as a time point; max() without --deadline
+std::chrono::steady_clock::time_point reduceDeadline();
 
 } // namespace hs

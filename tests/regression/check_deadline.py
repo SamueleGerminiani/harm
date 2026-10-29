@@ -5,7 +5,7 @@
       and every pair is unchecked
   T1b a deadline far away: the output equals the run without one, and the record says so
   T3  --mine-deadline 0: mining starts no permutation, HARM exits 0, and info.json's "deadline"
-      record says mining was cut (0 permutations done of more than 0)
+      record says mining was cut (0 permutations done; the fixture's 2 templates not started)
   T3b --deadline S alone: mining's deadline is 0.75 S (the record's mineDeadline)
 Usage: check_deadline.py <harm> <csv> <config>
 """
@@ -56,7 +56,7 @@ ok &= dl is not None and abs(dl["mineDeadline"] - 750) < 1e-6
 info, out = run("implies", "--mine-deadline", "0")
 dl = info.get("deadline")
 print(f"T3 mine-deadline 0: {len(info.get('assertions', []))} assertions, deadline {dl}")
-ok &= dl is not None and dl["mineCut"] is True and dl["permutationsDone"] == 0 < dl["permutationsTotal"]
+ok &= dl is not None and dl["mineCut"] is True and dl["permutationsDone"] == 0 and dl["templatesNotStarted"] == 2
 ok &= len(info.get("assertions", [])) == 0
 ok &= "Deadline: mining cut" in out
 

@@ -336,6 +336,15 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::atomPremises = true;
     messageErrorIf(clc::reduce != "implies", "--atom-premises needs --reduce implies");
   }
+  if (result.count("deadline")) {
+    clc::deadline = result["deadline"].as<double>();
+    messageErrorIf(clc::deadline < 0, "--deadline must be at least 0");
+    clc::mineDeadline = 0.75 * clc::deadline;
+  }
+  if (result.count("mine-deadline")) {
+    clc::mineDeadline = result["mine-deadline"].as<double>();
+    messageErrorIf(clc::mineDeadline < 0, "--mine-deadline must be at least 0");
+  }
   if (result.count("implies-max-pairs")) {
     clc::impliesMaxPairs = result["implies-max-pairs"].as<size_t>();
     messageErrorIf(clc::reduce != "implies", "--implies-max-pairs needs --reduce implies");

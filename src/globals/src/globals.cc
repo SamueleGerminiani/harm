@@ -49,6 +49,8 @@ std::string dumpCoiReport = "";
 bool atomPremises = false;
 size_t atomPremisesMax = 2000;
 size_t impliesMaxPairs = 0;
+double deadline = -1;
+double mineDeadline = -1;
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;
@@ -82,5 +84,30 @@ size_t nFaults = 0;
 size_t nFaultCovSubset = 0;
 size_t traceLength = 0;
 std::vector<std::string> checkDumpEvalIndex;
+std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+std::atomic<size_t> permutationsDone{0};
+std::atomic<size_t> permutationsTotal{0};
+std::atomic<size_t> templatesNotStarted{0};
+std::atomic<bool> mineCut{false};
+
+double elapsed() {
+  return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+}
+
+bool mineDeadlinePassed() {
+  if (clc::mineDeadline < 0 || elapsed() < clc::mineDeadline) {
+    return false;
+  }
+  mineCut = true;
+  return true;
+}
+
+std::chrono::steady_clock::time_point reduceDeadline() {
+  if (clc::deadline < 0) {
+    return std::chrono::steady_clock::time_point::max();
+  }
+  return start + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                     std::chrono::duration<double>(clc::deadline));
+}
 
 } // namespace hs

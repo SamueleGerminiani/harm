@@ -91,6 +91,9 @@ void Miner::run() {
 
     // store the time to mine of this context
     hs::timeToMine_ms += dirtyTimerMilliseconds("minerTimer", 0);
+    messageInfoIf(hs::mineCut, "Deadline: mining cut, " + std::to_string(hs::permutationsDone) + " of " +
+                                   std::to_string(hs::permutationsTotal) + " permutations done, " +
+                                   std::to_string(hs::templatesNotStarted) + " templates not started (--mine-deadline)");
 
     //4) Qualify the mined temporal assertions (additionally print and dump)
     _config.propertyQualifier->qualify(*context, trace);

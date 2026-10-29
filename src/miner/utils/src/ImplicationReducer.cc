@@ -797,7 +797,9 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records,
                     unsigned z3TimeoutMs, size_t *pairsChecked,
-                    const AtomPremises &premises, size_t maxPairs, bool *skipped) {
+                    const AtomPremises &premises, size_t maxPairs, bool *skipped,
+                    std::chrono::steady_clock::time_point deadline, size_t *unchecked,
+                    bool *deadlineHit) {
   const size_t n = in.size();
   std::vector<TemporalExpressionPtr> formulas;
   for (const auto &a : in) {
@@ -882,7 +884,14 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
   }
   std::vector<std::vector<bool>> imp(n, std::vector<bool>(n, false));
   std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
+  size_t notChecked = 0;
+  bool hit = false;
   for (const auto &[i, j] : candidates) {
+    if (hit || std::chrono::steady_clock::now() >= deadline) {
+      hit = true; // H39: the rest count as unrelated
+      notChecked++;
+      continue;
+    }
     std::vector<std::string> used;
     Implication r = relation(abs[i], abs[j], ctx, &facts, &used);
     if (!used.empty()) {
@@ -890,6 +899,13 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
     }
     imp[i][j] = r == Implication::AImpliesB || r == Implication::Equivalent;
     imp[j][i] = r == Implication::BImpliesA || r == Implication::Equivalent;
+  }
+
+  if (unchecked != nullptr) {
+    *unchecked = notChecked;
+  }
+  if (deadlineHit != nullptr) {
+    *deadlineHit = hit;
   }
 
   // equivalence classes: keep the smallest text of each
