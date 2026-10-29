@@ -13,6 +13,9 @@ Option & Effect (section) \\
 \opt{atom-premises} & with \code|implies|: facts between comparisons, proved with Z3 (\cref{sec:premises}) \\
 \opt{atom-premises-max} \code|<N>| & at most $N$ Z3 queries for those facts (default 2{,}000) \\
 \opt{implies-max-pairs} \code|<N>| & with \code|implies|: skip the implication step for a context with more than $N$ pairs (default 0: no cap, \ms{H33}), recorded in \opt{dump-assertion-info} (\cref{sec:implies}) \\
+\opt{implies-workers} \code|<N>| & with \code|implies|: the worker processes that check its pairs (default \opt{max-threads}, from 2{,}000 pairs per worker); the result does not depend on $N$ (H39) \\
+\opt{deadline} \code|<S>| & seconds from HARM's start: the implication step checks pairs until then, the rest count as unrelated (H39) \\
+\opt{mine-deadline} \code|<S>| & seconds from HARM's start: mining starts no template, permutation or decision-tree step after it (default 0.75 of \opt{deadline}); what was mined is written (H39) \\
 \opt{dump-implications} \code|<file>| & the dropped assertions and what implies them, as JSON \\
 \opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON \\
 \opt{dump-coi-report} \code|<file>| & the out-of-cone report (\cref{sec:coi}) \\

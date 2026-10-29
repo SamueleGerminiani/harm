@@ -53,6 +53,8 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 | `--reduce syntactic\|equiv\|implies` | remove redundant assertions: identical (default), equivalent propositions (Z3, H2), or implied assertions (Spot plus HARM's finite-trace model, H3) |
 | `--keep stronger\|weaker\|ranked` | with `implies`: which side of an implication is kept |
 | `--implies-max-pairs <N>` | with `implies`: skip the implication step for a context with more than `N` pairs to check (default `0`: no cap, H33), recorded in `--dump-assertion-info` (H29) |
+| `--implies-workers <N>` | with `implies`: the processes that check its pairs (default `--max-threads`, from 2,000 pairs per worker); the result does not depend on it (H39) |
+| `--deadline <S>`, `--mine-deadline <S>` | seconds from HARM's start: the implication step checks pairs until `--deadline` (the rest count as unrelated); mining starts nothing after `--mine-deadline` (default 0.75 of `--deadline`) and what was mined is written; recorded in `--dump-assertion-info` (H39) |
 | `--atom-premises`, `--atom-premises-max <N>` | with `implies`: also use facts between comparisons (`cnt > 9` ⇒ `cnt > 8`, exclusive FSM states; H3b) |
 | `--dump-implications <file>` | the dropped assertions and what implies them, as JSON |
 | `--dump-assertion-info <file>` | every kept assertion with its metrics, propositions, cycle offsets and origins, as JSON |

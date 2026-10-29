@@ -804,6 +804,10 @@ $ cat $OUT/implications.json
 ```
 * **`--implies-max-pairs <N>`** (with `--reduce implies`; default `0`: no cap, since H33)
     Only the pairs of assertions that share a consequent atom (or whose consequent atoms a proved fact links) are checked (H29). With a cap `N` > 0 and more than `N` such pairs in a context, HARM skips the implication step for it and says so; the equivalence step still runs, so the kept assertions are those of `--reduce equiv`. `--dump-assertion-info` records, per context, `"implication": {"pairs", "maxPairs", "skipped", "dropped", "seconds"}`.
+* **`--implies-workers <N>`** (with `--reduce implies`; default: `--max-threads`, from 2,000 pairs per worker)
+    The implication step's pairs are checked in `N` worker processes (each with its own copy of BuDDy's and Spot's state) and merged in the pairs' order, so the result does not depend on `N` (H39).
+* **`--deadline <S>`**, **`--mine-deadline <S>`** (seconds from HARM's start, H39)
+    With `--deadline`, the implication step checks pairs until then; a pair not checked counts as unrelated, so nothing is dropped that would not have been (fewer drops). With `--mine-deadline` (default: 0.75 of `--deadline`), mining starts no template, permutation or decision-tree step after it, and what was mined is qualified and written. `--dump-assertion-info` records `"deadline": {"deadline", "mineDeadline", "mineCut", "permutationsDone", "permutationsTotal", "templatesNotStarted"}` (written even when nothing was mined) and, per context, the implication step's `"unchecked"` pairs and `"deadlineHit"`.
 * **`--atom-premises`** (with `--reduce implies`), **`--atom-premises-max <N>`** (default 2000)
     Also use facts between the comparisons inside propositions, proved with Z3 under HARM's semantics (x/z included):
     - implications, e.g. `cnt > 9` implies `cnt > 8`;
