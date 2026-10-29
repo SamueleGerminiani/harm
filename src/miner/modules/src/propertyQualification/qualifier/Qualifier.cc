@@ -744,14 +744,24 @@ void Qualifier::sortAssertionsWithMetrics(
     a->_finalScore = score;
   }
 
-  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic
-  std::sort(assertions.begin(), assertions.end(),
-            [](const AssertionPtr &left, const AssertionPtr &right) {
-              if (left->_finalScore != right->_finalScore) {
-                return left->_finalScore > right->_finalScore;
+  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic;
+  //the texts are printed once (H39: printed in each comparison, ~25 s for 237,000 assertions)
+  std::vector<std::pair<std::string, AssertionPtr>> keyed;
+  keyed.reserve(assertions.size());
+  for (auto &a : assertions) {
+    keyed.emplace_back(a->toString(), a);
+  }
+  std::sort(keyed.begin(), keyed.end(),
+            [](const std::pair<std::string, AssertionPtr> &left,
+               const std::pair<std::string, AssertionPtr> &right) {
+              if (left.second->_finalScore != right.second->_finalScore) {
+                return left.second->_finalScore > right.second->_finalScore;
               }
-              return left->toString() < right->toString();
+              return left.first < right.first;
             });
+  for (size_t i = 0; i < keyed.size(); i++) {
+    assertions[i] = keyed[i].second;
+  }
 }
 
 void Qualifier::filterAssertionsWithMetrics(
