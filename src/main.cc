@@ -345,6 +345,11 @@ void parseCommandLineArguments(int argc, char *args[]) {
     clc::mineDeadline = result["mine-deadline"].as<double>();
     messageErrorIf(clc::mineDeadline < 0, "--mine-deadline must be at least 0");
   }
+  if (result.count("implies-workers")) {
+    clc::impliesWorkers = result["implies-workers"].as<size_t>();
+    messageErrorIf(clc::reduce != "implies", "--implies-workers needs --reduce implies");
+    messageErrorIf(clc::impliesWorkers == 0, "--implies-workers must be at least 1");
+  }
   if (result.count("implies-max-pairs")) {
     clc::impliesMaxPairs = result["implies-max-pairs"].as<size_t>();
     messageErrorIf(clc::reduce != "implies", "--implies-max-pairs needs --reduce implies");

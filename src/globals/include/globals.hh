@@ -88,6 +88,9 @@ extern size_t impliesMaxPairs;
 ///stops checking pairs at the deadline; mining starts no template or permutation after its own
 extern double deadline;
 extern double mineDeadline;
+///--implies-workers (H39): processes checking the implication step's pairs; 0 (default): --max-threads, from
+///IMPLIES_PAIRS_PER_WORKER pairs per process
+extern size_t impliesWorkers;
 ///--dump-coi-report (H9, D-022)
 extern std::string dumpCoiReport;
 ///--dump-vac-ass

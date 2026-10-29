@@ -14,6 +14,9 @@ using AssertionPtr = std::shared_ptr<Assertion>;
 enum class Implication { Equivalent, AImpliesB, BImpliesA, None, Skipped };
 std::string toString(Implication i);
 
+/// H39: with --implies-workers 0, a worker process per this many pairs, up to --max-threads
+constexpr size_t IMPLIES_PAIRS_PER_WORKER = 2000;
+
 /// assertions spanning more cycles than this are never reduced (their automata are exponential)
 constexpr int maxImplicationDepth = 10;
 

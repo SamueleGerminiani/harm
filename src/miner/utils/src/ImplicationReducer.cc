@@ -7,7 +7,12 @@
 #include <map>
 #include <numeric>
 #include <optional>
+#include <cerrno>
 #include <cstring>
+#include <iostream>
+#include <poll.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -810,6 +815,137 @@ Implication implicationBetween(const TemporalExpressionPtr &a,
   return relation(x, y, ctx, &facts);
 }
 
+namespace {
+/// H39: a checked pair's result as bytes: flags, then each used fact as its length and text
+std::string encodeResult(bool ij, bool ji, const std::vector<std::string> &used) {
+  std::string r;
+  putBytes(r, (uint8_t)(ij | ji << 1));
+  putBytes(r, (uint32_t)used.size());
+  for (const auto &u : used) {
+    putBytes(r, (uint32_t)u.size());
+    r += u;
+  }
+  return r;
+}
+
+template <typename T> T getBytes(const std::string &s, size_t &at) {
+  T v;
+  std::memcpy(&v, s.data() + at, sizeof(T));
+  at += sizeof(T);
+  return v;
+}
+
+void decodeResult(const std::string &rec, bool &ij, bool &ji, std::vector<std::string> &used) {
+  size_t at = 0;
+  auto flags = getBytes<uint8_t>(rec, at);
+  ij = flags & 1;
+  ji = flags & 2;
+  auto n = getBytes<uint32_t>(rec, at);
+  for (uint32_t u = 0; u < n; u++) {
+    auto len = getBytes<uint32_t>(rec, at);
+    used.push_back(rec.substr(at, len));
+    at += len;
+  }
+}
+
+/// H39: items 0..n-1 checked by `workers` forked processes (item k by worker k mod workers), each until the
+/// deadline; a worker sends (k, its record) back through a pipe. An item a worker did not send (the deadline, or the
+/// worker failed) is left unchecked
+void checkInWorkers(size_t n, size_t workers, std::chrono::steady_clock::time_point deadline,
+                    const std::function<void(size_t)> &check, const std::function<std::string(size_t)> &encode,
+                    const std::function<void(size_t, const std::string &)> &accept) {
+  std::cout.flush();
+  std::cerr.flush();
+  std::vector<int> fds;
+  std::vector<pid_t> pids;
+  for (size_t w = 0; w < workers; w++) {
+    int p[2];
+    messageErrorIf(pipe(p) != 0, "--reduce implies: cannot open a pipe for a worker");
+    pid_t pid = fork();
+    messageErrorIf(pid < 0, "--reduce implies: cannot start a worker");
+    if (pid == 0) {
+      close(p[0]);
+      for (int fd : fds) {
+        close(fd);
+      }
+      std::string buf;
+      auto flush = [&]() {
+        size_t off = 0;
+        while (off < buf.size()) {
+          ssize_t m = write(p[1], buf.data() + off, buf.size() - off);
+          if (m <= 0) {
+            _exit(1);
+          }
+          off += (size_t)m;
+        }
+        buf.clear();
+      };
+      for (size_t k = w; k < n && std::chrono::steady_clock::now() < deadline; k += workers) {
+        check(k);
+        std::string rec = encode(k);
+        putBytes(buf, (uint64_t)k);
+        putBytes(buf, (uint32_t)rec.size());
+        buf += rec;
+        if (buf.size() > (1 << 16)) {
+          flush();
+        }
+      }
+      flush();
+      close(p[1]);
+      _exit(0); // no destructors, no buffered output of the parent's twice
+    }
+    close(p[1]);
+    fds.push_back(p[0]);
+    pids.push_back(pid);
+  }
+  std::vector<std::string> data(workers);
+  std::vector<pollfd> polls;
+  for (int fd : fds) {
+    polls.push_back({fd, POLLIN, 0});
+  }
+  size_t open = workers;
+  char chunk[1 << 16];
+  while (open > 0) {
+    if (poll(polls.data(), polls.size(), -1) < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      break;
+    }
+    for (size_t w = 0; w < workers; w++) {
+      if (polls[w].fd < 0 || !(polls[w].revents & (POLLIN | POLLHUP | POLLERR))) {
+        continue;
+      }
+      ssize_t m = read(polls[w].fd, chunk, sizeof(chunk));
+      if (m > 0) {
+        data[w].append(chunk, (size_t)m);
+      } else {
+        close(polls[w].fd);
+        polls[w].fd = -1;
+        open--;
+      }
+    }
+  }
+  for (size_t w = 0; w < workers; w++) {
+    int status = 0;
+    waitpid(pids[w], &status, 0);
+    bool ok = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    messageWarningIf(!ok, "--reduce implies: a worker failed; its pairs count as not checked");
+    const std::string &s = data[w];
+    size_t at = 0;
+    while (ok && at + 12 <= s.size()) {
+      auto k = getBytes<uint64_t>(s, at);
+      auto len = getBytes<uint32_t>(s, at);
+      if (at + len > s.size()) {
+        break;
+      }
+      accept((size_t)k, s.substr(at, len));
+      at += len;
+    }
+  }
+}
+} // namespace
+
 std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
@@ -913,27 +1049,56 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
   std::vector<Pair> related;
   std::vector<std::vector<Edge>> adj(n);
   std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
+  // H39: each pair's result, checked here or in worker processes (fork: BuDDy and Spot keep global state, so each
+  // worker has its own copy); merged in the pairs' order, so the result does not depend on the workers
+  struct Result {
+    bool checked = false, ij = false, ji = false;
+    std::vector<std::string> used;
+  };
+  std::vector<Result> results(candidates.size());
+  auto check = [&](size_t k) {
+    const auto &[i, j] = candidates[k];
+    Result &res = results[k];
+    Implication r = relation(abs[i], abs[j], ctx, &facts, &res.used);
+    res.checked = true;
+    res.ij = r == Implication::AImpliesB || r == Implication::Equivalent;
+    res.ji = r == Implication::BImpliesA || r == Implication::Equivalent;
+  };
+  size_t workers = clc::impliesWorkers;
+  if (workers == 0) {
+    workers = std::min<size_t>(clc::maxThreads, candidates.size() / IMPLIES_PAIRS_PER_WORKER);
+  }
+  workers = std::max<size_t>(1, std::min(workers, candidates.size()));
+  if (workers == 1) {
+    for (size_t k = 0; k < candidates.size() && std::chrono::steady_clock::now() < deadline; k++) {
+      check(k);
+    }
+  } else {
+    checkInWorkers(results.size(), workers, deadline, check,
+                   [&](size_t k) -> std::string { return encodeResult(results[k].ij, results[k].ji, results[k].used); },
+                   [&](size_t k, const std::string &rec) {
+                     results[k].checked = true;
+                     decodeResult(rec, results[k].ij, results[k].ji, results[k].used);
+                   });
+  }
   size_t notChecked = 0;
-  bool hit = false;
-  for (const auto &[i, j] : candidates) {
-    if (hit || std::chrono::steady_clock::now() >= deadline) {
-      hit = true; // H39: the rest count as unrelated
-      notChecked++;
+  for (size_t k = 0; k < candidates.size(); k++) {
+    const auto &[i, j] = candidates[k];
+    const Result &res = results[k];
+    if (!res.checked) {
+      notChecked++; // H39: past the deadline, unrelated
       continue;
     }
-    std::vector<std::string> used;
-    Implication r = relation(abs[i], abs[j], ctx, &facts, &used);
-    if (!used.empty()) {
-      usedFacts[{i, j}] = used;
+    if (!res.used.empty()) {
+      usedFacts[{i, j}] = res.used;
     }
-    bool ij = r == Implication::AImpliesB || r == Implication::Equivalent;
-    bool ji = r == Implication::BImpliesA || r == Implication::Equivalent;
-    if (ij || ji) {
-      related.push_back({i, j, ij, ji});
-      adj[i].push_back({j, ij, ji});
-      adj[j].push_back({i, ji, ij});
+    if (res.ij || res.ji) {
+      related.push_back({i, j, res.ij, res.ji});
+      adj[i].push_back({j, res.ij, res.ji});
+      adj[j].push_back({i, res.ji, res.ij});
     }
   }
+  bool hit = notChecked > 0;
 
   if (unchecked != nullptr) {
     *unchecked = notChecked;

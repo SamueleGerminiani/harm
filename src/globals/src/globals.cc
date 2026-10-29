@@ -51,6 +51,7 @@ size_t atomPremisesMax = 2000;
 size_t impliesMaxPairs = 0;
 double deadline = -1;
 double mineDeadline = -1;
+size_t impliesWorkers = 0;
 std::string dumpVacAss = "";
 size_t maxAss = std::numeric_limits<size_t>().max();
 double minFrank = 0.f;
