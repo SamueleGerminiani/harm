@@ -185,11 +185,13 @@ def closure(names, direct, unknown, max_depth):
         if any(s in unknown and d <= max_depth for s, d in reach):
             unknown.add(t)
             continue
+        by = {}  # H40: each source's depths, grouped once (a scan of the whole reach per source was quadratic)
+        for s, d in reach:
+            by.setdefault(s, []).append(d)
         sources = []
-        for s in sorted({s for s, _ in reach}):
-            depths = sorted(d for x, d in reach if x == s and d <= max_depth)
-            entry = {"sig": s, "depths": depths}
-            if any(x == s and d > max_depth for x, d in reach):
+        for s in sorted(by):
+            entry = {"sig": s, "depths": sorted(d for d in by[s] if d <= max_depth)}
+            if any(d > max_depth for d in by[s]):
                 entry["saturated"] = True
             sources.append(entry)
         targets[t] = {"sources": sources}
