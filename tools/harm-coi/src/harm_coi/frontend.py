@@ -74,6 +74,7 @@ def elaborate(top, files, defines=(), includes=()):
     d = driver.Driver()
     d.addStandardArgs()
     args = ["harm-coi", "--top", top, "--timescale", "1ns/1ps"]  # H28: the default for a file without one, as trivergence and OpenFPV
+    args += ["--allow-use-before-declare"]  # H39: as Verilator and trivergence's simulator (AssertLLM2's sdspi)
     args += [f"-D{x}" for x in defines] + [f"-I{x}" for x in includes] + list(files)
     if not d.parseCommandLine(shlex.join(args), driver.CommandLineOptions()) or not d.processOptions():
         raise FrontendError("invalid front-end options")
