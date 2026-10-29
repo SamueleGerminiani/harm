@@ -7,8 +7,15 @@
 #include <map>
 #include <numeric>
 #include <optional>
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <poll.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <spot/tl/formula.hh>
 #include <spot/tl/parse.hh>
@@ -341,6 +348,13 @@ std::optional<HarmModel> harmModel(
 /// a pending consequent instance: its state in HARM's automaton and in the LTLf automaton
 using ConState = std::pair<unsigned, unsigned>;
 
+/// H39: a search state's key as fixed-width bytes (was decimal text): the same states compare equal
+template <typename T> void putBytes(std::string &k, T v) {
+  char b[sizeof(T)];
+  std::memcpy(b, &v, sizeof(T));
+  k.append(b, sizeof(T));
+}
+
 /// the next state of a pending consequent instance; 'outcome' 2: failed, 1: held, 0: pending
 ConState stepCon(const HarmModel &m, ConState c, const bdd &letter, int &outcome) {
   auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
@@ -368,12 +382,14 @@ struct Pending {
   std::vector<ConState> con; // the pending consequent instances
   bool failed = false;       // an instance failed inside the trace
 
-  std::string key() const {
-    std::string k = std::to_string(ant) + (startNext ? "+" : "-");
+  void key(std::string &k) const {
+    putBytes(k, ant);
+    putBytes(k, (uint8_t)startNext);
+    putBytes(k, (uint32_t)con.size());
     for (auto c : con) {
-      k += "," + std::to_string(c.first) + "." + std::to_string(c.second);
+      putBytes(k, c.first);
+      putBytes(k, c.second);
     }
-    return k;
   }
   /// fails if the trace ends now (--trace-end sva: a strong obligation is pending)
   bool failsAtEnd(const HarmModel &m) const {
@@ -428,11 +444,11 @@ struct Instance {
   bool startNext = false; // the consequent starts on the next cycle (|=>)
   bool failed = false;    // failed inside the trace (absorbing)
 
-  std::string key() const {
-    return std::to_string(ant) + "/" +
-           (conActive ? std::to_string(con.first) + "." + std::to_string(con.second)
-                      : std::string("-")) +
-           (started ? "s" : "w") + (startNext ? "+" : "-") + (failed ? "F" : "");
+  void key(std::string &k) const {
+    putBytes(k, ant);
+    putBytes(k, (uint8_t)(conActive | started << 1 | startNext << 2 | failed << 3));
+    putBytes(k, conActive ? con.first : 0u); // the state matters only while the consequent is pending
+    putBytes(k, conActive ? con.second : 0u);
   }
   bool failsAtEnd(const HarmModel &m) const {
     return failed || (conActive && !m.endOK2[con.second]);
@@ -517,9 +533,16 @@ bool harmImplies(const HarmModel &x, const HarmModel &y,
       }
     }
   }
-  std::set<std::string> seen;
+  std::unordered_set<std::string> seen;
+  std::string key;
+  auto keyOf = [&key](const Pending &p, const Instance &i) -> const std::string & {
+    key.clear();
+    i.key(key); // fixed width first, then the pending ones
+    p.key(key);
+    return key;
+  };
   std::deque<std::pair<Pending, Instance>> todo{{Pending(), Instance()}};
-  seen.insert(todo.front().first.key() + "|" + todo.front().second.key());
+  seen.insert(keyOf(todo.front().first, todo.front().second));
   while (!todo.empty()) {
     auto [px, iy] = todo.front();
     todo.pop_front();
@@ -539,7 +562,7 @@ bool harmImplies(const HarmModel &x, const HarmModel &y,
         if (qy->failsAtEnd(y) && !qx.failsAtEnd(x)) {
           return false; // the trace can end here: x holds, y fails
         }
-        if (seen.insert(qx.key() + "|" + qy->key()).second) {
+        if (seen.insert(keyOf(qx, *qy)).second) {
           if (seen.size() > maxStates) {
             return false; // too large to decide: keep both
           }
@@ -792,12 +815,145 @@ Implication implicationBetween(const TemporalExpressionPtr &a,
   return relation(x, y, ctx, &facts);
 }
 
+namespace {
+/// H39: a checked pair's result as bytes: flags, then each used fact as its length and text
+std::string encodeResult(bool ij, bool ji, const std::vector<std::string> &used) {
+  std::string r;
+  putBytes(r, (uint8_t)(ij | ji << 1));
+  putBytes(r, (uint32_t)used.size());
+  for (const auto &u : used) {
+    putBytes(r, (uint32_t)u.size());
+    r += u;
+  }
+  return r;
+}
+
+template <typename T> T getBytes(const std::string &s, size_t &at) {
+  T v;
+  std::memcpy(&v, s.data() + at, sizeof(T));
+  at += sizeof(T);
+  return v;
+}
+
+void decodeResult(const std::string &rec, bool &ij, bool &ji, std::vector<std::string> &used) {
+  size_t at = 0;
+  auto flags = getBytes<uint8_t>(rec, at);
+  ij = flags & 1;
+  ji = flags & 2;
+  auto n = getBytes<uint32_t>(rec, at);
+  for (uint32_t u = 0; u < n; u++) {
+    auto len = getBytes<uint32_t>(rec, at);
+    used.push_back(rec.substr(at, len));
+    at += len;
+  }
+}
+
+/// H39: items 0..n-1 checked by `workers` forked processes (item k by worker k mod workers), each until the
+/// deadline; a worker sends (k, its record) back through a pipe. An item a worker did not send (the deadline, or the
+/// worker failed) is left unchecked
+void checkInWorkers(size_t n, size_t workers, std::chrono::steady_clock::time_point deadline,
+                    const std::function<void(size_t)> &check, const std::function<std::string(size_t)> &encode,
+                    const std::function<void(size_t, const std::string &)> &accept) {
+  std::cout.flush();
+  std::cerr.flush();
+  std::vector<int> fds;
+  std::vector<pid_t> pids;
+  for (size_t w = 0; w < workers; w++) {
+    int p[2];
+    messageErrorIf(pipe(p) != 0, "--reduce implies: cannot open a pipe for a worker");
+    pid_t pid = fork();
+    messageErrorIf(pid < 0, "--reduce implies: cannot start a worker");
+    if (pid == 0) {
+      close(p[0]);
+      for (int fd : fds) {
+        close(fd);
+      }
+      std::string buf;
+      auto flush = [&]() {
+        size_t off = 0;
+        while (off < buf.size()) {
+          ssize_t m = write(p[1], buf.data() + off, buf.size() - off);
+          if (m <= 0) {
+            _exit(1);
+          }
+          off += (size_t)m;
+        }
+        buf.clear();
+      };
+      for (size_t k = w; k < n && std::chrono::steady_clock::now() < deadline; k += workers) {
+        check(k);
+        std::string rec = encode(k);
+        putBytes(buf, (uint64_t)k);
+        putBytes(buf, (uint32_t)rec.size());
+        buf += rec;
+        if (buf.size() > (1 << 16)) {
+          flush();
+        }
+      }
+      flush();
+      close(p[1]);
+      _exit(0); // no destructors, no buffered output of the parent's twice
+    }
+    close(p[1]);
+    fds.push_back(p[0]);
+    pids.push_back(pid);
+  }
+  std::vector<std::string> data(workers);
+  std::vector<pollfd> polls;
+  for (int fd : fds) {
+    polls.push_back({fd, POLLIN, 0});
+  }
+  size_t open = workers;
+  char chunk[1 << 16];
+  while (open > 0) {
+    if (poll(polls.data(), polls.size(), -1) < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      break;
+    }
+    for (size_t w = 0; w < workers; w++) {
+      if (polls[w].fd < 0 || !(polls[w].revents & (POLLIN | POLLHUP | POLLERR))) {
+        continue;
+      }
+      ssize_t m = read(polls[w].fd, chunk, sizeof(chunk));
+      if (m > 0) {
+        data[w].append(chunk, (size_t)m);
+      } else {
+        close(polls[w].fd);
+        polls[w].fd = -1;
+        open--;
+      }
+    }
+  }
+  for (size_t w = 0; w < workers; w++) {
+    int status = 0;
+    waitpid(pids[w], &status, 0);
+    bool ok = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    messageWarningIf(!ok, "--reduce implies: a worker failed; its pairs count as not checked");
+    const std::string &s = data[w];
+    size_t at = 0;
+    while (ok && at + 12 <= s.size()) {
+      auto k = getBytes<uint64_t>(s, at);
+      auto len = getBytes<uint32_t>(s, at);
+      if (at + len > s.size()) {
+        break;
+      }
+      accept((size_t)k, s.substr(at, len));
+      at += len;
+    }
+  }
+}
+} // namespace
+
 std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &in,
                     const std::string &keep,
                     std::vector<ImplicationRecord> *records,
                     unsigned z3TimeoutMs, size_t *pairsChecked,
-                    const AtomPremises &premises, size_t maxPairs, bool *skipped) {
+                    const AtomPremises &premises, size_t maxPairs, bool *skipped,
+                    std::chrono::steady_clock::time_point deadline, size_t *unchecked,
+                    bool *deadlineHit) {
   const size_t n = in.size();
   std::vector<TemporalExpressionPtr> formulas;
   for (const auto &a : in) {
@@ -880,35 +1036,99 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
   if (!store) {
     return in;
   }
-  std::vector<std::vector<bool>> imp(n, std::vector<bool>(n, false));
+  // H39: only a checked pair can be related, so the relations are kept per pair and per assertion
+  // (neighbours), not in an n x n matrix; every walk below visits the related pairs only
+  struct Pair {
+    size_t i, j;
+    bool ij, ji; // i implies j, j implies i
+  };
+  struct Edge {
+    size_t k;
+    bool to, from; // this one implies k, k implies this one
+  };
+  std::vector<Pair> related;
+  std::vector<std::vector<Edge>> adj(n);
   std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
-  for (const auto &[i, j] : candidates) {
+  // H39: each pair's result, checked here or in worker processes (fork: BuDDy and Spot keep global state, so each
+  // worker has its own copy); merged in the pairs' order, so the result does not depend on the workers
+  struct Result {
+    bool checked = false, ij = false, ji = false;
     std::vector<std::string> used;
-    Implication r = relation(abs[i], abs[j], ctx, &facts, &used);
-    if (!used.empty()) {
-      usedFacts[{i, j}] = used;
+  };
+  std::vector<Result> results(candidates.size());
+  auto check = [&](size_t k) {
+    const auto &[i, j] = candidates[k];
+    Result &res = results[k];
+    Implication r = relation(abs[i], abs[j], ctx, &facts, &res.used);
+    res.checked = true;
+    res.ij = r == Implication::AImpliesB || r == Implication::Equivalent;
+    res.ji = r == Implication::BImpliesA || r == Implication::Equivalent;
+  };
+  size_t workers = clc::impliesWorkers;
+  if (workers == 0) {
+    workers = std::min<size_t>(clc::maxThreads, candidates.size() / IMPLIES_PAIRS_PER_WORKER);
+  }
+  workers = std::max<size_t>(1, std::min(workers, candidates.size()));
+  if (workers == 1) {
+    for (size_t k = 0; k < candidates.size() && std::chrono::steady_clock::now() < deadline; k++) {
+      check(k);
     }
-    imp[i][j] = r == Implication::AImpliesB || r == Implication::Equivalent;
-    imp[j][i] = r == Implication::BImpliesA || r == Implication::Equivalent;
+  } else {
+    checkInWorkers(results.size(), workers, deadline, check,
+                   [&](size_t k) -> std::string { return encodeResult(results[k].ij, results[k].ji, results[k].used); },
+                   [&](size_t k, const std::string &rec) {
+                     results[k].checked = true;
+                     decodeResult(rec, results[k].ij, results[k].ji, results[k].used);
+                   });
+  }
+  size_t notChecked = 0;
+  for (size_t k = 0; k < candidates.size(); k++) {
+    const auto &[i, j] = candidates[k];
+    const Result &res = results[k];
+    if (!res.checked) {
+      notChecked++; // H39: past the deadline, unrelated
+      continue;
+    }
+    if (!res.used.empty()) {
+      usedFacts[{i, j}] = res.used;
+    }
+    if (res.ij || res.ji) {
+      related.push_back({i, j, res.ij, res.ji});
+      adj[i].push_back({j, res.ij, res.ji});
+      adj[j].push_back({i, res.ji, res.ij});
+    }
+  }
+  bool hit = notChecked > 0;
+
+  if (unchecked != nullptr) {
+    *unchecked = notChecked;
+  }
+  if (deadlineHit != nullptr) {
+    *deadlineHit = hit;
   }
 
-  // equivalence classes: keep the smallest text of each
+  // equivalence classes: keep the smallest text of each (the pairs in H38's order: i, then j)
+  std::vector<Pair> equivalent;
+  for (const auto &p : related) {
+    if (p.ij && p.ji) {
+      equivalent.push_back(p);
+    }
+  }
+  std::sort(equivalent.begin(), equivalent.end(), [](const Pair &a, const Pair &b) {
+    return a.i != b.i ? a.i < b.i : a.j < b.j;
+  });
   std::vector<size_t> rep(n);
   std::iota(rep.begin(), rep.end(), 0);
   std::function<size_t(size_t)> find = [&](size_t x) {
     return rep[x] == x ? x : rep[x] = find(rep[x]);
   };
-  for (size_t i = 0; i < n; i++) {
-    for (size_t j = i + 1; j < n; j++) {
-      if (imp[i][j] && imp[j][i]) {
-        size_t a = find(i), b = find(j);
-        if (a != b) {
-          if (text[b] < text[a]) {
-            std::swap(a, b);
-          }
-          rep[b] = a;
-        }
+  for (const auto &p : equivalent) {
+    size_t a = find(p.i), b = find(p.j);
+    if (a != b) {
+      if (text[b] < text[a]) {
+        std::swap(a, b);
       }
+      rep[b] = a;
     }
   }
   std::vector<bool> dropped(n, false);
@@ -919,10 +1139,10 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
       why[i] = "equivalent";
     }
   }
-  auto strict = [&](size_t a, size_t b) { return imp[a][b] && !imp[b][a]; };
 
   if (keep == "ranked") {
-    // best-ranked first: keep an assertion unless it is related to one already kept
+    // best-ranked first: keep an assertion unless it is related to one already kept (the first
+    // kept one decides the reason)
     std::vector<size_t> order;
     for (size_t i = 0; i < n; i++) {
       if (!dropped[i]) {
@@ -932,17 +1152,23 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
     std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
       return in[a]->_finalScore > in[b]->_finalScore;
     });
-    std::vector<size_t> kept;
+    std::vector<size_t> keptAt(n, n); // position among the kept, n: not kept
+    size_t nKept = 0;
     for (size_t i : order) {
-      for (size_t k : kept) {
-        if (strict(k, i) || strict(i, k)) {
-          dropped[i] = true;
-          why[i] = strict(k, i) ? "implied" : "implies";
-          break;
+      size_t first = n;
+      bool implied = false;
+      for (const auto &e : adj[i]) {
+        // strict(k, i): k implies i only; strict(i, k): i implies k only
+        if (keptAt[e.k] < first && (e.from != e.to)) {
+          first = keptAt[e.k];
+          implied = e.from;
         }
       }
-      if (!dropped[i]) {
-        kept.push_back(i);
+      if (first < n) {
+        dropped[i] = true;
+        why[i] = implied ? "implied" : "implies";
+      } else {
+        keptAt[i] = nKept++;
       }
     }
   } else {
@@ -951,9 +1177,9 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
       if (dropped[i]) {
         continue;
       }
-      for (size_t j = 0; j < n; j++) {
-        if (j != i && find(j) == j &&
-            (stronger ? strict(j, i) : strict(i, j))) {
+      for (const auto &e : adj[i]) {
+        // a class representative j with strict(j, i) (stronger) or strict(i, j) (weaker)
+        if (find(e.k) == e.k && (stronger ? (e.from && !e.to) : (e.to && !e.from))) {
           dropped[i] = true;
           why[i] = stronger ? "implied" : "implies";
           break;
@@ -974,14 +1200,22 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
         continue;
       }
       ImplicationRecord r{in[i], {}, why[i]};
-      for (size_t k = 0; k < n; k++) {
+      std::vector<size_t> ks; // the kept ones related to i, ascending
+      if (why[i] == "equivalent") {
+        ks.push_back(find(i));
+      } else {
+        for (const auto &e : adj[i]) {
+          if (why[i] == "implied" ? e.from : e.to) {
+            ks.push_back(e.k);
+          }
+        }
+        std::sort(ks.begin(), ks.end());
+      }
+      for (size_t k : ks) {
         if (dropped[k]) {
           continue;
         }
-        bool related = why[i] == "equivalent" ? find(i) == k
-                       : why[i] == "implied"  ? imp[k][i]
-                                              : imp[i][k];
-        if (related) {
+        {
           r.kept.push_back(in[k]);
           auto u = usedFacts.find({std::min(i, k), std::max(i, k)});
           if (u != usedFacts.end()) {

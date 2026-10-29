@@ -409,6 +409,9 @@ void AntecedentGenerator::runDecisionTree(
     const NumericDecTreeExp &numericCandidates,
     const TemplateImplicationPtr &t, double currScore) {
 
+  if (hs::mineDeadlinePassed()) {
+    return; // H39: the solutions found so far are kept
+  }
   DTOperatorPtr dto = t->getDT();
 
   std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
@@ -422,6 +425,9 @@ void AntecedentGenerator::runDecisionTree(
   if (dto->getNChoices() < dto->getLimits()._maxAll) {
     for (; candidate != unusedVars.end() ||
            candidateNumeric != unusedNumerics.end();) {
+      if (hs::mineDeadlinePassed()) {
+        break; // H39: the rest of the scan is not done
+      }
       if (dto->isUnordered()) {
         //Unordered ..#&.. ..##..
         for (size_t i = 0; i < dto->getLimits()._maxDepth; i++) {
@@ -559,6 +565,9 @@ void AntecedentGenerator::runDecisionTree(
   size_t currStates = nStates;
 
   for (auto &cand : candidates) {
+    if (hs::mineDeadlinePassed()) {
+      break; // H39
+    }
     dto->addItem(cand._prop, cand._depth);
     dto->addLeaf(cand._prop,
                  cand._id +

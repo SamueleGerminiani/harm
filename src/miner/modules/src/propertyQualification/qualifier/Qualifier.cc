@@ -347,6 +347,15 @@ void dumpAssertionInfo(const Context &context,
       out << "},\n";
     }
   }
+  if (clc::deadline >= 0 || clc::mineDeadline >= 0) {
+    // H39
+    std::stringstream d;
+    d << "  \"deadline\": {\"deadline\": " << (clc::deadline >= 0 ? std::to_string(clc::deadline) : "null")
+      << ", \"mineDeadline\": " << clc::mineDeadline << ", \"mineCut\": " << (hs::mineCut ? "true" : "false")
+      << ", \"permutationsDone\": " << hs::permutationsDone << ", \"permutationsTotal\": " << hs::permutationsTotal
+      << ", \"templatesNotStarted\": " << hs::templatesNotStarted << "},\n";
+    out << d.str();
+  }
   out << "  \"assertions\": [\n";
   for (size_t i = 0; i < records.size(); i++) {
     out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
@@ -366,9 +375,11 @@ void applyImplicationReduction(const Context &context,
   AtomPremises premises;
   premises.enabled = clc::atomPremises;
   premises.maxQueries = clc::atomPremisesMax;
-  bool skipped = false;
+  bool skipped = false, deadlineHit = false;
+  size_t unchecked = 0;
   assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs, premises,
-                                   clc::impliesMaxPairs, &skipped);
+                                   clc::impliesMaxPairs, &skipped, hs::reduceDeadline(),
+                                   &unchecked, &deadlineHit);
   double seconds = std::chrono::duration<double>(
                        std::chrono::steady_clock::now() - start)
                        .count();
@@ -380,15 +391,19 @@ void applyImplicationReduction(const Context &context,
   } else {
     messageInfo("Implication: dropped " + std::to_string(before - assertions.size()) +
                 " of " + std::to_string(before) + " assertions (keep " +
-                clc::keep + ", " + std::to_string(pairs) + " pairs checked in " +
+                clc::keep + ", " + std::to_string(pairs - unchecked) + " pairs checked in " +
                 secs.str() + "s)");
   }
+  messageInfoIf(deadlineHit, "Deadline: implication step cut, " + std::to_string(unchecked) +
+                                 " of " + std::to_string(pairs) + " pairs not checked (--deadline)");
   {
     std::lock_guard<std::mutex> lockRecords(implicationRecordsGuard());
     implicationRecords()[context._name] =
         "{\"pairs\": " + std::to_string(pairs) +
         ", \"maxPairs\": " + std::to_string(clc::impliesMaxPairs) +
         ", \"skipped\": " + (skipped ? "true" : "false") +
+        ", \"unchecked\": " + std::to_string(unchecked) +
+        ", \"deadlineHit\": " + (deadlineHit ? "true" : "false") +
         ", \"dropped\": " + std::to_string(before - assertions.size()) +
         ", \"seconds\": " + secs.str() + "}";
   }
@@ -443,6 +458,9 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   if (context._assertions.empty()) {
     messageWarning("Could not mine any assertions for context '" +
                    context._name + "'");
+    if (!clc::dumpAssertionInfo.empty() && (clc::deadline >= 0 || clc::mineDeadline >= 0)) {
+      dumpAssertionInfo(context, {}); // H39: the caller learns whether mining was cut
+    }
     return std::vector<AssertionPtr>();
   }
 
@@ -726,14 +744,24 @@ void Qualifier::sortAssertionsWithMetrics(
     a->_finalScore = score;
   }
 
-  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic
-  std::sort(assertions.begin(), assertions.end(),
-            [](const AssertionPtr &left, const AssertionPtr &right) {
-              if (left->_finalScore != right->_finalScore) {
-                return left->_finalScore > right->_finalScore;
+  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic;
+  //the texts are printed once (H39: printed in each comparison, ~25 s for 237,000 assertions)
+  std::vector<std::pair<std::string, AssertionPtr>> keyed;
+  keyed.reserve(assertions.size());
+  for (auto &a : assertions) {
+    keyed.emplace_back(a->toString(), a);
+  }
+  std::sort(keyed.begin(), keyed.end(),
+            [](const std::pair<std::string, AssertionPtr> &left,
+               const std::pair<std::string, AssertionPtr> &right) {
+              if (left.second->_finalScore != right.second->_finalScore) {
+                return left.second->_finalScore > right.second->_finalScore;
               }
-              return left->toString() < right->toString();
+              return left.first < right.first;
             });
+  for (size_t i = 0; i < keyed.size(); i++) {
+    assertions[i] = keyed[i].second;
+  }
 }
 
 void Qualifier::filterAssertionsWithMetrics(

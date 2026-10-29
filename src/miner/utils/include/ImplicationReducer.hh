@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,9 @@ using AssertionPtr = std::shared_ptr<Assertion>;
 /// relation between two assertions (H3, D-004)
 enum class Implication { Equivalent, AImpliesB, BImpliesA, None, Skipped };
 std::string toString(Implication i);
+
+/// H39: with --implies-workers 0, a worker process per this many pairs, up to --max-threads
+constexpr size_t IMPLIES_PAIRS_PER_WORKER = 2000;
 
 /// assertions spanning more cycles than this are never reduced (their automata are exponential)
 constexpr int maxImplicationDepth = 10;
@@ -47,7 +51,9 @@ struct ImplicationRecord {
 /// keep = "stronger" (default), "weaker" or "ranked" (by _finalScore, best first). The order of
 /// the kept assertions is the input order. Only the pairs that share a consequent atom, or whose
 /// consequent atoms a proved fact links, are checked (H29). With maxPairs > 0 and more pairs than
-/// that, nothing is checked and the input is returned (*skipped is set).
+/// that, nothing is checked and the input is returned (*skipped is set). H39: no pair is checked
+/// after `deadline`; a pair not checked counts as unrelated (*unchecked counts them, *deadlineHit
+/// is set).
 std::vector<AssertionPtr>
 reduceByImplication(const std::vector<AssertionPtr> &assertions,
                     const std::string &keep,
@@ -55,6 +61,9 @@ reduceByImplication(const std::vector<AssertionPtr> &assertions,
                     unsigned z3TimeoutMs = 1000,
                     size_t *pairsChecked = nullptr,
                     const AtomPremises &premises = AtomPremises(),
-                    size_t maxPairs = 0, bool *skipped = nullptr);
+                    size_t maxPairs = 0, bool *skipped = nullptr,
+                    std::chrono::steady_clock::time_point deadline =
+                        std::chrono::steady_clock::time_point::max(),
+                    size_t *unchecked = nullptr, bool *deadlineHit = nullptr);
 
 } // namespace harm

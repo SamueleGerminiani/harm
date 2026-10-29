@@ -188,6 +188,11 @@ void TLMiner::l3Handler(size_t nThread) {
     //allocate the thread
     std::lock_guard<std::mutex> lock{l3InstancesGuard};
 
+    if (toBeServed < _context->_templates.size() && hs::mineDeadlinePassed()) {
+      // H39: past mining's deadline no template is started
+      hs::templatesNotStarted += _context->_templates.size() - toBeServed;
+      toBeServed = _context->_templates.size();
+    }
     if (toBeServed < _context->_templates.size() &&
         l3Instances.size() < l3Constants::MAX_THREADS) {
       //mine a new template and give it to the thread
@@ -264,6 +269,7 @@ void TLMiner::l2Handler(
                   std::to_string(after));
     }
 
+    hs::permutationsTotal += t->getNumberOfPermutations();
     _progressBar.addInstance(l3InstId, t->getColoredTemplateStr(),
                              t->getNumberOfPermutations(), 70);
     _progressBar.enableCounter(l3InstId);
@@ -272,6 +278,9 @@ void TLMiner::l2Handler(
   while (1) {
     l2avThreads->wait();
     std::lock_guard<std::mutex> lock{l2InstancesGuard};
+    if (toBeServed < t->getNumberOfPermutations() && hs::mineDeadlinePassed()) {
+      toBeServed = t->getNumberOfPermutations(); // H39: past mining's deadline no permutation is started
+    }
     if (toBeServed < t->getNumberOfPermutations() &&
         l2Instances.size() < l2Constants::MAX_THREADS) {
 
@@ -490,6 +499,7 @@ end:;
     _collectedAssertions[{l3InstId, l2InstId}] = assp;
   }
 
+  hs::permutationsDone++;
   _progressBar.incrementCounter(l3InstId, assp.size());
   _progressBar.increment(l3InstId);
   _progressBar.display();

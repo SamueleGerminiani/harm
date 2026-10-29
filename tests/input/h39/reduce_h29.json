@@ -1,0 +1,106 @@
+{
+ "kept": [
+  "G({!rst && x2} -> y2)",
+  "G({!rst && x1} -> y1)",
+  "G({!rst && x1} -> y2)",
+  "G({!rst && x3} -> y3)",
+  "G({x1 && x2} -> y1)",
+  "G({x1 && x2} -> y2)",
+  "G({x2 && x3} -> y3)",
+  "G({x1 && x3} -> y1)",
+  "G({x1 && x3} -> y2)",
+  "G({x1 && x3} -> y3)"
+ ],
+ "implications": [
+  {
+   "context": "default",
+   "dropped": "G({!rst && x1 && x2} -> y1)",
+   "kept": [
+    "G({!rst && x1} -> y1)",
+    "G({x1 && x2} -> y1)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x1 && x2} -> y2)",
+   "kept": [
+    "G({!rst && x1} -> y2)",
+    "G({!rst && x2} -> y2)",
+    "G({x1 && x2} -> y2)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x1 && x3} -> y1)",
+   "kept": [
+    "G({!rst && x1} -> y1)",
+    "G({x1 && x3} -> y1)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x1 && x3} -> y2)",
+   "kept": [
+    "G({!rst && x1} -> y2)",
+    "G({x1 && x3} -> y2)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x1 && x3} -> y3)",
+   "kept": [
+    "G({!rst && x3} -> y3)",
+    "G({x1 && x3} -> y3)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x2 && x3} -> y2)",
+   "kept": [
+    "G({!rst && x2} -> y2)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({!rst && x2 && x3} -> y3)",
+   "kept": [
+    "G({!rst && x3} -> y3)",
+    "G({x2 && x3} -> y3)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({x1 && x2 && x3} -> y1)",
+   "kept": [
+    "G({x1 && x2} -> y1)",
+    "G({x1 && x3} -> y1)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({x1 && x2 && x3} -> y2)",
+   "kept": [
+    "G({x1 && x2} -> y2)",
+    "G({x1 && x3} -> y2)"
+   ],
+   "relation": "implied"
+  },
+  {
+   "context": "default",
+   "dropped": "G({x1 && x2 && x3} -> y3)",
+   "kept": [
+    "G({x1 && x3} -> y3)",
+    "G({x2 && x3} -> y3)"
+   ],
+   "relation": "implied"
+  }
+ ]
+}
