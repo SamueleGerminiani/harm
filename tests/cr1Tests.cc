@@ -1,0 +1,105 @@
+// CR1 (miner-portfolio's correctness review, doc/plan/CR1_PLAN.md there): C7b-1, a `|=>` instance at the last
+// cycle of a trace segment (the end of a VCD file, or a reset interval: Trace::getCuts) is pending, not judged on the
+// next segment's first cycle; C7b-5, an expanded decision-tree template's contingency table (its AF row, read by the
+// causality score) is the one of the same assertion parsed from its text.
+#include <gtest/gtest-message.h>
+#include <gtest/gtest-test-part.h>
+
+#include <string>
+#include <vector>
+
+#include "DTOperator.hh"
+#include "PointerUtils.hh"
+#include "TemplateImplication.hh"
+#include "Trace.hh"
+#include "Trinary.hh"
+#include "VarDeclaration.hh"
+#include "expUtils/ExpType.hh"
+#include "formula/atom/Variable.hh"
+#include "globals.hh"
+#include "message.hh"
+#include "temporalParsingUtils.hh"
+#include "gtest/gtest_pred_impl.h"
+
+using namespace harm;
+using namespace expression;
+
+namespace {
+
+/// a trace of the bits in `rows` ("ab,ab,..."), cut after the given cycles
+TracePtr cutTrace(const std::vector<std::string> &names, const std::string &rows,
+                  const std::vector<size_t> &cuts) {
+  std::vector<std::string> cycles;
+  size_t start = 0, p;
+  while ((p = rows.find(',', start)) != std::string::npos) {
+    cycles.push_back(rows.substr(start, p - start));
+    start = p + 1;
+  }
+  cycles.push_back(rows.substr(start));
+  std::vector<VarDeclaration> decls;
+  for (const auto &n : names) {
+    decls.emplace_back(n, ExpType::Bool, 1);
+  }
+  TracePtr tr = generatePtr<Trace>(decls, cycles.size());
+  for (size_t t = 0; t < cycles.size(); t++) {
+    for (size_t k = 0; k < names.size(); k++) {
+      tr->getBooleanVariable(names[k])->assign(t, cycles[t][k] == '1');
+    }
+  }
+  tr->setCuts(cuts);
+  return tr;
+}
+
+} // namespace
+
+// C7b-1: a on the last cycle of the first segment (t3), b false on the next segment's first cycle (t4)
+TEST(CR1Test, nextCycleImplicationDoesNotCrossACut) {
+  hlog::ScopedThrowOnError throwOnError;
+  TracePtr tr = cutTrace({"a", "b"}, "01,01,01,11,00,01,01,01", {3, 7});
+  TemplateImplicationPtr ti = hparser::parseTemplateImplication("G({a} |=> b)", tr, DTLimits(), false);
+  ASSERT_EQ(ti->evaluate(3), Trinary::U);  // pending at the segment's end
+  ASSERT_TRUE(ti->assHoldsOnTrace(Location::AntCon));
+  size_t ct[3][3] = {};
+  ti->fillContingency(ct, false);
+  // the instance at t3 is unknown: ant T, con U; it is neither a T nor an F instance of the consequent
+  ASSERT_EQ(ct[0][1], 0u);
+}
+
+TEST(CR1Test, nextCycleImplicationWithoutACutStillFails) {
+  hlog::ScopedThrowOnError throwOnError;
+  TracePtr tr = cutTrace({"a", "b"}, "01,01,01,11,00,01,01,01", {7});
+  TemplateImplicationPtr ti = hparser::parseTemplateImplication("G({a} |=> b)", tr, DTLimits(), false);
+  ASSERT_EQ(ti->evaluate(3), Trinary::F);
+  ASSERT_FALSE(ti->assHoldsOnTrace(Location::AntCon));
+}
+
+TEST(CR1Test, overlappingImplicationAtACutIsUnchanged) {
+  hlog::ScopedThrowOnError throwOnError;
+  TracePtr tr = cutTrace({"a", "b"}, "01,01,01,10,00,01,01,01", {3, 7});
+  TemplateImplicationPtr ti = hparser::parseTemplateImplication("G({a} |-> b)", tr, DTLimits(), false);
+  ASSERT_EQ(ti->evaluate(3), Trinary::F);
+}
+
+// C7b-5: the DT template expanded to {v2 ##1 v1} |=> con has the contingency table of the same text parsed
+TEST(CR1Test, expandedTemplateContingencyMatchesItsText) {
+  hlog::ScopedThrowOnError throwOnError;
+  // v2 v1 con: an AF instance (antecedent false) whose consequent differs at t+1 and at t+depth+1
+  TracePtr tr = cutTrace({"v1", "v2", "con"}, "010,100,001,000,011,100,000,001,010,001", {9});
+  DTLimits limits;
+  limits._maxDepth = 5;
+  limits._maxAll = 5;
+  TemplateImplicationPtr dt = hparser::parseTemplateImplication("G({..##1..} |=> con)", tr, limits);
+  DTOperatorPtr dto = dt->getDT();
+  dto->addItem(tr->getBooleanVariable("v1"), -1);
+  dto->addItem(tr->getBooleanVariable("v2"), -1);
+  ASSERT_EQ(dt->getAssertionStr(Language::SpotLTL), "G({v2 ##1 v1} |=> con)");
+  TemplateImplicationPtr text = hparser::parseTemplateImplication("G({v2 ##1 v1} |=> con)", tr, DTLimits(), false);
+  size_t a[3][3] = {}, b[3][3] = {};
+  dt->fillContingency(a, false);
+  text->fillContingency(b, false);
+  for (size_t i = 0; i < 3; i++) {
+    for (size_t j = 0; j < 3; j++) {
+      ASSERT_EQ(a[i][j], b[i][j]) << "row " << i << " column " << j;
+    }
+  }
+}
