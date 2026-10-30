@@ -1498,3 +1498,18 @@ Ready for the user's sign-off.
 - **Linux** (the trivergence session, 2026-10-28, at `e60ee08`): `ctest -j8` 278 of 278; harm-coi 144 passed.
 
 **H38 signed off by the user 2026-10-28**, at `0955268`, as part of the miner portfolio's FX1; merged into `dev`.
+
+## CR1: fixes from the miner portfolio's correctness review (2026-10-30/31; owner the portfolio's Mac session)
+
+Findings C7b-1, C7b-5 (HARM) and C9-1, C9-2 (harm-coi) of the portfolio's CR1 (its doc/plan/CR1_PLAN.md and
+CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `ms/CR1-harm` from `58e9e21`.
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `CR1Test.nextCycleImplicationDoesNotCrossACut`: `G({a} \|=> b)`, a on the last cycle of a segment, b false on the next segment's first: pending (U), holds; the AT/CF cell does not count it | fail (F, `Assertion fails` at [3,4]) | pass |
+| T2 | `CR1Test.expandedTemplateContingencyMatchesItsText`: the DT template expanded to `{v2 ##1 v1} \|=> con` has the contingency table of the same text parsed | fail (AF row 4 vs 3) | pass |
+| T3 | `CR1Test` contrasts: without the cut the same instance fails; `\|->` at a cut unchanged | pass | pass |
+| T4 | harm-coi `tests/test_cr1.py`: a packed array's element select is not a bit (`w[2]` of `[3:0][7:0]`); a real bit select still is; `sum <= a + b`, `cat <= {a, b}`, `subw <= a - b` keep the context width (`5'd0`, `8'd0` in the text) | fail (2 of 3) | pass |
+| T5 | `ctest -j8` on macOS | | 279 of 280; the one failure `regression_fsm`, an ordered baseline reordered by the fix (T6); after T6, 25 of 25 regression cases pass |
+| T6 | regression baselines rewritten with `update_baseline.sh` (ordered), **the user's approval, 2026-10-30/31**: `sub_platform1k` (32 lines), `bl_master1h` (10), `svaFunctions` (25), every changed line an assertion with a `##` antecedent crossing `--min-frank 0.9` (C7b-5's AF row); `fsm`: the same 10 assertions, three depth-0 ones ranked lower (the scores are normalised by the set's maximum) | | |
+| T7 | harm-coi's pytest | 149 passed | 150 passed; `test_relations`' concatenation expectations updated (`r == ((a + 9'd0) << 1)`, `c == (((a + 16'd0) << 8) \| b)`: HARM shifts at the operand's width) |
