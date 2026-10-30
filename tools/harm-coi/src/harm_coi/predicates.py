@@ -90,7 +90,8 @@ class Harvester:
         if r is not None and r[0] == "sig" and r[2].canonicalType.kind not in STRUCTS:
             self.out.widths[r[1]] = r[2].bitWidth
             return ("sig", r[1], r[2].bitWidth)
-        if e.kind == EK.ElementSelect:
+        if e.kind == EK.ElementSelect and e.type.bitWidth == 1:  # CR1 (C9-1): an element of a packed
+            # multi-dimensional array is several bits, not bit i of the VCD's flattened vector
             r = self.x.resolve(e.value)
             i = self.constant(e.selector)
             if r is not None and r[0] == "sig" and i is not None:
