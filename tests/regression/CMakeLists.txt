@@ -601,3 +601,11 @@ add_test(NAME cr1_sva_refuses_plain_next_implication
 set_tests_properties(cr1_sva_refuses_plain_next_implication PROPERTIES
     LABELS regression
     PASS_REGULAR_EXPRESSION "'=>' is not an SVA implication")
+# C7b-4: an assertion dropped as equivalent to a representative dropped by an implication names the kept ones
+if(PYTHON3_FOUND)
+    add_test(NAME cr1_implication_records_name_the_kept
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_cr1_implications.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/t.vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/config.xml
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/ass.txt)
+    set_tests_properties(cr1_implication_records_name_the_kept PROPERTIES LABELS regression)
+endif()
