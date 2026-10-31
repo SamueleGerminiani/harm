@@ -18,6 +18,8 @@
 #include "formula/atom/Variable.hh"
 #include "globals.hh"
 #include "message.hh"
+#include "expUtils/traceFiles.hh"
+#include "propositionParsingUtils.hh"
 #include "temporalParsingUtils.hh"
 #include "gtest/gtest_pred_impl.h"
 
@@ -102,4 +104,22 @@ TEST(CR1Test, expandedTemplateContingencyMatchesItsText) {
       ASSERT_EQ(a[i][j], b[i][j]) << "row " << i << " column " << j;
     }
   }
+}
+
+// C7a-7: $past, $stable, $rose and $fell do not read across the start of a concatenated VCD file (each file is its own
+// simulation; reset cuts, within a file, are read across as before)
+TEST(CR1Test, svaFunctionsDoNotCrossAFileStart) {
+  hlog::ScopedThrowOnError throwOnError;
+  TracePtr tr = cutTrace({"a", "b"}, "00,10,10,10,10,00", {2, 5});  // file 1: t0..t2, file 2: t3..t5
+  expression::traceFileStart = {0, 0, 0, 3, 3, 3};
+  PropositionPtr past = hparser::parseProposition("$past(a)", tr);
+  PropositionPtr stable = hparser::parseProposition("$stable(a)", tr);
+  PropositionPtr rose = hparser::parseProposition("$rose(a)", tr);
+  ASSERT_TRUE(past->evaluate(2));    // a@1, the same file
+  ASSERT_FALSE(past->evaluate(3));   // t3 starts file 2: no a@2
+  ASSERT_TRUE(past->evaluate(4));    // a@3
+  ASSERT_FALSE(stable->evaluate(3)); // as at time 0
+  ASSERT_FALSE(rose->evaluate(3));
+  expression::traceFileStart.clear();
+  ASSERT_TRUE(past->evaluate(3));    // without the table, as before
 }

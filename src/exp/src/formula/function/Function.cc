@@ -2,6 +2,11 @@
 #include "Logic.hh"
 #include "formula/function/SVAfunction.hh"
 #include "visitors/ExpVisitor.hh"
+#include "expUtils/traceFiles.hh"
+
+namespace expression {
+std::vector<size_t> traceFileStart; // CR1 (C7a-7)
+} // namespace expression
 
 namespace expression {
 //Past------------------------------------------
