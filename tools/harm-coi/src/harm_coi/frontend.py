@@ -342,6 +342,10 @@ class Extractor:
             elif m.kind == SK.Port and m.direction == ast.ArgumentDirection.Out and m.internalSymbol:
                 s = m.internalSymbol
                 self.top_outputs.update(self.leaves(self.path_of(s), s.type))
+            elif m.kind == SK.Port and m.direction == ast.ArgumentDirection.InOut and m.internalSymbol:
+                s = m.internalSymbol  # CR1 (C9-6): a top inout is driven from outside as well: unknown
+                for leaf in self.leaves(self.path_of(s), s.type):
+                    self.add_unknown(leaf, "inout port")
         self.walk(self.top.body)
         self.check_drivers()
 
@@ -469,7 +473,9 @@ class Extractor:
             return
         timing = body.timing if body.kind == TK.Timed else None
         events = self.edge_events(timing) if timing is not None else None
-        if kind == PK.AlwaysFF or (kind == PK.Always and events):
+        if kind == PK.AlwaysFF and events is None:  # CR1 (C9-5): e.g. @(posedge clk iff en): its targets unknown
+            self.give_up(body.stmt if timing is not None else body, "unsupported event control of always_ff")
+        elif kind == PK.AlwaysFF or (kind == PK.Always and events):
             self.clocked(pb, body, events)
         elif kind == PK.AlwaysComb or (kind == PK.Always and timing is not None and events == []):
             self.combinational(body.stmt if timing is not None else body)
