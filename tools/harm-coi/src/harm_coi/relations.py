@@ -327,8 +327,16 @@ class Relations:
                 self.stmt(b.stmt if b.kind == TK.Timed else b, registered, False, top=True)
             elif k == SK.Instance:
                 self.scope(m.body)
+            elif k == SK.InstanceArray:  # CR1 (C9-7): as predicates.scope walks them
+                for e in m.elements:
+                    if e.kind == SK.Instance:
+                        self.scope(e.body)
             elif k == SK.GenerateBlock and not m.isUninstantiated:
                 self.scope(m)
+            elif k == SK.GenerateBlockArray:  # CR1 (C9-7): a generate-for's blocks
+                for e in m.entries:
+                    if not e.isUninstantiated:
+                        self.scope(e)
 
     def holds(self):
         """registers assigned only under a condition: they keep their value otherwise ($stable)"""

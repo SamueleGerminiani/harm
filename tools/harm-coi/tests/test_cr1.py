@@ -12,10 +12,10 @@ import pytest
 from harm_coi import cli
 
 
-def config(tmp_path, sv, relations=False):
+def config(tmp_path, sv, relations=False, recursion=0):
     src = tmp_path / "m.sv"
     src.write_text(textwrap.dedent(sv))
-    rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut", "--vcd-recursion", "0", "--clock",
+    rc = cli.main(["--top", "m", "--files", str(src), "--vcd-scope", "tb::dut", "--vcd-recursion", str(recursion), "--clock",
                    "clk", "-o", str(tmp_path / "coi.json"), "--emit-config", str(tmp_path / "e.xml"), "--hints",
                    str(tmp_path / "h.json"), "--relations" if relations else "--no-relations"])
     assert rc == 0
@@ -132,5 +132,5 @@ def test_relations_in_generate_for(tmp_path):
             always_ff @(posedge clk) r <= a;
           end
         endmodule
-    """, relations=True)
+    """, relations=True, recursion=1)  # the generate blocks are VCD scopes below the top
     assert "g[0]::r == $past(a, 1)" in xml
