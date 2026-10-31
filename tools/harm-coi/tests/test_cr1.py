@@ -68,7 +68,6 @@ def run(tmp_path, sv, extra=(), vcd=None):
 
 
 # C9-3 .. C9-7 (the reviewer's tests, unchanged)
-@pytest.mark.xfail(strict=True, reason="CR1 C9-3: the fix (clip, not cut) lists every source at any depth; it costs time on wide cones (H40's bound): pending the user's decision")
 def test_deep_source_is_saturated(tmp_path):
     rc, doc = run(tmp_path, """
         module m(input logic clk, a, output logic r1, r2, r3, r4, r5, r6);
@@ -79,7 +78,6 @@ def test_deep_source_is_saturated(tmp_path):
     assert {"sig": "a", "depths": [], "saturated": True} in doc["targets"]["r6"]["sources"]
 
 
-@pytest.mark.xfail(strict=True, reason="CR1 C9-3: the fix (clip, not cut) lists every source at any depth; it costs time on wide cones (H40's bound): pending the user's decision")
 def test_invisible_pipeline_keeps_its_input(tmp_path):
     rc, doc = run(tmp_path, """
         module p(input logic clk, a, output logic o);

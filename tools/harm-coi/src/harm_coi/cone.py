@@ -160,8 +160,8 @@ def direct_edges(design, vis, clock_nodes, max_depth, merged=False):
             elif s in design.unknown:
                 if d <= max_depth:
                     unknown.add(n)          # the cone goes through a signal we cannot model
-            elif d <= limit:
-                stack += [(s2, d + d2) for s2, d2 in edges.get(s, ())]
+            else:  # CR1 (C9-3): a path through invisible atoms past the limit is clipped there, not dropped
+                stack += [(s2, min(d + d2, limit)) for s2, d2 in edges.get(s, ())]
     for n in unknown:
         out.pop(n, None)
     return out, unknown
@@ -173,15 +173,17 @@ def closure(names, direct, unknown, max_depth):
     targets, unknown = {}, set(unknown)
     for t in sorted(names - unknown):
         reach = set()
-        frontier = [(s, d) for s, d in direct.get(t, ()) if d <= limit]
+        # CR1 (C9-3; the user, 2026-10-31): a path past the depth limit is clipped at max_depth + 1 (a saturated
+        # source), not cut: a source that reaches the target only deeper than the search was left out of the cone
+        cap = max_depth + 1
+        frontier = [(s, min(d, cap)) for s, d in direct.get(t, ())]
         while frontier:
             s, d = frontier.pop()
             if (s, d) in reach:
                 continue
             reach.add((s, d))
             for s2, d2 in direct.get(s, ()):
-                if d + d2 <= limit:
-                    frontier.append((s2, d + d2))
+                frontier.append((s2, min(d + d2, cap)))
         if any(s in unknown and d <= max_depth for s, d in reach):
             unknown.add(t)
             continue

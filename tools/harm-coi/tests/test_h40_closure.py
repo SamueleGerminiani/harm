@@ -9,20 +9,21 @@ import time
 from harm_coi import cone
 
 
-def reference(names, direct, unknown, max_depth):  # H39's closure, verbatim
+def reference(names, direct, unknown, max_depth):  # H39's closure, with CR1's clip (C9-3)
     limit = max_depth + max((d for es in direct.values() for _, d in es), default=0) + 1
     targets, unknown = {}, set(unknown)
     for t in sorted(names - unknown):
         reach = set()
-        frontier = [(s, d) for s, d in direct.get(t, ()) if d <= limit]
+        # CR1 (C9-3): the reference clips a path at max_depth + 1, as the closure now does (H39 cut it)
+        cap = max_depth + 1
+        frontier = [(s, min(d, cap)) for s, d in direct.get(t, ())]
         while frontier:
             s, d = frontier.pop()
             if (s, d) in reach:
                 continue
             reach.add((s, d))
             for s2, d2 in direct.get(s, ()):
-                if d + d2 <= limit:
-                    frontier.append((s2, d + d2))
+                frontier.append((s2, min(d + d2, cap)))
         if any(s in unknown and d <= max_depth for s, d in reach):
             unknown.add(t)
             continue
@@ -72,5 +73,5 @@ def test_t1_wide_cone_is_fast() -> None:
     names = set(direct)
     t = time.time()
     out = cone.closure(names, direct, set(), 3)
-    assert time.time() - t < 3
+    assert time.time() - t < 10  # CR1 (C9-3; the user, 2026-10-31): every source at any depth is listed, clipped (8 s on the Mac; H39 cut them, < 3 s)
     assert out == reference(names, direct, set(), 3)
