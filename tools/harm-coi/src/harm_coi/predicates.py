@@ -85,6 +85,8 @@ class Harvester:
     def operand(self, e):
         """('sig', atom, width) or ('bit', atom, i) for a signal or a constant bit select of one"""
         while e.kind == EK.Conversion:
+            if e.type.bitWidth < e.operand.type.bitWidth:
+                return None  # CR1 (C9-4): a truncating cast (4'(x)) is not the signal x
             e = e.operand
         r = self.x.resolve(e)
         if r is not None and r[0] == "sig" and r[2].canonicalType.kind not in STRUCTS:
@@ -134,6 +136,8 @@ class Harvester:
         return None
 
     def cmp(self, op, opnd, v, w, raw, signed=False):
+        if signed and w > 1 and opnd[0] == "sig" and op in ("==", "!=") and raw >= (1 << (w - 1)):
+            return None  # CR1 (C9-4): a signed signal never equals a constant above its range (x == 15, x 4-bit)
         if signed and w > 1 and opnd[0] == "sig" and (raw < 0 or op not in ("==", "!=")):
             # H25 (D-039): an ordering, or a negative constant, read as signed: $signed(x) < -w'sdN
             if not -(1 << (w - 1)) <= raw < (1 << (w - 1)):
