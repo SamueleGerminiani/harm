@@ -594,3 +594,10 @@ add_test(NAME cr1_permutator_two_clusters
     COMMAND $<TARGET_FILE:harm> --vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/t.vcd --clk clk --vcd-ss tb::dut
             --conf ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/config.xml --sva --psilent --isilent --max-threads 1)
 set_tests_properties(cr1_permutator_two_clusters PROPERTIES LABELS regression)
+# C7b-2: with --sva, `=>` is refused: HARM evaluated it as the overlapping `->` but printed it as `|=>`
+add_test(NAME cr1_sva_refuses_plain_next_implication
+    COMMAND $<TARGET_FILE:harm> --vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/shift/t.vcd --clk clk --vcd-ss tb::dut
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/cr1/shift/config.xml --sva --psilent --isilent --max-threads 1)
+set_tests_properties(cr1_sva_refuses_plain_next_implication PROPERTIES
+    LABELS regression
+    PASS_REGULAR_EXPRESSION "'=>' is not an SVA implication")
