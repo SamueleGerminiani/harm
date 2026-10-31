@@ -67,6 +67,7 @@ TracePtr TraceReader::readTrace() {
   } else {
     //only one trace
     _trace = traces[0];
+    expression::traceFileStart.clear();  // CR1 (C8b-1): no earlier trace's file starts
     _trace->setCuts(std::vector<size_t>({_trace->getLength() - 1}));
     messageInfo("Trace length:" +
                 std::to_string(_trace->getLength()));

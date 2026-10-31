@@ -132,7 +132,8 @@ TEST(CR1Test, aOneFileTraceClearsTheFileStarts) {
   cfg._clk = "clk";
   cfg._selectedScope = "tb";
   cfg._vcdRecursive = 0;
-  VCDtraceReader reader("../tests/input/h38/bit_index.vcd", cfg);
-  reader.readTrace();
+  TraceReader *reader = new VCDtraceReader("../tests/input/h38/bit_index.vcd", cfg);
+  reader->readTrace();
+  delete reader;
   ASSERT_TRUE(expression::traceFileStart.empty());
 }
