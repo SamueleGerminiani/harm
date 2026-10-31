@@ -57,7 +57,7 @@ template <> void LogicRose::acceptVisitor(ExpVisitor &vis) {
 template <> void PropositionRose::initEvaluate() {
   directEvaluate = [this](size_t time) {
     PropositionPtr &op = _isTemporal ? *_phPtr : _op;
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : !op->evaluate(time - 1) && op->evaluate(time);
   };
   disableCache();
@@ -66,7 +66,7 @@ template <> void PropositionRose::initEvaluate() {
 //Rose------------------------------------------
 template <> void IntRose::initEvaluate() {
   directEvaluate = [this](size_t time) {
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : (_op->evaluate(time - 1) & 1) == 0 &&
                            (_op->evaluate(time) & 1) == 1;
   };
@@ -75,7 +75,7 @@ template <> void IntRose::initEvaluate() {
 
 template <> void LogicRose::initEvaluate() {
   directEvaluate = [this](size_t time) {
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : (_op->evaluate(time - 1).getUnsignedValue() &
                         (ULogic)1) == 0 &&
                            (_op->evaluate(time).getUnsignedValue() &
@@ -100,7 +100,7 @@ template <> void LogicFell::acceptVisitor(ExpVisitor &vis) {
 template <> void PropositionFell::initEvaluate() {
   directEvaluate = [this](size_t time) {
     PropositionPtr &op = _isTemporal ? *_phPtr : _op;
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : op->evaluate(time - 1) && !op->evaluate(time);
   };
   disableCache();
@@ -108,7 +108,7 @@ template <> void PropositionFell::initEvaluate() {
 
 template <> void IntFell::initEvaluate() {
   directEvaluate = [this](size_t time) {
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : (_op->evaluate(time - 1) & 1) == 1 &&
                            (_op->evaluate(time) & 1) == 0;
   };
@@ -117,7 +117,7 @@ template <> void IntFell::initEvaluate() {
 
 template <> void LogicFell::initEvaluate() {
   directEvaluate = [this](size_t time) {
-    return time == 0 ? false
+    return beforeFileStart(time, 1) ? false
                      : (_op->evaluate(time - 1).getUnsignedValue() &
                         (ULogic)1) == 1 &&
                            (_op->evaluate(time).getUnsignedValue() &
