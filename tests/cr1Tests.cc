@@ -13,6 +13,7 @@
 #include "TemplateImplication.hh"
 #include "Trace.hh"
 #include "Trinary.hh"
+#include "VCDtraceReader.hh"
 #include "VarDeclaration.hh"
 #include "expUtils/ExpType.hh"
 #include "formula/atom/Variable.hh"
@@ -122,4 +123,16 @@ TEST(CR1Test, svaFunctionsDoNotCrossAFileStart) {
   ASSERT_FALSE(rose->evaluate(3));
   expression::traceFileStart.clear();
   ASSERT_TRUE(past->evaluate(3));    // without the table, as before
+}
+
+// C8b-1 (CR1's second pass): reading a one-file trace leaves no earlier trace's file starts behind
+TEST(CR1Test, aOneFileTraceClearsTheFileStarts) {
+  expression::traceFileStart = {0, 0, 3, 3};  // as a two-file trace read before would leave it
+  VCDTraceReaderConfig cfg;
+  cfg._clk = "clk";
+  cfg._selectedScope = "tb";
+  cfg._vcdRecursive = 0;
+  VCDtraceReader reader("../tests/input/h38/bit_index.vcd", cfg);
+  reader.readTrace();
+  ASSERT_TRUE(expression::traceFileStart.empty());
 }
