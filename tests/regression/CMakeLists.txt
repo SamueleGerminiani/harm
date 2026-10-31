@@ -609,3 +609,10 @@ if(PYTHON3_FOUND)
                 ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/ass.txt)
     set_tests_properties(cr1_implication_records_name_the_kept PROPERTIES LABELS regression)
 endif()
+# C7a-1, C7a-3: VCD times past 2^31 units; --dump-trace-as-csv's last column whole
+if(PYTHON3_FOUND)
+    add_test(NAME cr1_trace_times_and_csv
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_cr1_trace.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/vcd/overflow.vcd)
+    set_tests_properties(cr1_trace_times_and_csv PROPERTIES LABELS regression)
+endif()
