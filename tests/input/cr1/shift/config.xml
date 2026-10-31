@@ -1,0 +1,7 @@
+<harm>
+    <context name="t">
+        <prop exp="a" loc="a"/>
+        <prop exp="b" loc="c"/>
+        <template check="1" exp="G(a => b)"/>
+    </context>
+</harm>

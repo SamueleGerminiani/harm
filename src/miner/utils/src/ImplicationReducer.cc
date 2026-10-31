@@ -1201,15 +1201,31 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
       }
       ImplicationRecord r{in[i], {}, why[i]};
       std::vector<size_t> ks; // the kept ones related to i, ascending
-      if (why[i] == "equivalent") {
-        ks.push_back(find(i));
-      } else {
-        for (const auto &e : adj[i]) {
-          if (why[i] == "implied" ? e.from : e.to) {
-            ks.push_back(e.k);
+      size_t via = i;         // whose pairs the premises come from (CR1 C8b-2: the representative's, when it was dropped)
+      // the assertions x was dropped for (implied: those implying it; implies: those it implies)
+      auto related = [&](size_t x) {
+        std::vector<size_t> out;
+        for (const auto &e : adj[x]) {
+          if (why[x] == "implied" ? e.from : e.to) {
+            out.push_back(e.k);
           }
         }
-        std::sort(ks.begin(), ks.end());
+        std::sort(out.begin(), out.end());
+        return out;
+      };
+      if (why[i] == "equivalent") {
+        size_t rep = find(i);
+        if (!dropped[rep]) {
+          ks.push_back(rep);
+        } else {
+          // CR1 (C7b-4): the class's representative was itself dropped by an implication: name what it was dropped
+          // for (the record had no kept assertion)
+          r.relation = "equivalent, " + why[rep];
+          ks = related(rep);
+          via = rep;
+        }
+      } else {
+        ks = related(i);
       }
       for (size_t k : ks) {
         if (dropped[k]) {
@@ -1217,7 +1233,7 @@ reduceByImplication(const std::vector<AssertionPtr> &in,
         }
         {
           r.kept.push_back(in[k]);
-          auto u = usedFacts.find({std::min(i, k), std::max(i, k)});
+          auto u = usedFacts.find({std::min(via, k), std::max(via, k)});
           if (u != usedFacts.end()) {
             for (const auto &t : u->second) {
               if (std::find(r.premises.begin(), r.premises.end(), t) == r.premises.end()) {

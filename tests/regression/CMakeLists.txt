@@ -586,3 +586,33 @@ if(PYTHON3_FOUND)
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} fixture25)
     set_tests_properties(h25_signed_fixture PROPERTIES LABELS "regression;parser")
 endif()
+
+# ---- CR1 (the miner portfolio's correctness review) --------------------------------------------------
+# C7b-3: a binomial operator whose placeholders form two equivalence clusters (P0, P1 in one domain, P2(1), P3(1) in
+# another) permutes without an out-of-bounds write: 3 permutations, C(3,2) * C(2,2) * 1
+add_test(NAME cr1_permutator_two_clusters
+    COMMAND $<TARGET_FILE:harm> --vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/t.vcd --clk clk --vcd-ss tb::dut
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/config.xml --sva --psilent --isilent --max-threads 1)
+set_tests_properties(cr1_permutator_two_clusters PROPERTIES LABELS regression)
+# C7b-2: with --sva, `=>` is refused: HARM evaluated it as the overlapping `->` but printed it as `|=>`
+add_test(NAME cr1_sva_refuses_plain_next_implication
+    COMMAND $<TARGET_FILE:harm> --vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/shift/t.vcd --clk clk --vcd-ss tb::dut
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/cr1/shift/config.xml --sva --psilent --isilent --max-threads 1)
+set_tests_properties(cr1_sva_refuses_plain_next_implication PROPERTIES
+    LABELS regression
+    PASS_REGULAR_EXPRESSION "'=>' is not an SVA implication")
+# C7b-4: an assertion dropped as equivalent to a representative dropped by an implication names the kept ones
+if(PYTHON3_FOUND)
+    add_test(NAME cr1_implication_records_name_the_kept
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_cr1_implications.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/t.vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/config.xml
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/impl/ass.txt)
+    set_tests_properties(cr1_implication_records_name_the_kept PROPERTIES LABELS regression)
+endif()
+# C7a-1, C7a-3: VCD times past 2^31 units; --dump-trace-as-csv's last column whole
+if(PYTHON3_FOUND)
+    add_test(NAME cr1_trace_times_and_csv
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_cr1_trace.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/cr1/vcd/overflow.vcd)
+    set_tests_properties(cr1_trace_times_and_csv PROPERTIES LABELS regression)
+endif()

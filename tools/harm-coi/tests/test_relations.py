@@ -84,9 +84,11 @@ def test_combinational_relations_case_arms_and_concatenation(tmp_path):
         endmodule
     """, "--reset", "rst")
     assert props["r == ((a + b) & 9'd511)"] == ["c", "6"]
-    assert props["r == (a << 1)"] == ["c", "6"]  # a concatenation is exact: no mask when it fits
+    # a concatenation is exact: no mask when it fits; CR1 (C9-2): a shifted part widened to the whole, as HARM shifts
+    # at the operand's width
+    assert props["r == ((a + 9'd0) << 1)"] == ["c", "6"]
     assert props["r == b"] == ["c", "6"]
-    assert props["c == ((a << 8) | b)"] == ["c", "5"]
+    assert props["c == (((a + 16'd0) << 8) | b)"] == ["c", "5"]
     assert props["z == (a == b)"] == ["c", "5"]
     assert "G({!rst}|-> P0(5))" in tpls
 

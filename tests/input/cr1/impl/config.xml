@@ -1,0 +1,7 @@
+<harm>
+    <context name="external">
+        <prop exp="a" loc="a"/>
+        <prop exp="b" loc="c"/>
+        <sort name="causality" exp="1-afct/traceLength"/>
+    </context>
+</harm>

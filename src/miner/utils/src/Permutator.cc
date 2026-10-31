@@ -149,7 +149,9 @@ Permutator::clusterFormulas(const TemporalExpressionPtr &templ) {
         }
         if (!used.count(j)) {
           if (areEquivalent(candidates[i], candidates[j])) {
-            equals[i].second.push_back(candidates[j]);
+            // CR1 (C7b-3): the cluster just opened for i; `equals` has one entry per cluster, so equals[i] was
+            // past its end once an earlier cluster had absorbed a candidate
+            equals.back().second.push_back(candidates[j]);
             used.insert(j);
           }
         }
