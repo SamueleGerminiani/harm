@@ -586,3 +586,11 @@ if(PYTHON3_FOUND)
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h18_operators.py $<TARGET_FILE:harm> ${CMAKE_SOURCE_DIR} fixture25)
     set_tests_properties(h25_signed_fixture PROPERTIES LABELS "regression;parser")
 endif()
+
+# ---- CR1 (the miner portfolio's correctness review) --------------------------------------------------
+# C7b-3: a binomial operator whose placeholders form two equivalence clusters (P0, P1 in one domain, P2(1), P3(1) in
+# another) permutes without an out-of-bounds write: 3 permutations, C(3,2) * C(2,2) * 1
+add_test(NAME cr1_permutator_two_clusters
+    COMMAND $<TARGET_FILE:harm> --vcd ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/t.vcd --clk clk --vcd-ss tb::dut
+            --conf ${CMAKE_SOURCE_DIR}/tests/input/cr1/perm/config.xml --sva --psilent --isilent --max-threads 1)
+set_tests_properties(cr1_permutator_two_clusters PROPERTIES LABELS regression)
