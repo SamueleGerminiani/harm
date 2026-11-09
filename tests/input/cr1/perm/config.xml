@@ -1,0 +1,11 @@
+<harm>
+    <context name="t">
+        <prop exp="a" loc="a"/>
+        <prop exp="b" loc="a"/>
+        <prop exp="c" loc="a"/>
+        <prop exp="d" loc="1"/>
+        <prop exp="e" loc="1"/>
+        <prop exp="f" loc="2"/>
+        <template exp="G({P0 &amp;&amp; P1 &amp;&amp; P2(1) &amp;&amp; P3(1)} |-> P4(2))"/>
+    </context>
+</harm>

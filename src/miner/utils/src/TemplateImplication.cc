@@ -221,7 +221,7 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
-          (shift >= _trace->getLength()) ? Trinary::U : conValue;
+          (shift > segmentEnd(time)) ? Trinary::U : conValue;
       if (antValue == Trinary::T && (!con) == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
@@ -268,7 +268,7 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
-          (shift >= _trace->getLength()) ? Trinary::U : conValue;
+          (shift > segmentEnd(time)) ? Trinary::U : conValue;
       if (antValue == Trinary::T && con == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
@@ -1109,6 +1109,23 @@ bool TemplateImplication::isVacuousOffset(harm::Location update) {
   return true;
 }
 
+size_t TemplateImplication::segmentEnd(size_t time) {
+  // CR1 (C7b-1): the last cycle of the segment holding `time` (Trace::getCuts: the end of each VCD file, or each
+  // reset interval, ascending); an instance whose consequent falls past it is pending (U), as the antecedent and
+  // consequent evaluators treat a cut
+  const auto &cuts = _trace->getCuts();
+  auto it = std::lower_bound(cuts.begin(), cuts.end(), time);
+  return it == cuts.end() ? _trace->getLength() - 1 : *it;
+}
+
+void TemplateImplication::refreshAntDepth() {
+  // CR1 (C7b-5): the antecedent depth of the formula now loaded (a DT operator swaps in a deeper one); the AF row
+  // of the contingency table reads the consequent at time + this depth
+  const PropertyImplicationPtr fimpl =
+      std::dynamic_pointer_cast<PropertyImplication>(_templateFormula->getItems()[0]);
+  _antDepth = getTemporalDepth(getAntecedent(fimpl));
+}
+
 Trinary TemplateImplication::evaluate(size_t time) {
   if (!_contains_mma) {
     auto [antValue, antShift] = _antEvaluator->evaluate(time);
@@ -1118,7 +1135,7 @@ Trinary TemplateImplication::evaluate(size_t time) {
     size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
-           (shift >= _trace->getLength() ? Trinary::U : conValue);
+           (shift > segmentEnd(time) ? Trinary::U : conValue);
   } else {
     return _impEvaluator->evaluate(time).first;
   }
@@ -1138,7 +1155,7 @@ Trinary TemplateImplication::evaluateOffset(size_t time) {
     size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
-           (shift >= _trace->getLength() ? Trinary::U : !conValue);
+           (shift > segmentEnd(time) ? Trinary::U : !conValue);
   } else {
     return _impEvaluator->evaluate(time).first;
   }

@@ -41,7 +41,8 @@ Implication implicationBetween(const expression::TemporalExpressionPtr &a,
 struct ImplicationRecord {
   AssertionPtr dropped;
   std::vector<AssertionPtr> kept;
-  /// "equivalent", "implied" (a kept assertion implies it) or "implies" (it implies a kept one)
+  /// "equivalent", "implied" (a kept assertion implies it) or "implies" (it implies a kept one); CR1 (C7b-4):
+  /// "equivalent, implied" (or ", implies") when the class's representative was itself dropped
   std::string relation;
   /// the facts between atoms the claim needed (H3b), as "p -> q" texts; empty without premises
   std::vector<std::string> premises;

@@ -1,0 +1,42 @@
+$version by hand $end
+$timescale 100ps $end
+$scope module tb $end
+$scope module dut $end
+$var wire 1 ! clk $end
+$var wire 1 " a $end
+$var wire 1 # b $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+0"
+0#
+#50
+1!
+#100
+0!
+1"
+#150
+1!
+#200
+0!
+0"
+1#
+#250
+1!
+#300
+0!
+0#
+#350
+1!
+#400
+0!
+#450
+1!
+#500
+0!
+#550
+1!
+#600
+0!

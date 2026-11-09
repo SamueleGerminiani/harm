@@ -1,4 +1,5 @@
 #pragma once
+#include "expUtils/traceFiles.hh"
 #include "PointerUtils.hh"
 #include "expUtils/ExpType.hh"
 #include "misc.hh"
@@ -31,7 +32,7 @@ template <typename OT, typename ET>
 void Past<OT, ET>::initEvaluate() {
   if constexpr (std::is_same<OT, LogicExpression>::value) {
     directEvaluate = [this](size_t time) {
-      if ((int)time - (int)_shift < 0) {
+      if (beforeFileStart(time, _shift)) {  // CR1 (C7a-7): nor across a file's start
         return Logic(1, 0, 0, 0, 0);
       }
       return _op->evaluate(time - _shift);
@@ -39,14 +40,14 @@ void Past<OT, ET>::initEvaluate() {
   } else if constexpr (std::is_same<OT, Proposition>::value) {
     directEvaluate = [this](size_t time) {
       PropositionPtr &op = _isTemporal ? *_phPtr : _op;
-      if ((int)time - (int)_shift < 0) {
+      if (beforeFileStart(time, _shift)) {  // CR1 (C7a-7): nor across a file's start
         return false;
       }
       return op->evaluate(time - _shift);
     };
   } else {
     directEvaluate = [this](size_t time) {
-      if ((int)time - (int)_shift < 0) {
+      if (beforeFileStart(time, _shift)) {  // CR1 (C7a-7): nor across a file's start
         return (ReturnType)0;
       }
       return _op->evaluate(time - _shift);
@@ -138,10 +139,10 @@ void Stable<OT, ET>::initEvaluate() {
   directEvaluate = [this](size_t time) {
     if constexpr (std::is_same<OT, Proposition>::value) {
       PropositionPtr &op = _isTemporal ? *_phPtr : _op;
-      return time == 0 ? false
-                       : op->evaluate(time) == op->evaluate(time - 1);
+      return beforeFileStart(time, 1) ? false
+                                      : op->evaluate(time) == op->evaluate(time - 1);
     } else {
-      return time == 0
+      return beforeFileStart(time, 1)
                  ? false
                  : _op->evaluate(time) == _op->evaluate(time - 1);
     }

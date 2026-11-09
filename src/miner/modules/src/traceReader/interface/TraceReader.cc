@@ -1,3 +1,4 @@
+#include "expUtils/traceFiles.hh"
 #include <algorithm>
 #include <stddef.h>
 #include <string>
@@ -46,6 +47,15 @@ TracePtr TraceReader::readTrace() {
   if (traces.size() > 1) {
     //merge multiple traces into one
     _trace = mergeTrace(traces);
+    // CR1 (C7a-7): each time step's file start, from the files' cuts (before any reset cut is added)
+    expression::traceFileStart.assign(_trace->getLength(), 0);
+    size_t first = 0;
+    for (size_t c : _trace->getCuts()) {
+      for (size_t t = first; t <= c && t < _trace->getLength(); t++) {
+        expression::traceFileStart[t] = first;
+      }
+      first = c + 1;
+    }
     //print some stats
     double avgLength = (double)_trace->getLength() /
                        (double)_trace->getCuts().size();
@@ -57,6 +67,7 @@ TracePtr TraceReader::readTrace() {
   } else {
     //only one trace
     _trace = traces[0];
+    expression::traceFileStart.clear();  // CR1 (C8b-1): no earlier trace's file starts
     _trace->setCuts(std::vector<size_t>({_trace->getLength() - 1}));
     messageInfo("Trace length:" +
                 std::to_string(_trace->getLength()));

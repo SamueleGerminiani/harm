@@ -211,9 +211,14 @@ void TemporalParserHandler::exitImplication(
           "errors. Do not ignore this.\n" +
           printErrorMessage());
 
+  // CR1 (C7b-2): `=>` is evaluated as the overlapping `->` (no shift) but printed as `|=>`: the printed assertion
+  // would mean another property. With SVA output it is an error; `->` (printed `|->`) keeps the warning
+  messageErrorIf(clc::outputLang == Language::SVA && ctx->IMPL() != nullptr,
+                 "SystemVerilog output language detected: '=>' is not an SVA implication (HARM evaluates it as "
+                 "'->' but would print it as '|=>'); use {...} |=> or -> X\n" +
+                     printErrorMessage());
   messageWarningIf(
-      clc::outputLang == Language::SVA &&
-          (ctx->IMPL() != nullptr || ctx->IMPLO() != nullptr),
+      clc::outputLang == Language::SVA && ctx->IMPLO() != nullptr,
       "SystemVerilog output language detected, SystemVerilog "
       "implications requires to use |-> or |=>\n"
       "The semantics of the generated assertions might change once "

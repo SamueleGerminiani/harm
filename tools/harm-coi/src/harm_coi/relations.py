@@ -164,6 +164,8 @@ class Relations:
                 shift -= p.width
                 if p.text.endswith("'d0") and not p.compound:
                     continue                    # a constant zero part
+                if shift and p.width < total:  # CR1 (C9-2): a part shifted at its own width loses its high bits
+                    p = Val(f"({p.text} + {total}'d0)", total, p.dirty, True, p.ops + 1, p.signals)
                 terms.append(p if shift == 0 else Val(f"({p.text} << {shift})", p.width + shift, False, True,
                                                       p.ops + 1, p.signals))  # fmt: skip
             if not terms:
@@ -202,8 +204,10 @@ class Relations:
             sig = a.signals | b.signals
             ops = a.ops + b.ops + 1
             if e.op in DIRTY_BIN:
-                if e.op in WIDEN and (a.hw or a.width) < w:
-                    # HARM computes * and << at the operands' width, SystemVerilog at the context's: widen one
+                if (a.hw or a.width) < w:
+                    # HARM computes these at the operands' width, SystemVerilog at the context's: widen one. CR1
+                    # (C9-2): every one (+ and - as * and <<), so the width is in the text and survives $past, whose
+                    # argument is self-determined
                     a = Val(f"({a.text} + {w}'d0)", w, a.dirty, True, a.ops + 1, a.signals)
                 return Val(f"({a.text} {DIRTY_BIN[e.op]} {b.text})", w, True, True, ops, sig)
             if e.op in BITWISE:
@@ -323,8 +327,16 @@ class Relations:
                 self.stmt(b.stmt if b.kind == TK.Timed else b, registered, False, top=True)
             elif k == SK.Instance:
                 self.scope(m.body)
+            elif k == SK.InstanceArray:  # CR1 (C9-7): as predicates.scope walks them
+                for e in m.elements:
+                    if e.kind == SK.Instance:
+                        self.scope(e.body)
             elif k == SK.GenerateBlock and not m.isUninstantiated:
                 self.scope(m)
+            elif k == SK.GenerateBlockArray:  # CR1 (C9-7): a generate-for's blocks
+                for e in m.entries:
+                    if not e.isUninstantiated:
+                        self.scope(e)
 
     def holds(self):
         """registers assigned only under a condition: they keep their value otherwise ($stable)"""

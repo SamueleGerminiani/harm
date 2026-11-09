@@ -242,6 +242,12 @@ public:
    */
   void fillContingency(size_t (&ct)[3][3], bool offset);
 
+  /// CR1 (C7b-1): the last cycle of the trace segment holding `time`
+  size_t segmentEnd(size_t time);
+
+  /// CR1 (C7b-5): recompute the antecedent depth of the loaded formula
+  void refreshAntDepth();
+
   void setL1Threads(size_t n);
 
   void setDTLimits(const DTLimits &l);

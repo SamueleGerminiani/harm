@@ -209,6 +209,7 @@ using DTOperatorPtr = std::shared_ptr<DTOperator>;
   _t->_templateFormula = _formulas[depth];                           \
   if (_t->_contains_mma) {                                           \
     _t->_impEvaluator = _impEvaluators[depth];                       \
-  }
+  }                                                                  \
+  _t->refreshAntDepth(); /* CR1 C7b-5 */
 
 } // namespace harm
