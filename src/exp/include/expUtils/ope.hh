@@ -667,6 +667,9 @@ inline int opeToPrecedenceClass(ope o) {
 //return true if o1 has a higher precedence than o2
 inline bool hasHigherPrecedence(const ope &o1,
                                 const temporalOpe &o2) {
+  if (o2 == BooleanLayerNot) {
+    return false; // H41: ! binds tighter than any binary operator (!(x == c), not !x == c)
+  }
   if (o1 == PropositionAnd &&
       (o2 == PropertyAnd || o2 == SereAnd || o2 == SereIntersect)) {
     return false;

@@ -1531,3 +1531,21 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
   - C8b-2: an `equivalent, implied` record takes its premises from the representative's pairs.
 
 **Tests (Mac, 2026-10-31) at `045777a`:** `ctest -j8` 284 of 284 passed; harm-coi pytest 156 passed. No regression baseline changed after T6.
+
+## H41: a template's `!` over a proposition with a binary operator prints with brackets (2026-11-04; owner the portfolio's Mac session)
+- **Why:** the miner portfolio's DD1 (A7, its doc/plan/DD1_PLAN.md). The template `!P1(8) W P2(8)` over a state
+  encoding printed `!uart_parser1.main_sm == 4'b1 until ...`, which SystemVerilog reads as `(!main_sm) == 1`, another
+  property. The defect was in the copy of an assertion the miner writes (`fillAssertion`: a placeholder becomes a
+  BooleanLayerInst); a parsed formula and the template itself already printed brackets.
+- **Change:** `hasHigherPrecedence(const ope&, const temporalOpe&)` (expUtils/ope.hh) is false when the outer
+  operator is BooleanLayerNot: `!` binds tighter than any binary operator. A bare signal still prints `!b`.
+- **Tests** (written first, committed failing in `1b69134`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `DomainTest.notOverComparisonPrintsBrackets`: `G({P0(1)} \|=> !P1(2) W P0(1))` with `b` and `x == 3'b100`, through `fillAssertion`: SVA `always (b \|=> !(x == 3'b100) until b)`, Spot `G({b} \|=> !(x == 3'b100) W b)`; `!b` unbracketed | fail (`!x == 3'b100`) | pass |
+| T2 | `ctest -j6` on macOS at `5e7905e` | | 283 of 284, the one failure h5_unit (harm-coi's pytest), passed rerun alone; a second `ctest -j6` 284 of 284 (h5_unit 505 s) |
+
+- **In use:** the portfolio's DD1 A6-A7 check (uart_to_bus, harm and harm-rel): one harm-rel false alarm's text
+  corrected (`uart_rx_1.ce_1_mid |-> !(main_sm == 4'b1) until addr_auto_inc`); e2's and e3's top 100 held no
+  misprinted candidate, so their results stand.
