@@ -8,9 +8,12 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "AntecedentGenerator.hh"
+#include "CoiInfo.hh"
+#include "expUtils/expUtils.hh"
 #include "Assertion.hh"
 #include "Context.hh"
 #include "DTOperator.hh"
@@ -27,6 +30,96 @@ class NumericExpression;
 } // namespace expression
 
 namespace harm {
+
+// ---------------------------------------------------------------- COI filter mode (H7, D-017)
+namespace {
+std::mutex coiFilterStatsGuard;
+
+template <typename Vars> std::vector<std::string> variableNames(const Vars &vars) {
+  std::vector<std::string> names;
+  for (const auto &[name, type] : vars) {
+    names.push_back(name);
+  }
+  std::sort(names.begin(), names.end());
+  names.erase(std::unique(names.begin(), names.end()), names.end());
+  return names;
+}
+
+std::vector<std::string> variablesOf(const PropositionPtr &p) {
+  return variableNames(getVars(p));
+}
+
+std::vector<std::string> variablesOf(const NumericExpressionPtr &n) {
+  switch (n->getType().first) {
+  case ExpType::Float:
+    return variableNames(getVars(n->get<FloatExpression>()));
+  case ExpType::SInt:
+  case ExpType::UInt:
+    return variableNames(getVars(n->get<IntExpression>()));
+  default:
+    return variableNames(getVars(n->get<LogicExpression>()));
+  }
+}
+
+/// the variables of the consequent loaded in t
+std::vector<std::string> consequentVariables(const TemplateImplicationPtr &t) {
+  std::vector<std::string> vars;
+  for (const auto &p : t->getLoadedPropositionsCon()) {
+    auto v = variablesOf(p);
+    vars.insert(vars.end(), v.begin(), v.end());
+  }
+  return vars;
+}
+
+/// the loaded permutation of t has no antecedent proposition outside the cone; placeholders
+/// shared by antecedent and consequent are not filtered (D-017)
+bool permutationInCone(const TemplateImplicationPtr &t, const CoiInfo &coi,
+                       CoiDepth depth) {
+  std::unordered_set<const Proposition *> shared;
+  for (const auto &[ph, pp] : t->get_acphToPP()) {
+    shared.insert(pp->get());
+  }
+  // H24 (D-038): only what a placeholder loads is filtered; a proposition written in the template itself
+  // ({!rst}, {$fell(rst)}) is the author's choice, not a mined antecedent
+  std::unordered_set<const Proposition *> loaded;
+  for (const auto &[ph, pp] : t->get_aphToPP()) {
+    loaded.insert(pp->get());
+  }
+  auto fixed = [&](const Proposition *p) { return !loaded.count(p); };
+  if (depth == CoiDepth::Any) {
+    std::vector<std::string> con = consequentVariables(t);
+    for (const auto &p : t->getLoadedPropositionsAnt()) {
+      if (!shared.count(p.get()) && !fixed(p.get()) &&
+          !coi.inCone(variablesOf(p), con)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  // depth filter (H8, D-020): every antecedent leaf at its distance from each consequent leaf;
+  // leafOffsets reads the loaded propositions through the placeholders of the template
+  auto leaves = leafOffsets(t->getTemplateFormula());
+  for (const auto &l : leaves) {
+    if (!l.inAntecedent || shared.count(l.prop.get()) || fixed(l.prop.get())) {
+      continue;
+    }
+    std::vector<ConsequentLeaf> con;
+    for (const auto &q : leaves) {
+      if (!q.inAntecedent) {
+        std::optional<int> d;
+        if (l.offset && q.offset) {
+          d = *q.offset - *l.offset;
+        }
+        con.push_back({variablesOf(q.prop), d});
+      }
+    }
+    if (!coi.fits(variablesOf(l.prop), con, depth)) {
+      return false;
+    }
+  }
+  return true;
+}
+} // namespace
 class Edit;
 
 TLMiner::TLMiner() : PropertyMiner() {}
@@ -61,7 +154,7 @@ void TLMiner::mineProperties(const ContextPtr &context,
   l3Handler(clc::maxThreads);
 
   //store all the generated assertions into the context
-  for (auto &pack : _collectedAssertions) {
+  for (auto &[templAndPerm, pack] : _collectedAssertions) {
     for (const AssertionPtr &ass : pack) {
       context->_assertions.push_back(ass);
     }
@@ -95,6 +188,11 @@ void TLMiner::l3Handler(size_t nThread) {
     //allocate the thread
     std::lock_guard<std::mutex> lock{l3InstancesGuard};
 
+    if (toBeServed < _context->_templates.size() && hs::mineDeadlinePassed()) {
+      // H39: past mining's deadline no template is started
+      hs::templatesNotStarted += _context->_templates.size() - toBeServed;
+      toBeServed = _context->_templates.size();
+    }
     if (toBeServed < _context->_templates.size() &&
         l3Instances.size() < l3Constants::MAX_THREADS) {
       //mine a new template and give it to the thread
@@ -155,7 +253,23 @@ void TLMiner::l2Handler(
   {
     t->genPermutations(_context->_domainIdToProps,
                        _context->_domainIdToNumerics);
+    if (_context->_coi != nullptr && _context->_coiMode == "filter") {
+      size_t before = t->getNumberOfPermutations();
+      t->keepPermutations([&]() {
+        return permutationInCone(t, *_context->_coi, _context->_coiDepth);
+      });
+      size_t after = t->getNumberOfPermutations();
+      {
+        std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+        _context->_coiFilterStats.permutationsBefore += before;
+        _context->_coiFilterStats.permutationsAfter += after;
+      }
+      messageInfo("COI filter: " + t->getTemplateStr(Language::SpotLTL) +
+                  ": permutations " + std::to_string(before) + " -> " +
+                  std::to_string(after));
+    }
 
+    hs::permutationsTotal += t->getNumberOfPermutations();
     _progressBar.addInstance(l3InstId, t->getColoredTemplateStr(),
                              t->getNumberOfPermutations(), 70);
     _progressBar.enableCounter(l3InstId);
@@ -164,6 +278,9 @@ void TLMiner::l2Handler(
   while (1) {
     l2avThreads->wait();
     std::lock_guard<std::mutex> lock{l2InstancesGuard};
+    if (toBeServed < t->getNumberOfPermutations() && hs::mineDeadlinePassed()) {
+      toBeServed = t->getNumberOfPermutations(); // H39: past mining's deadline no permutation is started
+    }
     if (toBeServed < t->getNumberOfPermutations() &&
         l2Instances.size() < l2Constants::MAX_THREADS) {
 
@@ -268,21 +385,75 @@ void TLMiner::l1Handler(
 
     DecTreeVariables candidateVariables;
     auto propsDT = t->getDTPropositions();
-    for (size_t i = 0; i < t->getDTPropositions().size(); i++) {
+    auto numericsDT = t->getDTNumerics();
+    if (_context->_coi != nullptr && _context->_coiMode == "filter") {
+      // only candidates in the cone of the loaded consequent (D-017)
+      std::vector<std::string> con = consequentVariables(t);
+      size_t before = propsDT.size() + numericsDT.size();
+      propsDT.erase(std::remove_if(propsDT.begin(), propsDT.end(),
+                                   [&](const PropositionPtr &p) {
+                                     return !_context->_coi->inCone(
+                                         variablesOf(p), con);
+                                   }),
+                    propsDT.end());
+      numericsDT.erase(std::remove_if(numericsDT.begin(), numericsDT.end(),
+                                      [&](const NumericExpressionPtr &n) {
+                                        return !_context->_coi->inCone(
+                                            variablesOf(n), con);
+                                      }),
+                       numericsDT.end());
+      std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+      _context->_coiFilterStats.dtCandidatesBefore += before;
+      _context->_coiFilterStats.dtCandidatesAfter +=
+          propsDT.size() + numericsDT.size();
+    }
+    for (size_t i = 0; i < propsDT.size(); i++) {
       candidateVariables[i].first = propsDT[i];
-      candidateVariables[i].second =
-          makeGenericExpression<PropositionNot>(propsDT[i]);
+      // the negation of !p is p (H24: no `!!p` in the output)
+      if (auto n = std::dynamic_pointer_cast<PropositionNot>(propsDT[i])) {
+        candidateVariables[i].second = n->getItems()[0];
+      } else {
+        candidateVariables[i].second =
+            makeGenericExpression<PropositionNot>(propsDT[i]);
+      }
     }
 
     NumericDecTreeExp numericCandidates;
-    auto numericsDT = t->getDTNumerics();
     for (size_t i = 0; i < numericsDT.size(); i++) {
       numericCandidates[i] = numericsDT[i];
     }
 
     AntecedentGenerator antGen;
     antGen._saveOffset = t->getDT()->getLimits()._saveOffset;
+    // COI depth filter (H8, D-020): which candidate may go at which index of the operator
+    std::vector<std::vector<char>> propFits, numericFits;
+    const bool depthFilter = _context->_coi != nullptr &&
+                             _context->_coiMode == "filter" &&
+                             _context->_coiDepth != CoiDepth::Any;
+    if (depthFilter) {
+      for (const auto &con : dtIndexConsequents(t)) {
+        propFits.emplace_back();
+        for (const auto &p : propsDT) {
+          propFits.back().push_back(
+              _context->_coi->fits(variablesOf(p), con, _context->_coiDepth));
+        }
+        numericFits.emplace_back();
+        for (const auto &n : numericsDT) {
+          numericFits.back().push_back(
+              _context->_coi->fits(variablesOf(n), con, _context->_coiDepth));
+        }
+      }
+      antGen._admissible = [&](size_t id, bool numeric, size_t index) {
+        const auto &table = numeric ? numericFits : propFits;
+        return index >= table.size() || table[index][id];
+      };
+    }
     antGen.makeAntecedents(t, candidateVariables, numericCandidates);
+    if (depthFilter) {
+      std::lock_guard<std::mutex> lock{coiFilterStatsGuard};
+      _context->_coiFilterStats.dtPairsBefore += antGen._pairsBefore;
+      _context->_coiFilterStats.dtPairsAfter += antGen._pairsAfter;
+    }
 
     //onset
     handleDTSolutions(t, antGen._onSets, assp, false);
@@ -325,9 +496,10 @@ end:;
   //store the assertions collected in the current permutation
   if (!assp.empty()) {
     std::lock_guard<std::mutex> lock{_collectedAssertionsGuard};
-    _collectedAssertions.push_back(assp);
+    _collectedAssertions[{l3InstId, l2InstId}] = assp;
   }
 
+  hs::permutationsDone++;
   _progressBar.incrementCounter(l3InstId, assp.size());
   _progressBar.increment(l3InstId);
   _progressBar.display();

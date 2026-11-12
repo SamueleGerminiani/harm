@@ -1,0 +1,6 @@
+design = aliases
+top = aliases
+vcd_scope = tb::dut
+vcd_recursion = 2
+clock = clk
+max_depth = 3

@@ -1,0 +1,31 @@
+$version written by hand for H38 $end
+$timescale 1ps $end
+ $scope module tb $end
+  $var wire 1 ' clk $end
+  $var wire 1 # hi [1:1] $end
+  $var wire 1 $ mid [5:5] $end
+  $var wire 1 & one [0:0] $end
+ $upscope $end
+$enddefinitions $end
+#0
+0'
+0#
+1$
+1&
+#5
+1'
+#10
+0'
+1#
+0$
+#15
+1'
+#20
+0'
+0#
+1$
+0&
+#25
+1'
+#30
+0'

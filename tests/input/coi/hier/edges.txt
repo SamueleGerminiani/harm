@@ -1,0 +1,16 @@
+design = hier
+top = hier
+vcd_scope = tb::dut
+vcd_recursion = 1
+clock = clk
+max_depth = 3
+
+target din
+# parameters are dumped as constant signals
+target N
+target W
+# g[i].w is the q of stage g[i].*.st (its d and q ports are not visible at recursion 1)
+g[0]::w <- din @1
+g[1]::w <- g[0]::w @1
+g[2]::w <- g[1]::w @1
+dout <- g[2]::w @0

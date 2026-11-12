@@ -42,6 +42,7 @@ enum ope : int {
 
   FloatSum,
   FloatSub,
+  FloatNeg,
   FloatMul,
   FloatDiv,
   FloatEq,
@@ -60,6 +61,7 @@ enum ope : int {
   IntBOr,
   IntBXor,
   IntNot,
+  IntNeg,
   IntEq,
   IntNeq,
   IntGreater,
@@ -68,6 +70,7 @@ enum ope : int {
   IntLessEq,
   IntLShift,
   IntRShift,
+  IntARShift,
   IntSetMembership,
 
   LogicSum,
@@ -78,6 +81,7 @@ enum ope : int {
   LogicBOr,
   LogicBXor,
   LogicNot,
+  LogicNeg,
   LogicEq,
   LogicNeq,
   LogicGreater,
@@ -86,7 +90,13 @@ enum ope : int {
   LogicLessEq,
   LogicLShift,
   LogicRShift,
+  LogicARShift,
   LogicSetMembership,
+  LogicCaseEq,
+  LogicCaseNeq,
+  LogicConcat,
+
+  Ternary,
 
   StringEq,
   StringNeq,
@@ -99,6 +109,7 @@ enum ope : int {
 
   Function,
 
+  Select, // D-034: a bit or part select, tighter than every operator (printing only)
   NoOp
 
 };
@@ -127,7 +138,8 @@ inline std::string opeToString(temporalOpe o,
     case Language::PSL:
       return "eventually";
     case Language::SVA:
-      return "eventually";
+      // unbounded (strong) eventually; 'eventually' without a range is not SystemVerilog
+      return clc::legacySvaPrinting ? "eventually" : "s_eventually";
     default:
       messageError("Unset language");
     }
@@ -334,6 +346,10 @@ inline std::string opeToString(ope o) {
     return "^";
   case IntNot:
     return "~";
+  case IntNeg:
+  case LogicNeg:
+  case FloatNeg:
+    return "-";
   case IntEq:
     return "==";
   case IntNeq:
@@ -348,6 +364,9 @@ inline std::string opeToString(ope o) {
     return "<=";
   case IntLShift:
     return "<<";
+  case IntARShift:
+  case LogicARShift:
+    return ">>>";
   case IntRShift:
     return ">>";
   case IntSetMembership:
@@ -400,11 +419,21 @@ inline std::string opeToString(ope o) {
     return "<";
   case StringLessEq:
     return "<=";
+  case LogicCaseEq:
+    return "===";
+  case LogicCaseNeq:
+    return "!==";
+  case LogicConcat:
+    return "{,}";
+  case Ternary:
+    return "?:";
   case StringConcat:
     return "+";
   case Substring:
     return ".substr";
 
+  case Select:
+    return "[]";
   case NoOp:
     return "NoOp";
 
@@ -480,14 +509,18 @@ inline int opeToPrecedenceClass(ope o) {
     return 0;
   case IntNot:
     return 0;
+  case IntNeg:
+  case LogicNeg:
+  case FloatNeg:
+    return 0;
   case LogicNot:
     return 0;
   case IntSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case LogicSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case FloatSetMembership:
-    return 0;
+    return 4; // D-034: inside is relational
   case PropositionNot:
     return 0;
   case Substring:
@@ -524,6 +557,9 @@ inline int opeToPrecedenceClass(ope o) {
   case IntLShift:
     return 3;
   case LogicLShift:
+    return 3;
+  case IntARShift:
+  case LogicARShift:
     return 3;
   case IntRShift:
     return 3;
@@ -608,6 +644,17 @@ inline int opeToPrecedenceClass(ope o) {
   case PropositionOr:
     return 11;
 
+  case LogicCaseEq:
+    return 5;
+  case LogicCaseNeq:
+    return 5;
+  case LogicConcat:
+    return 0;
+  case Ternary:
+    return 12;
+
+  case Select:
+    return -1;
   case NoOp:
     return 12;
   }
@@ -620,6 +667,9 @@ inline int opeToPrecedenceClass(ope o) {
 //return true if o1 has a higher precedence than o2
 inline bool hasHigherPrecedence(const ope &o1,
                                 const temporalOpe &o2) {
+  if (o2 == BooleanLayerNot) {
+    return false; // H41: ! binds tighter than any binary operator (!(x == c), not !x == c)
+  }
   if (o1 == PropositionAnd &&
       (o2 == PropertyAnd || o2 == SereAnd || o2 == SereIntersect)) {
     return false;
@@ -641,6 +691,21 @@ inline bool hasHigherPrecedence(const ope &o1,
 inline bool hasHigherPrecedence(const ope &o1, const ope &o2) {
   return opeToPrecedenceClass(o1) < opeToPrecedenceClass(o2);
 }
+/// D-034: a right operand of the same precedence class needs brackets (operators are
+/// left-associative), unless it is the same associative operator (a + (b + c) is a + b + c)
+inline bool needsBracketsAsRight(const ope &parent, const ope &child) {
+  if (opeToPrecedenceClass(parent) != opeToPrecedenceClass(child)) {
+    return false;
+  }
+  switch (child) {
+  case IntSum: case LogicSum: case FloatSum: case IntMul: case LogicMul: case FloatMul:
+  case IntBAnd: case LogicBAnd: case IntBOr: case LogicBOr: case IntBXor: case LogicBXor:
+  case PropositionAnd: case PropositionOr:
+    return parent != child;
+  default:
+    return true;
+  }
+}
 inline bool isSamePrecedence(const temporalOpe &o1,
                              const temporalOpe &o2) {
   return opeToPrecedenceClass(o1) == opeToPrecedenceClass(o2);
@@ -649,6 +714,44 @@ inline bool hasHigherPrecedence(const temporalOpe &o1,
                                 const temporalOpe &o2) {
   return opeToPrecedenceClass(o1) < opeToPrecedenceClass(o2);
 }
+/// IEEE 1800-2017 Table 16-3 for the property operators HARM prints (lower binds tighter); it
+/// differs from HARM's own (LTL) precedence: in SVA, 'until' binds looser than 'and'/'or', and
+/// 's_eventually' (like 'always') looser than everything (H1c)
+inline int svaPrecedenceClass(temporalOpe o) {
+  switch (o) {
+  case PropertyNot:
+  case PropertyNext:
+    return 0;
+  case PropertyAnd:
+    return 1;
+  case PropertyOr:
+    return 2;
+  case PropertyUntil:
+  case PropertyRelease:
+    return 3;
+  case PropertyImplication:
+    return 4;
+  case PropertyEventually:
+  case PropertyAlways:
+    return 5;
+  default:
+    return -1; // sequences and booleans bind tighter than any property operator
+  }
+}
+/// true if, printed in SVA, a 'child' property under 'parent' needs brackets
+inline bool svaNeedsBrackets(temporalOpe parent, temporalOpe child) {
+  if (parent == TemporalNoOp || parent == PropertyAlways ||
+      svaPrecedenceClass(parent) < 0 || svaPrecedenceClass(child) < 0) {
+    return false;
+  }
+  if (child == PropertyEventually) {
+    // a prefix operator with the lowest precedence extends to the right: wrap it unless it
+    // is the whole consequent
+    return parent != PropertyImplication;
+  }
+  return svaPrecedenceClass(parent) < svaPrecedenceClass(child);
+}
+
 inline bool isPropertyOpe(const temporalOpe &o) {
   return o == PropertyAlways || o == PropertyEventually ||
          o == PropertyNext || o == PropertyUntil ||

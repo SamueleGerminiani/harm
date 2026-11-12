@@ -1,3 +1,4 @@
+#include "globals.hh"
 
 
 #include <algorithm>
@@ -32,9 +33,29 @@
 namespace harm {
 using namespace expression;
 
+namespace {
+/// edit rules are written against HARM's SystemVerilog printing before D-002 (true, ::,
+/// nexttime): keep matching them against that printing. They match the property itself, so the
+/// --sva-assert wrapper (which names the clock, not always a trace variable) is not printed.
+struct LegacySvaPrinting {
+  bool _previous;
+  bool _previousSvaAssert;
+  LegacySvaPrinting()
+      : _previous(clc::legacySvaPrinting), _previousSvaAssert(clc::svaAssert) {
+    clc::legacySvaPrinting = true;
+    clc::svaAssert = false;
+  }
+  ~LegacySvaPrinting() {
+    clc::legacySvaPrinting = _previous;
+    clc::svaAssert = _previousSvaAssert;
+  }
+};
+} // namespace
+
 bool toBeRemoved(const std::string assertionStr,
                  const std::vector<EditPtr> &remove,
                  const TracePtr &trace) {
+  LegacySvaPrinting legacy;
 
   //t is the original template of the assertion being matched
   TemplateImplicationPtr t =
@@ -57,6 +78,7 @@ bool toBeRemoved(const std::string assertionStr,
 bool rewriteAssertion(const AssertionPtr &ass,
                       const std::vector<EditPtr> &rewrite,
                       const TracePtr &trace) {
+  LegacySvaPrinting legacy;
 
   //t is the original template of the assertion being matched
   TemplateImplicationPtr t =

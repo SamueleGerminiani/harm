@@ -9,9 +9,93 @@
 #include "message.hh"
 #include "misc.hh"
 #include <cstring>
+#include <fcntl.h>
 #include <fstream>
+#include <mutex>
+#include <sstream>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace hlog {
+
+namespace {
+// H11f (F-L9): warning.log and error.log are rewritten in place (read, drop the closing "]",
+// append), so every writer holds an exclusive lock for the whole update: flock against other
+// processes (ctest -j runs the tests in one directory), a mutex against this process's threads.
+std::mutex logMutex;
+// a log write that fails reports through messageError, which writes the log again: such a nested
+// write is skipped (the message is still printed), instead of waiting for its own lock
+thread_local bool inLogWrite = false;
+// H30: a message is printed whole, one at a time: HARM's threads print through the same std::cout,
+// whose characters could otherwise interleave (and a std::cout pointed at a string stream, as in
+// the tests, is not thread-safe at all). Apart from logMutex, so printing never waits for a flock.
+std::mutex consoleMutex;
+
+void printWhole(std::ostream &out, const std::string &text) {
+  std::lock_guard<std::mutex> guard(consoleMutex);
+  out << text;
+  out.flush();
+}
+
+class LogLock {
+public:
+  explicit LogLock(const char *file)
+      : _guard(logMutex), _fd(open(file, O_RDWR | O_CREAT, 0644)) {
+    inLogWrite = true;
+    if (_fd >= 0) {
+      flock(_fd, LOCK_EX);
+    }
+  }
+  ~LogLock() {
+    if (_fd >= 0) {
+      flock(_fd, LOCK_UN);
+      close(_fd);
+    }
+    inLogWrite = false;
+  }
+  LogLock(const LogLock &) = delete;
+  LogLock &operator=(const LogLock &) = delete;
+  int fd() const { return _fd; }
+
+private:
+  std::lock_guard<std::mutex> _guard;
+  int _fd;
+};
+// H21: appends one record to the JSON array in file, holding lock. A file that ends with the line
+// "]" gets the record written over that line, so a message costs the same however long the log is;
+// the bytes are those of the read-modify-write below, which stays for an empty file and for a file
+// that does not end so (edited by hand, or cut by a crash)
+void appendRecord(const LogLock &lock, const char *file, const std::string &record) {
+  int fd = lock.fd();
+  struct stat st;
+  if (fd >= 0 && fstat(fd, &st) == 0 && st.st_size >= 2) {
+    off_t size = st.st_size;
+    char tail[3] = {0, 0, 0};
+    off_t from = size >= 3 ? size - 3 : 0;
+    ssize_t n = pread(fd, tail, size - from, from);
+    bool endsWithBracketLine =
+        n == size - from && tail[n - 2] == ']' && tail[n - 1] == '\n' && (n == 2 || tail[0] == '\n');
+    if (endsWithBracketLine) {
+      std::string text = ",\n" + record + "]\n";
+      if (pwrite(fd, text.data(), text.size(), size - 2) == (ssize_t)text.size()) {
+        return;
+      }
+    }
+  }
+  if (!isFileEmpty(file)) {
+    deleteLastLine(file);
+    std::ofstream(file, std::ios::app) << ",\n" << record << "]\n";
+  } else {
+    std::ofstream(file, std::ios::app) << "[\n" << record << "]\n";
+  }
+}
+} // namespace
+
+//number of active ScopedThrowOnError in this thread
+static thread_local size_t throwOnErrorDepth = 0;
+ScopedThrowOnError::ScopedThrowOnError() { throwOnErrorDepth++; }
+ScopedThrowOnError::~ScopedThrowOnError() { throwOnErrorDepth--; }
 
 std::string NowTime() {
   struct timeval tv;
@@ -26,24 +110,14 @@ std::string NowTime() {
 
 void dumpErrorToFile(std::string message, int custom_errno,
                      int custom_signal, bool withException) {
-
-  if (!isFileEmpty("error.log")) {
-    deleteLastLine("error.log");
-    std::ofstream file;
-    file.open("error.log", std::ios::app);
-    file << ",\n";
-    file.close();
-  } else {
-    std::ofstream file;
-    file.open("error.log", std::ios::app);
-    file << "[\n";
-    file.close();
+  if (inLogWrite) {
+    return;
   }
+  LogLock lock("error.log");
 
   removeDoubleQuotes(message);
 
-  std::ofstream file;
-  file.open("error.log", std::ios::app);
+  std::ostringstream file;
   file << "{\n";
   file << "\"time\" : \"" << NowTime() << "\"," << std::endl;
   file << "\"message\" : \"" << message << "\"";
@@ -70,45 +144,33 @@ void dumpErrorToFile(std::string message, int custom_errno,
 
   file << "}\n";
 
-  file << "]\n";
-
-  file.close();
+  appendRecord(lock, "error.log", file.str());
 }
 
 void dumpWarningToFile(std::string message) {
-
-  if (!isFileEmpty("warning.log")) {
-    deleteLastLine("warning.log");
-    std::ofstream file;
-    file.open("warning.log", std::ios::app);
-    file << ",\n";
-    file.close();
-  } else {
-    std::ofstream file;
-    file.open("warning.log", std::ios::app);
-    file << "[\n";
-    file.close();
+  if (inLogWrite) {
+    return;
   }
+  LogLock lock("warning.log");
 
   removeDoubleQuotes(message);
 
-  std::ofstream file;
-  file.open("warning.log", std::ios::app);
+  std::ostringstream file;
   file << "{\n";
   file << "\"time\" : \"" << NowTime() << "\"," << std::endl;
   file << "\"message\" : \"" << message << "\"";
   file << "}\n";
-  file << "]\n";
 
-  file.close();
+  appendRecord(lock, "warning.log", file.str());
 }
 
 void _harm_internal_messageInfo(const std::string &message) {
   if (clc::isilent == 0) {
-    std::cout << "\e[1m[INFO] " << NowTime() << " - "
-              << "Message: " << message << std::endl
-              << "\033[0m";
-    std::cout.flush();
+    std::ostringstream text;
+    text << "\e[1m[INFO] " << NowTime() << " - "
+         << "Message: " << message << "\n"
+         << "\033[0m";
+    printWhole(std::cout, text.str());
   }
 }
 
@@ -118,13 +180,13 @@ void _harm_internal_messageWarning(const std::string &file,
   dumpWarningToFile(message);
 
   if (clc::wsilent == 0) {
-    std::cout << "\033[1;33m[WARNING] " << NowTime() << " - "
-              << "File: " << file << " -- "
-              << "Line: " << line << std::endl
-              << "\tMessage: " << message << std::endl
-              << "\033[0m";
-
-    std::cout.flush();
+    std::ostringstream text;
+    text << "\033[1;33m[WARNING] " << NowTime() << " - "
+         << "File: " << file << " -- "
+         << "Line: " << line << "\n"
+         << "\tMessage: " << message << "\n"
+         << "\033[0m";
+    printWhole(std::cout, text.str());
   }
 }
 
@@ -132,15 +194,19 @@ void _harm_internal_messageError(const std::string &file,
                                  unsigned int line,
                                  const std::string &message) {
 
+  if (throwOnErrorDepth > 0) {
+    throw HarmError(message);
+  }
+
   dumpErrorToFile(message);
 
-  std::cerr << "\033[1;31m[ERROR] " << NowTime() << " - "
-            << "File: " << file << " "
-            << "at line " << line << std::endl
-            << "Message: " << message << std::endl
-            << "\033[0m";
-
-  std::cerr.flush();
+  std::ostringstream text;
+  text << "\033[1;31m[ERROR] " << NowTime() << " - "
+       << "File: " << file << " "
+       << "at line " << line << "\n"
+       << "Message: " << message << "\n"
+       << "\033[0m";
+  printWhole(std::cerr, text.str());
   assert(0);
   exit(1);
 }

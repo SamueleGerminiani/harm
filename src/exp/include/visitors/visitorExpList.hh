@@ -44,6 +44,9 @@
   VIRTUAL void visit(IntBOr &o) OVVERIDE;                            \
   VIRTUAL void visit(IntBXor &o) OVVERIDE;                           \
   VIRTUAL void visit(IntNot &o) OVVERIDE;                            \
+  VIRTUAL void visit(IntNeg &o) OVVERIDE;                            \
+  VIRTUAL void visit(LogicNeg &o) OVVERIDE;                          \
+  VIRTUAL void visit(FloatNeg &o) OVVERIDE;                          \
   VIRTUAL void visit(IntEq &o) OVVERIDE;                             \
   VIRTUAL void visit(IntNeq &o) OVVERIDE;                            \
   VIRTUAL void visit(IntGreater &o) OVVERIDE;                        \
@@ -54,8 +57,11 @@
   VIRTUAL void visit(IntToBool &o) OVVERIDE;                         \
   VIRTUAL void visit(IntToFloat &o) OVVERIDE;                        \
   VIRTUAL void visit(IntToLogic &o) OVVERIDE;                        \
+  VIRTUAL void visit(BoolToLogic &o) OVVERIDE;                       \
   VIRTUAL void visit(IntLShift &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRShift &o) OVVERIDE;                         \
+  VIRTUAL void visit(IntARShift &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicARShift &o) OVVERIDE;                      \
   VIRTUAL void visit(IntSetMembership &o) OVVERIDE;                  \
   VIRTUAL void visit(IntStable &o) OVVERIDE;                         \
   VIRTUAL void visit(IntRose &o) OVVERIDE;                           \
@@ -81,6 +87,8 @@
   VIRTUAL void visit(LogicToBool &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicToFloat &o) OVVERIDE;                      \
   VIRTUAL void visit(LogicToInt &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicSignCast &o) OVVERIDE;                     \
+  VIRTUAL void visit(IntSignCast &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicLShift &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicRShift &o) OVVERIDE;                       \
   VIRTUAL void visit(LogicSetMembership &o) OVVERIDE;                \
@@ -88,6 +96,13 @@
   VIRTUAL void visit(LogicRose &o) OVVERIDE;                         \
   VIRTUAL void visit(LogicFell &o) OVVERIDE;                         \
   VIRTUAL void visit(LogicPast &o) OVVERIDE;                         \
+  VIRTUAL void visit(LogicCaseEq &o) OVVERIDE;                       \
+  VIRTUAL void visit(LogicCaseNeq &o) OVVERIDE;                      \
+  VIRTUAL void visit(LogicConcat &o) OVVERIDE;                       \
+  VIRTUAL void visit(PropositionTernary &o) OVVERIDE;                \
+  VIRTUAL void visit(IntTernary &o) OVVERIDE;                        \
+  VIRTUAL void visit(LogicTernary &o) OVVERIDE;                      \
+  VIRTUAL void visit(FloatTernary &o) OVVERIDE;                      \
   VIRTUAL void visit(StringVariable &o) OVVERIDE;                    \
   VIRTUAL void visit(StringConstant &o) OVVERIDE;                    \
   VIRTUAL void visit(StringEq &o) OVVERIDE;                          \

@@ -17,6 +17,9 @@
 #include <spot/tl/print.hh>
 #include <spot/twaalgos/isdet.hh>
 #include <spot/twaalgos/postproc.hh>
+#include <spot/tl/ltlf.hh>
+#include <spot/twa/bdddict.hh>
+#include <mutex>
 #endif
 
 namespace harm {
@@ -204,6 +207,9 @@ void AutomataBasedEvaluator::linearEval(
     // only 1 thread
     runLinearEval<Dynamic>(traceRange, Range(threadsRange._start, 1));
     joinData<Dynamic>(traceRange, Range(threadsRange._start, 1));
+  }
+  if (clc::traceEnd == "sva") {
+    applySvaTraceEnd<Dynamic>(traceRange);
   }
 
   // notify the end and free the threads
@@ -468,11 +474,15 @@ AutomataBasedEvaluator::evaluateAutomaton(size_t time) {
   return {Trinary::U, dShift};
 }
 
+namespace {
+/// Spot is not thread-safe: every translation in this file holds this lock
+std::mutex spotGuard;
+} // namespace
+
 void AutomataBasedEvaluator::generateAutomaton() {
 
 #ifdef SPOTLTL
   {
-    static std::mutex spotGuard;
     std::lock_guard<std::mutex> lock{spotGuard};
     //retrieve the string representation of temporal formula
     std::string spotFormulaStr =
@@ -494,6 +504,136 @@ void AutomataBasedEvaluator::generateAutomaton() {
   messageError("No automata generator library provided");
   //other automata-based libraries
 #endif
+}
+
+TraceEndModel::~TraceEndModel() {
+  for (auto &es : edges) {
+    for (auto &e : es) {
+      delete e.first;
+    }
+  }
+}
+
+void AutomataBasedEvaluator::buildTraceEndModel() {
+  _traceEnd = std::make_unique<TraceEndModel>();
+#ifdef SPOTLTL
+  std::lock_guard<std::mutex> lock{spotGuard};
+  std::string text = temp2String(_formula, Language::SpotLTL, PrintMode::Hide);
+  spot::formula f = spot::parse_infix_psl(text).f;
+  if (f.kind() == spot::op::Closure) {
+    return; // an antecedent: pending means 'no match yet', never a failure
+  }
+  if (!f.is_ltl_formula()) {
+    messageWarning("--trace-end sva: '" + text +
+                   "' contains sequences; its end-of-trace verdicts follow --trace-end harm");
+    return;
+  }
+  // HARM's X is SVA's nexttime, weak; Spot 2.9's from_ltlf also reads X as weak
+  // (X b -> X(!alive | b)), so !X b becomes the strong X(alive & !b), as s_nexttime !b
+  const std::string alive = "harm_trace_alive";
+  spot::formula fl = spot::from_ltlf(f, alive.c_str());
+  spot::translator trans;
+  trans.set_pref(spot::postprocessor::Deterministic);
+  auto aut = trans.run(fl);
+  spot::postprocessor post;
+  post.set_pref(spot::postprocessor::Complete);
+  aut = post.run(aut);
+  if (!spot::is_deterministic(aut)) {
+    messageWarning("--trace-end sva: no deterministic automaton for '" + text +
+                   "'; its end-of-trace verdicts follow --trace-end harm");
+    return;
+  }
+  auto dict = aut->get_dict();
+  int av = dict->has_registered_proposition(spot::formula::ap(alive), aut);
+  // the trace may end in state s if 'alive' can stay false forever from s
+  spot::translator deadTrans(dict);
+  auto dead = deadTrans.run(spot::formula::G(
+      spot::formula::Not(spot::formula::ap(alive))));
+  auto pack = extractPlaceholders(_formula);
+  unsigned n = aut->num_states();
+  _traceEnd->init = aut->get_init_state_number();
+  _traceEnd->endOK.assign(n, true);
+  _traceEnd->edges.resize(n);
+  for (unsigned s = 0; s < n; s++) {
+    auto from = spot::make_twa_graph(aut, spot::twa::prop_set::all());
+    from->set_init_state(s);
+    _traceEnd->endOK[s] = from->intersects(dead);
+    for (auto &e : aut->out(s)) {
+      bdd cond = av < 0 ? e.cond : bdd_restrict(e.cond, bdd_ithvar(av));
+      if (cond == bddfalse) {
+        continue; // only taken once the trace has ended
+      }
+      spot::formula edge = spot::parse_formula(spot::bdd_format_formula(dict, cond));
+      _traceEnd->edges[s].emplace_back(spotEdgeToProposition(edge, pack), e.dst);
+    }
+  }
+  // needed only if a state reachable while the trace lasts may not end it
+  std::vector<bool> seen(n, false);
+  std::vector<unsigned> todo{_traceEnd->init};
+  seen[_traceEnd->init] = true;
+  while (!todo.empty()) {
+    unsigned s = todo.back();
+    todo.pop_back();
+    if (!_traceEnd->endOK[s]) {
+      _traceEnd->needed = true;
+    }
+    for (auto &e : _traceEnd->edges[s]) {
+      if (!seen[e.second]) {
+        seen[e.second] = true;
+        todo.push_back(e.second);
+      }
+    }
+  }
+#endif
+}
+
+template <bool Dynamic>
+void AutomataBasedEvaluator::applySvaTraceEnd(const Range &traceRange) {
+  if (_traceEnd == nullptr) {
+    buildTraceEndModel();
+  }
+  if (!_traceEnd->needed) {
+    return;
+  }
+  size_t begin = traceRange._start, end = traceRange._start + traceRange._length;
+  // only the instances still pending (U) at the end of the segment can change; they are run
+  // through the LTLf automaton, grouped by state
+  std::vector<std::vector<size_t>> at(_traceEnd->edges.size()), next(at.size());
+  size_t active = 0;
+  for (size_t time = begin; time < end; time++) {
+    if (_cache[time] == Trinary::U) {
+      at[_traceEnd->init].push_back(time);
+      active++;
+    }
+    if (active == 0) {
+      continue;
+    }
+    for (size_t s = 0; s < at.size(); s++) {
+      if (at[s].empty()) {
+        continue;
+      }
+      for (auto &e : _traceEnd->edges[s]) {
+        if (e.first->evaluate(time)) {
+          auto &dst = next[e.second];
+          dst.insert(dst.end(), at[s].begin(), at[s].end());
+          break;
+        }
+      }
+      at[s].clear();
+    }
+    at.swap(next);
+  }
+  for (size_t s = 0; s < at.size(); s++) {
+    if (_traceEnd->endOK[s]) {
+      continue;
+    }
+    for (size_t id : at[s]) {
+      _cache[id] = Trinary::F;
+      if constexpr (Dynamic) {
+        _sereShiftCache[id] = (end - 1) - id;
+      }
+    }
+  }
 }
 
 void AutomataBasedEvaluator::initCache() {

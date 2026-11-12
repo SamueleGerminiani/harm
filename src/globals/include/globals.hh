@@ -1,5 +1,7 @@
 
 #pragma once
+#include <atomic>
+#include <chrono>
 #include <stddef.h>
 #include <string>
 #include <vector>
@@ -44,6 +46,9 @@ extern std::string evaluatorType;
 extern Language outputLang;
 ///--sva-assert
 extern bool svaAssert;
+///print SystemVerilog as HARM did before D-002 (true, ::, nexttime, eventually); set only while
+///edit rules are matched, so that existing edit rules keep working
+extern bool legacySvaPrinting;
 ///--generate-config
 extern bool genConfig;
 ///--dump-trace-as-csv
@@ -58,6 +63,36 @@ extern std::string dumpPath;
 extern bool dumpAssSplitContexts;
 ///--keep-vac-ass
 extern bool keepVacAss;
+///--skip-invalid-props
+extern bool skipInvalidProps;
+///--reduce: "syntactic", "equiv" or "implies"
+extern std::string reduce;
+///--keep: "stronger", "weaker" or "ranked" (with --reduce implies)
+extern std::string keep;
+///--dump-implications
+extern std::string dumpImplications;
+///--trace-end: "harm" (pending instances hold) or "sva" (pending strong obligations fail, D-016)
+extern std::string traceEnd;
+///--dump-assertion-info
+extern std::string dumpAssertionInfo;
+///--dump-prop-table (H15)
+extern std::string dumpPropTable;
+///HARM_VERSION (git describe), for the files HARM writes
+extern std::string harmVersion;
+///--atom-premises, --atom-premises-max (H3b, D-025)
+extern bool atomPremises;
+extern size_t atomPremisesMax;
+///--implies-max-pairs (H29): --reduce implies is skipped for a context with more pairs; 0 (the default since H33): no cap
+extern size_t impliesMaxPairs;
+///--deadline, --mine-deadline (H39): seconds from HARM's start; < 0: none. The implication step
+///stops checking pairs at the deadline; mining starts no template or permutation after its own
+extern double deadline;
+extern double mineDeadline;
+///--implies-workers (H39): processes checking the implication step's pairs; 0 (default): --max-threads, from
+///IMPLIES_PAIRS_PER_WORKER pairs per process
+extern size_t impliesWorkers;
+///--dump-coi-report (H9, D-022)
+extern std::string dumpCoiReport;
 ///--dump-vac-ass
 extern std::string dumpVacAss;
 ///--max-ass
@@ -117,5 +152,19 @@ extern size_t nFaultCovSubset;
 extern size_t traceLength;
 ///Number of input fault
 extern size_t nFaults;
+/// --check-dump-eval: one index.json record per dumped assertion, in check order (D-030)
+extern std::vector<std::string> checkDumpEvalIndex;
+/// H39: HARM's start, and mining's progress against --mine-deadline
+extern std::chrono::steady_clock::time_point start;
+extern std::atomic<size_t> permutationsDone;
+extern std::atomic<size_t> permutationsTotal;
+extern std::atomic<size_t> templatesNotStarted;
+extern std::atomic<bool> mineCut;
+/// H39: seconds since HARM's start
+double elapsed();
+/// H39: true once mining's deadline has passed (and records the cut)
+bool mineDeadlinePassed();
+/// H39: the implication step's deadline as a time point; max() without --deadline
+std::chrono::steady_clock::time_point reduceDeadline();
 
 } // namespace hs

@@ -1,5 +1,6 @@
 
 #pragma once
+#include <unordered_map>
 
 #include <stack>
 #include <stddef.h>
@@ -124,12 +125,50 @@ private:
   exitLogicAtom(propositionParser::LogicAtomContext *ctx) override;
   void exitLogic_constant(
       propositionParser::Logic_constantContext *ctx) override;
+  void exitConcatenation(
+      propositionParser::ConcatenationContext *ctx) override;
+  void exitNumericTernary(
+      propositionParser::NumericTernaryContext *ctx) override;
+  void exitBooleanTernary(
+      propositionParser::BooleanTernaryContext *ctx) override;
+
+  /// fill literals ('0 '1 'x 'z) waiting for the width of the other operand
+  std::unordered_map<expression::LogicExpression *, char> _fillLiterals;
+  bool isFill(NumericPack &p);
+  /// if one of the operands is a fill literal, replace it with a constant as wide as the other
+  void resolveFill(NumericPack &a, NumericPack &b);
+  /// error if a fill literal never got a width
+  void checkNoUnresolvedFill();
+  /// D-034: a number as a Boolean (true where it has a known 1 bit); a Boolean that was made a
+  /// number (BoolToLogic) is given back as it was, so that trees keep their pre-D-034 shape
+  expression::PropositionPtr toBool(NumericPack np);
+  /// D-034: a Boolean as a 1-bit number
+  NumericPack toNumber(const expression::PropositionPtr &p);
+  /// D-035: SystemVerilog's context-determined operands (IEEE 1800-2017 11.6.1, 11.8.2): the
+  /// width and signedness of a context (a comparison, a condition, a ?: or an inside) are given to
+  /// its context-determined operands, recursively (+ - * / & | ^ ~ unary -, the left operand of a
+  /// shift, the branches of ?:); not to self-determined ones (shift amounts, selects,
+  /// concatenation items, function arguments, the operands of a nested comparison)
+  void toContext(NumericPack &np, std::pair<expression::ExpType, size_t> context);
+  /// D-034: the comparison op (< <= > >= == != === !==) of two numbers, as a proposition
+  expression::PropositionPtr compare(NumericPack e1, NumericPack e2,
+                                     const std::string &op);
   virtual void
   exitStringAtom(propositionParser::StringAtomContext *ctx) override;
   void exitInt_constant(
       propositionParser::Int_constantContext *ctx) override;
   virtual void
   exitFloatAtom(propositionParser::FloatAtomContext *ctx) override;
+  /// H25 (D-039): $signed(e) / $unsigned(e)
+  virtual void exitSignCast(propositionParser::SignCastContext *ctx) override;
+
+  virtual void enterNonTemporalFunction(
+      propositionParser::NonTemporalFunctionContext *ctx) override;
+  /// D-034: the sizes of the two stacks when a function starts: its result goes to the stack
+  /// of its argument's kind ($past of a number is a number), whatever the grammar position
+  std::unordered_map<propositionParser::NonTemporalFunctionContext *,
+                     std::pair<size_t, size_t>>
+      _functionStart;
   virtual void exitNonTemporalFunction(
       propositionParser::NonTemporalFunctionContext *ctx) override;
   virtual void

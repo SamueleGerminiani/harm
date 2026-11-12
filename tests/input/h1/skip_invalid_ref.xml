@@ -1,0 +1,10 @@
+<harm>
+    <!-- H1, A7: skip_invalid.xml without its two invalid propositions -->
+    <context name="default">
+        <prop exp="{go, s} == 3'b110" loc="a"/>
+        <prop exp="cnt >= 4'd6" loc="c"/>
+        <prop exp="s !== 2'b00" loc="c"/>
+        <template exp="G(P0 -> P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

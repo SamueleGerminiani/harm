@@ -1,0 +1,25 @@
+<harm>
+    <!-- H7 (acceptance A1-A3, A5): COI filter mode on the H4 fixture "multipath". Every proposition
+         can be antecedent, consequent or decision-tree candidate; one consequent placeholder per
+         template (needed by the per-consequent oracle, H7_PLAN F3). The two multi-variable
+         propositions were added after a mutation test ("any variable" instead of "every
+         variable") passed on single-variable propositions only. -->
+    <context name="default">
+        <prop exp="a" loc="a, c, dt"/>
+        <prop exp="b" loc="a, c, dt"/>
+        <prop exp="y" loc="a, c, dt"/>
+        <prop exp="z" loc="a, c, dt"/>
+        <prop exp="r1" loc="a, c, dt"/>
+        <prop exp="r2" loc="a, c, dt"/>
+        <prop exp="rb" loc="a, c, dt"/>
+        <prop exp="a &amp;&amp; b" loc="a, c, dt"/>
+        <prop exp="r1 || rb" loc="a, c, dt"/>
+        <coi file="../coi/multipath/expected_coi.json" mode="filter"/>
+        <template exp="G(P0 -&gt; P1)"/>
+        <template exp="G(P0 -&gt; X P1)"/>
+        <template exp="G(P0 &amp;&amp; P1 -&gt; X P2)"/>
+        <template dtLimits="3A" exp="G({..&amp;&amp;..}|-&gt; X P0)"/>
+        <template dtLimits="3A" exp="G({..#1&amp;..}|-&gt; P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

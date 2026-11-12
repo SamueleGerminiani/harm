@@ -1,0 +1,16 @@
+afcf
+afct
+afcu
+atcf
+atct
+atcu
+aucf
+auct
+aucu
+complexity
+ct
+faultCoverage
+nFaults
+nfCovered
+pRepetitions
+traceLength

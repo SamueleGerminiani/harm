@@ -39,6 +39,12 @@ public:
 
   void popItem();
 
+  /// @brief D-035: the type of the context (SystemVerilog's context-determined width and sign)
+  void setType(ExpType type, size_t size) {
+    this->_type = type;
+    this->_size = size;
+  }
+
   /// @brief Assing operator
   TypeCast &operator=(const TypeCast &other) = delete;
 
@@ -65,6 +71,9 @@ using FloatToBool = TypeCast<FloatExpression, Proposition>;
 using FloatToInt = TypeCast<FloatExpression, IntExpression>;
 using FloatToLogic = TypeCast<FloatExpression, LogicExpression>;
 
+/// D-032: a bool operand of a bitwise operator, as a 1-bit unsigned logic
+using BoolToLogic = TypeCast<Proposition, LogicExpression>;
+
 //smart pointer alias
 using LogicToFloatPtr = std::shared_ptr<LogicToFloat>;
 using LogicToBoolPtr = std::shared_ptr<LogicToBool>;
@@ -78,6 +87,8 @@ using FloatToBoolPtr = std::shared_ptr<FloatToBool>;
 using FloatToIntPtr = std::shared_ptr<FloatToInt>;
 using FloatToLogicPtr = std::shared_ptr<FloatToLogic>;
 
+using BoolToLogicPtr = std::shared_ptr<BoolToLogic>;
+
 
 
 /// @brief Check if an expression is a of type TypeCast
@@ -90,7 +101,8 @@ template <typename T> bool isTypeCast(GenericPtr<T> exp) {
            std::dynamic_pointer_cast<FloatToInt>(exp) != nullptr;
   } else if constexpr (std::is_same_v<T, LogicExpression>) {
     return std::dynamic_pointer_cast<IntToLogic>(exp) != nullptr ||
-           std::dynamic_pointer_cast<FloatToLogic>(exp) != nullptr;
+           std::dynamic_pointer_cast<FloatToLogic>(exp) != nullptr ||
+           std::dynamic_pointer_cast<BoolToLogic>(exp) != nullptr;
   } else if constexpr (std::is_same_v<T, Proposition>) {
     return std::dynamic_pointer_cast<LogicToBool>(exp) != nullptr ||
            std::dynamic_pointer_cast<IntToBool>(exp) != nullptr ||

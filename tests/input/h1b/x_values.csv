@@ -1,0 +1,3 @@
+logic [3:0] a, logic [3:0] b, logic [3:0] c, logic p, logic [3:0] v, logic [3:0] w, logic k
+10x1,1001,0001,x,01x0,00x0,1
+10x1,1001,0001,x,01x0,00x0,1

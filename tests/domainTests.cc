@@ -82,3 +82,33 @@ TEST(DomainTest, expandedDomainNonEnumerated) {
   ASSERT_EQ(t->getAssertionStr(Language::SpotLTL),
             "G(v1 -> {v2 && v3})");
 }
+
+// H41 (DD1 A7, the user 2026-11-04): a template's ! over a placeholder holding a comparison is printed with
+// brackets, so the text re-parses to the mined property by C/SystemVerilog precedence (! binds tighter than
+// ==). It printed !x == 3'b100, which is (!x) == 4, never true, where HARM had checked !(x == 4).
+TEST(DomainTest, notOverComparisonPrintsBrackets) {
+  std::vector<VarDeclaration> vars;
+  vars.emplace_back("b", ExpType::Bool, 1);
+  vars.emplace_back("x", ExpType::ULogic, 3);
+  const TracePtr &trace = generatePtr<Trace>(vars, 1);
+  Context c;
+  c._domainIdToProps[1].push_back(hparser::parseProposition("b", trace));
+  c._domainIdToProps[2].push_back(hparser::parseProposition("x == 3'b100", trace));
+  for (auto lang : {Language::SpotLTL, Language::SVA}) {
+    clc::outputLang = lang;
+    TemplateImplicationPtr t = hparser::parseTemplateImplication("G({P0(1)} |=> !P1(2) W P0(1))", trace);
+    t->genPermutations(c._domainIdToProps, c._domainIdToNumerics);
+    t->loadPerm(0);
+    ASSERT_EQ(t->getNumberOfPermutations(), 1);
+    std::string want = lang == Language::SVA ? "always (b |=> !(x == 3'b100) until b)" : "G({b} |=> !(x == 3'b100) W b)";
+    ASSERT_EQ(t->getAssertionStr(lang), want);
+    AssertionPtr ass = generatePtr<Assertion>();  // as the miner writes it (TLMiner, the dump)
+    fillAssertion(ass, t, false);
+    ASSERT_EQ(ass->toString(lang), want);
+  }
+  clc::outputLang = Language::SpotLTL;
+  TemplateImplicationPtr t = hparser::parseTemplateImplication("G({P0(1)} |=> !P1(1) W P0(1))", trace);
+  t->genPermutations(c._domainIdToProps, c._domainIdToNumerics);
+  t->loadPerm(0);
+  ASSERT_EQ(t->getAssertionStr(Language::SpotLTL), "G({b} |=> !b W b)");  // a bare signal: no brackets
+}

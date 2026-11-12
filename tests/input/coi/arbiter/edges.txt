@@ -1,0 +1,16 @@
+design = arbiter
+top = arbiter
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3
+
+target rst
+target req
+# gnt: always_comb from req and prio
+gnt <- req @0
+gnt <- prio @0
+# prio: set/cleared from gnt, held otherwise, reset
+prio <- gnt @1
+prio <- prio @1
+prio <- rst @1

@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/fwd.hpp>
 #include <boost/multiprecision/number.hpp>
@@ -52,6 +53,19 @@ public:
   ULogic _z;
 };
 
+/// @brief 'l' resized to 'width' bits: truncated, or extended with its sign (x/z included) if
+/// 'signExtend', with zeros otherwise
+Logic resize(const Logic &l, size_t width, bool signExtend);
+
+/// @brief SystemVerilog concatenation {items[0], items[1], ...}: items[0] gives the most
+/// significant bits; the result is unsigned and as wide as the sum of the item widths
+Logic concat(const std::vector<Logic> &items);
+
+/// @brief SystemVerilog case equality (===): true iff the operands are bitwise identical,
+/// including x and z bits, after extending both to the wider width (sign extension if both are
+/// signed, zero extension otherwise)
+bool caseEq(const Logic &lhs, const Logic &rhs);
+
 //the following functions need the result type to handle implicit conversions
 
 Logic sum(const Logic &lhs, const Logic &rhs,
@@ -72,6 +86,9 @@ Logic bls(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType);
 Logic brs(const Logic &lhs, const Logic &rhs,
           const std::pair<ExpType, size_t> &resType);
+/// D-035: >>> (arithmetic on a signed result)
+Logic bars(const Logic &lhs, const Logic &rhs,
+           const std::pair<ExpType, size_t> &resType);
 Logic bnot(const Logic &lhs,
            const std::pair<ExpType, size_t> &resType);
 bool eq(const Logic &lhs, const Logic &rhs,

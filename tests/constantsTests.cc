@@ -22,7 +22,7 @@ TEST(ConstantsTest, gccBinary) {
   IntExpressionPtr ic = hparser::parseIntExpression(val, trace);
 
   ASSERT_EQ(ic->evaluate(0), 5);
-  ASSERT_EQ("5", exp2String(ic));
+  ASSERT_EQ("3'b101", exp2String(ic)); // H19 (D-035): unsigned, as a sized literal
 }
 
 TEST(ConstantsTest, gccHex) {
@@ -33,7 +33,7 @@ TEST(ConstantsTest, gccHex) {
   IntExpressionPtr ic = hparser::parseIntExpression(val, trace);
 
   ASSERT_EQ(ic->evaluate(0), 255);
-  ASSERT_EQ("255", exp2String(ic));
+  ASSERT_EQ("8'b11111111", exp2String(ic)); // H19 (D-035)
 }
 
 TEST(ConstantsTest, sInteger) {
@@ -88,7 +88,7 @@ TEST(ConstantsTest, ullLiteral) {
   IntExpressionPtr ic = hparser::parseIntExpression(val, trace);
 
   ASSERT_EQ(ic->evaluate(0), 12345);
-  ASSERT_EQ("12345", exp2String(ic));
+  ASSERT_EQ("64'b11000000111001", exp2String(ic)); // H19 (D-035)
 }
 
 TEST(ConstantsTest, fLiteral) {
@@ -99,5 +99,5 @@ TEST(ConstantsTest, fLiteral) {
   FloatExpressionPtr ic = hparser::parseFloatExpression(val, trace);
 
   ASSERT_EQ(ic->evaluate(0), -1.f);
-  ASSERT_EQ("-1", exp2String(ic));
+  ASSERT_EQ("-1.0", exp2String(ic)); // H19 (D-035): a real keeps its point
 }

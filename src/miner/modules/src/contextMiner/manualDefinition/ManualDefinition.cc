@@ -1,3 +1,5 @@
+#include <filesystem>
+#include "CoiInfo.hh"
 #include <algorithm>
 #include <ctype.h>
 #include <istream>
@@ -411,6 +413,16 @@ void ManualDefinition::mineContexts(
                                     safeStod(th));
     }
 
+    // the COI metric variables need a <coi> (checked when the <coi> is known, below)
+    auto usesCoi = [](const MetricPtr &m) {
+      return m->contains("coiFrac") || m->contains("coiDepthFit") ||
+             m->contains("coiUnknown");
+    };
+    bool metricsUseCoi =
+        std::any_of(context->_sort.begin(), context->_sort.end(), usesCoi) ||
+        std::any_of(context->_filter.begin(), context->_filter.end(),
+                    [&](const auto &f) { return usesCoi(f.first); });
+
     // get edits
     std::vector<rapidxml::xml_node<> *> editsTag;
     getNodesFromName(contextTag, "edit", editsTag);
@@ -442,6 +454,59 @@ void ManualDefinition::mineContexts(
       }
     }
 
+    // cone of influence: <coi file="..." mode="rank|filter" depth="any|bounded|exact"/>
+    // (H6, H7, H8)
+    std::vector<rapidxml::xml_node<> *> coiTags;
+    getNodesFromName(contextTag, "coi", coiTags);
+    messageErrorIf(coiTags.size() > 1,
+                   "At most one <coi> per context (context '" + contextName +
+                       "')");
+    if (!coiTags.empty()) {
+      auto file = getAttributeValue(coiTags[0], "file", "");
+      auto mode = getAttributeValue(coiTags[0], "mode", "rank");
+      messageErrorIf(file.empty(), "<coi> needs a file attribute");
+      messageErrorIf(mode != "rank" && mode != "filter",
+                     "Unknown <coi> mode '" + mode +
+                         "' (expected 'rank' or 'filter')");
+      context->_coiMode = mode;
+      auto depth = getAttributeValue(coiTags[0], "depth", "");
+      messageErrorIf(!depth.empty() && mode != "filter",
+                     "<coi> depth applies only to mode=\"filter\" (context '" +
+                         contextName + "')");
+      messageErrorIf(!depth.empty() && depth != "any" && depth != "bounded" &&
+                         depth != "exact",
+                     "Unknown <coi> depth '" + depth +
+                         "' (expected 'any', 'bounded' or 'exact')");
+      context->_coiDepth = depth == "exact"     ? CoiDepth::Exact
+                           : depth == "bounded" ? CoiDepth::Bounded
+                                                : CoiDepth::Any;
+      static bool warned = false;
+      if (mode == "filter" && !warned) {
+        warned = true;
+        messageWarning(
+            "COI filter mode assumes the RTL is correct: behaviour removed or "
+            "added by an RTL bug cannot be mined (use mode=\"rank\" to look for "
+            "bugs)");
+      }
+      // relative to the configuration file
+      std::filesystem::path path(file);
+      if (path.is_relative()) {
+        path = std::filesystem::path(_configFile).parent_path() / path;
+      }
+      context->_coi = CoiInfo::load(path.string(), trace);
+      messageWarningIf(
+          !clc::selectedScope.empty() &&
+              clc::selectedScope != context->_coi->_vcdScope,
+          "--vcd-ss '" + clc::selectedScope +
+              "' differs from the coi file's meta.vcd_scope '" +
+              context->_coi->_vcdScope + "'");
+    }
+
+    messageErrorIf(metricsUseCoi && context->_coi == nullptr,
+                   "A metric of context '" + contextName +
+                       "' uses coiFrac/coiDepthFit/coiUnknown, which needs a "
+                       "<coi> element in the context");
+
     // get propositions
     std::vector<rapidxml::xml_node<> *> propsTag;
     getNodesFromName(contextTag, "prop", propsTag);
@@ -457,12 +522,30 @@ void ManualDefinition::mineContexts(
       }
       auto domains = parseDomain<0>(locStr);
 
-      PropositionPtr p = hparser::parseProposition(exp, trace);
+      auto origin = getAttributeValue(propTag, "origin", "");
+      PropositionPtr p = nullptr;
+      if (clc::skipInvalidProps) {
+        std::string error;
+        p = hparser::tryParseProposition(exp, trace, error);
+        if (p == nullptr) {
+          messageWarning("Invalid proposition skipped: '" + exp +
+                         "'\n\t" + error);
+          continue;
+        }
+      } else {
+        p = hparser::parseProposition(exp, trace);
+      }
       p->enableCache();
+      if (!origin.empty()) {
+        context->_origin[prop2String(p)] = origin;
+      }
+      std::vector<int> ids;
       for (auto &[id, dontExpand] : domains) {
         //dontExpand is not used for non-numerics
         context->_domainIdToProps[id].push_back(p);
+        ids.push_back(id);
       }
+      context->_loadedProps.push_back({p, ids, ""});
 
       if (clc::dumpDebugData) {
         std::vector<int> domains_int;
@@ -503,9 +586,25 @@ void ManualDefinition::mineContexts(
         }
 
         auto domains = parseDomain<1>(locStr);
+        auto origin = getAttributeValue(numTag, "origin", "");
+        if (!origin.empty()) {
+          context->_origin[exp] = origin;
+        }
 
         // use the proposition parser to parse the numeric expression, because we do not know the actual type of the numeric expression
-        PropositionPtr np = hparser::parseProposition(exp, trace);
+        PropositionPtr np = nullptr;
+        if (clc::skipInvalidProps) {
+          std::string error;
+          np = hparser::tryParseProposition(exp, trace, error);
+          if (np == nullptr) {
+            messageWarning("Invalid proposition skipped: '" + exp +
+                           "' (numeric)\n\t" + error);
+            pb.increment(0);
+            continue;
+          }
+        } else {
+          np = hparser::parseProposition(exp, trace);
+        }
 
         messageErrorIf(
             std::dynamic_pointer_cast<LogicToBool>(np) == nullptr &&
@@ -537,25 +636,26 @@ void ManualDefinition::mineContexts(
         nn->_clsConfig = cf;
 
         std::string nnStr = num2String(nn);
+        if (!origin.empty()) {
+          context->_origin[nnStr] = origin; // as printed, like propositions (H9)
+        }
 
         //get the domains
-        std::vector<int> expandedDomains;
+        std::vector<int> expandedDomains, unexpandedDomains;
         for (auto &[id, dontExpand] : domains) {
           if (dontExpand) {
             context->_domainIdToNumerics[id].push_back(nn);
+            unexpandedDomains.push_back(id);
           } else {
             expandedDomains.push_back(id);
           }
         }
+        if (!unexpandedDomains.empty()) {
+          context->_unexpandedNumerics.emplace_back(nnStr, unexpandedDomains);
+        }
 
         //non-expanded domains
         if (clc::dumpDebugData) {
-          std::vector<int> unexpandedDomains;
-          for (auto &[id, dontExpand] : domains) {
-            if (dontExpand) {
-              unexpandedDomains.push_back(id);
-            }
-          }
           ddd::addNumeric(nn.get(), contextName, nnStr,
                           unexpandedDomains);
         }
@@ -573,6 +673,9 @@ void ManualDefinition::mineContexts(
             context->_domainIdToProps[id].insert(
                 context->_domainIdToProps[id].end(), props.begin(),
                 props.end());
+          }
+          for (const auto &p : props) {
+            context->_loadedProps.push_back({p, expandedDomains, nnStr});
           }
 
           //expanded domains
@@ -612,6 +715,10 @@ void ManualDefinition::mineContexts(
       external_context = *pc;
     }
     addAssertionsFromFile(clc::includeAss, trace, external_context);
+  }
+
+  if (!clc::dumpCoiReport.empty()) {
+    writeCoiReport(contexts, clc::dumpCoiReport); // H9, D-022
   }
 }
 

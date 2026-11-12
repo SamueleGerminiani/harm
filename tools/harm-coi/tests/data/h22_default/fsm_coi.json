@@ -1,0 +1,201 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "fsm",
+    "top": "fsm",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "harm-coi",
+      "version": "0.1.0 (pyslang 12.0.0)"
+    }
+  },
+  "targets": {
+    "busy": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "finished": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "go": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    },
+    "state": {
+      "sources": [
+        {
+          "sig": "go",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "state",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "stop",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "stop": {
+      "sources": []
+    }
+  },
+  "unknown": [],
+  "predicates": [
+    {
+      "expr": "go",
+      "origin": "rtl",
+      "src": "fsm.sv:21",
+      "targets": [
+        "state"
+      ]
+    },
+    {
+      "expr": "rst",
+      "origin": "rtl",
+      "src": "fsm.sv:18",
+      "targets": [
+        "state"
+      ]
+    },
+    {
+      "expr": "state == 2'd0",
+      "origin": "rtl",
+      "src": "fsm.sv:18, fsm.sv:21, fsm.sv:3",
+      "targets": [
+        "state"
+      ]
+    },
+    {
+      "expr": "state == 2'd1",
+      "origin": "rtl",
+      "src": "fsm.sv:22, fsm.sv:26, fsm.sv:4",
+      "targets": [
+        "busy",
+        "state"
+      ]
+    },
+    {
+      "expr": "state == 2'd2",
+      "origin": "rtl",
+      "src": "fsm.sv:23, fsm.sv:27, fsm.sv:5",
+      "targets": [
+        "finished",
+        "state"
+      ]
+    },
+    {
+      "expr": "stop",
+      "origin": "rtl",
+      "src": "fsm.sv:22",
+      "targets": [
+        "state"
+      ]
+    }
+  ]
+}

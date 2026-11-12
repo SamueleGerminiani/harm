@@ -22,6 +22,18 @@ src/miner/modules/src/traceReader/vcdTraceReader/pyVCDparser/Verilog_VCD.pyc
 third_party/spot
 third_party/antlr4
 third_party/boost
+third_party/z3
+third_party/verilator
+third_party/iverilog
+third_party/yosys
 tests/bl_master/bl_master100k.vcd
 .DS_Store
 examples/sobel/ass.txt
+
+# ctest output when run from the source tree
+Testing/
+tools/harm-coi/src/*.egg-info/
+__pycache__/
+error.log
+warning.log
+build-*/

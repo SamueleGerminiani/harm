@@ -1,5 +1,9 @@
 
+#include "harmKeywords.hh"
+#include <unordered_set>
 #include <algorithm>
+#include <cctype>
+#include <unordered_map>
 #include <iterator>
 #include <utility>
 
@@ -245,23 +249,184 @@ parsePropositionAlreadyTyped(std::string formula,
   return listener.getProposition();
 }
 
-static std::vector<std::string> reservedKeywords = {
-    "inside",      "true",   "false",      "substr",   "and",
-    "or",          "not",    "eventually", "nexttime", "next",
-    "X",           "until",  "W",          "always",   "G",
-    "first_match", ".substr"};
-void checkReservedKeywords(const std::string &formula) {
-  for (const auto &keyword : reservedKeywords) {
-    if (formula == keyword) {
-      messageError(
-          "The keyword " + keyword +
-          " is reserved (in variable declaration): " + formula);
+expression::PropositionPtr
+tryParseProposition(std::string formula, const harm::TracePtr &trace,
+                    std::string &error) {
+  hlog::ScopedThrowOnError throwOnError;
+  try {
+    return parseProposition(formula, trace);
+  } catch (const hlog::HarmError &e) {
+    error = e.what();
+    return nullptr;
+  }
+}
+
+
+namespace {
+bool isIdentifierChar(char c) {
+  return std::isalnum((unsigned char)c) || c == '_';
+}
+
+/// Replace whole identifiers only. A token matches at position i if
+///  - it starts a word: the character before i is not part of an identifier or literal
+///    ([A-Za-z0-9_$']), or the word before i consists only of the LTL unary operators X, F, G
+///    written without a space (e.g. 'Xcon', 'GFa', as in Spot syntax), or only of the digits of a
+///    cycle delay ('##3v2', produced by edit rules), and
+///  - the character after the match cannot continue an identifier ([A-Za-z0-9_]).
+/// Among the tokens matching at i, the longest wins.
+/// This keeps literals such as 3'b1x0, 0xa and 8'hb1 intact when variables x, a or b1 exist.
+void replaceIdentifiers(
+    const std::vector<std::pair<std::string, std::string>> &tokens,
+    std::string &formula) {
+  std::unordered_map<char, std::vector<const std::pair<std::string,
+                                                       std::string> *>>
+      byFirstChar;
+  for (const auto &t : tokens) {
+    if (!t.first.empty()) {
+      byFirstChar[t.first[0]].push_back(&t);
+    }
+  }
+  std::string out;
+  size_t i = 0;
+  while (i < formula.size()) {
+    //start of the word containing position i
+    size_t wordStart = i;
+    while (wordStart > 0 && isIdentifierChar(formula[wordStart - 1])) {
+      wordStart--;
+    }
+    char beforeWord = wordStart == 0 ? ' ' : formula[wordStart - 1];
+    bool canStart = beforeWord != '$' && beforeWord != '\'';
+    if (canStart && wordStart < i) {
+      //the word so far must be LTL unary operators ('Xa') or a cycle delay ('##3a')
+      bool ltlOps = true, delay = beforeWord == '#';
+      for (size_t k = wordStart; k < i; k++) {
+        ltlOps &= formula[k] == 'X' || formula[k] == 'F' || formula[k] == 'G';
+        delay &= std::isdigit((unsigned char)formula[k]) != 0;
+      }
+      canStart = ltlOps || delay;
+    }
+    const std::pair<std::string, std::string> *best = nullptr;
+    if (canStart && byFirstChar.count(formula[i])) {
+      for (const auto *t : byFirstChar.at(formula[i])) {
+        const std::string &name = t->first;
+        if (formula.compare(i, name.size(), name) != 0) {
+          continue;
+        }
+        size_t end = i + name.size();
+        if (end < formula.size() && isIdentifierChar(formula[end]) &&
+            isIdentifierChar(name.back())) {
+          continue;
+        }
+        if (best == nullptr || name.size() > best->first.size()) {
+          best = t;
+        }
+      }
+    }
+    if (best != nullptr) {
+      out += best->second;
+      i += best->first.size();
+    } else {
+      out += formula[i];
+      i++;
+    }
+  }
+  formula = out;
+}
+
+/// D-032, D-034: «x,bool» becomes «x,bit» (a 1-bit logic for the parser) where it is an operand
+/// of a numeric operator: the nearest non-blank character before or after it belongs to an
+/// arithmetic, shift, comparison or bitwise operator (* / + - << >> < <= > >= == != === !== ^ ~,
+/// a single & or |). Template arrows (->, |->, |=>) do not count; nor do && and ||; in templates a
+/// single & or | is a temporal operator. A bool used only as a Boolean (a, !a, a && b) is unchanged.
+void markBitwiseBoolOperands(std::string &formula, bool inTemplate) {
+  const std::string tag = ",bool»";
+  auto isBlank = [](char c) { return c == ' ' || c == '\t' || c == '\n'; };
+  auto at = [&](long i) { return i >= 0 && i < (long)formula.size() ? formula[i] : '\0'; };
+  // the character at i is a single & or | (not && / ||, not |-> / |=>), outside templates
+  auto singleAndOr = [&](long i) {
+    char c = at(i);
+    if (inTemplate || (c != '&' && c != '|')) {
+      return false;
+    }
+    return at(i - 1) != c && at(i + 1) != c && at(i + 1) != '-' && at(i + 1) != '=';
+  };
+  // the operator ending at i (just before an operand)
+  auto opEndsAt = [&](long i) {
+    char c = at(i);
+    switch (c) {
+    case '^': case '~': case '*': case '/': case '+': case '<': case '=':
+      return true;
+    case '-':
+      return true; // binary or unary minus ('->' ends with '>')
+    case '>':
+      return at(i - 1) != '-' && at(i - 1) != '='; // not -> or |=>
+    default:
+      return singleAndOr(i);
+    }
+  };
+  // the operator starting at i (just after an operand)
+  auto opStartsAt = [&](long i) {
+    char c = at(i);
+    switch (c) {
+    case '^': case '*': case '/': case '+': case '<': case '>':
+      return true;
+    case '=':
+      return at(i + 1) == '='; // ==, ===
+    case '!':
+      return at(i + 1) == '='; // !=, !==
+    case '-':
+      return at(i + 1) != '>'; // not ->
+    default:
+      return singleAndOr(i);
+    }
+  };
+  size_t pos = 0;
+  while ((pos = formula.find(tag, pos)) != std::string::npos) {
+    size_t start = formula.rfind("«", pos);
+    size_t end = pos + tag.size();
+    long b = (long)start - 1;
+    while (b >= 0 && isBlank(formula[b])) {
+      b--;
+    }
+    size_t a = end;
+    while (a < formula.size() && isBlank(formula[a])) {
+      a++;
+    }
+    if (start != std::string::npos && (opEndsAt(b) || opStartsAt((long)a))) {
+      formula.replace(pos, tag.size(), ",bit»");
+    }
+    pos = end;
+  }
+}
+} // namespace
+
+/// H23 (D-037): in a proposition, a variable named after a keyword that is not a proposition word
+/// (true, false, and, or, not, inside are) must be escaped; a bare one is an error naming the escape
+static void checkBareKeywordVariables(const std::string &formula,
+                                      const std::vector<harm::VarDeclaration> &decls) {
+  static const std::unordered_set<std::string> propositionWords = {"true", "false", "and", "or",
+                                                                   "not", "inside"};
+  for (const auto &d : decls) {
+    const std::string &n = d.getName();
+    if (!harm::isKeywordName(n) || propositionWords.count(n)) {
+      continue;
+    }
+    for (size_t p = formula.find(n); p != std::string::npos; p = formula.find(n, p + 1)) {
+      char before = p == 0 ? ' ' : formula[p - 1];
+      size_t end = p + n.size();
+      char after = end < formula.size() ? formula[end] : ' ';
+      if (!isIdentifierChar(before) && before != '\\' && before != '$' && before != '\'' &&
+          before != '.' && !isIdentifierChar(after)) {
+        messageError("'" + n + "' is a HARM keyword and the name of a variable: write the variable as '" +
+                     harm::escapedName(n) + "' (in proposition: " + formula + ")");
+      }
     }
   }
 }
 
 void addTypeToExp(std::string &formula,
-                  std::vector<harm::VarDeclaration> varDeclarations) {
+                  std::vector<harm::VarDeclaration> varDeclarations,
+                  bool inTemplate) {
 
   // match the longest variables first to solve (3)
   std::sort(begin(varDeclarations), end(varDeclarations),
@@ -273,9 +438,16 @@ void addTypeToExp(std::string &formula,
   const std::string startVar = "«";
   const std::string endVar = "»";
 
+  if (!inTemplate) {
+    checkBareKeywordVariables(formula, varDeclarations);
+  }
+  // an escaped identifier ends with a blank: one at the end of the formula is closed here
+  if (formula.find('\\') != std::string::npos) {
+    formula += ' ';
+  }
+
   // gather all the variables in the formula
   for (auto varDec : varDeclarations) {
-    checkReservedKeywords(varDec.getName());
     std::string nameType = "";
     switch (varDec.getType()) {
     case ExpType::Bool:
@@ -304,8 +476,19 @@ void addTypeToExp(std::string &formula,
       break;
     }
 
-    varSubstitutions.push_back(
-        std::make_pair(varDec.getName(), nameType));
+    // H23 (D-037): any variable can be written escaped ('\\a '); one named after a keyword only so
+    const bool keyword = harm::isKeywordName(varDec.getName());
+    varSubstitutions.push_back(std::make_pair(harm::escapedName(varDec.getName()), nameType));
+    if (!keyword) {
+      varSubstitutions.push_back(std::make_pair(varDec.getName(), nameType));
+    }
+    //hierarchical names can also be written with '.' (SystemVerilog style) instead of '::'
+    if (varDec.getName().find("::") != std::string::npos) {
+      std::string dotted = varDec.getName();
+      replace("::", ".", dotted);
+      varSubstitutions.push_back(std::make_pair(dotted, nameType));
+      varSubstitutions.push_back(std::make_pair(harm::escapedName(dotted), nameType));
+    }
 
   } // end var
 
@@ -317,15 +500,17 @@ void addTypeToExp(std::string &formula,
   //do not allow the subtitution of these keywords
   varSubstitutions.emplace_back("true", "@true");
   varSubstitutions.emplace_back("false", "@false");
-  //do not allow the subtitution of reserved keywords
-  for (const std::string &rk : reservedKeywords) {
+  //do not allow the subtitution of keywords (H23: a variable named after one is written escaped)
+  for (const std::string &rk : harm::keywordNames()) {
     //true and false keywords are already substituted with the @ symbol
     if (rk != "true" && rk != "false") {
       varSubstitutions.emplace_back(rk, rk);
     }
   }
-  //replace all the variables in the formula
-  replace(varSubstitutions, formula);
+  varSubstitutions.emplace_back(".substr", ".substr");
+  //replace all the variables in the formula (whole identifiers only)
+  replaceIdentifiers(varSubstitutions, formula);
+  markBitwiseBoolOperands(formula, inTemplate);
   //        debug
   //       std::cout << "After: " << formula << "\n";
 }

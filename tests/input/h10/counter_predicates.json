@@ -1,0 +1,30 @@
+{
+ "design": "counter",
+ "predicates": [
+  {
+   "expr": "cnt == 4'd0",
+   "targets": [
+    "cnt"
+   ]
+  },
+  {
+   "expr": "cnt == 4'd9",
+   "targets": [
+    "cnt",
+    "wrap"
+   ]
+  },
+  {
+   "expr": "en",
+   "targets": [
+    "cnt"
+   ]
+  },
+  {
+   "expr": "rst",
+   "targets": [
+    "cnt"
+   ]
+  }
+ ]
+}

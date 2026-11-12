@@ -5,6 +5,7 @@
 #include "formula/expression/BitSelector.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/Substring.hh"
 #include "formula/expression/TypeCast.hh"
 #include "formula/function/SVAfunction.hh"
@@ -92,13 +93,19 @@ EXP_OPE(IntGreaterEq)
 EXP_OPE(IntLess)
 EXP_OPE(IntLessEq)
 EXP_OPE(IntNot)
+EXP_OPE(IntNeg)
+EXP_OPE(LogicNeg)
+EXP_OPE(FloatNeg)
 EXP_OPE(IntLShift)
 EXP_OPE(IntRShift)
+EXP_OPE(IntARShift)
+EXP_OPE(LogicARShift)
 EXP_OPE_UNARY(IntBitSelector)
 EXP_OPE_UNARY(IntSetMembership)
 EXP_OPE_UNARY(IntToFloat)
 EXP_OPE_UNARY(IntToBool)
 EXP_OPE_UNARY(IntToLogic)
+EXP_OPE_UNARY(BoolToLogic)
 UNARY_FUNCTION(IntStable)
 UNARY_FUNCTION(IntRose)
 UNARY_FUNCTION(IntFell)
@@ -128,6 +135,8 @@ EXP_OPE_UNARY(LogicSetMembership)
 EXP_OPE_UNARY(LogicToFloat)
 EXP_OPE_UNARY(LogicToBool)
 EXP_OPE_UNARY(LogicToInt)
+EXP_OPE_UNARY(LogicSignCast)
+EXP_OPE_UNARY(IntSignCast)
 UNARY_FUNCTION(LogicStable)
 UNARY_FUNCTION(LogicRose)
 UNARY_FUNCTION(LogicFell)
@@ -186,4 +195,19 @@ EXP_OPE(SerePlus)
 EXP_OPE(SereGoto)
 EXP_OPE(SereNonConsecutiveRep)
 
+
+EXP_OPE(LogicCaseEq)
+EXP_OPE(LogicCaseNeq)
+EXP_OPE(LogicConcat)
+
+#define TERNARY(NODE)                                                \
+  void ExpVisitor::visit(NODE &o) {                                  \
+    o.getCondition()->acceptVisitor(*this);                          \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+  }
+TERNARY(PropositionTernary)
+TERNARY(IntTernary)
+TERNARY(LogicTernary)
+TERNARY(FloatTernary)
 } // namespace expression

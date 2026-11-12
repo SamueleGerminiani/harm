@@ -875,3 +875,50 @@ TEST(DTOTest, dtNCRepsPrintEval) {
   ASSERT_EQ(imp2->getAssertionStr(Language::SpotLTL),
             "G({v4;true} -> con)");
 }
+
+// H32: the key of a known solution must not depend on where its propositions were allocated.
+// isKnownSolution keyed an antecedent by sorting its propositions by address, so the same
+// antecedent, built from other objects, could be known in one run and new in another.
+TEST(DTSolutionTest, keyIgnoresObjectOrder) {
+  // objects of two texts, until one pair of each address order exists
+  std::vector<PropositionPtr> keep;
+  PropositionPtr lowA, lowB, highA, highB; // (lowA < lowB) and (highB < highA) by address
+  // H42: pairs are taken across allocations (the lowest false with the highest true, the highest false
+  // with the lowest true). Pairs from one iteration had one address order only when the allocator's
+  // addresses only increase (a flaky failure under load). Alternating allocations give both orders for
+  // any allocator whose addresses increase or decrease.
+  PropositionPtr minF, maxF, minT, maxT;
+  for (int i = 0; i < 4096 && !(lowA && highA); i++) {
+    PropositionPtr a = generatePtr<BooleanConstant>(false, ExpType::Bool, 1, 10);
+    PropositionPtr b = generatePtr<BooleanConstant>(true, ExpType::Bool, 1, 10);
+    keep.push_back(a);
+    keep.push_back(b);
+    if (!minF || a.get() < minF.get()) minF = a;
+    if (!maxF || maxF.get() < a.get()) maxF = a;
+    if (!minT || b.get() < minT.get()) minT = b;
+    if (!maxT || maxT.get() < b.get()) maxT = b;
+    if (minF.get() < maxT.get()) {
+      lowA = minF;
+      lowB = maxT;
+    } else {
+      lowA = lowB = nullptr;
+    }
+    if (minT.get() < maxF.get()) {
+      highA = maxF;
+      highB = minT;
+    } else {
+      highA = highB = nullptr;
+    }
+  }
+  ASSERT_TRUE(lowA && highA) << "no pair of each address order";
+  std::string ta = prop2String(lowA), tb = prop2String(lowB);
+  ASSERT_NE(ta, tb);
+  std::string expected = (ta < tb ? ta + "$" + tb : tb + "$" + ta) + "$$";
+
+  DTSolution s1, s2;
+  s1.emplace_back({lowA, lowB});
+  s2.emplace_back({highB, highA});
+  EXPECT_EQ(s1.key(true), expected);
+  EXPECT_EQ(s2.key(true), expected);
+  EXPECT_EQ(s1.key(false), s2.key(false));
+}

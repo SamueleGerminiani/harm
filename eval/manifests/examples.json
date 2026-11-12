@@ -1,0 +1,174 @@
+[
+ {
+  "name": "vendingMachine",
+  "config": "examples/vendingMachine/vendingMachineConfig.xml",
+  "trace": {
+   "vcd": "examples/vendingMachine/vendingMachine.vcd",
+   "clk": "clk",
+   "scope": "machine_bench::machine_"
+  }
+ },
+ {
+  "name": "fsmSVT",
+  "config": "examples/fsmSVT/fsm.xml",
+  "trace": {
+   "vcd": "examples/fsmSVT/fsm.vcd",
+   "clk": "clk",
+   "recursion": 1,
+   "scope": "tbench_top"
+  }
+ },
+ {
+  "name": "multiTrace",
+  "config": "examples/multiTrace/multiTrace.xml",
+  "trace": {
+   "csv_dir": "examples/multiTrace/csv/"
+  }
+ },
+ {
+  "name": "nonBoolDT",
+  "config": "examples/nonBoolDT/nonBooleanDT.xml",
+  "trace": {
+   "csv": "examples/nonBoolDT/nonBooleanDT.csv"
+  }
+ },
+ {
+  "name": "simpleNonBoolDT",
+  "config": "examples/simpleNonBoolDT/simpleNonBoolDT.xml",
+  "trace": {
+   "csv": "examples/simpleNonBoolDT/simpleNonBoolDT.csv"
+  }
+ },
+ {
+  "name": "paperRE",
+  "config": "examples/paperRE/reConfig.xml",
+  "args": [
+   "--spotltl"
+  ],
+  "trace": {
+   "csv": "examples/paperRE/re.csv"
+  }
+ },
+ {
+  "name": "ex3",
+  "config": "examples/ex3/ex3Config.xml",
+  "trace": {
+   "csv": "examples/ex3/ex3.csv"
+  }
+ },
+ {
+  "name": "faultCov",
+  "config": "examples/faultCov/fcConfig.xml",
+  "faults": "examples/faultCov/faultyTraces",
+  "trace": {
+   "csv": "examples/faultCov/fc.csv"
+  }
+ },
+ {
+  "name": "csvCheck",
+  "config": "examples/csvCheck/csvCheckConfig.xml",
+  "trace": {
+   "csv": "examples/csvCheck/harm_test_data.csv"
+  }
+ },
+ {
+  "name": "sub_platform1k",
+  "config": "examples/sub_platform/sub_platform.xml",
+  "args": [
+   "--min-frank",
+   "0.9"
+  ],
+  "trace": {
+   "vcd": "examples/sub_platform/sub_platform1k.vcd",
+   "clk": "CLK",
+   "scope": "sim1::p::slave_0::camallia_u"
+  }
+ },
+ {
+  "name": "bl_master1h",
+  "config": "examples/bl_master/bl_masterConfig.xml",
+  "args": [
+   "--min-frank",
+   "0.9"
+  ],
+  "trace": {
+   "vcd": "examples/bl_master/bl_master1h.vcd",
+   "clk": "wb_clk",
+   "scope": "sim1::p::core::master_interface"
+  }
+ },
+ {
+  "name": "bl_master1k",
+  "config": "examples/bl_master/bl_masterConfig.xml",
+  "args": [
+   "--min-frank",
+   "0.9"
+  ],
+  "trace": {
+   "vcd": "examples/bl_master/bl_master1k.vcd",
+   "clk": "wb_clk",
+   "scope": "sim1::p::core::master_interface"
+  }
+ },
+ {
+  "name": "sobel",
+  "config": "examples/sobel/sobelConf.xml",
+  "args": [
+   "--max-ass",
+   "1000",
+   "--sample-by-con",
+   "--find-min-subset"
+  ],
+  "faults": "examples/sobel/faults/",
+  "trace": {
+   "vcd": "examples/sobel/sobel1k.vcd",
+   "clk": "sobel_tb::clk"
+  }
+ },
+ {
+  "name": "process",
+  "config": "examples/process/processConfig.xml",
+  "args": [
+   "--sva"
+  ],
+  "trace": {
+   "csv_dir": "examples/process/traces"
+  }
+ },
+ {
+  "name": "edit",
+  "config": "examples/edit/edit.xml",
+  "args": [
+   "--sva"
+  ],
+  "trace": {
+   "csv": "examples/edit/edit.csv",
+   "clk": "clk"
+  }
+ },
+ {
+  "name": "svaFunctions",
+  "config": "examples/svaFunctions/svaFunctionsConfig.xml",
+  "args": [
+   "--min-frank",
+   "0.9"
+  ],
+  "trace": {
+   "vcd": "examples/svaFunctions/bl_master1h.vcd",
+   "clk": "wb_clk",
+   "scope": "sim1::p::core::master_interface"
+  }
+ },
+ {
+  "name": "process_trace_end_sva",
+  "config": "examples/process/processConfig.xml",
+  "args": [
+   "--sva",
+   "--trace-end",
+   "sva"
+  ],
+  "trace": {
+   "csv_dir": "examples/process/traces"
+  }
+ }
+]

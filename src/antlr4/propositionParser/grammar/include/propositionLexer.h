@@ -1,5 +1,5 @@
 
-// Generated from proposition.g4 by ANTLR 4.10.1
+// Generated from proposition.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -13,15 +13,16 @@ class  propositionLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, BOOLEAN_CONSTANT = 2, BOOLEAN_VARIABLE = 3, INT_VARIABLE = 4, 
-    CONST_SUFFIX = 5, LOGIC_VARIABLE = 6, FLOAT_CONSTANT = 7, FLOAT_VARIABLE = 8, 
-    SUBSTR = 9, STRING_CONSTANT = 10, STRING_VARIABLE = 11, LCURLY = 12, 
-    RCURLY = 13, LSQUARED = 14, RSQUARED = 15, LROUND = 16, RROUND = 17, 
-    INSIDE = 18, FUNCTION = 19, SINTEGER = 20, UINTEGER = 21, FLOAT = 22, 
-    GCC_BINARY = 23, HEX = 24, VERILOG_BINARY = 25, FVL = 26, SINGLE_QUOTE = 27, 
-    PLUS = 28, MINUS = 29, TIMES = 30, DIV = 31, GT = 32, GE = 33, LT = 34, 
-    LE = 35, EQ = 36, NEQ = 37, BAND = 38, BOR = 39, BXOR = 40, NEG = 41, 
-    LSHIFT = 42, RSHIFT = 43, AND = 44, OR = 45, NOT = 46, COL = 47, DCOL = 48, 
-    DOLLAR = 49, RANGE = 50, CLS_TYPE = 51, WS = 52
+    CONST_SUFFIX = 5, LOGIC_VARIABLE = 6, BIT_VARIABLE = 7, FLOAT_CONSTANT = 8, 
+    FLOAT_VARIABLE = 9, SUBSTR = 10, STRING_CONSTANT = 11, STRING_VARIABLE = 12, 
+    LCURLY = 13, RCURLY = 14, LSQUARED = 15, RSQUARED = 16, LROUND = 17, 
+    RROUND = 18, INSIDE = 19, SIGN_CAST = 20, FUNCTION = 21, UINTEGER = 22, 
+    FLOAT = 23, GCC_BINARY = 24, HEX = 25, VERILOG_BASED = 26, FILL_LITERAL = 27, 
+    SINGLE_QUOTE = 28, PLUS = 29, MINUS = 30, TIMES = 31, DIV = 32, GT = 33, 
+    GE = 34, LT = 35, LE = 36, EQ = 37, NEQ = 38, CASE_EQ = 39, CASE_NEQ = 40, 
+    QUESTION = 41, BAND = 42, BOR = 43, BXOR = 44, NEG = 45, ALSHIFT = 46, 
+    ARSHIFT = 47, LSHIFT = 48, RSHIFT = 49, AND = 50, OR = 51, NOT = 52, 
+    COL = 53, DCOL = 54, DOLLAR = 55, RANGE = 56, CLS_TYPE = 57, WS = 58
   };
 
   explicit propositionLexer(antlr4::CharStream *input);

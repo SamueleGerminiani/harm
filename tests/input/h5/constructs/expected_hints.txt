@@ -1,0 +1,37 @@
+# H22 hints, hand-written from rtl/constructs.sv (recursion 1). rst is an asynchronous control of q: reset.
+# g, bus::valid, bus::data, y_loop are functions (or copies) of single inputs: comb, never input (D-036)
+role a input control
+role b input control
+role c input
+role d input
+role s input control
+role k input
+role sel input control
+role v input
+role rst reset control
+role u::clk clock
+role g comb
+role t comb
+role bus::data comb
+role bus::valid comb
+role o comb
+role y_bit comb
+role y_case comb
+role y_cond comb
+role y_fn comb
+role y_full comb
+role y_loop comb
+role y_tmp comb
+role q state
+role r state
+role rp state
+role u::o state
+prop !q -> state
+prop a -> -
+prop b -> -
+prop rst -> -
+prop s -> -
+prop sel == 2'd0 -> -
+prop sel == 2'd1 -> -
+prop sel == 2'd2 -> -
+prop sel == 2'd3 -> -

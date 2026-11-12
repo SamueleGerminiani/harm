@@ -1,0 +1,17 @@
+design = counter
+top = counter
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3
+
+# inputs
+target rst
+target en
+# cnt: reset, enable and the increment/hold feedback (always_ff)
+cnt <- cnt @1
+cnt <- en @1
+cnt <- rst @1
+# wrap = en && (cnt == 9)
+wrap <- en @0
+wrap <- cnt @0

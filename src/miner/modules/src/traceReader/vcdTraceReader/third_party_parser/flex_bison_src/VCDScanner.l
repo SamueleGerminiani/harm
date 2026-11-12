@@ -307,8 +307,8 @@ VERSION_TEXT        {COMMENT_TEXT}
 
 <IN_SIMTIME>{DECIMAL_NUM} {
     BEGIN(INITIAL);
-    //std::cout << yytext << std::endl;
-    return VCDParser::parser::make_TOK_DECIMAL_NUM(std::atoi(yytext),loc);
+    // CR1 (C7a-1): a simulation time past 2^31 units (2.1 ms at Verilator's 1 ps) was wrong through atoi
+    return VCDParser::parser::make_TOK_DECIMAL_NUM(std::strtoull(yytext, nullptr, 10),loc);
 }
 
 {KW_DUMPALL} {

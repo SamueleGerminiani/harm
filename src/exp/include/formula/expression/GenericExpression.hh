@@ -113,6 +113,8 @@ using FloatSum = GenericExpression<ope::ope::FloatSum,
                                    FloatExpression, FloatExpression>;
 using FloatSub = GenericExpression<ope::ope::FloatSub,
                                    FloatExpression, FloatExpression>;
+using FloatNeg = GenericExpression<ope::ope::FloatNeg,
+                                   FloatExpression, FloatExpression>;
 using FloatMul = GenericExpression<ope::ope::FloatMul,
                                    FloatExpression, FloatExpression>;
 using FloatDiv = GenericExpression<ope::ope::FloatDiv,
@@ -160,6 +162,9 @@ using IntLessEq = GenericExpression<ope::ope::IntLessEq,
                                     IntExpression, Proposition>;
 using IntNot =
     GenericExpression<ope::ope::IntNot, IntExpression, IntExpression>;
+/// D-034: unary minus
+using IntNeg =
+    GenericExpression<ope::ope::IntNeg, IntExpression, IntExpression>;
 using IntLShift = GenericExpression<ope::ope::IntLShift,
                                     IntExpression, IntExpression>;
 using IntRShift = GenericExpression<ope::ope::IntRShift,
@@ -184,6 +189,13 @@ using LogicEq = GenericExpression<ope::ope::LogicEq, LogicExpression,
                                   Proposition>;
 using LogicNeq = GenericExpression<ope::ope::LogicNeq,
                                    LogicExpression, Proposition>;
+using LogicCaseEq = GenericExpression<ope::ope::LogicCaseEq,
+                                      LogicExpression, Proposition>;
+using LogicCaseNeq = GenericExpression<ope::ope::LogicCaseNeq,
+                                       LogicExpression, Proposition>;
+/// n-ary: items[0] gives the most significant bits; a replication {N{a}} repeats its items
+using LogicConcat = GenericExpression<ope::ope::LogicConcat,
+                                      LogicExpression, LogicExpression>;
 using LogicGreater = GenericExpression<ope::ope::LogicGreater,
                                        LogicExpression, Proposition>;
 using LogicGreaterEq =
@@ -194,6 +206,8 @@ using LogicLess = GenericExpression<ope::ope::LogicLess,
 using LogicLessEq = GenericExpression<ope::ope::LogicLessEq,
                                       LogicExpression, Proposition>;
 using LogicNot = GenericExpression<ope::ope::LogicNot,
+                                   LogicExpression, LogicExpression>;
+using LogicNeg = GenericExpression<ope::ope::LogicNeg,
                                    LogicExpression, LogicExpression>;
 using LogicLShift =
     GenericExpression<ope::ope::LogicLShift, LogicExpression,
@@ -252,7 +266,17 @@ using IntGreaterPtr = std::shared_ptr<IntGreater>;
 using IntGreaterEqPtr = std::shared_ptr<IntGreaterEq>;
 using IntLessPtr = std::shared_ptr<IntLess>;
 using IntLessEqPtr = std::shared_ptr<IntLessEq>;
+/// D-035: >>> (arithmetic on a signed result)
+using IntARShift =
+    GenericExpression<ope::ope::IntARShift, IntExpression, IntExpression>;
+using LogicARShift = GenericExpression<ope::ope::LogicARShift,
+                                       LogicExpression, LogicExpression>;
+using IntARShiftPtr = std::shared_ptr<IntARShift>;
+using LogicARShiftPtr = std::shared_ptr<LogicARShift>;
 using IntNotPtr = std::shared_ptr<IntNot>;
+using IntNegPtr = std::shared_ptr<IntNeg>;
+using LogicNegPtr = std::shared_ptr<LogicNeg>;
+using FloatNegPtr = std::shared_ptr<FloatNeg>;
 using IntLShiftPtr = std::shared_ptr<IntLShift>;
 using IntRShiftPtr = std::shared_ptr<IntRShift>;
 using LogicSumPtr = std::shared_ptr<LogicSum>;
@@ -264,6 +288,9 @@ using LogicBOrPtr = std::shared_ptr<LogicBOr>;
 using LogicBXorPtr = std::shared_ptr<LogicBXor>;
 using LogicEqPtr = std::shared_ptr<LogicEq>;
 using LogicNeqPtr = std::shared_ptr<LogicNeq>;
+using LogicCaseEqPtr = std::shared_ptr<LogicCaseEq>;
+using LogicCaseNeqPtr = std::shared_ptr<LogicCaseNeq>;
+using LogicConcatPtr = std::shared_ptr<LogicConcat>;
 using LogicGreaterPtr = std::shared_ptr<LogicGreater>;
 using LogicGreaterEqPtr = std::shared_ptr<LogicGreaterEq>;
 using LogicLessPtr = std::shared_ptr<LogicLess>;

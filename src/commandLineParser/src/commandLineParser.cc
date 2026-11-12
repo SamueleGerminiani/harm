@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "commandLineParser.hh"
+#include "harmVersion.hh"
 
 // HARM
 cxxopts::ParseResult parseHARM(int argc, char *argv[]) {
@@ -48,6 +49,20 @@ options.add_options()
 ( "min-frank", "minimum final ranking score (all assertions below this level are discarded)", cxxopts::value<double>(), "<float> (between 0 and 1)")
 ("dump-vac-ass", "dump vacuous assertions to file", cxxopts::value<std::string>(), "<FILE>")
 ( "keep-vac-ass", "do not discard vacuous assertions")
+( "reduce", "redundancy reduction: syntactic (default: identical text and contingency table), equiv (also equivalent propositions, proved with Z3), implies (also assertions implied by another one, proved with Spot; safety assertions only)", cxxopts::value<std::string>(), "<syntactic|equiv|implies>")
+( "keep", "with --reduce implies, which side of an implication is kept: stronger (default), weaker, or ranked (the better ranked)", cxxopts::value<std::string>(), "<stronger|weaker|ranked>")
+( "trace-end", "how an assertion still pending at the end of a trace is judged: harm (default: it holds) or sva (IEEE 1800 end-of-simulation semantics: it fails if the pending obligation is strong, e.g. s_eventually or not nexttime)", cxxopts::value<std::string>(), "<harm|sva>")
+( "dump-implications", "with --reduce implies, dump every dropped assertion with the kept assertions that imply it (or that it implies, with --keep weaker) as JSON", cxxopts::value<std::string>(), "<FILE>")
+( "dump-assertion-info", "dump, for every kept assertion, its metric values and its propositions (offset, variables, origin) as JSON", cxxopts::value<std::string>(), "<FILE>")
+( "atom-premises", "with --reduce implies, also use implications between atoms proved with Z3 (e.g. cnt > 9 implies cnt > 8, H3b)")
+( "atom-premises-max", "with --atom-premises, the maximum number of Z3 queries between atoms (default 2000)", cxxopts::value<size_t>(), "<N>")
+( "deadline", "seconds from HARM's start: the implication step (--reduce implies) checks pairs until then, a pair not checked counts as unrelated; mining's deadline defaults to 0.75 of it (H39)", cxxopts::value<double>(), "<S>")
+( "implies-workers", "with --reduce implies, the processes that check its pairs (default: --max-threads, for large steps only); the result does not depend on it (H39)", cxxopts::value<size_t>(), "<N>")
+( "mine-deadline", "seconds from HARM's start: mining starts no template or permutation after it, and what was mined is qualified and written (H39)", cxxopts::value<double>(), "<S>")
+( "implies-max-pairs", "with --reduce implies, skip the implication step for a context with more pairs to check than this (default 0: no cap); the equivalence step still runs", cxxopts::value<size_t>(), "<N>")
+( "dump-prop-table", "dump, for every context, its propositions and their value at every cycle of the trace as JSON (prop-table v1)", cxxopts::value<std::string>(), "<FILE>")
+( "dump-coi-report", "dump, for each consequent proposition of a context with <coi>, the antecedent propositions outside its cone (with origin) as JSON", cxxopts::value<std::string>(), "<FILE>")
+( "skip-invalid-props", "skip (with a warning) <prop> and <numeric> expressions that cannot be parsed, instead of stopping")
 ( "include-ass", "create a new context 'external' with the assertions contained in " "the provided FILE (one assertion per line), if a context named " "'external' is present in the config file, then the assertions " "will be added to that context", cxxopts::value<std::string>(), "<FILE>")
 ( "sample-by-con", "if the number of mined assertions exceeds the value provided by " "max-ass, assertions are selected favouring consequent diversity")
 ( "ddd", "Enables dumping of debug data", cxxopts::value<std::string>(), "<DIRECTORY>")
@@ -59,6 +74,7 @@ options.add_options()
 ( "isilent", "disable all infos")
 ("psilent", "disable all progress bars")
 ( "name", "name of this execution (used when dumping statistics)", cxxopts::value<std::string>(), "<String>")
+("version", "print HARM's version (git describe: tag, commits since, commit) and exit")
 ("help", "Show options");
     // clang-format on
 
@@ -66,6 +82,10 @@ options.add_options()
 
     if (result.count("help")) {
       std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+    if (result.count("version")) {
+      std::cout << "HARM " << HARM_VERSION << std::endl;
       exit(0);
     }
 

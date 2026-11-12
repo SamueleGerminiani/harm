@@ -1,3 +1,5 @@
+#include "harmKeywords.hh"
+#include <optional>
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -15,6 +17,7 @@
 #include "formula/atom/Constant.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Substring.hh"
@@ -47,28 +50,50 @@ std::string PrinterVisitor::get() {
 
 //Atom------------------------------------------------------------------------------
 #define selCol(bw, col) (_colored ? col : bw)
+//in SystemVerilog, hierarchical names use '.' (a::b is a package scope)
 #define VARIABLE(LEAF)                                               \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << selCol(o.getName(), VAR(o.getName()));                    \
+    std::string name = o.getName();                                  \
+    if (_lang == Language::SVA && !clc::legacySvaPrinting) {         \
+      replace("::", ".", name);                                      \
+    } else if (_lang != Language::SVA && harm::isKeywordName(name)) { \
+      name = harm::escapedName(name); /* H23: HARM reads it back */  \
+    }                                                                \
+    _ss << selCol(name, VAR(name));                                  \
   }
 
+// D-035 (R4): an unsigned integer constant prints as a sized SystemVerilog literal, so that the
+// text re-parses to an unsigned value of the same width (a decimal would re-parse signed)
 #define INT_CONSTANT(LEAF)                                           \
   void PrinterVisitor::visit(LEAF &o) {                              \
     if (o.getType().first == ExpType::UInt) {                        \
       UInt val = (UInt)o.evaluate(0);                                \
-      _ss << selCol(std::to_string(val) +                            \
-                        (std::log2(val) > 63.f ? "ull" : ""),        \
-                    VAR(std::to_string(val) +                        \
-                        (std::log2(val) > 63.f ? "ull" : "")));      \
+      size_t w = std::min<size_t>(o.getType().second, 64);           \
+      if (w < 64) {                                                  \
+        val &= (UInt(1) << w) - 1;                                   \
+      }                                                              \
+      std::string bits;                                              \
+      for (UInt v = val; v != 0; v >>= 1) {                          \
+        bits.insert(bits.begin(), char('0' + (v & 1)));              \
+      }                                                              \
+      std::string t = std::to_string(w) + "'b" + (bits.empty() ? "0" : bits); \
+      _ss << selCol(t, VAR(t));                                      \
     } else {                                                         \
       _ss << selCol(std::to_string((SInt)o.evaluate(0)),             \
                     VAR(std::to_string((SInt)o.evaluate(0))));       \
     }                                                                \
   }
 
+// D-035 (R4): a real keeps a decimal point ('2.0', not '2', which would re-parse as an integer)
 #define REAL_CONSTANT(LEAF)                                          \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << std::setprecision(17) << o.evaluate(0);                   \
+    std::ostringstream os;                                           \
+    os << std::setprecision(17) << o.evaluate(0);                    \
+    std::string t = os.str();                                        \
+    if (t.find_first_of(".eEni") == std::string::npos) {             \
+      t += ".0";                                                     \
+    }                                                                \
+    _ss << t;                                                        \
   }
 
 #define LOGIC_CONSTANT(LEAF)                                         \
@@ -84,19 +109,28 @@ std::string PrinterVisitor::get() {
             VAR(to_string(o.evaluate(0).getSignedValue())));         \
       }                                                              \
     } else {                                                         \
-      _ss << selCol(std::to_string(o.getType().second) + "'b" +      \
-                        o.evaluate(0).toString(),                    \
-                    VAR(std::to_string(o.getType().second) + "'b" +  \
-                        o.evaluate(0).toString()));                  \
+      /* D-035 (R4): a leading x or z digit after stripped zeros keeps */ \
+      /* one 0 (4'bx01 would mean 4'bxx01); a signed literal keeps 's' */  \
+      std::string digits = o.evaluate(0).toString();                 \
+      if (!digits.empty() &&                                         \
+          std::string("xXzZ").find(digits[0]) != std::string::npos &&\
+          digits.size() < o.getType().second) {                      \
+        digits = "0" + digits;                                       \
+      }                                                              \
+      std::string t = std::to_string(o.getType().second) +           \
+                      (isSigned(o.getType().first) ? "'sb" : "'b") + \
+                      digits;                                        \
+      _ss << selCol(t, VAR(t));                                      \
     }                                                                \
   }
 
+//'true' and 'false' are not SystemVerilog
 #define BOOLEAN_CONSTANT(LEAF)                                       \
   void PrinterVisitor::visit(LEAF &o) {                              \
-    _ss << (o.evaluate(0) ? selCol(std::string("true"),              \
-                                   BOOL(std::string("true")))        \
-                          : selCol(std::string("false"),             \
-                                   BOOL(std::string("false"))));     \
+    bool sv = _lang == Language::SVA && !clc::legacySvaPrinting;     \
+    std::string t = sv ? "1'b1" : "true";                            \
+    std::string f = sv ? "1'b0" : "false";                           \
+    _ss << (o.evaluate(0) ? selCol(t, BOOL(t)) : selCol(f, BOOL(f))); \
   }
 
 #define STRING_CONSTANT(LEAF)                                        \
@@ -110,6 +144,8 @@ std::string PrinterVisitor::get() {
 #define EXP_OPE(NODE)                                                \
   void PrinterVisitor::visit(expression::NODE &o) {                  \
     auto parent_op = _ope_stack.top();                               \
+    bool asRight = _rightOperand;                                    \
+    _rightOperand = false;                                           \
     _ope_stack.push(ope::ope::NODE);                                 \
     auto &items = o.getItems();                                      \
     auto iterStop = items.end();                                     \
@@ -120,13 +156,15 @@ std::string PrinterVisitor::get() {
                                                                      \
     bool putBrakets =                                                \
         items.size() > 1 &&                                          \
-        hasHigherPrecedence(parent_op, ope::ope::NODE);              \
+        (hasHigherPrecedence(parent_op, ope::ope::NODE) ||           \
+         (asRight && needsBracketsAsRight(parent_op, ope::ope::NODE)));\
     if (putBrakets) {                                                \
       _ss << selCol("(", BOOL("("));                                 \
     }                                                                \
     if (items.size() > 1) {                                          \
       --iterStop;                                                    \
       for (; iter != iterStop; ++iter) {                             \
+        _rightOperand = false;                                       \
         (*iter)->acceptVisitor(*this);                               \
         _ss << " "                                                   \
             << selCol(opeToString(ope::NODE),                        \
@@ -134,11 +172,38 @@ std::string PrinterVisitor::get() {
             << " ";                                                  \
       }                                                              \
     }                                                                \
+    /* the last item is a right operand (D-034) */                   \
+    _rightOperand = items.size() > 1;                                \
     (*iter)->acceptVisitor(*this);                                   \
+    _rightOperand = false;                                           \
     if (putBrakets) {                                                \
       _ss << selCol(")", BOOL(")"));                                 \
     }                                                                \
     _ope_stack.pop();                                                \
+  }
+
+// D-034: x inside {...} has the precedence of a relational operator; the values print in the
+// order written, without a trailing blank
+#define SET_MEMBERSHIP(NODE)                                         \
+  void PrinterVisitor::visit(NODE &o) {                              \
+    auto parent_op = _ope_stack.top();                               \
+    bool asRight = _rightOperand;                                    \
+    _rightOperand = false;                                           \
+    bool putBrakets =                                                \
+        hasHigherPrecedence(parent_op, ope::ope::NODE) ||            \
+        (asRight && needsBracketsAsRight(parent_op, ope::ope::NODE));\
+    if (putBrakets) {                                                \
+      _ss << selCol("(", BOOL("("));                                 \
+    }                                                                \
+    _ope_stack.push(ope::ope::NODE);                                 \
+    o.getItem()->acceptVisitor(*this);                               \
+    std::string kw = " " + ope::opeToString(ope::ope::NODE) + " ";   \
+    _ss << selCol(kw, BOOL(kw));                                     \
+    _ss << selCol(o.valuesToString(), VAR(o.valuesToString()));      \
+    _ope_stack.pop();                                                \
+    if (putBrakets) {                                                \
+      _ss << selCol(")", BOOL(")"));                                 \
+    }                                                                \
   }
 
 #define TYPE_CAST(NODE)                                              \
@@ -146,9 +211,29 @@ std::string PrinterVisitor::get() {
     o.getItem()->acceptVisitor(*this);                               \
   }
 
+// D-034: a select binds tighter than every operator: its operand is bracketed unless it is a
+// primary (the Select pseudo-operator is tighter than every class)
 #define EXP_OPE_BIT_SELECTION(NODE)                                  \
   void PrinterVisitor::visit(expression::NODE &o) {                  \
-    if (o.getLowerBound() == o.getUpperBound()) {                    \
+    _rightOperand = false;                                           \
+    _ope_stack.push(ope::ope::Select);                               \
+    printSelected(o);                                                \
+    _ope_stack.pop();                                                \
+  }                                                                  \
+  void PrinterVisitor::printSelected(expression::NODE &o) {          \
+    if (o.getSourceLeft() >= 0) {                                    \
+      /* the SystemVerilog indices as written (D-028) */             \
+      o.getItem()->acceptVisitor(*this);                             \
+      _ss << selCol("[", BOOL("["));                                 \
+      _ss << selCol(std::to_string(o.getSourceLeft()),               \
+                    VAR(std::to_string(o.getSourceLeft())));         \
+      if (o.getSourceRight() != o.getSourceLeft()) {                 \
+        _ss << selCol(":", BOOL(":"));                               \
+        _ss << selCol(std::to_string(o.getSourceRight()),            \
+                      VAR(std::to_string(o.getSourceRight())));      \
+      }                                                              \
+      _ss << selCol("]", BOOL("]"));                                 \
+    } else if (o.getLowerBound() == o.getUpperBound()) {             \
       o.getItem()->acceptVisitor(*this);                             \
       _ss << selCol("[", BOOL("["));                                 \
       _ss << selCol(std::to_string(o.getLowerBound()),               \
@@ -192,20 +277,48 @@ UNARY_FUNCTION(PropositionStable)
 UNARY_FUNCTION(PropositionRose)
 UNARY_FUNCTION(PropositionFell)
 
-void PrinterVisitor::visit(expression::PropositionNot &o) {
-  _ope_stack.push(ope::ope::PropositionNot);
-  _ss << selCol(opeToString(ope::PropositionNot),
-                BOOL(opeToString(ope::PropositionNot)));
-  o.getItems()[0]->acceptVisitor(*this);
+// D-034: a prefix operator binds tighter than every binary operator, so a binary operand gets
+// brackets (through _ope_stack); a unary minus over a negation or a negative constant gets them
+// too, so that '--' (decrement in SystemVerilog) is never printed
+template <typename N> void PrinterVisitor::printPrefix(N &o, ope::ope op) {
+  _rightOperand = false;
+  _ope_stack.push(op);
+  _ss << selCol(opeToString(op), BOOL(opeToString(op)));
+  auto child = o.getItems()[0];
+  bool minus = op == ope::ope::IntNeg || op == ope::ope::LogicNeg ||
+               op == ope::ope::FloatNeg;
+  std::string childText;
+  if (minus) {
+    PrinterVisitor pv(_lang, false, _printMode);
+    child->acceptVisitor(pv);
+    childText = pv.get();
+  }
+  bool brackets = minus && !childText.empty() && childText[0] == '-';
+  if (brackets) {
+    _ss << selCol("(", BOOL("("));
+  }
+  child->acceptVisitor(*this);
+  if (brackets) {
+    _ss << selCol(")", BOOL(")"));
+  }
   _ope_stack.pop();
 }
 
+void PrinterVisitor::visit(expression::PropositionNot &o) {
+  printPrefix(o, ope::ope::PropositionNot);
+}
+
 void PrinterVisitor::visit(expression::IntNot &o) {
-  _ope_stack.push(ope::ope::IntNot);
-  _ss << selCol(opeToString(ope::IntNot),
-                BOOL(opeToString(ope::IntNot)));
-  o.getItems()[0]->acceptVisitor(*this);
-  _ope_stack.pop();
+  printPrefix(o, ope::ope::IntNot);
+}
+void PrinterVisitor::visit(expression::IntNeg &o) {
+  printPrefix(o, ope::ope::IntNeg);
+}
+void PrinterVisitor::visit(expression::LogicNeg &o) {
+  printPrefix(o, ope::ope::LogicNeg);
+}
+void PrinterVisitor::visit(expression::FloatNeg &o) {
+  printPrefix(o, ope::ope::FloatNeg);
 }
 
 // float
@@ -227,22 +340,7 @@ TYPE_CAST(FloatToBool)
 UNARY_FUNCTION(FloatStable)
 UNARY_FUNCTION(FloatPast)
 
-void PrinterVisitor::visit(FloatSetMembership &o) {
-  _ope_stack.push(ope::ope::FloatSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::FloatSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::FloatSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(FloatSetMembership)
 
 // int
 VARIABLE(IntVariable)
@@ -263,29 +361,18 @@ EXP_OPE(IntLessEq)
 EXP_OPE_BIT_SELECTION(IntBitSelector)
 EXP_OPE(IntLShift)
 EXP_OPE(IntRShift)
+EXP_OPE(IntARShift)
+EXP_OPE(LogicARShift)
 TYPE_CAST(IntToFloat)
 TYPE_CAST(IntToBool)
 TYPE_CAST(IntToLogic)
+TYPE_CAST(BoolToLogic) // D-032: printed as the bool operand itself
 UNARY_FUNCTION(IntPast)
 UNARY_FUNCTION(IntStable)
 UNARY_FUNCTION(IntRose)
 UNARY_FUNCTION(IntFell)
 
-void PrinterVisitor::visit(IntSetMembership &o) {
-  _ope_stack.push(ope::ope::IntSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::IntSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::IntSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(IntSetMembership)
 
 // logic
 VARIABLE(LogicVariable)
@@ -304,40 +391,88 @@ EXP_OPE(LogicGreaterEq)
 EXP_OPE(LogicLess)
 EXP_OPE(LogicLessEq)
 EXP_OPE_BIT_SELECTION(LogicBitSelector)
+EXP_OPE(LogicCaseEq)
+EXP_OPE(LogicCaseNeq)
+
+void PrinterVisitor::visit(expression::LogicConcat &o) {
+  _ope_stack.push(ope::ope::LogicConcat);
+  //print each item on its own, to fold a replication {N{a}} back
+  std::string prefix = _ss.str();
+  std::vector<std::string> parts;
+  for (const auto &item : o.getItems()) {
+    _ss.str("");
+    _ss.clear();
+    item->acceptVisitor(*this);
+    parts.push_back(_ss.str());
+  }
+  _ss.str("");
+  _ss.clear();
+  _ss << prefix;
+  bool replication =
+      parts.size() > 1 &&
+      std::all_of(parts.begin(), parts.end(),
+                  [&parts](const std::string &p) { return p == parts[0]; });
+  _ss << selCol("{", BOOL("{"));
+  if (replication) {
+    _ss << selCol(std::to_string(parts.size()),
+                  VAR(std::to_string(parts.size())))
+        << selCol("{", BOOL("{")) << parts[0] << selCol("}", BOOL("}"));
+  } else {
+    for (size_t i = 0; i < parts.size(); i++) {
+      _ss << (i ? selCol(", ", BOOL(", ")) : "") << parts[i];
+    }
+  }
+  _ss << selCol("}", BOOL("}"));
+  _ope_stack.pop();
+}
+
+//a ternary is always parenthesized, so that the output can be parsed again
+#define TERNARY(NODE)                                                \
+  void PrinterVisitor::visit(expression::NODE &o) {                  \
+    _ope_stack.push(ope::ope::Ternary);                              \
+    _ss << selCol("(", BOOL("("));                                   \
+    o.getCondition()->acceptVisitor(*this);                          \
+    _ss << selCol(" ? ", BOOL(" ? "));                               \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    _ss << selCol(" : ", BOOL(" : "));                               \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+    _ss << selCol(")", BOOL(")"));                                   \
+    _ope_stack.pop();                                                \
+  }
+TERNARY(PropositionTernary)
+TERNARY(IntTernary)
+TERNARY(LogicTernary)
+TERNARY(FloatTernary)
 EXP_OPE(LogicLShift)
 EXP_OPE(LogicRShift)
 TYPE_CAST(LogicToFloat)
 TYPE_CAST(LogicToBool)
 TYPE_CAST(LogicToInt)
+// H25 (D-039): $signed(e) / $unsigned(e), a primary; its operand is printed with no enclosing operator
+#define SIGN_CAST(NODE)                                              \
+  void PrinterVisitor::visit(expression::NODE &o) {                  \
+    std::string name = std::string(o.functionName()) + "(";          \
+    _ss << selCol(name, FUN(name));                                  \
+    bool right = _rightOperand;                                      \
+    _rightOperand = false;                                           \
+    _ope_stack.push(ope::ope::NoOp);                                 \
+    o.getItem()->acceptVisitor(*this);                               \
+    _ope_stack.pop();                                                \
+    _rightOperand = right;                                           \
+    _ss << selCol(")", FUN(")"));                                    \
+  }
+SIGN_CAST(LogicSignCast)
+SIGN_CAST(IntSignCast)
 UNARY_FUNCTION(LogicPast)
 UNARY_FUNCTION(LogicStable)
 UNARY_FUNCTION(LogicRose)
 UNARY_FUNCTION(LogicFell)
 
 void PrinterVisitor::visit(expression::LogicNot &o) {
-  _ope_stack.push(ope::ope::LogicNot);
-  _ss << selCol(opeToString(ope::LogicNot),
-                BOOL(opeToString(ope::LogicNot)));
-  o.getItems()[0]->acceptVisitor(*this);
-  _ope_stack.pop();
+  printPrefix(o, ope::ope::LogicNot);
 }
 
-void PrinterVisitor::visit(LogicSetMembership &o) {
-  _ope_stack.push(ope::ope::LogicSetMembership);
-  o.getItem()->acceptVisitor(*this);
-  if (_colored) {
-    _ss << BOOL(" " + ope::opeToString(ope::ope::LogicSetMembership) +
-                " ");
-    _ss << VAR(o.valuesToString());
-    _ss << " ";
-
-  } else {
-    _ss << " " + ope::opeToString(ope::ope::LogicSetMembership) + " ";
-    _ss << o.valuesToString();
-    _ss << " ";
-  }
-  _ope_stack.pop();
-}
+SET_MEMBERSHIP(LogicSetMembership)
 
 //string
 STRING_CONSTANT(StringConstant)
@@ -401,8 +536,17 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
                                                                      \
     bool putBrakets =                                                \
         (items.size() > 1 &&                                         \
-         hasHigherPrecedence(parent_op, ope::temporalOpe::NODE)) ||  \
+         (hasHigherPrecedence(parent_op, ope::temporalOpe::NODE) ||  \
+          (_lang == Language::SVA &&                                 \
+           svaNeedsBrackets(parent_op, ope::temporalOpe::NODE)))) || \
         ope::temporalOpe::NODE == ope::temporalOpe::PropertyAlways;  \
+    /* SVA: a unary operator of low precedence is wrapped whole */   \
+    bool wrapSelf = items.size() == 1 && _lang == Language::SVA &&   \
+                    svaNeedsBrackets(parent_op, ope::temporalOpe::NODE); \
+    if (wrapSelf) {                                                  \
+      _ss << selCol("(", chooseTemporalOpColor(                      \
+                             "(", ope::temporalOpe::NODE));          \
+    }                                                                \
                                                                      \
     if (items.size() > 1) {                                          \
       bool leftRequiresBrackets = false;                             \
@@ -456,6 +600,10 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     items.back()->acceptVisitor(*this);                              \
                                                                      \
     if (putBrakets) {                                                \
+      _ss << selCol(                                                 \
+          ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
+    }                                                                \
+    if (wrapSelf) {                                                  \
       _ss << selCol(                                                 \
           ")", chooseTemporalOpColor(")", ope::temporalOpe::NODE));  \
     }                                                                \
@@ -549,6 +697,35 @@ bool isBinaryRightAssociative(ope::temporalOpe op) {
     _temporal_ope_stack.pop();                                       \
   }
 
+namespace {
+/// Spot LTL: X, F, !, U (printed W) and R bind tighter than && and ||, and && tighter than ||;
+/// a proposition with such a connective at the top needs brackets under them (H1d, F8, D-021)
+bool spotNeedsBrackets(const PropositionPtr &p, ope::temporalOpe parent) {
+  using T = ope::temporalOpe;
+  auto op = p->getOperator();
+  bool connective =
+      (op == ope::PropositionAnd && getPropositionAndSize(p) > 1) ||
+      op == ope::PropositionOr || op == ope::PropositionXor ||
+      op == ope::PropositionEq || op == ope::PropositionNeq;
+  if (!connective) {
+    return false;
+  }
+  switch (parent) {
+  case T::PropertyNext:
+  case T::PropertyEventually:
+  case T::PropertyNot:
+  case T::BooleanLayerNot:
+  case T::PropertyUntil:
+  case T::PropertyRelease:
+    return true;
+  case T::PropertyAnd:
+    return op != ope::PropositionAnd;
+  default:
+    return false;
+  }
+}
+} // namespace
+
 void PrinterVisitor::visit(BooleanLayerNot &o) {
   _temporal_ope_stack.push(ope::temporalOpe::BooleanLayerNot);
   _ss << selCol(opeToString(ope::temporalOpe::BooleanLayerNot),
@@ -573,7 +750,10 @@ void PrinterVisitor::visit(BooleanLayerPermutationPlaceholder &o) {
 void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
   if (_printMode == PrintMode::ShowAll) {
     if (isEmptyPropositionAnd(*o.getPlaceholderPointer())) {
-      _ss << selCol("true", BOOL("true"));
+      std::string t = _lang == Language::SVA && !clc::legacySvaPrinting
+                          ? "1'b1"
+                          : "true";
+      _ss << selCol(t, BOOL(t));
       return;
     }
 
@@ -585,6 +765,8 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
     needsBrackets &=
         !isPropositionAnd(*o.getPlaceholderPointer()) ||
         getPropositionAndSize(*o.getPlaceholderPointer()) > 1;
+    needsBrackets |= _lang == Language::SpotLTL &&
+                     spotNeedsBrackets(*o.getPlaceholderPointer(), parent_op);
 
     if (needsBrackets) {
       _ss << selCol("(", TEMP("("));
@@ -604,12 +786,18 @@ void PrinterVisitor::visit(BooleanLayerDTPlaceholder &o) {
   }
 }
 void PrinterVisitor::visit(BooleanLayerInst &o) {
+  if (_subst != nullptr && _subst->count(o.getProposition().get())) {
+    _ss << _subst->at(o.getProposition().get());
+    return;
+  }
   bool needsBrackets = !isUnary(o.getProposition());
   auto parent_op = _temporal_ope_stack.top();
   needsBrackets &= !hasHigherPrecedence(
       o.getProposition()->getOperator(), parent_op);
   needsBrackets &= !isPropositionAnd(o.getProposition()) ||
                    getPropositionAndSize(o.getProposition()) > 1;
+  needsBrackets |= _lang == Language::SpotLTL &&
+                   spotNeedsBrackets(o.getProposition(), parent_op);
 
   if (_printMode != PrintMode::Hide) {
     if (needsBrackets) {
@@ -667,8 +855,144 @@ void PrinterVisitor::visit(PropertyNext &o) {
   _temporal_ope_stack.pop();
 }
 
+namespace {
+/// the last cycle of a sequence of fixed length, counting from 0 (a Boolean: 0); std::nullopt if
+/// te is not a sequence (e.g. a property with nexttime) or its length is not fixed (H1d, F7)
+std::optional<int> sequenceLastCycle(const TemporalExpressionPtr &te) {
+  if (isBooleanLayer(te)) {
+    return 0;
+  }
+  if (auto c = std::dynamic_pointer_cast<SereConcat>(te)) {
+    auto l = sequenceLastCycle(c->getItems()[0]);
+    auto r = sequenceLastCycle(c->getItems()[1]);
+    if (!l || !r) {
+      return std::nullopt;
+    }
+    return *l + (c->isOverlapping() ? 0 : 1) + *r;
+  }
+  if (auto d = std::dynamic_pointer_cast<SereDelay>(te)) {
+    auto w = d->getWindow();
+    if (w.first != w.second || w.first < 0) {
+      return std::nullopt;
+    }
+    auto &items = d->getItems();
+    std::optional<int> from = 0;
+    if (items.size() == 2) {
+      from = sequenceLastCycle(items[0]);
+    }
+    auto r = sequenceLastCycle(items.back());
+    if (!from || !r) {
+      return std::nullopt;
+    }
+    return *from + w.first + *r;
+  }
+  if (std::dynamic_pointer_cast<SereAnd>(te) || std::dynamic_pointer_cast<SereOr>(te) ||
+      std::dynamic_pointer_cast<SereIntersect>(te)) {
+    std::optional<int> last;
+    for (const auto &i : te->getItems()) {
+      auto l = sequenceLastCycle(i);
+      if (!l || (last && *l != *last)) {
+        return std::nullopt; // only operands of equal length have one end
+      }
+      last = l;
+    }
+    return last;
+  }
+  return std::nullopt;
+}
+
+/// true for the antecedent of an invariant G(true -> p)
+bool isTrueAntecedent(const TemporalExpressionPtr &te) {
+  auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(te);
+  if (inst == nullptr) {
+    return false;
+  }
+  auto c = std::dynamic_pointer_cast<BooleanConstant>(inst->getProposition());
+  return c != nullptr && c->evaluate(0);
+}
+} // namespace
+
 void PrinterVisitor::visit(PropertyImplication &o) {
+  // an invariant G(true -> p) is printed as G(p)
+  if (!o.isMMImplication() && o.isOverlapping() &&
+      isTrueAntecedent(o.getItems()[0])) {
+    // printed exactly as the consequent of an implication
+    _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
+    o.getItems()[1]->acceptVisitor(*this);
+    _temporal_ope_stack.pop();
+    return;
+  }
   _temporal_ope_stack.push(ope::temporalOpe::PropertyImplication);
+
+  // SystemVerilog: 'p |-> nexttime q' is printed 'p |=> q', and more nexttimes as '##n', when q
+  // is boolean (equivalent: a sequence used as a property is weak by default, like nexttime);
+  // nexttime is valid SystemVerilog but not accepted by common tools (Verilator, EBMC)
+  // SystemVerilog: HARM's '->' starts the consequent with the antecedent, SVA's '|->' at its end
+  // (H1d, F7, D-021). A multi-cycle antecedent is re-anchored at its end when it is a sequence of
+  // fixed length and the consequent is Boolean after k nexttimes; otherwise 'implies', which
+  // starts both sides together
+  if (_lang == Language::SVA && !clc::legacySvaPrinting && !o.isMMImplication() &&
+      !isBooleanLayer(o.getItems()[0])) {
+    TemporalExpressionPtr consequent = o.getItems()[1];
+    int k = o.isOverlapping() ? 0 : 1;
+    while (auto next = std::dynamic_pointer_cast<PropertyNext>(consequent)) {
+      k += (int)next->getDelay();
+      consequent = next->getItems()[0];
+    }
+    auto last = sequenceLastCycle(o.getItems()[0]);
+    if (last && isBooleanLayer(consequent)) {
+      int j = k - *last;
+      o.getItems()[0]->acceptVisitor(*this);
+      std::string op = j == 0   ? " |-> "
+                       : j == 1 ? " |=> "
+                       : j > 1  ? " |-> ##" + std::to_string(j) + " "
+                                : " |-> $past(";
+      _ss << selCol(op, TIMPL(op));
+      consequent->acceptVisitor(*this);
+      if (j < 0) {
+        std::string tail = ", " + std::to_string(-j) + ")";
+        _ss << selCol(tail, TIMPL(tail));
+      }
+    } else {
+      _ss << selCol("(", TIMPL("("));
+      o.getItems()[0]->acceptVisitor(*this);
+      std::string op = std::string(") implies ") + (o.isOverlapping() ? "" : "nexttime ");
+      _ss << selCol(op, TIMPL(op));
+      if (!o.isOverlapping()) {
+        _ss << selCol("(", TIMPL("("));
+      }
+      o.getItems()[1]->acceptVisitor(*this);
+      if (!o.isOverlapping()) {
+        _ss << selCol(")", TIMPL(")"));
+      }
+    }
+    _temporal_ope_stack.pop();
+    return;
+  }
+
+  if (_lang == Language::SVA && !clc::legacySvaPrinting) {
+    TemporalExpressionPtr consequent = o.getItems()[1];
+    size_t shift = o.isOverlapping() ? 0 : 1;
+    size_t nexts = 0;
+    while (auto next =
+               std::dynamic_pointer_cast<PropertyNext>(consequent)) {
+      shift += next->getDelay();
+      nexts++;
+      consequent = next->getItems()[0];
+    }
+    if (nexts > 0 && isBooleanLayer(consequent)) {
+      o.getItems()[0]->acceptVisitor(*this);
+      if (shift == 1) {
+        _ss << selCol(" |=> ", TIMPL(" |=> "));
+      } else {
+        std::string delay = " |-> ##" + std::to_string(shift) + " ";
+        _ss << selCol(delay, TIMPL(delay));
+      }
+      consequent->acceptVisitor(*this);
+      _temporal_ope_stack.pop();
+      return;
+    }
+  }
 
   auto [open, close] = getSereBrackets();
 

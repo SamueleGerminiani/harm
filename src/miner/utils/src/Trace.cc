@@ -18,6 +18,9 @@ Trace::Trace(std::vector<VarDeclaration> &variables, size_t length)
   for (VarDeclaration &dt : _variables) {
     _varName2size[dt.getName()] = dt.getSize();
     _varName2Type[dt.getName()] = dt.getType();
+    if (dt.hasRange()) {
+      _varName2range[dt.getName()] = {dt.getLeft(), dt.getRight()};
+    }
   }
 
   //allocate the three lanes of a logic sub-trace
@@ -414,8 +417,8 @@ void dumpTraceAsCSV(const TracePtr &trace,
 
     std::string row = ss.str();
     ss.str(std::string());
-    //remove last comma
-    row = row.substr(0, row.size() - 2);
+    //remove last comma (CR1 C7a-3: only the comma; the last column lost its last character)
+    row = row.substr(0, row.size() - 1);
     file << row;
     file << "\n";
   } //end for i
@@ -426,5 +429,16 @@ void dumpTraceAsCSV(const TracePtr &trace,
 
 std::vector<VarDeclaration> Trace::getVariables() {
   return _variables;
+}
+
+bool Trace::getDeclaredRange(const std::string &name, long &left,
+                             long &right) const {
+  auto it = _varName2range.find(name);
+  if (it == _varName2range.end()) {
+    return false;
+  }
+  left = it->second.first;
+  right = it->second.second;
+  return true;
 }
 } // namespace harm

@@ -173,6 +173,18 @@ void TemporalParserHandler::exitFormula(
     temporalParser::FormulaContext *ctx) {
   auto tformula = _tsubFormulas.top();
   _tsubFormulas.pop();
+  if (std::dynamic_pointer_cast<PropertyImplication>(tformula) ==
+      nullptr) {
+    // invariant G(p): read as G(true -> p) (printed back as G(p))
+    messageErrorIf(dtCount > 0,
+                   "Decision-tree operators need an implication: they "
+                   "build the antecedent of G(antecedent -> consequent)\n" +
+                       printErrorMessage());
+    std::string inst = handleNewInst("@true");
+    tformula = generatePtr<PropertyImplication>(
+        generatePtr<BooleanLayerInst>(_instToPP.at(inst), inst), tformula,
+        false, true);
+  }
   _temporalExpression = generatePtr<PropertyAlways>(tformula);
   _errorMessages.clear();
 }
@@ -199,9 +211,14 @@ void TemporalParserHandler::exitImplication(
           "errors. Do not ignore this.\n" +
           printErrorMessage());
 
+  // CR1 (C7b-2): `=>` is evaluated as the overlapping `->` (no shift) but printed as `|=>`: the printed assertion
+  // would mean another property. With SVA output it is an error; `->` (printed `|->`) keeps the warning
+  messageErrorIf(clc::outputLang == Language::SVA && ctx->IMPL() != nullptr,
+                 "SystemVerilog output language detected: '=>' is not an SVA implication (HARM evaluates it as "
+                 "'->' but would print it as '|=>'); use {...} |=> or -> X\n" +
+                     printErrorMessage());
   messageWarningIf(
-      clc::outputLang == Language::SVA &&
-          (ctx->IMPL() != nullptr || ctx->IMPLO() != nullptr),
+      clc::outputLang == Language::SVA && ctx->IMPLO() != nullptr,
       "SystemVerilog output language detected, SystemVerilog "
       "implications requires to use |-> or |=>\n"
       "The semantics of the generated assertions might change once "

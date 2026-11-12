@@ -1,0 +1,29 @@
+{
+ "kept": [
+  "G(cnt > 4'b1000 -> a)"
+ ],
+ "implications": [
+  {
+   "context": "default",
+   "dropped": "G(cnt > 4'b1001 -> a)",
+   "kept": [
+    "G(cnt > 4'b1000 -> a)"
+   ],
+   "relation": "implied",
+   "premises": [
+    "cnt > 4'b1001 -> cnt > 4'b1000"
+   ]
+  },
+  {
+   "context": "default",
+   "dropped": "G(cnt == 4'b1001 -> a)",
+   "kept": [
+    "G(cnt > 4'b1000 -> a)"
+   ],
+   "relation": "implied",
+   "premises": [
+    "cnt == 4'b1001 -> cnt > 4'b1000"
+   ]
+  }
+ ]
+}

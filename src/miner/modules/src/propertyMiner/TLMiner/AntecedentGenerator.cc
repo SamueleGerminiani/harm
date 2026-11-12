@@ -127,6 +127,9 @@ inline void AntecedentGenerator::findCandidates(
     double currScore) {
 
   DTOperatorPtr dto = t->getDT();
+  if (!admissible(candidate, false, dto->insertionIndex(depth))) {
+    return; // COI depth filter (H8)
+  }
 
   // the 2 propositions of X
   std::vector<PropositionPtr> propPtr;
@@ -325,6 +328,9 @@ inline void AntecedentGenerator::findCandidatesNumeric(
   if (dto->isTaken(candidate + numLeavesOffset, 0, depth)) {
     return;
   }
+  if (!admissible(candidate, true, dto->insertionIndex(depth))) {
+    return; // COI depth filter (H8)
+  }
 
   // retrieve the propositions (props)
   std::vector<PropositionPtr> props = gatherPropositionsFromNumerics(
@@ -386,27 +392,13 @@ bool AntecedentGenerator::isKnownSolution(
   } else {
     solution = dto->getSolution();
   }
-  solution.sortByWidth();
+  std::string key = solution.key(dto->isMultiDimensional());
 
-  std::stringstream ss;
-  if (dto->isMultiDimensional()) {
-    for (auto &pack : solution.getMultidimensionalSolution()) {
-      for (auto &p : pack) {
-        ss << prop2String(p) << "$";
-      }
-      ss << "$";
-    }
-  } else {
-    for (auto &p : solution.getUnidimensionalSolution()) {
-      ss << prop2String(p) << "$";
-    }
-  }
-
-  if (_knownSolutions.count(ss.str())) {
+  if (_knownSolutions.count(key)) {
     return true;
   }
   if (!checkOnly) {
-    _knownSolutions.insert(ss.str());
+    _knownSolutions.insert(key);
   }
 
   return false;
@@ -417,6 +409,9 @@ void AntecedentGenerator::runDecisionTree(
     const NumericDecTreeExp &numericCandidates,
     const TemplateImplicationPtr &t, double currScore) {
 
+  if (hs::mineDeadlinePassed()) {
+    return; // H39: the solutions found so far are kept
+  }
   DTOperatorPtr dto = t->getDT();
 
   std::unordered_set<DiscoveredLeaf, DiscoveredLeafHash>
@@ -430,6 +425,9 @@ void AntecedentGenerator::runDecisionTree(
   if (dto->getNChoices() < dto->getLimits()._maxAll) {
     for (; candidate != unusedVars.end() ||
            candidateNumeric != unusedNumerics.end();) {
+      if (hs::mineDeadlinePassed()) {
+        break; // H39: the rest of the scan is not done
+      }
       if (dto->isUnordered()) {
         //Unordered ..#&.. ..##..
         for (size_t i = 0; i < dto->getLimits()._maxDepth; i++) {
@@ -567,6 +565,9 @@ void AntecedentGenerator::runDecisionTree(
   size_t currStates = nStates;
 
   for (auto &cand : candidates) {
+    if (hs::mineDeadlinePassed()) {
+      break; // H39
+    }
     dto->addItem(cand._prop, cand._depth);
     dto->addLeaf(cand._prop,
                  cand._id +

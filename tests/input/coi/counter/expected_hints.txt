@@ -1,0 +1,11 @@
+# H22 hints, hand-written from rtl/counter.sv (no --reset: rst is a synchronous reset, an input)
+# role <signal> <input|reset|const|clock|comb|state|unknown> [control]
+role rst input control
+role en input control
+role cnt state control
+role wrap comb
+# prop <expr> -> <consequent classes, or ->
+prop cnt == 4'd0 -> state
+prop cnt == 4'd9 -> state
+prop en -> -
+prop rst -> -

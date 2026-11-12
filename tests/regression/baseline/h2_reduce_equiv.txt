@@ -1,0 +1,6 @@
+# mode: ordered
+### default_ass.txt
+G({go, s} == 3'b110 -> s != 2'b0)
+G({go, s} == 3'b110 -> s !== 2'b0)
+G(4'b110 == cnt -> s != 2'b0)
+G(4'b110 == cnt -> s !== 2'b0)

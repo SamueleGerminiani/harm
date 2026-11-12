@@ -1,0 +1,1252 @@
+#include "ImplicationReducer.hh"
+
+#include <algorithm>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <map>
+#include <numeric>
+#include <optional>
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <poll.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
+#include <spot/tl/formula.hh>
+#include <spot/tl/parse.hh>
+#include <spot/twa/twagraph.hh>
+#include <spot/twa/bdddict.hh>
+#include <spot/twa/formula2bdd.hh>
+#include <spot/twaalgos/isdet.hh>
+#include <spot/twaalgos/postproc.hh>
+#include <spot/twaalgos/translate.hh>
+#include <spot/tl/ltlf.hh>
+
+#include "Assertion.hh"
+#include "CoiInfo.hh"
+#include "PropositionCanonicalizer.hh"
+#include "expUtils/smtEquivalence.hh"
+#include "expUtils/expUtils.hh"
+#include "formula/atom/Constant.hh"
+#include "formula/expression/GenericExpression.hh"
+#include "formula/temporal/temporal.hh"
+#include "globals.hh"
+#include "message.hh"
+
+namespace harm {
+using namespace expression;
+
+std::string toString(Implication i) {
+  switch (i) {
+  case Implication::Equivalent:
+    return "EQUIVALENT";
+  case Implication::AImpliesB:
+    return "A_IMPLIES_B";
+  case Implication::BImpliesA:
+    return "B_IMPLIES_A";
+  case Implication::None:
+    return "NONE";
+  case Implication::Skipped:
+    return "SKIPPED";
+  }
+  return "?";
+}
+
+namespace {
+
+// ---------------------------------------------------------------- atoms (maximal non-boolean)
+/// the items of a boolean connective, or nullptr if 'p' is an atom
+const std::vector<PropositionPtr> *connectiveItems(const PropositionPtr &p,
+                                                   std::string &op) {
+  if (auto x = std::dynamic_pointer_cast<PropositionAnd>(p)) {
+    op = "&";
+    return &x->getItems();
+  }
+  if (auto x = std::dynamic_pointer_cast<PropositionOr>(p)) {
+    op = "|";
+    return &x->getItems();
+  }
+  if (auto x = std::dynamic_pointer_cast<PropositionXor>(p)) {
+    op = "^";
+    return &x->getItems();
+  }
+  if (auto x = std::dynamic_pointer_cast<PropositionEq>(p)) {
+    op = "<->";
+    return &x->getItems();
+  }
+  if (auto x = std::dynamic_pointer_cast<PropositionNeq>(p)) {
+    op = "^";
+    return &x->getItems();
+  }
+  if (auto x = std::dynamic_pointer_cast<PropositionNot>(p)) {
+    op = "!";
+    return &x->getItems();
+  }
+  return nullptr;
+}
+
+void collectAtoms(const PropositionPtr &p, std::vector<PropositionPtr> &atoms) {
+  std::string op;
+  if (auto items = connectiveItems(p, op)) {
+    for (const auto &i : *items) {
+      collectAtoms(i, atoms);
+    }
+  } else if (std::dynamic_pointer_cast<BooleanConstant>(p) == nullptr) {
+    atoms.push_back(p);
+  }
+}
+
+/// the boolean skeleton of 'p' in Spot syntax, atoms replaced by their class tokens
+std::string skeleton(
+    const PropositionPtr &p,
+    const std::unordered_map<const Proposition *, std::string> &tokens) {
+  if (auto c = std::dynamic_pointer_cast<BooleanConstant>(p)) {
+    return c->evaluate(0) ? "true" : "false";
+  }
+  std::string op;
+  if (auto items = connectiveItems(p, op)) {
+    if (op == "!") {
+      return "!(" + skeleton((*items)[0], tokens) + ")";
+    }
+    std::string s;
+    for (const auto &i : *items) {
+      s += (s.empty() ? "(" : " " + op + " ") + skeleton(i, tokens);
+    }
+    return s + ")";
+  }
+  return tokens.at(p.get());
+}
+
+std::vector<PropositionPtr> leafPropositions(const TemporalExpressionPtr &te) {
+  std::vector<PropositionPtr> leaves;
+  traverse(te, [&](const TemporalExpressionPtr &current) {
+    if (auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(current)) {
+      leaves.push_back(inst->getProposition());
+    }
+    return false;
+  });
+  return leaves;
+}
+
+// ---------------------------------------------------------------- HARM's finite-trace semantics
+// D-004 as amended. Spot's infinite-word implication is not enough: HARM evaluates a mined
+// assertion on a finite trace, and an instance still pending at the end counts as holding. The
+// evaluator (AutomataBasedEvaluator) runs a deterministic Spot automaton of the consequent whose
+// atoms are the boolean leaves, not the atoms inside them, so a violation that is certain at the
+// atom level can be seen only some cycles later (e.g. 'X (b && !b)'). Hence the second check:
+// an exact model of HARM's evaluation, explored over every finite trace.
+
+/// the shared BDD dictionary and translators of one reduction
+struct Context {
+  spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+  spot::translator trans{dict};
+  spot::translator det{dict};
+  int owner = 0; // the address owns the variables registered here
+  Context() { det.set_pref(spot::postprocessor::Deterministic); }
+  ~Context() { dict->unregister_all_my_variables(&owner); }
+};
+
+/// how HARM evaluates G(antecedent |-> consequent) with a fixed-length boolean antecedent
+struct HarmModel {
+  std::vector<bdd> ant;   // the antecedent, one boolean step per cycle (atom level)
+  bool overlap = true;    // the consequent starts on the last antecedent cycle
+  unsigned init = 0;      // the consequent automaton (as in AutomataBasedEvaluator)
+  std::vector<int> term;  // 0 pending, 1 accepting sink, 2 rejecting sink
+  std::vector<std::vector<std::pair<bdd, unsigned>>> edges; // atom-level conditions
+  // --trace-end sva (D-016): the consequent in LTLf, as in AutomataBasedEvaluator's
+  // TraceEndModel; a pending instance fails at the end if its state here may not end the trace.
+  // With --trace-end harm: one state, which may always end the trace
+  unsigned init2 = 0;
+  std::vector<std::vector<std::pair<bdd, unsigned>>> edges2{{{bddtrue, 0}}};
+  std::vector<bool> endOK2{true};
+};
+
+/// the antecedent as one boolean step per cycle, starting at 'start'; false if not a fixed
+/// sequence of boolean steps; returns the last cycle in 'end'
+bool antecedentSteps(const TemporalExpressionPtr &te, int start,
+                     const std::function<bdd(const PropositionPtr &)> &leafBdd,
+                     std::vector<bdd> &steps, int &end) {
+  if (start > 62) {
+    return false;
+  }
+  if (auto inst = std::dynamic_pointer_cast<BooleanLayerInst>(te)) {
+    if ((int)steps.size() <= start) {
+      steps.resize(start + 1, bddtrue);
+    }
+    steps[start] &= leafBdd(inst->getProposition());
+    end = start;
+    return true;
+  }
+  if (auto c = std::dynamic_pointer_cast<SereConcat>(te)) {
+    int e;
+    return antecedentSteps(c->getItems()[0], start, leafBdd, steps, e) &&
+           antecedentSteps(c->getItems()[1], e + (c->isOverlapping() ? 0 : 1),
+                           leafBdd, steps, end);
+  }
+  bool intersect = std::dynamic_pointer_cast<SereIntersect>(te) != nullptr;
+  if (intersect || std::dynamic_pointer_cast<SereAnd>(te) != nullptr) {
+    // both operands start together; '&&' needs them to end together, '&' ends with the later
+    end = start;
+    for (size_t i = 0; i < te->getItems().size(); i++) {
+      int e;
+      if (!antecedentSteps(te->getItems()[i], start, leafBdd, steps, e) ||
+          (intersect && i > 0 && e != end)) {
+        return false;
+      }
+      end = std::max(end, e);
+    }
+    return true;
+  }
+  if (auto d = std::dynamic_pointer_cast<SereDelay>(te)) {
+    auto w = d->getWindow();
+    if (w.first != w.second) {
+      return false;
+    }
+    auto &items = d->getItems();
+    int from = start;
+    if (items.size() == 2 &&
+        !antecedentSteps(items[0], start, leafBdd, steps, from)) {
+      return false;
+    }
+    if (items.size() == 1 && w.first > 0) {
+      // '##n b' with nothing before: the first cycles are free
+      if ((int)steps.size() <= start) {
+        steps.resize(start + 1, bddtrue);
+      }
+    }
+    return antecedentSteps(items.back(), from + (int)w.first, leafBdd, steps,
+                           end);
+  }
+  return false;
+}
+
+/// HARM's model of 'te', or nullopt if 'te' is not G(antecedent |-> consequent) with a fixed
+/// boolean antecedent (such assertions are never reduced)
+std::optional<HarmModel> harmModel(
+    const TemporalExpressionPtr &te,
+    const std::unordered_map<const Proposition *, std::string> &tokens,
+    Context &ctx) {
+  auto always = std::dynamic_pointer_cast<PropertyAlways>(te);
+  if (always == nullptr) {
+    return std::nullopt;
+  }
+  auto imp =
+      std::dynamic_pointer_cast<PropertyImplication>(always->getItems()[0]);
+  if (imp == nullptr) {
+    return std::nullopt;
+  }
+  bool ok = true;
+  auto leafBdd = [&](const PropositionPtr &leaf) -> bdd {
+    spot::parsed_formula pf = spot::parse_infix_boolean(skeleton(leaf, tokens));
+    if (!pf.errors.empty()) {
+      ok = false;
+      return bddtrue;
+    }
+    return spot::formula_to_bdd(pf.f, ctx.dict, &ctx.owner);
+  };
+  HarmModel m;
+  int end = 0;
+  if (!antecedentSteps(imp->getItems()[0], 0, leafBdd, m.ant, end) || !ok) {
+    return std::nullopt;
+  }
+  m.ant.resize(end + 1, bddtrue);
+  m.overlap = imp->isOverlapping();
+
+  // the consequent over its leaves, as HARM sees it
+  TemporalExpressionPtr con = imp->getItems()[1];
+  std::unordered_map<const Proposition *, std::string> subst;
+  std::map<std::string, bdd> leafOf; // leaf atom -> its atom-level condition
+  for (const auto &leaf : leafPropositions(con)) {
+    std::string sk = skeleton(leaf, tokens);
+    subst[leaf.get()] = "\"L:" + sk + "\"";
+    leafOf.emplace("L:" + sk, leafBdd(leaf));
+  }
+  spot::parsed_formula pf =
+      spot::parse_infix_psl(temp2StringSubst(con, Language::SpotLTL, subst));
+  if (!pf.errors.empty() || !ok) {
+    return std::nullopt;
+  }
+  auto aut = ctx.det.run(pf.f);
+  spot::postprocessor post;
+  post.set_pref(spot::postprocessor::Complete);
+  aut = post.run(aut);
+  if (!spot::is_deterministic(aut) || !spot::is_complete(aut)) {
+    return std::nullopt;
+  }
+  bddPair *pair = bdd_newpair();
+  for (const auto &[name, cond] : leafOf) {
+    int v = ctx.dict->has_registered_proposition(spot::formula::ap(name),
+                                                  aut);
+    if (v >= 0) {
+      bdd_setbddpair(pair, v, cond);
+    }
+  }
+  unsigned n = aut->num_states();
+  m.init = aut->get_init_state_number();
+  m.term.assign(n, 0);
+  m.edges.resize(n);
+  for (unsigned s = 0; s < n; s++) {
+    size_t outs = 0;
+    bool selfLoop = false;
+    for (auto &e : aut->out(s)) {
+      outs++;
+      selfLoop = e.dst == s;
+      m.edges[s].emplace_back(bdd_veccompose(e.cond, pair), e.dst);
+    }
+    if (outs == 1 && selfLoop) {
+      m.term[s] = aut->state_is_accepting(s) ? 1 : 2;
+    }
+  }
+  if (clc::traceEnd == "sva") {
+    // as AutomataBasedEvaluator::buildTraceEndModel, where a formula it cannot model keeps
+    // HARM's semantics: here such an assertion is never reduced
+    if (!pf.f.is_ltl_formula()) {
+      bdd_freepair(pair);
+      return std::nullopt;
+    }
+    const std::string alive = "harm_trace_alive";
+    auto aut2 = post.run(ctx.det.run(spot::from_ltlf(pf.f, alive.c_str())));
+    if (!spot::is_deterministic(aut2)) {
+      bdd_freepair(pair);
+      return std::nullopt;
+    }
+    for (const auto &[name, cond] : leafOf) {
+      int v = ctx.dict->has_registered_proposition(spot::formula::ap(name),
+                                                    aut2);
+      if (v >= 0) {
+        bdd_setbddpair(pair, v, cond);
+      }
+    }
+    int av = ctx.dict->has_registered_proposition(spot::formula::ap(alive), aut2);
+    auto dead = ctx.trans.run(
+        spot::formula::G(spot::formula::Not(spot::formula::ap(alive))));
+    unsigned n2 = aut2->num_states();
+    m.init2 = aut2->get_init_state_number();
+    m.edges2.assign(n2, {});
+    m.endOK2.assign(n2, true);
+    for (unsigned s = 0; s < n2; s++) {
+      auto from = spot::make_twa_graph(aut2, spot::twa::prop_set::all());
+      from->set_init_state(s);
+      m.endOK2[s] = from->intersects(dead);
+      for (auto &e : aut2->out(s)) {
+        bdd cond = av < 0 ? e.cond : bdd_restrict(e.cond, bdd_ithvar(av));
+        if (cond != bddfalse) {
+          m.edges2[s].emplace_back(bdd_veccompose(cond, pair), e.dst);
+        }
+      }
+    }
+  }
+  bdd_freepair(pair);
+  return m;
+}
+
+/// a pending consequent instance: its state in HARM's automaton and in the LTLf automaton
+using ConState = std::pair<unsigned, unsigned>;
+
+/// H39: a search state's key as fixed-width bytes (was decimal text): the same states compare equal
+template <typename T> void putBytes(std::string &k, T v) {
+  char b[sizeof(T)];
+  std::memcpy(b, &v, sizeof(T));
+  k.append(b, sizeof(T));
+}
+
+/// the next state of a pending consequent instance; 'outcome' 2: failed, 1: held, 0: pending
+ConState stepCon(const HarmModel &m, ConState c, const bdd &letter, int &outcome) {
+  auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
+  outcome = 0;
+  for (const auto &[cond, dst] : m.edges[c.first]) {
+    if (holds(cond)) {
+      outcome = m.term[dst];
+      c.first = dst;
+      break;
+    }
+  }
+  for (const auto &[cond, dst] : m.edges2[c.second]) {
+    if (holds(cond)) {
+      c.second = dst;
+      break;
+    }
+  }
+  return c;
+}
+
+/// the pending instances of one assertion after a prefix of the trace
+struct Pending {
+  uint64_t ant = 0;          // bit k: an antecedent instance has matched k cycles
+  bool startNext = false;    // a consequent starts on the next cycle (|=>)
+  std::vector<ConState> con; // the pending consequent instances
+  bool failed = false;       // an instance failed inside the trace
+
+  void key(std::string &k) const {
+    putBytes(k, ant);
+    putBytes(k, (uint8_t)startNext);
+    putBytes(k, (uint32_t)con.size());
+    for (auto c : con) {
+      putBytes(k, c.first);
+      putBytes(k, c.second);
+    }
+  }
+  /// fails if the trace ends now (--trace-end sva: a strong obligation is pending)
+  bool failsAtEnd(const HarmModel &m) const {
+    return failed || std::any_of(con.begin(), con.end(), [&](const ConState &c) {
+             return !m.endOK2[c.second];
+           });
+  }
+};
+
+/// one cycle of HARM's evaluation on a letter (a class of atom valuations)
+Pending step(const HarmModel &m, const Pending &p, const bdd &letter) {
+  auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
+  Pending q;
+  q.failed = p.failed;
+  std::set<ConState> active(p.con.begin(), p.con.end());
+  if (p.startNext) {
+    active.insert({m.init, m.init2});
+  }
+  uint64_t positions = p.ant | 1; // an instance starts on every cycle
+  size_t last = m.ant.size() - 1;
+  for (size_t k = 0; k <= last; k++) {
+    if ((positions >> k & 1) && holds(m.ant[k])) {
+      if (k < last) {
+        q.ant |= (uint64_t)1 << (k + 1);
+      } else if (m.overlap) {
+        active.insert({m.init, m.init2});
+      } else {
+        q.startNext = true;
+      }
+    }
+  }
+  std::set<ConState> next;
+  for (auto c : active) {
+    int outcome;
+    ConState d = stepCon(m, c, letter, outcome);
+    if (outcome == 2) {
+      q.failed = true;
+    } else if (outcome == 0) {
+      next.insert(d);
+    }
+  }
+  q.con.assign(next.begin(), next.end());
+  return q;
+}
+
+/// one instance of y, chosen to be the one that fails
+struct Instance {
+  int ant = -1;           // the next antecedent step to match; -1 if not started or past it
+  bool conActive = false; // the consequent is pending in state 'con'
+  ConState con{0, 0};
+  bool started = false;
+  bool startNext = false; // the consequent starts on the next cycle (|=>)
+  bool failed = false;    // failed inside the trace (absorbing)
+
+  void key(std::string &k) const {
+    putBytes(k, ant);
+    putBytes(k, (uint8_t)(conActive | started << 1 | startNext << 2 | failed << 3));
+    putBytes(k, conActive ? con.first : 0u); // the state matters only while the consequent is pending
+    putBytes(k, conActive ? con.second : 0u);
+  }
+  bool failsAtEnd(const HarmModel &m) const {
+    return failed || (conActive && !m.endOK2[con.second]);
+  }
+};
+
+/// one cycle of y's chosen instance; nullopt if it can no longer fail. 'start' starts it now
+std::optional<Instance> stepInstance(const HarmModel &m, Instance i,
+                                     const bdd &letter, bool start) {
+  auto holds = [&](const bdd &b) { return (b & letter) != bddfalse; };
+  if (i.failed) {
+    return i;
+  }
+  if (!i.started) {
+    if (!start) {
+      return i;
+    }
+    i.started = true;
+    i.ant = 0;
+  }
+  if (i.startNext) {
+    i.startNext = false;
+    i.conActive = true;
+    i.con = {m.init, m.init2};
+  } else if (i.ant >= 0) {
+    if (!holds(m.ant[i.ant])) {
+      return std::nullopt; // the antecedent does not match: this instance holds
+    }
+    if (i.ant + 1 < (int)m.ant.size()) {
+      i.ant++;
+      return i;
+    }
+    i.ant = -1;
+    if (!m.overlap) {
+      i.startNext = true;
+      return i;
+    }
+    i.conActive = true;
+    i.con = {m.init, m.init2};
+  }
+  if (i.conActive) {
+    int outcome;
+    i.con = stepCon(m, i.con, letter, outcome);
+    if (outcome == 2) {
+      i.failed = true;
+      i.conActive = false;
+    } else if (outcome == 1) {
+      return std::nullopt; // the consequent holds
+    }
+  }
+  return i;
+}
+
+/// no finite trace makes x hold while y fails, in HARM's evaluation. A search over all finite
+/// traces, tracking every pending instance of x and one chosen instance of y; it gives up
+/// (answers false: never sound to drop) beyond 'maxStates' explored states
+bool harmImplies(const HarmModel &x, const HarmModel &y,
+                 size_t maxStates = 20000, const bdd &constraint = bddtrue) {
+  // letters: the classes of atom valuations that no condition of x or y separates; with atom
+  // premises (H3b), only valuations that satisfy them occur on a real trace
+  std::vector<bdd> letters{constraint};
+  auto refine = [&](const bdd &b) {
+    std::vector<bdd> out;
+    for (const auto &l : letters) {
+      for (const bdd &part : {l & b, l & !b}) {
+        if (part != bddfalse) {
+          out.push_back(part);
+        }
+      }
+    }
+    letters.swap(out);
+  };
+  for (const HarmModel *m : {&x, &y}) {
+    for (const auto &b : m->ant) {
+      refine(b);
+    }
+    for (const auto *edges : {&m->edges, &m->edges2}) {
+      for (const auto &es : *edges) {
+        for (const auto &e : es) {
+          refine(e.first);
+        }
+      }
+    }
+  }
+  std::unordered_set<std::string> seen;
+  std::string key;
+  auto keyOf = [&key](const Pending &p, const Instance &i) -> const std::string & {
+    key.clear();
+    i.key(key); // fixed width first, then the pending ones
+    p.key(key);
+    return key;
+  };
+  std::deque<std::pair<Pending, Instance>> todo{{Pending(), Instance()}};
+  seen.insert(keyOf(todo.front().first, todo.front().second));
+  while (!todo.empty()) {
+    auto [px, iy] = todo.front();
+    todo.pop_front();
+    for (const auto &l : letters) {
+      Pending qx = step(x, px, l);
+      if (qx.failed) {
+        continue; // x fails from here on: no counterexample on this path
+      }
+      for (bool start : {false, true}) {
+        if (start && iy.started) {
+          break;
+        }
+        auto qy = stepInstance(y, iy, l, start);
+        if (!qy) {
+          continue;
+        }
+        if (qy->failsAtEnd(y) && !qx.failsAtEnd(x)) {
+          return false; // the trace can end here: x holds, y fails
+        }
+        if (seen.insert(keyOf(qx, *qy)).second) {
+          if (seen.size() > maxStates) {
+            return false; // too large to decide: keep both
+          }
+          todo.emplace_back(qx, *qy);
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------- abstraction and automata
+struct Abstracted {
+  bool ok = false;     // parsed by Spot and modelled as HARM evaluates it
+  bool safety = false; // syntactic safety (D-004)
+  spot::formula f;     // infinite-word semantics
+  HarmModel harm;      // HARM's finite-trace semantics
+  std::set<std::string> atoms;
+  std::set<std::string> consequentAtoms; // H29: the atoms of the consequent's leaves
+  spot::twa_graph_ptr aut, negAut; // translated lazily
+};
+
+/// the canonical classes of all atoms of these formulas (Z3, H2)
+std::unordered_map<const Proposition *, std::string>
+atomTokens(const std::vector<TemporalExpressionPtr> &formulas,
+           unsigned z3TimeoutMs) {
+  std::vector<PropositionPtr> atoms;
+  for (const auto &te : formulas) {
+    for (const auto &leaf : leafPropositions(te)) {
+      collectAtoms(leaf, atoms);
+    }
+  }
+  PropositionCanonicalizer canon(z3TimeoutMs, "p", "");
+  canon.build(atoms);
+  return canon.tokens();
+}
+
+// ---------------------------------------------------------------- atom facts (H3b, D-025)
+/// p -> q, or p -> !q (an exclusion), between canonical atoms, proved with Z3 under HARM's
+/// semantics (x/z included, D-011): it holds on every cycle of every trace HARM evaluates
+struct Fact {
+  std::string p, q;
+  bool negated;
+  std::string text;
+};
+
+struct Facts {
+  std::vector<Fact> list;
+  /// the facts whose two atoms are in 'atoms', as a Spot Boolean formula ("" if none), and their
+  /// texts
+  std::string constraint(const std::set<std::string> &atoms,
+                         std::vector<std::string> *texts = nullptr) const {
+    std::string c;
+    for (const auto &f : list) {
+      if (atoms.count(f.p) && atoms.count(f.q)) {
+        c += (c.empty() ? "" : " & ") + std::string("(!") + f.p + " | " +
+             (f.negated ? "!" : "") + f.q + ")";
+        if (texts != nullptr) {
+          texts->push_back(f.text);
+        }
+      }
+    }
+    return c;
+  }
+};
+
+Facts proveFacts(const std::vector<TemporalExpressionPtr> &formulas,
+                 const std::unordered_map<const Proposition *, std::string> &tokens,
+                 const AtomPremises &opt, unsigned z3TimeoutMs) {
+  Facts facts;
+  if (!opt.enabled) {
+    return facts;
+  }
+  // one proposition per canonical atom, with its variables
+  std::map<std::string, PropositionPtr> rep;
+  for (const auto &te : formulas) {
+    for (const auto &leaf : leafPropositions(te)) {
+      std::vector<PropositionPtr> atoms;
+      collectAtoms(leaf, atoms);
+      for (const auto &at : atoms) {
+        rep.emplace(tokens.at(at.get()), at);
+      }
+    }
+  }
+  std::vector<std::pair<std::string, PropositionPtr>> atoms(rep.begin(), rep.end());
+  std::vector<std::set<std::string>> vars;
+  for (const auto &[t, p] : atoms) {
+    std::set<std::string> v;
+    for (const auto &[name, type] : getVars(p)) {
+      v.insert(name);
+    }
+    vars.push_back(v);
+  }
+  size_t queries = 0, skipped = 0;
+  auto ask = [&](size_t i, size_t j, bool negated) {
+    if (queries >= opt.maxQueries) {
+      skipped++;
+      return;
+    }
+    queries++;
+    PropositionPtr q = atoms[j].second;
+    if (negated) {
+      q = makeGenericExpression<PropositionNot>(q);
+    }
+    if (smt::checkImplication(atoms[i].second, q, z3TimeoutMs) == smt::Entails::Yes) {
+      facts.list.push_back({atoms[i].first, atoms[j].first, negated,
+                            prop2String(atoms[i].second) + " -> " + prop2String(q)});
+    }
+  };
+  for (size_t i = 0; i < atoms.size(); i++) {
+    for (size_t j = i + 1; j < atoms.size(); j++) {
+      bool shared = std::any_of(vars[i].begin(), vars[i].end(),
+                                [&](const std::string &v) { return vars[j].count(v) > 0; });
+      if (!shared) {
+        continue; // only atoms over a common variable are queried
+      }
+      ask(i, j, false);
+      ask(j, i, false);
+      ask(i, j, true); // i -> !j, i.e. j -> !i
+    }
+  }
+  if (skipped > 0) {
+    messageInfo("atom premises: query cap (" + std::to_string(opt.maxQueries) +
+                ") reached, " + std::to_string(skipped) +
+                " queries skipped; the reduction stays sound, only weaker");
+  }
+  return facts;
+}
+
+Abstracted abstractFormula(
+    const TemporalExpressionPtr &te,
+    const std::unordered_map<const Proposition *, std::string> &tokens,
+    Context &ctx) {
+  Abstracted a;
+  std::unordered_map<const Proposition *, std::string> subst;
+  for (const auto &leaf : leafPropositions(te)) {
+    subst[leaf.get()] = skeleton(leaf, tokens);
+    std::vector<PropositionPtr> atoms;
+    collectAtoms(leaf, atoms);
+    for (const auto &at : atoms) {
+      a.atoms.insert(tokens.at(at.get()));
+    }
+  }
+  for (const auto &l : leafOffsets(te)) {
+    if (!l.inAntecedent) {
+      std::vector<PropositionPtr> atoms;
+      collectAtoms(l.prop, atoms);
+      for (const auto &at : atoms) {
+        a.consequentAtoms.insert(tokens.at(at.get()));
+      }
+    }
+  }
+  std::string text = temp2StringSubst(te, Language::SpotLTL, subst);
+  spot::parsed_formula pf = spot::parse_infix_psl(text);
+  if (!pf.errors.empty()) {
+    return a; // not understood by Spot: never reduced
+  }
+  a.f = pf.f;
+  a.safety = pf.f.is_syntactic_safety();
+  if (!a.safety) {
+    return a; // D-004: never reduced, and not worth modelling
+  }
+  // an automaton of G(a -> X^k b) needs 2^k states: deeper assertions are never reduced
+  for (const auto &l : leafOffsets(te)) {
+    if (l.offset && *l.offset > maxImplicationDepth) {
+      return a;
+    }
+  }
+  auto m = harmModel(te, tokens, ctx);
+  if (!m) {
+    return a; // not modelled as HARM evaluates it: never reduced
+  }
+  a.harm = std::move(*m);
+  a.ok = true;
+  return a;
+}
+
+void translate(Abstracted &a, Context &ctx) {
+  if (a.aut == nullptr) {
+    a.aut = ctx.trans.run(a.f);
+    a.negAut = ctx.trans.run(spot::formula::Not(a.f));
+  }
+}
+
+/// x implies y both on infinite words (SVA, formal tools) and on finite traces as HARM
+/// evaluates them (D-004 as amended)
+bool implies(Abstracted &x, Abstracted &y, Context &ctx,
+             const std::string &premises = "") {
+  translate(x, ctx);
+  translate(y, ctx);
+  if (premises.empty()) {
+    return !x.aut->intersects(y.negAut) && harmImplies(x.harm, y.harm);
+  }
+  // H3b: every trace satisfies G(premises), so it is assumed in both checks. HARM's finite model
+  // first: it is cheap and rejects most pairs, before a Spot translation
+  spot::parsed_formula pc = spot::parse_infix_boolean(premises);
+  bdd constraint = spot::formula_to_bdd(pc.f, ctx.dict, &ctx.owner);
+  if (!harmImplies(x.harm, y.harm, 20000, constraint)) {
+    return false;
+  }
+  auto withPremises =
+      ctx.trans.run(spot::formula::And({spot::formula::G(pc.f), x.f}));
+  return !withPremises->intersects(y.negAut);
+}
+
+Implication relation(Abstracted &a, Abstracted &b, Context &ctx,
+                     const Facts *facts = nullptr,
+                     std::vector<std::string> *used = nullptr) {
+  if (!a.ok || !b.ok || !a.safety || !b.safety) {
+    return Implication::Skipped;
+  }
+  auto label = [](bool ab, bool ba) {
+    return ab && ba ? Implication::Equivalent
+           : ab     ? Implication::AImpliesB
+           : ba     ? Implication::BImpliesA
+                    : Implication::None;
+  };
+  bool ab0 = implies(a, b, ctx), ba0 = implies(b, a, ctx);
+  Implication without = label(ab0, ba0);
+  if (facts == nullptr || facts->list.empty()) {
+    return without;
+  }
+  std::set<std::string> atoms = a.atoms;
+  atoms.insert(b.atoms.begin(), b.atoms.end());
+  std::vector<std::string> texts;
+  std::string premises = facts->constraint(atoms, &texts);
+  if (premises.empty()) {
+    return without;
+  }
+  // premises only remove traces, so they can only add implications: a direction that holds
+  // without them is not checked again
+  Implication with = label(ab0 || implies(a, b, ctx, premises),
+                           ba0 || implies(b, a, ctx, premises));
+  if (with != without && used != nullptr) {
+    *used = texts;
+  }
+  return with;
+}
+
+} // namespace
+
+Implication implicationBetween(const TemporalExpressionPtr &a,
+                               const TemporalExpressionPtr &b,
+                               unsigned z3TimeoutMs, const AtomPremises &premises) {
+  auto tokens = atomTokens({a, b}, z3TimeoutMs);
+  Facts facts = proveFacts({a, b}, tokens, premises, z3TimeoutMs);
+  Context ctx;
+  Abstracted x = abstractFormula(a, tokens, ctx),
+             y = abstractFormula(b, tokens, ctx);
+  return relation(x, y, ctx, &facts);
+}
+
+namespace {
+/// H39: a checked pair's result as bytes: flags, then each used fact as its length and text
+std::string encodeResult(bool ij, bool ji, const std::vector<std::string> &used) {
+  std::string r;
+  putBytes(r, (uint8_t)(ij | ji << 1));
+  putBytes(r, (uint32_t)used.size());
+  for (const auto &u : used) {
+    putBytes(r, (uint32_t)u.size());
+    r += u;
+  }
+  return r;
+}
+
+template <typename T> T getBytes(const std::string &s, size_t &at) {
+  T v;
+  std::memcpy(&v, s.data() + at, sizeof(T));
+  at += sizeof(T);
+  return v;
+}
+
+void decodeResult(const std::string &rec, bool &ij, bool &ji, std::vector<std::string> &used) {
+  size_t at = 0;
+  auto flags = getBytes<uint8_t>(rec, at);
+  ij = flags & 1;
+  ji = flags & 2;
+  auto n = getBytes<uint32_t>(rec, at);
+  for (uint32_t u = 0; u < n; u++) {
+    auto len = getBytes<uint32_t>(rec, at);
+    used.push_back(rec.substr(at, len));
+    at += len;
+  }
+}
+
+/// H39: items 0..n-1 checked by `workers` forked processes (item k by worker k mod workers), each until the
+/// deadline; a worker sends (k, its record) back through a pipe. An item a worker did not send (the deadline, or the
+/// worker failed) is left unchecked
+void checkInWorkers(size_t n, size_t workers, std::chrono::steady_clock::time_point deadline,
+                    const std::function<void(size_t)> &check, const std::function<std::string(size_t)> &encode,
+                    const std::function<void(size_t, const std::string &)> &accept) {
+  std::cout.flush();
+  std::cerr.flush();
+  std::vector<int> fds;
+  std::vector<pid_t> pids;
+  for (size_t w = 0; w < workers; w++) {
+    int p[2];
+    messageErrorIf(pipe(p) != 0, "--reduce implies: cannot open a pipe for a worker");
+    pid_t pid = fork();
+    messageErrorIf(pid < 0, "--reduce implies: cannot start a worker");
+    if (pid == 0) {
+      close(p[0]);
+      for (int fd : fds) {
+        close(fd);
+      }
+      std::string buf;
+      auto flush = [&]() {
+        size_t off = 0;
+        while (off < buf.size()) {
+          ssize_t m = write(p[1], buf.data() + off, buf.size() - off);
+          if (m <= 0) {
+            _exit(1);
+          }
+          off += (size_t)m;
+        }
+        buf.clear();
+      };
+      for (size_t k = w; k < n && std::chrono::steady_clock::now() < deadline; k += workers) {
+        check(k);
+        std::string rec = encode(k);
+        putBytes(buf, (uint64_t)k);
+        putBytes(buf, (uint32_t)rec.size());
+        buf += rec;
+        if (buf.size() > (1 << 16)) {
+          flush();
+        }
+      }
+      flush();
+      close(p[1]);
+      _exit(0); // no destructors, no buffered output of the parent's twice
+    }
+    close(p[1]);
+    fds.push_back(p[0]);
+    pids.push_back(pid);
+  }
+  std::vector<std::string> data(workers);
+  std::vector<pollfd> polls;
+  for (int fd : fds) {
+    polls.push_back({fd, POLLIN, 0});
+  }
+  size_t open = workers;
+  char chunk[1 << 16];
+  while (open > 0) {
+    if (poll(polls.data(), polls.size(), -1) < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      break;
+    }
+    for (size_t w = 0; w < workers; w++) {
+      if (polls[w].fd < 0 || !(polls[w].revents & (POLLIN | POLLHUP | POLLERR))) {
+        continue;
+      }
+      ssize_t m = read(polls[w].fd, chunk, sizeof(chunk));
+      if (m > 0) {
+        data[w].append(chunk, (size_t)m);
+      } else {
+        close(polls[w].fd);
+        polls[w].fd = -1;
+        open--;
+      }
+    }
+  }
+  for (size_t w = 0; w < workers; w++) {
+    int status = 0;
+    waitpid(pids[w], &status, 0);
+    bool ok = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    messageWarningIf(!ok, "--reduce implies: a worker failed; its pairs count as not checked");
+    const std::string &s = data[w];
+    size_t at = 0;
+    while (ok && at + 12 <= s.size()) {
+      auto k = getBytes<uint64_t>(s, at);
+      auto len = getBytes<uint32_t>(s, at);
+      if (at + len > s.size()) {
+        break;
+      }
+      accept((size_t)k, s.substr(at, len));
+      at += len;
+    }
+  }
+}
+} // namespace
+
+std::vector<AssertionPtr>
+reduceByImplication(const std::vector<AssertionPtr> &in,
+                    const std::string &keep,
+                    std::vector<ImplicationRecord> *records,
+                    unsigned z3TimeoutMs, size_t *pairsChecked,
+                    const AtomPremises &premises, size_t maxPairs, bool *skipped,
+                    std::chrono::steady_clock::time_point deadline, size_t *unchecked,
+                    bool *deadlineHit) {
+  const size_t n = in.size();
+  std::vector<TemporalExpressionPtr> formulas;
+  for (const auto &a : in) {
+    formulas.push_back(a->_formula);
+  }
+  auto tokens = atomTokens(formulas, z3TimeoutMs);
+  Facts facts = proveFacts(formulas, tokens, premises, z3TimeoutMs);
+  Context ctx;
+  std::vector<Abstracted> abs;
+  std::vector<std::string> text;
+  for (const auto &a : in) {
+    abs.push_back(abstractFormula(a->_formula, tokens, ctx));
+    text.push_back(a->toString());
+  }
+
+  // H29: the pairs that share a consequent atom, or whose consequent atoms a fact links (H3b).
+  // Sound and incomplete (F4): a pair left out is an implication not found, never a wrong drop.
+  // A ⇒ B with no such link holds only if B is vacuous under A or its consequent follows from
+  // its own antecedent. Counted exactly in O(n) memory; stored only up to maxPairs
+  std::map<std::string, std::vector<size_t>> byAtom;
+  for (size_t i = 0; i < n; i++) {
+    if (abs[i].ok && abs[i].safety) {
+      for (const auto &at : abs[i].consequentAtoms) {
+        byAtom[at].push_back(i);
+      }
+    }
+  }
+  std::map<std::string, std::set<std::string>> linked;
+  for (const auto &f : facts.list) {
+    if (byAtom.count(f.p) && byAtom.count(f.q)) {
+      linked[f.p].insert(f.q);
+      linked[f.q].insert(f.p);
+    }
+  }
+  std::vector<std::pair<size_t, size_t>> candidates;
+  std::vector<size_t> seenBy(n, n);
+  size_t count = 0;
+  bool store = true;
+  auto visit = [&](size_t i, const std::vector<size_t> &group) {
+    for (size_t j : group) {
+      if (j == i || seenBy[j] == i) {
+        continue;
+      }
+      seenBy[j] = i;
+      if (j < i) {
+        continue; // counted from j
+      }
+      count++;
+      if (!store) {
+        continue;
+      }
+      if (maxPairs > 0 && count > maxPairs) {
+        store = false;
+        std::vector<std::pair<size_t, size_t>>().swap(candidates);
+      } else {
+        candidates.emplace_back(i, j);
+      }
+    }
+  };
+  for (size_t i = 0; i < n; i++) {
+    if (!(abs[i].ok && abs[i].safety)) {
+      continue;
+    }
+    for (const auto &at : abs[i].consequentAtoms) {
+      visit(i, byAtom[at]);
+      auto l = linked.find(at);
+      if (l != linked.end()) {
+        for (const auto &q : l->second) {
+          visit(i, byAtom[q]);
+        }
+      }
+    }
+  }
+  if (pairsChecked != nullptr) {
+    *pairsChecked = count;
+  }
+  if (skipped != nullptr) {
+    *skipped = !store;
+  }
+  if (!store) {
+    return in;
+  }
+  // H39: only a checked pair can be related, so the relations are kept per pair and per assertion
+  // (neighbours), not in an n x n matrix; every walk below visits the related pairs only
+  struct Pair {
+    size_t i, j;
+    bool ij, ji; // i implies j, j implies i
+  };
+  struct Edge {
+    size_t k;
+    bool to, from; // this one implies k, k implies this one
+  };
+  std::vector<Pair> related;
+  std::vector<std::vector<Edge>> adj(n);
+  std::map<std::pair<size_t, size_t>, std::vector<std::string>> usedFacts;
+  // H39: each pair's result, checked here or in worker processes (fork: BuDDy and Spot keep global state, so each
+  // worker has its own copy); merged in the pairs' order, so the result does not depend on the workers
+  struct Result {
+    bool checked = false, ij = false, ji = false;
+    std::vector<std::string> used;
+  };
+  std::vector<Result> results(candidates.size());
+  auto check = [&](size_t k) {
+    const auto &[i, j] = candidates[k];
+    Result &res = results[k];
+    Implication r = relation(abs[i], abs[j], ctx, &facts, &res.used);
+    res.checked = true;
+    res.ij = r == Implication::AImpliesB || r == Implication::Equivalent;
+    res.ji = r == Implication::BImpliesA || r == Implication::Equivalent;
+  };
+  size_t workers = clc::impliesWorkers;
+  if (workers == 0) {
+    workers = std::min<size_t>(clc::maxThreads, candidates.size() / IMPLIES_PAIRS_PER_WORKER);
+  }
+  workers = std::max<size_t>(1, std::min(workers, candidates.size()));
+  if (workers == 1) {
+    for (size_t k = 0; k < candidates.size() && std::chrono::steady_clock::now() < deadline; k++) {
+      check(k);
+    }
+  } else {
+    checkInWorkers(results.size(), workers, deadline, check,
+                   [&](size_t k) -> std::string { return encodeResult(results[k].ij, results[k].ji, results[k].used); },
+                   [&](size_t k, const std::string &rec) {
+                     results[k].checked = true;
+                     decodeResult(rec, results[k].ij, results[k].ji, results[k].used);
+                   });
+  }
+  size_t notChecked = 0;
+  for (size_t k = 0; k < candidates.size(); k++) {
+    const auto &[i, j] = candidates[k];
+    const Result &res = results[k];
+    if (!res.checked) {
+      notChecked++; // H39: past the deadline, unrelated
+      continue;
+    }
+    if (!res.used.empty()) {
+      usedFacts[{i, j}] = res.used;
+    }
+    if (res.ij || res.ji) {
+      related.push_back({i, j, res.ij, res.ji});
+      adj[i].push_back({j, res.ij, res.ji});
+      adj[j].push_back({i, res.ji, res.ij});
+    }
+  }
+  bool hit = notChecked > 0;
+
+  if (unchecked != nullptr) {
+    *unchecked = notChecked;
+  }
+  if (deadlineHit != nullptr) {
+    *deadlineHit = hit;
+  }
+
+  // equivalence classes: keep the smallest text of each (the pairs in H38's order: i, then j)
+  std::vector<Pair> equivalent;
+  for (const auto &p : related) {
+    if (p.ij && p.ji) {
+      equivalent.push_back(p);
+    }
+  }
+  std::sort(equivalent.begin(), equivalent.end(), [](const Pair &a, const Pair &b) {
+    return a.i != b.i ? a.i < b.i : a.j < b.j;
+  });
+  std::vector<size_t> rep(n);
+  std::iota(rep.begin(), rep.end(), 0);
+  std::function<size_t(size_t)> find = [&](size_t x) {
+    return rep[x] == x ? x : rep[x] = find(rep[x]);
+  };
+  for (const auto &p : equivalent) {
+    size_t a = find(p.i), b = find(p.j);
+    if (a != b) {
+      if (text[b] < text[a]) {
+        std::swap(a, b);
+      }
+      rep[b] = a;
+    }
+  }
+  std::vector<bool> dropped(n, false);
+  std::vector<std::string> why(n);
+  for (size_t i = 0; i < n; i++) {
+    if (find(i) != i) {
+      dropped[i] = true;
+      why[i] = "equivalent";
+    }
+  }
+
+  if (keep == "ranked") {
+    // best-ranked first: keep an assertion unless it is related to one already kept (the first
+    // kept one decides the reason)
+    std::vector<size_t> order;
+    for (size_t i = 0; i < n; i++) {
+      if (!dropped[i]) {
+        order.push_back(i);
+      }
+    }
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+      return in[a]->_finalScore > in[b]->_finalScore;
+    });
+    std::vector<size_t> keptAt(n, n); // position among the kept, n: not kept
+    size_t nKept = 0;
+    for (size_t i : order) {
+      size_t first = n;
+      bool implied = false;
+      for (const auto &e : adj[i]) {
+        // strict(k, i): k implies i only; strict(i, k): i implies k only
+        if (keptAt[e.k] < first && (e.from != e.to)) {
+          first = keptAt[e.k];
+          implied = e.from;
+        }
+      }
+      if (first < n) {
+        dropped[i] = true;
+        why[i] = implied ? "implied" : "implies";
+      } else {
+        keptAt[i] = nKept++;
+      }
+    }
+  } else {
+    bool stronger = keep != "weaker";
+    for (size_t i = 0; i < n; i++) {
+      if (dropped[i]) {
+        continue;
+      }
+      for (const auto &e : adj[i]) {
+        // a class representative j with strict(j, i) (stronger) or strict(i, j) (weaker)
+        if (find(e.k) == e.k && (stronger ? (e.from && !e.to) : (e.to && !e.from))) {
+          dropped[i] = true;
+          why[i] = stronger ? "implied" : "implies";
+          break;
+        }
+      }
+    }
+  }
+
+  std::vector<AssertionPtr> out;
+  for (size_t i = 0; i < n; i++) {
+    if (!dropped[i]) {
+      out.push_back(in[i]);
+    }
+  }
+  if (records != nullptr) {
+    for (size_t i = 0; i < n; i++) {
+      if (!dropped[i]) {
+        continue;
+      }
+      ImplicationRecord r{in[i], {}, why[i]};
+      std::vector<size_t> ks; // the kept ones related to i, ascending
+      size_t via = i;         // whose pairs the premises come from (CR1 C8b-2: the representative's, when it was dropped)
+      // the assertions x was dropped for (implied: those implying it; implies: those it implies)
+      auto related = [&](size_t x) {
+        std::vector<size_t> out;
+        for (const auto &e : adj[x]) {
+          if (why[x] == "implied" ? e.from : e.to) {
+            out.push_back(e.k);
+          }
+        }
+        std::sort(out.begin(), out.end());
+        return out;
+      };
+      if (why[i] == "equivalent") {
+        size_t rep = find(i);
+        if (!dropped[rep]) {
+          ks.push_back(rep);
+        } else {
+          // CR1 (C7b-4): the class's representative was itself dropped by an implication: name what it was dropped
+          // for (the record had no kept assertion)
+          r.relation = "equivalent, " + why[rep];
+          ks = related(rep);
+          via = rep;
+        }
+      } else {
+        ks = related(i);
+      }
+      for (size_t k : ks) {
+        if (dropped[k]) {
+          continue;
+        }
+        {
+          r.kept.push_back(in[k]);
+          auto u = usedFacts.find({std::min(via, k), std::max(via, k)});
+          if (u != usedFacts.end()) {
+            for (const auto &t : u->second) {
+              if (std::find(r.premises.begin(), r.premises.end(), t) == r.premises.end()) {
+                r.premises.push_back(t);
+              }
+            }
+          }
+        }
+      }
+      records->push_back(r);
+    }
+  }
+  return out;
+}
+
+} // namespace harm

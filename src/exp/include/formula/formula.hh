@@ -5,4 +5,5 @@
 #include "atom/NumericExpression.hh"
 #include "atom/Variable.hh"
 #include "expression/GenericExpression.hh"
+#include "expression/Ternary.hh"
 #include "temporal/temporal.hh"

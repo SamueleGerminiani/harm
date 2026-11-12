@@ -17,9 +17,25 @@ template <> void IntToBool::initEvaluate() {
 }
 
 template <> void IntToLogic::initEvaluate() {
+  // D-035: the integer extended from its own width to the cast's (a context may widen the cast):
+  // sign-extended when both are signed, zero-extended otherwise (IEEE 1800-2017 11.8.2)
   directEvaluate = [this](size_t time) {
-    return Logic(this->_size, isSigned(this->_type),
-                 (ULogic)_e->evaluate(time), 0, 0);
+    UInt raw = _e->evaluate(time);
+    const size_t w = std::min<size_t>(_e->getType().second, 64);
+    const bool sx = isSigned(this->_type) && isSigned(_e->getType().first);
+    ULogic v;
+    if (w >= 64) {
+      v = sx && (SInt)raw < 0 ? ~((ULogic)~raw) : (ULogic)raw;
+    } else if (sx && ((raw >> (w - 1)) & 1)) {
+      ULogic m = (ULogic(1) << w) - 1;
+      v = ~ULogic(0) & ~m | ((ULogic)raw & m); // the sign bit repeated above the own width
+    } else {
+      v = (ULogic)(raw & ((UInt(1) << w) - 1));
+    }
+    if (this->_size < sizeOfLogic() * 8) {
+      v &= (ULogic(1) << this->_size) - 1;
+    }
+    return Logic(this->_size, isSigned(this->_type), v, 0, 0);
   };
   disableCache();
 }
@@ -38,10 +54,9 @@ template <> void FloatToBool::initEvaluate() {
 }
 
 template <> void FloatToInt::initEvaluate() {
+  // D-035: a float becomes a signed integer (truncated towards zero), as the cast's type says
   directEvaluate = [this](size_t time) {
-    return _e->getType().first == ExpType::SInt
-               ? (SInt)_e->evaluate(time)
-               : (UInt)_e->evaluate(time);
+    return (UInt)(SInt)_e->evaluate(time);
   };
   disableCache();
 }
@@ -71,9 +86,17 @@ template <> void LogicToBool::initEvaluate() {
 
 template <> void LogicToInt::initEvaluate() {
   directEvaluate = [this](size_t time) {
-    return _e->getType().first == ExpType::SInt
-               ? (SInt)_e->evaluate(time).getSignedValue()
+    // D-035: the sign of the logic operand (its type is SLogic or ULogic, never SInt)
+    return isSigned(_e->getType().first)
+               ? (UInt)(SInt)_e->evaluate(time).getSignedValue()
                : (UInt)_e->evaluate(time).getUnsignedValue();
+  };
+  disableCache();
+}
+
+template <> void BoolToLogic::initEvaluate() {
+  directEvaluate = [this](size_t time) {
+    return Logic(1, false, (ULogic)(_e->evaluate(time) ? 1 : 0), 0, 0);
   };
   disableCache();
 }
@@ -156,6 +179,14 @@ FloatToLogic::TypeCast(FloatExpressionPtr e)
   initEvaluate();
 }
 
+//bool
+template <>
+BoolToLogic::TypeCast(PropositionPtr e)
+    : LogicExpression(ExpType::ULogic, 1, e->getMaxTime()), _e(e) {
+
+  initEvaluate();
+}
+
 //------------------acceptVisitor------------------
 template <> void IntToFloat::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
@@ -182,6 +213,9 @@ template <> void FloatToInt::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
 template <> void FloatToLogic::acceptVisitor(ExpVisitor &vis) {
+  vis.visit(*this);
+}
+template <> void BoolToLogic::acceptVisitor(ExpVisitor &vis) {
   vis.visit(*this);
 }
 

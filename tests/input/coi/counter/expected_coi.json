@@ -1,0 +1,89 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "counter",
+    "top": "counter",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "hand-written",
+      "version": "edges.txt"
+    }
+  },
+  "targets": {
+    "cnt": {
+      "sources": [
+        {
+          "sig": "cnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "en",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "en": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    },
+    "wrap": {
+      "sources": [
+        {
+          "sig": "cnt",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "en",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    }
+  },
+  "unknown": [],
+  "predicates": []
+}

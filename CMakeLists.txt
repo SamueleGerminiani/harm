@@ -31,8 +31,19 @@ elseif (CMAKE_COMPILER_IS_GNUCXX)
     #Required for youcompleteme
     add_compile_options("-std=c++1z")
     add_compile_options("-Wno-psabi")
-    add_link_options("--profile")
 endif()
+# Profiling (gprof) is opt-in: -DHARM_PROFILE=ON compiles and links with -pg. A default build writes
+# no gmon.out (until H13 an unconditional "--profile" link option wrote one wherever HARM ran,
+# without call-graph data)
+option(HARM_PROFILE "Build HARM for gprof (-pg; every run writes gmon.out)" OFF)
+if(HARM_PROFILE)
+    add_compile_options("-pg")
+    add_link_options("-pg")
+    message(STATUS "HARM_PROFILE: built for gprof (-pg)")
+endif()
+# Every floating-point operation rounded, as on x86_64: on arm64, contracting `1 - a*b` into a fused
+# multiply-add changes the last bit of the decision-tree scores, and the mined assertions (H12, F-M2)
+add_compile_options("-ffp-contract=off")
 
 
 ### BUILD TYPE ###
@@ -134,6 +145,38 @@ add_subdirectory(src/SQLiteCpp)
 find_package(SPOTLTL REQUIRED)
 add_compile_definitions(SPOTLTL)
 
+#z3: proposition equivalence (H2), built in third_party with the same compiler as HARM
+option(HARM_WITH_Z3 "Use Z3 to decide proposition equivalence (--reduce equiv)" ON)
+if(HARM_WITH_Z3)
+    find_package(Z3 CONFIG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/z3 NO_DEFAULT_PATH)
+    message(STATUS "Z3 ${Z3_VERSION_STRING} found")
+    add_compile_definitions(HARM_WITH_Z3)
+endif()
+
+#third-party libraries must be built with the same compiler as HARM: mixing C++ runtimes
+#(e.g. two libstdc++ versions, or libstdc++ and libc++) makes HARM crash at start-up
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version
+    OUTPUT_VARIABLE HARM_CXX_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(REGEX REPLACE "\n.*" "" HARM_CXX_VERSION "${HARM_CXX_VERSION}")
+set(HARM_DEPS spot antlr4 boost)
+if(HARM_WITH_Z3)
+    list(APPEND HARM_DEPS z3)
+endif()
+foreach(dep ${HARM_DEPS})
+    set(marker ${CMAKE_SOURCE_DIR}/third_party/${dep}/.harm_toolchain)
+    if(EXISTS ${marker})
+        file(STRINGS ${marker} dep_cxx_version LIMIT_COUNT 1)
+        if(NOT dep_cxx_version STREQUAL HARM_CXX_VERSION)
+            message(WARNING "third_party/${dep} was built with '${dep_cxx_version}', "
+                "but HARM is being built with '${HARM_CXX_VERSION}'. "
+                "Rebuild the dependencies with the same compiler (see README).")
+        endif()
+    else()
+        message(WARNING "third_party/${dep} has no compiler record (.harm_toolchain): "
+            "make sure it was built with '${HARM_CXX_VERSION}' (see README).")
+    endif()
+endforeach()
+
 
 ### LIBRARIES LINKED TO EVERYONE ######################################
 
@@ -174,8 +217,17 @@ link_libraries(ddd)
 SET(NAME harm)
 add_executable(${NAME} src/main.cc)
 
+#HARM's version (git describe), refreshed at every build (H11)
+add_custom_target(harm_version ALL
+    COMMAND ${CMAKE_COMMAND} -DSRC=${CMAKE_SOURCE_DIR} -DOUT=${CMAKE_BINARY_DIR}/generated/harmVersion.hh
+            -P ${CMAKE_SOURCE_DIR}/cmake/version.cmake
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/harmVersion.hh)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
 #Command line parser
 add_subdirectory(src/commandLineParser)
+add_dependencies(commandLineParser harm_version)
+add_dependencies(${NAME} harm_version)
 target_link_libraries(${NAME} commandLineParser)
 
 #c++17 filesystem

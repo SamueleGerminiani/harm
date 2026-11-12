@@ -29,9 +29,6 @@ void VarDeclarationParserHandler::enterVarDec(
   size_t left;
   size_t right;
   if (ctx->range() != nullptr) {
-    messageErrorIf(!ctx->range()->SINTEGER().empty(),
-                   "Negative index in bit range!" +
-                       printErrorMessage());
     messageErrorIf(ctx->range()->UINTEGER().empty(),
                    "Invalid range!" + printErrorMessage());
 

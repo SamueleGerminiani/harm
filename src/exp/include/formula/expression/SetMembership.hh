@@ -49,6 +49,9 @@ public:
   /// @brief Return the ranges of the operator
   std::vector<std::pair<GenericPtr<T>, GenericPtr<T>>> getRanges();
 
+  /// @brief the comparisons whose disjunction is the membership test
+  std::vector<PropositionPtr> &getConditions() { return _conditions; }
+
   SetMembership &operator=(const SetMembership &other) = delete;
 
   /// @brief Return the operator of the expression

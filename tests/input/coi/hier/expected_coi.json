@@ -1,0 +1,104 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "hier",
+    "top": "hier",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 1,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "hand-written",
+      "version": "edges.txt"
+    }
+  },
+  "targets": {
+    "N": {
+      "sources": []
+    },
+    "W": {
+      "sources": []
+    },
+    "din": {
+      "sources": []
+    },
+    "dout": {
+      "sources": [
+        {
+          "sig": "din",
+          "depths": [
+            3
+          ]
+        },
+        {
+          "sig": "g[0]::w",
+          "depths": [
+            2
+          ]
+        },
+        {
+          "sig": "g[1]::w",
+          "depths": [
+            1
+          ]
+        },
+        {
+          "sig": "g[2]::w",
+          "depths": [
+            0
+          ]
+        }
+      ]
+    },
+    "g[0]::w": {
+      "sources": [
+        {
+          "sig": "din",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "g[1]::w": {
+      "sources": [
+        {
+          "sig": "din",
+          "depths": [
+            2
+          ]
+        },
+        {
+          "sig": "g[0]::w",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    },
+    "g[2]::w": {
+      "sources": [
+        {
+          "sig": "din",
+          "depths": [
+            3
+          ]
+        },
+        {
+          "sig": "g[0]::w",
+          "depths": [
+            2
+          ]
+        },
+        {
+          "sig": "g[1]::w",
+          "depths": [
+            1
+          ]
+        }
+      ]
+    }
+  },
+  "unknown": [],
+  "predicates": []
+}

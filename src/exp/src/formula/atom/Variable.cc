@@ -98,7 +98,8 @@ void LogicVariable::initEvaluate() {
     ULogic ret_x = val_x >> shift;
     ULogic ret_z = val_z >> shift;
 
-    if (_type == ExpType::SLogic && ((1 << (_size - 1)) & ret_i)) {
+    // D-035: a ULogic shift (an int shift is undefined above 31 bits)
+    if (_type == ExpType::SLogic && ((ULogic(1) << (_size - 1)) & ret_i)) {
       return Logic(_size, isSigned(this->_type), ret_i | ~_mask,
                    ret_x, ret_z);
     }

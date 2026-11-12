@@ -1,0 +1,9 @@
+# mode: ordered
+### default_ass.txt
+G({s, go} !== 3'bxxx)
+G((go === 1'b1 ? cnt : 4'b0) > 4'b101 -> cnt >= 4'b110)
+G((go === 1'b1 ? cnt : 4'b0) > 4'b101 -> s !== 2'b0)
+G((go === 1'b1 ? cnt : 4'b0) > 4'b101 -> {s, go} !== 3'bxxx)
+G({go, s} == 3'b110 -> cnt >= 4'b110)
+G({go, s} == 3'b110 -> s !== 2'b0)
+G({go, s} == 3'b110 -> {s, go} !== 3'bxxx)

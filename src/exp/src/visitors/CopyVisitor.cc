@@ -7,6 +7,7 @@
 #include "formula/atom/NumericExpression.hh"
 #include "formula/atom/Variable.hh"
 #include "formula/expression/BitSelector.hh"
+#include "formula/expression/Ternary.hh"
 #include "formula/expression/GenericExpression.hh"
 #include "formula/expression/SetMembership.hh"
 #include "formula/expression/Substring.hh"
@@ -200,6 +201,9 @@ EXPRESSION(IntBAnd, _int, _int)
 EXPRESSION(IntBOr, _int, _int)
 EXPRESSION(IntBXor, _int, _int)
 EXPRESSION(IntNot, _int, _int)
+EXPRESSION(IntNeg, _int, _int)
+EXPRESSION(LogicNeg, _logic, _logic)
+EXPRESSION(FloatNeg, _float, _float)
 EXPRESSION(IntEq, _int, _proposition)
 EXPRESSION(IntNeq, _int, _proposition)
 EXPRESSION(IntLess, _int, _proposition)
@@ -207,10 +211,13 @@ EXPRESSION(IntLessEq, _int, _proposition)
 EXPRESSION(IntGreater, _int, _proposition)
 EXPRESSION(IntGreaterEq, _int, _proposition)
 EXPRESSION(IntRShift, _int, _int)
+EXPRESSION(IntARShift, _int, _int)
+EXPRESSION(LogicARShift, _logic, _logic)
 EXPRESSION(IntLShift, _int, _int)
 TYPE_CAST(IntToBool, _int, _proposition)
 TYPE_CAST(IntToFloat, _int, _float)
 TYPE_CAST(IntToLogic, _int, _logic)
+TYPE_CAST(BoolToLogic, _proposition, _logic)
 UNARY_FUNCTION(IntPast, _int)
 UNARY_FUNCTION(IntStable, _proposition)
 UNARY_FUNCTION(IntFell, _proposition)
@@ -218,8 +225,11 @@ UNARY_FUNCTION(IntRose, _proposition)
 
 void CopyVisitor::visit(IntBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _int = generatePtr<IntBitSelector>(_int, o.getUpperBound(),
-                                     o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  auto sel = generatePtr<IntBitSelector>(_int, o.getLowerBound(),
+                                       o.getUpperBound());
+  sel->setSourceIndices(o.getSourceLeft(), o.getSourceRight());
+  _int = sel;
 }
 
 void CopyVisitor::visit(IntSetMembership &o) {
@@ -249,15 +259,46 @@ EXPRESSION(LogicLShift, _logic, _logic)
 TYPE_CAST(LogicToBool, _logic, _proposition)
 TYPE_CAST(LogicToFloat, _logic, _float)
 TYPE_CAST(LogicToInt, _logic, _int)
+// H25 (D-039): $signed / $unsigned
+void CopyVisitor::visit(LogicSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  _logic = generatePtr<LogicSignCast>(_logic, o.toSigned());
+}
+void CopyVisitor::visit(IntSignCast &o) {
+  o.getItem()->acceptVisitor(*this);
+  _int = generatePtr<IntSignCast>(_int, o.toSigned());
+}
 UNARY_FUNCTION(LogicPast, _logic)
 UNARY_FUNCTION(LogicStable, _proposition)
 UNARY_FUNCTION(LogicFell, _proposition)
 UNARY_FUNCTION(LogicRose, _proposition)
 
+EXPRESSION(LogicCaseEq, _logic, _proposition)
+EXPRESSION(LogicCaseNeq, _logic, _proposition)
+EXPRESSION(LogicConcat, _logic, _logic)
+
+#define TERNARY(OPERATOR, RESULT)                                    \
+  void CopyVisitor::visit(OPERATOR &o) {                             \
+    o.getCondition()->acceptVisitor(*this);                          \
+    auto cond = _proposition;                                        \
+    o.getWhenTrue()->acceptVisitor(*this);                           \
+    auto whenTrue = RESULT;                                          \
+    o.getWhenFalse()->acceptVisitor(*this);                          \
+    auto whenFalse = RESULT;                                         \
+    RESULT = generatePtr<OPERATOR>(cond, whenTrue, whenFalse);       \
+  }
+TERNARY(PropositionTernary, _proposition)
+TERNARY(IntTernary, _int)
+TERNARY(LogicTernary, _logic)
+TERNARY(FloatTernary, _float)
+
 void CopyVisitor::visit(LogicBitSelector &o) {
   o.getItem()->acceptVisitor(*this);
-  _logic = generatePtr<LogicBitSelector>(_logic, o.getUpperBound(),
-                                         o.getLowerBound());
+  //the constructor takes (lower bound, upper bound)
+  auto sel = generatePtr<LogicBitSelector>(_logic, o.getLowerBound(),
+                                       o.getUpperBound());
+  sel->setSourceIndices(o.getSourceLeft(), o.getSourceRight());
+  _logic = sel;
 }
 
 void CopyVisitor::visit(LogicSetMembership &o) {

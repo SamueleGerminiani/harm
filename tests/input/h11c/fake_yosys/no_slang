@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# behaves like yosys 0.47 without the slang frontend: 'help <anything>' exits 0, running
+# read_slang fails (H11c, F-L3)
+case "$*" in
+  *"help read_slang"*) echo "No such command or cell type: read_slang"; exit 0 ;;
+  *read_slang*) echo "ERROR: No such command: read_slang (type 'help' for a command overview)"; exit 1 ;;
+  *) exit 0 ;;
+esac

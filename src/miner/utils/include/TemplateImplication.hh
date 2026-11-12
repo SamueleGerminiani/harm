@@ -7,6 +7,7 @@
 #include "Permutator.hh"
 #include "formula/atom/Atom.hh"
 #include "minerUtils.hh"
+#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -192,6 +193,10 @@ public:
   /** \brief get the number of permutations generated */
   size_t getNumberOfPermutations() const;
 
+  /// @brief keep only the permutations for which 'keep' returns true once the permutation is
+  /// loaded (H7, COI filter mode); call after genPermutations, before copying the template
+  void keepPermutations(const std::function<bool()> &keep);
+
   /** \brief returns true if the assertion holds on the input trace, false otherwise */
   bool assHoldsOnTrace(harm::Location update);
   /** \brief returns true if the assertion (offset) holds on the input trace, false otherwise
@@ -237,6 +242,12 @@ public:
    */
   void fillContingency(size_t (&ct)[3][3], bool offset);
 
+  /// CR1 (C7b-1): the last cycle of the trace segment holding `time`
+  size_t segmentEnd(size_t time);
+
+  /// CR1 (C7b-5): recompute the antecedent depth of the loaded formula
+  void refreshAntDepth();
+
   void setL1Threads(size_t n);
 
   void setDTLimits(const DTLimits &l);
@@ -250,8 +261,9 @@ public:
   void printContingency();
 
   /** \brief check if this (fully instantied) template holds on the input trace, it prints the reason if it does not hold
+   * \param context the name of the context, for the --check-dump-eval index
    */
-  void check();
+  void check(const std::string &context);
 
   /** \brief check if the instance at time 'timechoice is fundemental to make the ant true in the DTO
    * \param time is the time instant to check

@@ -1,0 +1,20 @@
+<harm>
+    <!-- H1, acceptance test A5: every new operator in propositions, plus an invariant template.
+         Hand-derived truth table (rows t0..t5):
+           A1 {go, s} == 3'b110                      t1 t2 t5
+           A2 (go === 1'b1 ? cnt : 4'h0) > 4'd5      t1 t2 t5
+           C1 cnt >= 4'd6                            t1 t2 t3 t5
+           C2 s !== 2'b00                            t1 t2 t3 t5
+           C3 {s, go} !== 3'bxxx                     always
+         Expected: G(C3) and the six implications {A1,A2} -> {C1,C2,C3}; no other invariant. -->
+    <context name="default">
+        <prop exp="{go, s} == 3'b110" loc="a"/>
+        <prop exp="(go === 1'b1 ? cnt : 4'h0) > 4'd5" loc="a"/>
+        <prop exp="cnt >= 4'd6" loc="c"/>
+        <prop exp="s !== 2'b00" loc="c"/>
+        <prop exp="{s, go} !== 3'bxxx" loc="c"/>
+        <template exp="G(P0 -> P1)"/>
+        <template exp="G(P0)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

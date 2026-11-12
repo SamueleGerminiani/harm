@@ -1,0 +1,17 @@
+# H1, acceptance test A6. Copied from trivergence code/tests/fixtures/m0/harm/normalize_cases.yaml
+# (trivergence commit 37b10e2): HARM --sva output lines (HARM a8c302b) and the SystemVerilog that
+# trivergence's adapter turns them into. After H1, HARM's own --sva-assert printing of each input
+# must give the expected body. Format: <input> ==> <expected body>
+always (!req |-> nexttime !ack) ==> !req |=> !ack
+always (!req ##1 true |-> !ack) ==> !req ##1 1'b1 |-> !ack
+always (!ack && req |-> nexttime ack) ==> !ack && req |=> ack
+always (ack ##1 req |-> nexttime ack) ==> ack ##1 req |=> ack
+always (count == 8'b1001 && en |-> wrap) ==> count == 8'b1001 && en |-> wrap
+always (!(count == 8'b1001) ##1 true |-> nexttime count <= 8'b1001) ==> !(count == 8'b1001) ##1 1'b1 |=> count <= 8'b1001
+always (count == 8'b1001 ##1 !(count == 8'b1001) |-> count == 8'b0) ==> count == 8'b1001 ##1 !(count == 8'b1001) |-> count == 8'b0
+always (!en && count == 8'b1001 |-> nexttime count == 8'b1001) ==> !en && count == 8'b1001 |=> count == 8'b1001
+always (u_core::state == 2'b10 |-> nexttime u_core::busy) ==> u_core.state == 2'b10 |=> u_core.busy
+# trivergence rejects these three (expected: null); HARM now prints them as valid SystemVerilog
+always (a |-> nexttime nexttime b) ==> a |-> ##2 b
+always (a |-> s_eventually b) ==> a |-> s_eventually b
+always (a until b) ==> a until b

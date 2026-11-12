@@ -7,9 +7,11 @@ SET(EXP_SRCS
     src/formula/atom/Variable.cc 
     src/formula/expression/GenericExpression.cc
     src/formula/expression/BitSelector.cc
+    src/formula/expression/Ternary.cc
     src/formula/expression/Substring.cc
     src/formula/expression/SetMembership.cc
     src/formula/expression/TypeCast.cc
+    src/formula/expression/SignCast.cc
     src/formula/function/Function.cc
     #temporal
     src/formula/temporal/BooleanLayer.cc
@@ -23,9 +25,14 @@ SET(EXP_SRCS
     src/visitors/TraceChangerVisitor.cc
     #utils
     src/expUtils/expUtils.cc
+    src/expUtils/smtEquivalence.cc
     )
 
 
 add_library(exp ${EXP_SRCS})
 
 target_include_directories(exp PUBLIC include ../miner/utils/include/)
+if(HARM_WITH_Z3)
+    target_sources(exp PRIVATE src/visitors/ExpToZ3Visitor.cc)
+    target_link_libraries(exp PUBLIC z3::libz3)
+endif()

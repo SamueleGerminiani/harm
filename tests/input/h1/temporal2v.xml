@@ -1,0 +1,24 @@
+<harm>
+    <!-- H1 validation: Verilator replay of HARM's SVA output (tests/oracle/verilator_replay.py) -->
+    <context name="default">
+        <prop exp="en" loc="a,dt"/>
+        <prop exp="cnt == 4'd9" loc="a,c,dt"/>
+        <prop exp="cnt === 4'h0" loc="a,c,dt"/>
+        <prop exp="{st, en} == 3'b001" loc="a,c,dt"/>
+        <prop exp="st == 2'd1" loc="a,c"/>
+        <prop exp="st == 2'd2" loc="a,c"/>
+        <prop exp="(st == 2'd2 ? cnt : 4'h0) != '0" loc="a,c"/>
+        <prop exp="data[7:4] == cnt" loc="c"/>
+        <prop exp="data === {cnt, ~cnt}" loc="c"/>
+        <prop exp="st inside {2'd0, 2'd1, 2'd2}" loc="c"/>
+        <template exp="G(P0)"/>
+        <template exp="G(P0 -> X P1)"/>
+        <template exp="G(P0 -> X X P1)"/>
+        <template exp="G({P0 ; P1} |-> P2)"/>
+        <template dtLimits="3A,-0.1E" exp="G({..&&..} |-> X P0)"/>
+        <template dtLimits="3A,-0.1E" exp="G({..##1..} |-> P0)"/>
+        <template exp="G(P0 -> P1 W P2)"/>
+        <template exp="G(P0 -> F P1)"/>
+        <sort name="frequency" exp="atct/traceLength"/>
+    </context>
+</harm>

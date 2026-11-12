@@ -180,10 +180,10 @@ TEST(ClsTest, contiguousSingleVsRange) {
 
   EXPECT_EQ(prop2String(props[0]),
             "v1 inside {[" + std::to_string(values[0]) + ":" +
-                std::to_string(values[2]) + "]} ");
+                std::to_string(values[2]) + "]}"); // H18 (D-034): no trailing blank after inside {...}
   EXPECT_EQ(prop2String(props[1]),
             "v1 inside {[" + std::to_string(values[3]) + ":" +
-                std::to_string(values[4]) + "]} ");
+                std::to_string(values[4]) + "]}"); // H18 (D-034): no trailing blank after inside {...}
 
   //E + Range
   cc._clsOps.clear();
@@ -200,8 +200,8 @@ TEST(ClsTest, contiguousSingleVsRange) {
 
   EXPECT_EQ(prop2String(props[0]),
             "v1 inside {[" + std::to_string(values[0]) + ":" +
-                std::to_string(values[2]) + "]} ");
+                std::to_string(values[2]) + "]}"); // H18 (D-034): no trailing blank after inside {...}
   EXPECT_EQ(prop2String(props[1]),
             "v1 inside {[" + std::to_string(values[3]) + ":" +
-                std::to_string(values[4]) + "]} ");
+                std::to_string(values[4]) + "]}"); // H18 (D-034): no trailing blank after inside {...}
 }

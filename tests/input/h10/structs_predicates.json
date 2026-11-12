@@ -1,0 +1,11 @@
+{
+ "design": "structs",
+ "predicates": [
+  {
+   "expr": "bus::valid",
+   "targets": [
+    "c::val"
+   ]
+  }
+ ]
+}

@@ -6,10 +6,13 @@
 #include <stdlib.h>
 #include <string>
 #include <thread>
+
+#include "expUtils/smtEquivalence.hh"
 #include <unordered_map>
 #include <vector>
 
 #include "CSVtraceReader.hh"
+#include "harmVersion.hh"
 #include "ManualDefinition.hh"
 #include "Miner.hh"
 #include "Qualifier.hh"
@@ -46,8 +49,14 @@ int main(int arg, char *argv[]) {
   //enforce deterministic rand
   srand(1);
 
-  //print welcome message
-  std::cout << getIcon() << "\n";
+  //print welcome message (not with --version, which prints one line, H11)
+  bool versionOnly = false;
+  for (int i = 1; i < arg; i++) {
+    versionOnly |= std::string(argv[i]) == "--version";
+  }
+  if (!versionOnly) {
+    std::cout << getIcon() << "\n";
+  }
 
   //it holds the employed modules
   Miner::ModulesConfig config;
@@ -158,6 +167,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(clc::traceFiles.empty(),
                    "No vcd trace found in: " +
                        result["vcd-dir"].as<std::string>());
+    // D-033: path order, not the directory's (unspecified) order
+    std::sort(clc::traceFiles.begin(), clc::traceFiles.end());
   } else if (result.count("csv-dir")) {
     messageErrorIf(!std::filesystem::is_directory(
                        result["csv-dir"].as<std::string>()),
@@ -173,6 +184,8 @@ void parseCommandLineArguments(int argc, char *args[]) {
     messageErrorIf(clc::traceFiles.empty(),
                    "No csv trace found in: " +
                        result["csv-dir"].as<std::string>());
+    // D-033: path order, not the directory's (unspecified) order
+    std::sort(clc::traceFiles.begin(), clc::traceFiles.end());
   }
 
   if (result.count("reset")) {
@@ -276,6 +289,75 @@ void parseCommandLineArguments(int argc, char *args[]) {
   if (result.count("keep-vac-ass")) {
     clc::keepVacAss = 1;
   }
+  if (result.count("skip-invalid-props")) {
+    clc::skipInvalidProps = true;
+  }
+  clc::harmVersion = HARM_VERSION;
+  if (result.count("dump-prop-table")) {
+    clc::dumpPropTable = result["dump-prop-table"].as<std::string>();
+  }
+
+  if (result.count("dump-assertion-info")) {
+    clc::dumpAssertionInfo = result["dump-assertion-info"].as<std::string>();
+  }
+  if (result.count("dump-coi-report")) {
+    clc::dumpCoiReport = result["dump-coi-report"].as<std::string>();
+  }
+  if (result.count("reduce")) {
+    clc::reduce = result["reduce"].as<std::string>();
+    messageErrorIf(clc::reduce != "syntactic" && clc::reduce != "equiv" &&
+                       clc::reduce != "implies",
+                   "--reduce must be 'syntactic', 'equiv' or 'implies', got '" +
+                       clc::reduce + "'");
+    messageErrorIf(clc::reduce != "syntactic" && !expression::smt::available(),
+                   "--reduce " + clc::reduce +
+                       " needs Z3: build HARM with -DHARM_WITH_Z3=ON");
+  }
+  if (result.count("keep")) {
+    clc::keep = result["keep"].as<std::string>();
+    messageErrorIf(clc::keep != "stronger" && clc::keep != "weaker" &&
+                       clc::keep != "ranked",
+                   "--keep must be 'stronger', 'weaker' or 'ranked', got '" +
+                       clc::keep + "'");
+    messageErrorIf(clc::reduce != "implies", "--keep needs --reduce implies");
+  }
+  if (result.count("trace-end")) {
+    clc::traceEnd = result["trace-end"].as<std::string>();
+    messageErrorIf(clc::traceEnd != "harm" && clc::traceEnd != "sva",
+                   "--trace-end must be 'harm' or 'sva', got '" + clc::traceEnd +
+                       "'");
+  }
+  if (result.count("dump-implications")) {
+    clc::dumpImplications = result["dump-implications"].as<std::string>();
+    messageErrorIf(clc::reduce != "implies",
+                   "--dump-implications needs --reduce implies");
+  }
+  if (result.count("atom-premises")) {
+    clc::atomPremises = true;
+    messageErrorIf(clc::reduce != "implies", "--atom-premises needs --reduce implies");
+  }
+  if (result.count("deadline")) {
+    clc::deadline = result["deadline"].as<double>();
+    messageErrorIf(clc::deadline < 0, "--deadline must be at least 0");
+    clc::mineDeadline = 0.75 * clc::deadline;
+  }
+  if (result.count("mine-deadline")) {
+    clc::mineDeadline = result["mine-deadline"].as<double>();
+    messageErrorIf(clc::mineDeadline < 0, "--mine-deadline must be at least 0");
+  }
+  if (result.count("implies-workers")) {
+    clc::impliesWorkers = result["implies-workers"].as<size_t>();
+    messageErrorIf(clc::reduce != "implies", "--implies-workers needs --reduce implies");
+    messageErrorIf(clc::impliesWorkers == 0, "--implies-workers must be at least 1");
+  }
+  if (result.count("implies-max-pairs")) {
+    clc::impliesMaxPairs = result["implies-max-pairs"].as<size_t>();
+    messageErrorIf(clc::reduce != "implies", "--implies-max-pairs needs --reduce implies");
+  }
+  if (result.count("atom-premises-max")) {
+    clc::atomPremisesMax = result["atom-premises-max"].as<size_t>();
+    messageErrorIf(!clc::atomPremises, "--atom-premises-max needs --atom-premises");
+  }
 
   if (result.count("dump-trace-as-csv")) {
     clc::dumpTraceAsCSV =
@@ -320,10 +402,13 @@ void parseCommandLineArguments(int argc, char *args[]) {
           clc::faultyTraceFiles.push_back(entry.path().u8string());
         }
       }
-      //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage
+      //shuffle the faulty traces, to have an immediate potential outlook on the whole fault coverage;
+      //sort first (the directory order is unspecified) and use a fixed seed, so that fault ids, and
+      //therefore the minimum covering subset, are the same on every run
+      std::sort(clc::faultyTraceFiles.begin(),
+                clc::faultyTraceFiles.end());
       std::shuffle(clc::faultyTraceFiles.begin(),
-                   clc::faultyTraceFiles.end(),
-                   std::mt19937{std::random_device{}()});
+                   clc::faultyTraceFiles.end(), std::mt19937{0});
 
     } else if (clc::parserType == "csv") {
       for (const auto &entry : std::filesystem::directory_iterator(
@@ -332,6 +417,9 @@ void parseCommandLineArguments(int argc, char *args[]) {
           clc::faultyTraceFiles.push_back(entry.path().u8string());
         }
       }
+      //the directory order is unspecified: sort, so that fault ids are the same on every run
+      std::sort(clc::faultyTraceFiles.begin(),
+                clc::faultyTraceFiles.end());
     }
 
     if (result.count("find-min-subset")) {
@@ -427,6 +515,17 @@ void parseCommandLineArguments(int argc, char *args[]) {
                        clc::checkDumpEvalDirectory + "'");
   }
 }
+/// @brief the declared index of bit position pos (from the right) of a variable: with a declared
+/// range [l:r] (D-028) it is r + pos (descending) or r - pos (ascending); otherwise pos
+static long declaredIndex(const harm::TracePtr &trace, const std::string &name,
+                          size_t pos) {
+  long l, r;
+  if (trace->getDeclaredRange(name, l, r)) {
+    return l >= r ? r + (long)pos : r - (long)pos;
+  }
+  return (long)pos;
+}
+
 void genConfigFile(std::string &configFile,
                    const TraceReaderPtr &tr) {
   messageErrorIf(tr == nullptr,
@@ -465,7 +564,7 @@ void genConfigFile(std::string &configFile,
         if (clc::splitLogic && isLogic(type)) {
           for (size_t i = 0; i < size; i++) {
             ofs << "\t\t<prop exp=\"";
-            ofs << name + "[" + std::to_string(i) + "]";
+            ofs << name + "[" + std::to_string(declaredIndex(trace, name, i)) + "]";
             ofs << "\"";
             ofs << " loc=\"c,dt\"/>"
                 << "\n";
@@ -511,7 +610,7 @@ void genConfigFile(std::string &configFile,
       if (clc::splitLogic && isLogic(type)) {
         for (size_t i = 0; i < size; i++) {
           ofs << "\t\t<prop exp=\"";
-          ofs << name + "[" + std::to_string(i) + "]";
+          ofs << name + "[" + std::to_string(declaredIndex(trace, name, i)) + "]";
           ofs << "\"";
           ofs << " loc=\"c,dt\"/>"
               << "\n";

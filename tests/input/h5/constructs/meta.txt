@@ -1,0 +1,8 @@
+# harm-coi arguments for this validation design (no hand-written cones: it is checked by
+# simulation, tests/coi/perturb.py, and against yosys, tests/coi/xcheck_yosys.py)
+design = constructs
+top = constructs
+vcd_scope = tb::dut
+vcd_recursion = 1
+clock = clk
+max_depth = 3

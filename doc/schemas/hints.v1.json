@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "harm/hints.v1.json",
+  "title": "HARM hints v1 (H22, D-036): signal roles, proposition placement and templates per timing class",
+  "description": "Written by harm-coi --hints from the RTL (origin rtl); the same form for hints from a specification (origin llm), so the two can be merged. Names are HARM's, as in coi.json.",
+  "type": "object",
+  "required": ["version", "meta", "roles", "classes", "propositions"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": "1"},
+    "meta": {
+      "type": "object",
+      "required": ["design", "top", "clock", "reset", "generator"],
+      "properties": {
+        "design": {"type": "string"},
+        "top": {"type": "string"},
+        "clock": {"type": "string"},
+        "reset": {"type": "array", "items": {"type": "string"}},
+        "generator": {"type": "object"}
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["role", "control", "origin", "rule"],
+        "additionalProperties": false,
+        "properties": {
+          "role": {"enum": ["input", "reset", "const", "clock", "comb", "state", "unknown"]},
+          "control": {"type": "boolean"},
+          "origin": {"enum": ["rtl", "llm"]},
+          "rule": {"type": "string"}
+        }
+      }
+    },
+    "classes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["domain", "template", "dtLimits", "targets", "origin", "rule"],
+        "additionalProperties": false,
+        "properties": {
+          "domain": {"type": "integer", "minimum": 1},
+          "template": {"type": "string"},
+          "dtLimits": {"type": "string"},
+          "targets": {"type": "array", "items": {"type": "string"}},
+          "origin": {"enum": ["rtl", "llm"]},
+          "rule": {"type": "string"}
+        }
+      }
+    },
+    "propositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["expr", "signals", "consequent", "loc", "origin", "rule"],
+        "additionalProperties": false,
+        "properties": {
+          "expr": {"type": "string"},
+          "signals": {"type": "array", "items": {"type": "string"}},
+          "consequent": {"type": "array", "items": {"type": "string"}},
+          "loc": {"type": "array", "items": {"type": "string"}},
+          "origin": {"enum": ["rtl", "llm"]},
+          "rule": {"type": "string"}
+        }
+      }
+    }
+  }
+}

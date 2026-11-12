@@ -1,0 +1,13 @@
+# H22 hints, hand-written from rtl/fsm.sv
+role rst input control
+role go input control
+role stop input control
+role state state control
+role busy comb
+role finished comb
+prop go -> -
+prop rst -> -
+prop stop -> -
+prop state == 2'd0 -> state
+prop state == 2'd1 -> state
+prop state == 2'd2 -> state

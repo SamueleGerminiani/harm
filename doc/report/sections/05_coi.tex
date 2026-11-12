@@ -1,0 +1,136 @@
+\section{Cones of influence}\label{sec:coi}
+HARM mines from traces alone, so it finds correlations that the design cannot produce: an input predicting another input, or an output predicting a register it does not drive. The RTL knows which signals can influence which, and through how many registers. v4 lets HARM use that knowledge without reading the RTL itself: a separate generator (\cref{sec:harmcoi}) writes a \emph{cone-of-influence} file, and HARM reads it in one of two modes.
+\begin{itemize}
+\item \textbf{Rank mode} only scores: new metric variables tell how well an assertion agrees with the cones, and can sort or filter. This is for trivergence, where the RTL is one view among three and may be wrong.
+\item \textbf{Filter mode} prunes the search before mining, as GoldMine~\cite{goldmine} does. It assumes the RTL is correct: behaviour that an RTL bug removed or added cannot be mined, and HARM says so once.
+\end{itemize}
+
+\subsection{The contract: \texttt{coi.json} (H4, D-005, D-013)}
+The file format is versioned (\file{doc/schemas/coi.v1.json}, JSON Schema 2020-12):
+\begin{itemize}
+\item \code|meta|: design, top module, the VCD scope and recursion HARM is run with, the clock, \code|max_depth|, and the generator's name and version;
+\item \code|targets|: for every signal HARM sees in the trace, its \code|sources|, each a list \code|{sig, depths, saturated}|;
+\item \code|unknown|: signals whose cone the generator could not determine;
+\item \code|predicates|: the RTL's predicates (\cref{sec:predicates}).
+\end{itemize}
+\textbf{Depth} is the number of register crossings on a path from source to target (D-005): 0 means the source's value now can affect the target now; $d$ means its value $d$ cycles ago. Depths are counted as HARM samples a trace, on the values just before each rising edge, which is what an SVA concurrent assertion sees in the Preponed region. With that convention \code|q <= a| gives \code|G(a -> X q)|. A first version of the simulation oracle sampled just after the edge and saw every input-to-register depth one cycle short; HARM's own sampling settled it. All depths up to \code|max_depth| are listed; \code|saturated| marks a source that also reaches the target through longer paths.
+\textbf{Targets} are the signals visible in the trace; \textbf{sources} are visible signals, with paths through invisible nets followed through; the clock is never a source, and reset is an ordinary one (D-013).
+
+A context names its cone file with \code|<coi file="design_coi.json" mode="rank"/>|; the path is relative to the configuration. The examples of this section use the \texttt{multipath} fixture (\file{tests/input/coi/multipath/}):
+\begin{lstlisting}[language={}]
+always_ff @(posedge clk) begin r1 <= a; r2 <= r1; rb <= b; end
+assign y = a ^ r2;      // y <- a at depths 0 and 2, r2 at depth 0
+assign z = rb;          // z <- b at depth 1, rb at depth 0
+\end{lstlisting}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  sig/.style={draw,circle,minimum size=8mm,font=\small\ttfamily},
+  reg/.style={draw,minimum size=7mm,font=\small\ttfamily,fill=black!6},
+  arr/.style={-{Stealth[length=2mm]},thick}]
+\node[sig] (a) at (0,0) {a};
+\node[reg] (r1) at (2,0) {r1};
+\node[reg] (r2) at (4,0) {r2};
+\node[sig] (y) at (6,0.8) {y};
+\node[sig] (b) at (0,-1.8) {b};
+\node[reg] (rb) at (2,-1.8) {rb};
+\node[sig] (z) at (4,-1.8) {z};
+\draw[arr] (a) -- node[above,font=\scriptsize]{+1} (r1);
+\draw[arr] (r1) -- node[above,font=\scriptsize]{+1} (r2);
+\draw[arr] (r2) -- node[below right,font=\scriptsize]{+0} (y);
+\draw[arr] (a) to[bend left=20] node[above,font=\scriptsize]{+0} (y);
+\draw[arr] (b) -- node[above,font=\scriptsize]{+1} (rb);
+\draw[arr] (rb) -- node[above,font=\scriptsize]{+0} (z);
+\end{tikzpicture}
+\caption{The \texttt{multipath} fixture. Edges carry their register delays; the cone of \texttt{y} contains \texttt{a} at depths 0 and 2, \texttt{r1} at depth 1 and \texttt{r2} at depth 0. \texttt{b} cannot influence \texttt{y}.}
+\label{fig:multipath}
+\end{figure}
+
+\subsection{Rank mode (H6, D-014)}
+For a mined assertion \code|G(antecedent -> consequent)|, let the \emph{leaves} be its atomic propositions, and $\mathit{off}(\ell)$ the cycle at which leaf $\ell$ is evaluated, relative to the start of the antecedent; $\mathit{off}$ is unknown under \code|until|, \code|F|, \code|R|, repetitions and ranges. Let $A$ be the antecedent leaves with variables, $C$ the consequent leaves, and $\mathrm{cone}(c)$ the sources of signal $c$ with their depths. Then
+\begin{align*}
+\mathtt{coiFrac} &= \frac{|\{\ell \in A : \forall v \in \mathit{vars}(\ell).\ \exists q\in C,\, c \in \mathit{vars}(q).\ v \in \mathrm{cone}(c)\}|}{|A|},\\
+\mathtt{coiDepthFit} &= \frac{|\{\ell \in A : \forall v \in \mathit{vars}(\ell).\ \exists q\in C,\, c \in \mathit{vars}(q).\ \mathit{off}(q)-\mathit{off}(\ell) \in \mathrm{depths}(v, c)\}|}{|A|},
+\end{align*}
+where a saturated source also fits at any distance above \code|max_depth|, and an unknown offset falls back to cone membership. With no antecedent leaves (an invariant), both are 1. \code|coiUnknown| counts the antecedent leaves with a variable the file does not know; they count as in the cone and fitting: never penalised, but counted.
+
+Offsets depend on the implication: with \code!|->! the consequent starts at the end of the antecedent, with \code!|=>! a cycle later, with \code|->| together with the antecedent. Getting \code|->| right needed a fix (F6 of \ms{H8}): the first version anchored it at the end, as for \code!|->!.
+
+These variables can be used in any \code|<sort>| or \code|<filter>|, e.g. \code|<sort name="fit" exp="coiDepthFit"/>|. On \texttt{multipath} with templates \code|G(P0 -> P1)|, \code|G(P0 -> X P1)| and \code|G(P0 -> X X P1)|, the seven assertions that hold score as derived by hand from the RTL; \code|G(z -> rb)| holds on the trace but \code|z| cannot influence \code|rb|:
+
+% example
+\begin{lstlisting}
+$ harm --vcd tests/input/coi/multipath/trace.vcd --clk clk --vcd-ss tb::dut \
+    --conf tests/input/h6/multipath_rank.xml --dont-print-ass \
+    --dump-assertion-info $OUT/rank.json > /dev/null
+$ python3 -c "import json; [print(a['text'], a['metrics']['coiFrac'], a['metrics']['coiDepthFit']) for a in json.load(open('$OUT/rank.json'))['assertions']]"
+G(a -> XXr2) 1.0 1.0
+G(b -> Xz) 1.0 1.0
+G(rb -> z) 1.0 1.0
+G(z -> rb) 0.0 0.0
+\end{lstlisting}
+
+Propositions and numerics can also carry a free-text \code|origin| (\code|<prop exp="..." origin="spec"/>|), reported by \opt{dump-assertion-info} and \opt{dump-coi-report}. trivergence marks the propositions that come from the specification this way.
+
+\subsection{Filter mode, signal level (H7, D-017, D-018)}
+\code|<coi ... mode="filter"/>| never tries, for a consequent, an antecedent proposition outside its cone. The rule is \code|coiFrac|'s, so that the two modes share one definition: a proposition is in the cone of a consequent if \emph{every} one of its variables is a source of \emph{some} variable of the consequent. Unknown signals count as in the cone; propositions without variables and placeholders shared by antecedent and consequent are kept. Permutations of plain templates that use an out-of-cone proposition are removed before mining, and decision-tree candidates are restricted to the consequent's cone. HARM reports the search space before and after, and \opt{dump-assertion-info} records it.
+
+\paragraph{Not ``rank mode minus out-of-cone assertions'' (D-018).} For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. Its guarantee is the output of rank mode on a configuration from which, for each consequent, the out-of-cone propositions were deleted by hand; that is how it was validated (\cref{sec:validation}).
+
+\subsection{Filter mode with depths (H8, D-007, D-020)}
+\code|depth="bounded"| or \code|"exact"| also uses the depths. An antecedent proposition at distance $d$ cycles before a consequent leaf is kept, for each of its known variables $v$, if some consequent variable $c$ gives:
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\code|depth| & condition \\
+\midrule
+\code|any| (default) & $v \in \mathrm{cone}(c)$ (the signal-level filter) \\
+\code|bounded| & $0 \le d \le \max \mathrm{depths}(v,c)$, or $v$ saturated and $d \ge 0$ \\
+\code|exact| & $d \in \mathrm{depths}(v,c)$, or $v$ saturated and $d > \mathtt{max\_depth}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\code|exact| is \code|coiDepthFit|'s rule; the metric and the filter share one function, so filter output with \code|exact| has \code|coiDepthFit| = 1. In \cref{fig:multipath}, \code|y| gets \code|a| at depths 0 and 2: \code|G(a -> X y)| ($d=1$) is kept by \code|bounded| and not by \code|exact|; \code|G(a -> X X X y)| ($d=3$) by neither.
+
+\paragraph{Decision trees (D-007).} A decision-tree operator adds items at indices; each index is at a fixed distance from each consequent leaf, independent of how many items the tree adds later:
+
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Implication & antecedent layout & distance of index $i$ to leaf $q$ \\
+\midrule
+\code!|->! & \code|dM ##N ... ##N d1 ##N d0| (index 0 is the last cycle) & $i\cdot N + \mathit{off}(q)$ \\
+\code!|=>! & the same & $i\cdot N + 1 + \mathit{off}(q)$ \\
+\code|->| & \code|d0 ##N d1 ... ##N dM| from the start & $\mathit{off}(q) - i\cdot N$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+HARM computes this table rather than hard-coding it: it places a marker at each index and runs the same offset function as \code|coiDepthFit|. A unit test checks 12 template shapes against the table, and mined \texttt{counter} assertions were checked by hand. A (candidate, index) pair is tried only if the candidate fits at that distance.
+
+On \texttt{multipath}, \code|exact| keeps 10 of the 147 permutations, and mines the six structural assertions of the rank example, without \code|G(z -> rb)|:
+
+% example
+\begin{lstlisting}
+$ sed -e 's#mode="rank"#mode="filter" depth="exact"#' -e 's#\.\./coi/#../tests/input/coi/#' \
+    tests/input/h6/multipath_rank.xml > $OUT/filter.xml
+$ harm --vcd tests/input/coi/multipath/trace.vcd --clk clk --vcd-ss tb::dut \
+    --conf $OUT/filter.xml --dont-print-ass --dump-to $OUT/filter.txt
+COI filter (context 'default'): permutations 147 -> 10
+$ cat $OUT/filter.txt
+G(a -> XXr2)
+G(rb -> z)
+\end{lstlisting}
+
+\subsection{The out-of-cone report (H9, D-022)}
+\opt{dump-coi-report} lists, for each consequent proposition, the antecedent propositions and numerics that cannot influence it, with their \code|origin| and the signals outside the cone; propositions HARM cannot decide (unknown signals) are listed apart, never as ``out''. It is computed from the configuration and the cone file, and does not change mining. For trivergence, a proposition with \code|origin="spec"| outside a cone is a disagreement between the specification (``A influences B'') and the RTL (``it cannot'').
+
+% example
+\begin{lstlisting}
+$ harm --vcd tests/input/coi/multipath/trace.vcd --clk clk --vcd-ss tb::dut \
+    --conf tests/input/h6/multipath_rank.xml --dont-print-ass \
+    --dump-coi-report $OUT/report.json > /dev/null
+$ python3 -c "import json; [print(c['text'], '<-', [o['text'] for o in c['outOfCone']]) for c in json.load(open('$OUT/report.json'))['contexts'][0]['consequents']]"
+y <- ['b', 'rb', 'z']
+z <- ['a', 'r1', 'r2', 'y']
+\end{lstlisting}

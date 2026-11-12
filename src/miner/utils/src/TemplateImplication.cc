@@ -221,7 +221,7 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
-          (shift >= _trace->getLength()) ? Trinary::U : conValue;
+          (shift > segmentEnd(time)) ? Trinary::U : conValue;
       if (antValue == Trinary::T && (!con) == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
@@ -268,7 +268,7 @@ void TemplateImplication::fillContingency(size_t (&ct)[3][3],
       size_t shift = time + (_applyDynamicShift ? antShift : 0);
       auto [conValue, conShift] = _conEvaluator->evaluate(shift);
       auto con =
-          (shift >= _trace->getLength()) ? Trinary::U : conValue;
+          (shift > segmentEnd(time)) ? Trinary::U : conValue;
       if (antValue == Trinary::T && con == Trinary::T) {
         if (!_contains_mma) {
           ct[0][0]++;
@@ -631,7 +631,7 @@ void TemplateImplication::printContingency() {
   table << "AU" << ct[2][0] << ct[2][1] << ct[2][2] << fort::endr;
   std::cout << table.to_string() << std::endl;
 }
-void TemplateImplication::check() {
+void TemplateImplication::check(const std::string &context) {
   messageErrorIf(
       !isFullyInstantiated(),
       "Checking is available only for fully instantiated templates "
@@ -772,13 +772,22 @@ void TemplateImplication::check() {
             << "\n";
 
   if (clc::checkDumpEvalDirectory != "") {
-    std::string filename =
-        clc::checkDumpEvalDirectory + "/" +
-        sanitizeFilename(getAssertionStr(Language::SpotLTL)) + ".csv";
-    std::ofstream file;
-    file.open(filename);
-    messageErrorIf(!file.is_open(), "Could not open file '" +
-                                        filename + "' for writing");
+    // D-030: <k>_<readable text>.csv, k the check order in the run; index.json maps it back
+    const std::string spot = getAssertionStr(Language::SpotLTL);
+    std::string name =
+        std::to_string(hs::checkDumpEvalIndex.size()) + "_" +
+        sanitizeFilename(spot).substr(0, 100) + ".csv";
+    std::ofstream file(clc::checkDumpEvalDirectory + "/" + name);
+    messageWarningIf(!file.is_open(), "Could not open file '" + name +
+                                          "' for writing, not dumped");
+    hs::checkDumpEvalIndex.push_back(
+        "    {\"file\": " + (file.is_open() ? jsonString(name) : "null") +
+        ", \"context\": " + jsonString(context) +
+        ", \"spot\": " + jsonString(spot) +
+        ", \"sva\": " + jsonString(getAssertionStr(Language::SVA)) + "}");
+    if (!file.is_open()) {
+      return;
+    }
 
     file << "t, Ant, Shift, Con, Ass\n";
 
@@ -796,10 +805,10 @@ void TemplateImplication::check() {
           antShift = _antDepth + _constShift;
         }
 #endif
-        file << antShift << ", ";
-        file << toString(evaluate_con(time)) << ", ";
-        file << toString(evaluate(time)) << "\n";
       }
+      file << antShift << ", ";
+      file << toString(evaluate_con(time)) << ", ";
+      file << toString(evaluate(time)) << "\n";
     }
 
     file.close();
@@ -823,6 +832,16 @@ TemplateImplication::getVars() {
   }
 
   return vars;
+}
+
+void TemplateImplication::keepPermutations(const std::function<bool()> &keep) {
+  auto &m = *_permutator._permMatrix;
+  std::vector<bool> rows(m._nRows);
+  for (size_t i = 0; i < m._nRows; i++) {
+    loadPerm(i);
+    rows[i] = keep();
+  }
+  m.keepRows(rows);
 }
 
 std::vector<PropositionPtr>
@@ -1090,6 +1109,23 @@ bool TemplateImplication::isVacuousOffset(harm::Location update) {
   return true;
 }
 
+size_t TemplateImplication::segmentEnd(size_t time) {
+  // CR1 (C7b-1): the last cycle of the segment holding `time` (Trace::getCuts: the end of each VCD file, or each
+  // reset interval, ascending); an instance whose consequent falls past it is pending (U), as the antecedent and
+  // consequent evaluators treat a cut
+  const auto &cuts = _trace->getCuts();
+  auto it = std::lower_bound(cuts.begin(), cuts.end(), time);
+  return it == cuts.end() ? _trace->getLength() - 1 : *it;
+}
+
+void TemplateImplication::refreshAntDepth() {
+  // CR1 (C7b-5): the antecedent depth of the formula now loaded (a DT operator swaps in a deeper one); the AF row
+  // of the contingency table reads the consequent at time + this depth
+  const PropertyImplicationPtr fimpl =
+      std::dynamic_pointer_cast<PropertyImplication>(_templateFormula->getItems()[0]);
+  _antDepth = getTemporalDepth(getAntecedent(fimpl));
+}
+
 Trinary TemplateImplication::evaluate(size_t time) {
   if (!_contains_mma) {
     auto [antValue, antShift] = _antEvaluator->evaluate(time);
@@ -1099,7 +1135,7 @@ Trinary TemplateImplication::evaluate(size_t time) {
     size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
-           (shift >= _trace->getLength() ? Trinary::U : conValue);
+           (shift > segmentEnd(time) ? Trinary::U : conValue);
   } else {
     return _impEvaluator->evaluate(time).first;
   }
@@ -1119,7 +1155,7 @@ Trinary TemplateImplication::evaluateOffset(size_t time) {
     size_t shift = time + (_applyDynamicShift ? antShift : 0);
     auto [conValue, conShift] = _conEvaluator->evaluate(shift);
     return !antValue ||
-           (shift >= _trace->getLength() ? Trinary::U : !conValue);
+           (shift > segmentEnd(time) ? Trinary::U : !conValue);
   } else {
     return _impEvaluator->evaluate(time).first;
   }

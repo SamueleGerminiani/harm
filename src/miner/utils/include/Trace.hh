@@ -90,6 +90,9 @@ public:
   ///@bfried returns a copy of the declarations of the variables in the trace
   std::vector<VarDeclaration> getDeclarations();
 
+  /// @brief The declared range [left:right] of a variable (D-028); false if it has none
+  bool getDeclaredRange(const std::string &name, long &left, long &right) const;
+
   ///@brief returns the variables in the trace as a map
   std::unordered_map<std::string,
                      std::pair<expression::ExpType, size_t>>
@@ -147,6 +150,7 @@ private:
 
   /// @brief list of variables in the trace
   std::vector<VarDeclaration> _variables;
+  std::unordered_map<std::string, std::pair<long, long>> _varName2range;
 
   /// @brief utility function to allocate the memory of the trace
   void allocateTrace(std::vector<VarDeclaration> &variables);

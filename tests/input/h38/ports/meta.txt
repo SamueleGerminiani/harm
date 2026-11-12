@@ -1,0 +1,6 @@
+design = ports
+top = ports
+vcd_scope = tb::dut
+vcd_recursion = 0
+clock = clk
+max_depth = 3

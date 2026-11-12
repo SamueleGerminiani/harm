@@ -1,0 +1,123 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "counter",
+    "top": "counter",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "harm-coi",
+      "version": "0.1.0 (pyslang 12.0.0)"
+    }
+  },
+  "targets": {
+    "cnt": {
+      "sources": [
+        {
+          "sig": "cnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "en",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "en": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    },
+    "wrap": {
+      "sources": [
+        {
+          "sig": "cnt",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "en",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    }
+  },
+  "unknown": [],
+  "predicates": [
+    {
+      "expr": "cnt == 4'd0",
+      "origin": "rtl",
+      "src": "counter.sv:11",
+      "targets": [
+        "cnt"
+      ]
+    },
+    {
+      "expr": "cnt == 4'd9",
+      "origin": "rtl",
+      "src": "counter.sv:12, counter.sv:9",
+      "targets": [
+        "cnt",
+        "wrap"
+      ]
+    },
+    {
+      "expr": "en",
+      "origin": "rtl",
+      "src": "counter.sv:12",
+      "targets": [
+        "cnt"
+      ]
+    },
+    {
+      "expr": "rst",
+      "origin": "rtl",
+      "src": "counter.sv:11",
+      "targets": [
+        "cnt"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "arbiter",
+    "top": "arbiter",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "hand-written",
+      "version": "edges.txt"
+    }
+  },
+  "targets": {
+    "gnt": {
+      "sources": [
+        {
+          "sig": "gnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "prio",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "req",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "prio": {
+      "sources": [
+        {
+          "sig": "gnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "prio",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "req",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "req": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    }
+  },
+  "unknown": [],
+  "predicates": []
+}

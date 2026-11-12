@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.10.1
+// Generated from varDeclaration.g4 by ANTLR 4.13.2
 
 #pragma once
 
@@ -13,15 +13,16 @@ class  varDeclarationLexer : public antlr4::Lexer {
 public:
   enum {
     T__0 = 1, Name = 2, VARTYPE = 3, WS = 4, BOOLEAN_CONSTANT = 5, BOOLEAN_VARIABLE = 6, 
-    INT_VARIABLE = 7, CONST_SUFFIX = 8, LOGIC_VARIABLE = 9, FLOAT_CONSTANT = 10, 
-    FLOAT_VARIABLE = 11, SUBSTR = 12, STRING_CONSTANT = 13, STRING_VARIABLE = 14, 
-    LCURLY = 15, RCURLY = 16, LSQUARED = 17, RSQUARED = 18, LROUND = 19, 
-    RROUND = 20, INSIDE = 21, FUNCTION = 22, SINTEGER = 23, UINTEGER = 24, 
-    FLOAT = 25, GCC_BINARY = 26, HEX = 27, VERILOG_BINARY = 28, FVL = 29, 
-    SINGLE_QUOTE = 30, PLUS = 31, MINUS = 32, TIMES = 33, DIV = 34, GT = 35, 
-    GE = 36, LT = 37, LE = 38, EQ = 39, NEQ = 40, BAND = 41, BOR = 42, BXOR = 43, 
-    NEG = 44, LSHIFT = 45, RSHIFT = 46, AND = 47, OR = 48, NOT = 49, COL = 50, 
-    DCOL = 51, DOLLAR = 52, RANGE = 53, CLS_TYPE = 54
+    INT_VARIABLE = 7, CONST_SUFFIX = 8, LOGIC_VARIABLE = 9, BIT_VARIABLE = 10, 
+    FLOAT_CONSTANT = 11, FLOAT_VARIABLE = 12, SUBSTR = 13, STRING_CONSTANT = 14, 
+    STRING_VARIABLE = 15, LCURLY = 16, RCURLY = 17, LSQUARED = 18, RSQUARED = 19, 
+    LROUND = 20, RROUND = 21, INSIDE = 22, SIGN_CAST = 23, FUNCTION = 24, 
+    UINTEGER = 25, FLOAT = 26, GCC_BINARY = 27, HEX = 28, VERILOG_BASED = 29, 
+    FILL_LITERAL = 30, SINGLE_QUOTE = 31, PLUS = 32, MINUS = 33, TIMES = 34, 
+    DIV = 35, GT = 36, GE = 37, LT = 38, LE = 39, EQ = 40, NEQ = 41, CASE_EQ = 42, 
+    CASE_NEQ = 43, QUESTION = 44, BAND = 45, BOR = 46, BXOR = 47, NEG = 48, 
+    ALSHIFT = 49, ARSHIFT = 50, LSHIFT = 51, RSHIFT = 52, AND = 53, OR = 54, 
+    NOT = 55, COL = 56, DCOL = 57, DOLLAR = 58, RANGE = 59, CLS_TYPE = 60
   };
 
   explicit varDeclarationLexer(antlr4::CharStream *input);

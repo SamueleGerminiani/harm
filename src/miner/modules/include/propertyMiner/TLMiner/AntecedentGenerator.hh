@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -127,6 +128,12 @@ public:
   ///if true, it prompts the algo to save the offset
   bool _saveOffset;
 
+  ///COI depth filter (H8, D-020): may candidate 'id' (a numeric if the flag is set) go at this
+  ///index of the decision-tree operator; empty: every pair is tried
+  std::function<bool(size_t id, bool numeric, size_t index)> _admissible;
+  ///(candidate, index) pairs reached, and those tried after the depth filter
+  size_t _pairsBefore = 0, _pairsAfter = 0;
+
 private:
   ///number of times the consequent is true
   size_t _CT = 0;
@@ -137,6 +144,17 @@ private:
   std::unordered_set<std::string> _knownSolutions;
 
 private:
+  /// @brief the COI depth filter (H8), counting the pairs
+  bool admissible(size_t id, bool numeric, size_t index) {
+    if (!_admissible) {
+      return true;
+    }
+    _pairsBefore++;
+    bool ok = _admissible(id, numeric, index);
+    _pairsAfter += ok;
+    return ok;
+  }
+
   /// @brief implements the actual dt algo
   void runDecisionTree(std::set<size_t> &unusedVars,
                        const DecTreeVariables &dcVariables,

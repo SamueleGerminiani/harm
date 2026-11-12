@@ -1,0 +1,499 @@
+{
+ "contexts": {
+  "default": {
+   "coi": true,
+   "consequents": {
+    "a": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "a",
+        "b"
+       ]
+      },
+      "b": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "b"
+       ]
+      },
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1",
+        "rb"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "a && b": {
+     "coneUnknown": false,
+     "origin": "spec",
+     "outOfCone": {
+      "a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "b": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "b"
+       ]
+      },
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1",
+        "rb"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "b": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "a",
+        "b"
+       ]
+      },
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1",
+        "rb"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "r1": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "b"
+       ]
+      },
+      "b": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "b"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1",
+        "rb"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "r1 || rb": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "r2": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "b"
+       ]
+      },
+      "b": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "b"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "rb": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "a"
+       ]
+      },
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1",
+        "rb"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "y": {
+     "coneUnknown": false,
+     "origin": "llm",
+     "outOfCone": {
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "b"
+       ]
+      },
+      "b": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "b"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "rb"
+       ]
+      },
+      "z": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "z"
+       ]
+      }
+     },
+     "unknown": {}
+    },
+    "z": {
+     "coneUnknown": false,
+     "origin": null,
+     "outOfCone": {
+      "a": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "a"
+       ]
+      },
+      "a && b": {
+       "numeric": false,
+       "origin": "spec",
+       "outside": [
+        "a"
+       ]
+      },
+      "r1": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r1 || rb": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r1"
+       ]
+      },
+      "r2": {
+       "numeric": false,
+       "origin": null,
+       "outside": [
+        "r2"
+       ]
+      },
+      "y": {
+       "numeric": false,
+       "origin": "llm",
+       "outside": [
+        "y"
+       ]
+      }
+     },
+     "unknown": {}
+    }
+   }
+  }
+ }
+}

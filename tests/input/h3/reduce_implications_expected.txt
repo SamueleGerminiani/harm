@@ -1,0 +1,4 @@
+# H3, A3: --dump-implications, hand-derived. <dropped> ||| <kept assertions that imply it, sorted>
+G({a && b} -> c) ||| G(a -> c)
+G({a && d} -> c) ||| G(a -> c), G(d -> c)
+G({b && d} -> c) ||| G(d -> c)

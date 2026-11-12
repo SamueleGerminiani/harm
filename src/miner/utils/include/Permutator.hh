@@ -109,6 +109,8 @@ public:
     PermMatrix(size_t nRows, size_t nCols);
     ~PermMatrix();
     void removeDuplicateRows();
+    /// keep the rows i with keep[i] (H7, COI filter mode)
+    void keepRows(const std::vector<bool> &keep);
 
   public:
     size_t _nRows = 0;

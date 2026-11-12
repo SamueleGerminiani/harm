@@ -1,0 +1,9 @@
+# H22 hints, hand-written from rtl/structs.sv (recursion 1)
+role x input
+role xv input
+role m input
+role bus::data state
+role bus::valid state control
+role c::mode state
+role c::val state
+prop bus::valid -> state

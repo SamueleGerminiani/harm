@@ -1,0 +1,156 @@
+{
+  "version": "1",
+  "meta": {
+    "design": "arbiter",
+    "top": "arbiter",
+    "vcd_scope": "tb::dut",
+    "vcd_recursion": 0,
+    "clock": "clk",
+    "max_depth": 3,
+    "generator": {
+      "name": "harm-coi",
+      "version": "0.1.0 (pyslang 12.0.0)"
+    }
+  },
+  "targets": {
+    "gnt": {
+      "sources": [
+        {
+          "sig": "gnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "prio",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "req",
+          "depths": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "prio": {
+      "sources": [
+        {
+          "sig": "gnt",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "prio",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "req",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        },
+        {
+          "sig": "rst",
+          "depths": [
+            1,
+            2,
+            3
+          ],
+          "saturated": true
+        }
+      ]
+    },
+    "req": {
+      "sources": []
+    },
+    "rst": {
+      "sources": []
+    }
+  },
+  "unknown": [],
+  "predicates": [
+    {
+      "expr": "!prio",
+      "origin": "rtl",
+      "src": "arbiter.sv:13",
+      "targets": [
+        "prio"
+      ]
+    },
+    {
+      "expr": "gnt[0]",
+      "origin": "rtl",
+      "src": "arbiter.sv:14",
+      "targets": [
+        "prio"
+      ]
+    },
+    {
+      "expr": "gnt[1]",
+      "origin": "rtl",
+      "src": "arbiter.sv:15",
+      "targets": [
+        "prio"
+      ]
+    },
+    {
+      "expr": "prio",
+      "origin": "rtl",
+      "src": "arbiter.sv:10",
+      "targets": [
+        "gnt"
+      ]
+    },
+    {
+      "expr": "req == 2'd3",
+      "origin": "rtl",
+      "src": "arbiter.sv:10",
+      "targets": [
+        "gnt"
+      ]
+    },
+    {
+      "expr": "rst",
+      "origin": "rtl",
+      "src": "arbiter.sv:13",
+      "targets": [
+        "prio"
+      ]
+    }
+  ]
+}

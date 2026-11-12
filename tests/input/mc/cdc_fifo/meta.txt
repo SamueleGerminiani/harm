@@ -1,0 +1,6 @@
+design = cdc_fifo
+top = cdc_fifo
+vcd_scope = tb::dut
+vcd_recursion = 1
+clock = rclk
+max_depth = 3

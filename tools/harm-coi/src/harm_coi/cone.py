@@ -1,0 +1,209 @@
+"""From the extracted design to HARM's names and cones (D-005, D-013).
+
+1. The sampling clock: --clock, or the single signal that every register's clock comes from
+   through wires and ports. Registers on another clock (or a derived one) are unknown.
+2. Visible names: the VCD's, when a trace is given (signals of the trace that the RTL does not
+   produce are unknown); otherwise every atom at most `recursion` sub-scopes below the top.
+3. Direct edges between visible names: paths through invisible signals are collapsed, their
+   delays summed.
+4. With --aliases (H34, D-042): the visible names of one net (whole-signal port connections and `assign a = b`,
+   nothing else driving the driven side, nothing unknown or on the clock's path) become its shallowest name.
+5. The closure up to max_depth, with the same rule as tests/coi/closure.py: every path depth up
+   to max_depth, and `saturated` when the source also reaches the target through a deeper path.
+   A target whose cone reaches an unknown signal within max_depth is itself unknown.
+"""
+from collections import defaultdict
+
+from .frontend import FrontendError
+
+
+def name(path):
+    return "::".join(path)
+
+
+def clock_root(atom, edges):
+    """Follow a clock back through single-source zero-delay edges (wires, ports) to its root."""
+    seen = [atom]
+    while True:
+        srcs = edges.get(atom, set())
+        if len(srcs) != 1:
+            return atom, seen
+        (s, d), = srcs
+        if d != 0 or s in seen:
+            return atom, seen
+        atom = s
+        seen.append(s)
+
+
+def resolve_clocks(design, clock_name, others_unknown=True):
+    """Fix the register delays; returns (clock atom, set of atoms on clock paths). `others_unknown` False (H36,
+    --cut-domains): a register on another clock keeps no sources but is not unknown (it is cut from the names)."""
+    edges = design.edges
+    roots = {}
+    chain_nodes = set()
+    for p in design.processes:
+        r, chain = clock_root(p.clock, edges)
+        roots[id(p)] = r
+    if clock_name is not None:
+        clk = tuple(clock_name.split("::"))
+        if clk not in design.signals:
+            raise FrontendError(f"clock '{clock_name}' is not a signal of the design")
+    else:
+        cands = set(roots.values())
+        if not cands:
+            raise FrontendError("no clocked process found: give the sampling clock with --clock")
+        if len(cands) > 1:
+            raise FrontendError("several clocks (" + ", ".join(sorted(name(c) for c in cands))
+                                + "): give the sampling clock with --clock")
+        clk = cands.pop()
+    for p in design.processes:
+        if roots[id(p)] == clk and p.edge in ("pos", "neg"):
+            chain_nodes.update(clock_root(p.clock, edges)[1])
+            delays = (1,) if p.edge == "pos" else (0, 1)
+            for t in p.targets:
+                new = set()
+                for s, d in edges[t]:
+                    if d == "reg":
+                        new |= {(s, x) for x in delays}
+                    else:
+                        new.add((s, d))
+                edges[t] = new
+        else:
+            other = roots[id(p)] != clk
+            reason = "register on another clock" if other else "register on both clock edges"
+            for t in p.targets:
+                if others_unknown or not other:
+                    design.unknown.setdefault(t, reason)
+                edges[t] = set()
+    chain_nodes.add(clk)
+    return clk, chain_nodes
+
+
+def visible_names(design, recursion, vcd_names, clk):
+    """{atom: visible name} and the set of trace names the RTL does not produce."""
+    atoms = design.signals | design.params
+    if vcd_names is None:
+        return {a: name(a) for a in atoms if len(a) - 1 <= recursion}, set()
+    m = {}
+    for a in atoms:
+        for n in range(len(a), 0, -1):   # a struct dumped as one vector: its fields map to it
+            if name(a[:n]) in vcd_names:
+                m[a] = name(a[:n])
+                break
+    orphan = set(vcd_names) - set(m.values()) - {name(clk)}
+    return m, orphan
+
+
+def alias_classes(design, vis, clock_nodes):
+    """(the name map with every visible name of a net replaced by its shallowest one, then a top input port, then a
+    top output port (H38), ties broken by string order;
+    {kept name: [merged names]}) (H34). A class is left as it is when one of its names is shared by an atom outside
+    it (a struct dumped as one vector)."""
+    parent = {}
+
+    def find(a):
+        parent.setdefault(a, a)
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    bad = set(design.unknown) | set(clock_nodes)
+    for t, s in design.alias_pairs:
+        if t in bad or s in bad or design.edges.get(t) != {(s, 0)}:
+            continue
+        parent[find(t)] = find(s)
+    groups = defaultdict(set)
+    for a in list(parent):
+        groups[find(a)].add(a)
+    by_name = defaultdict(set)
+    for a, n in vis.items():
+        by_name[n].add(a)
+    ins = {vis[a] for a in design.top_inputs if a in vis}
+    outs = {vis[a] for a in getattr(design, "top_outputs", ()) if a in vis}
+    rank = lambda n: (n.count("::"), 0 if n in ins else 1 if n in outs else 2, n)  # noqa: E731
+    out, aliases = dict(vis), {}
+    for members in groups.values():
+        names = sorted({vis[a] for a in members if a in vis}, key=rank)
+        if len(names) < 2 or any(by_name[n] - members for n in names):
+            continue
+        for a in members:
+            if a in vis:
+                out[a] = names[0]
+        aliases[names[0]] = names[1:]
+    return out, dict(sorted(aliases.items()))
+
+
+def direct_edges(design, vis, clock_nodes, max_depth, merged=False):
+    """Edges between visible names, collapsing invisible atoms; and the unknown visible names. `merged` (H34): a
+    zero-delay edge between two atoms of one name (a merged net) is no edge."""
+    edges = design.edges
+    limit = max_depth + 1
+    out = defaultdict(set)
+    unknown = {vis[a] for a in design.unknown if a in vis}
+    by_name = defaultdict(list)
+    for a, n in vis.items():
+        by_name[n].append(a)
+    for n, atoms in by_name.items():
+        if n in unknown or any(a in clock_nodes for a in atoms):
+            continue                        # an alias of the clock (a clock port): no sources
+        stack = [(s, d) for a in atoms for s, d in edges.get(a, ())]
+        seen = set()
+        while stack:
+            s, d = stack.pop()
+            if (s, d) in seen or s in clock_nodes:
+                continue
+            seen.add((s, d))
+            if s in vis:
+                if not (merged and d == 0 and vis[s] == n):
+                    out[n].add((vis[s], min(d, limit)))
+            elif s in design.unknown:
+                if d <= max_depth:
+                    unknown.add(n)          # the cone goes through a signal we cannot model
+            else:  # CR1 (C9-3): a path through invisible atoms past the limit is clipped there, not dropped
+                stack += [(s2, min(d + d2, limit)) for s2, d2 in edges.get(s, ())]
+    for n in unknown:
+        out.pop(n, None)
+    return out, unknown
+
+
+def closure(names, direct, unknown, max_depth):
+    """D-005 cones; targets whose cone reaches an unknown name within max_depth become unknown."""
+    limit = max_depth + max((d for es in direct.values() for _, d in es), default=0) + 1
+    targets, unknown = {}, set(unknown)
+    for t in sorted(names - unknown):
+        reach = set()
+        # CR1 (C9-3; the user, 2026-10-31): a path past the depth limit is clipped at max_depth + 1 (a saturated
+        # source), not cut: a source that reaches the target only deeper than the search was left out of the cone
+        cap = max_depth + 1
+        frontier = [(s, min(d, cap)) for s, d in direct.get(t, ())]
+        while frontier:
+            s, d = frontier.pop()
+            if (s, d) in reach:
+                continue
+            reach.add((s, d))
+            for s2, d2 in direct.get(s, ()):
+                frontier.append((s2, min(d + d2, cap)))
+        if any(s in unknown and d <= max_depth for s, d in reach):
+            unknown.add(t)
+            continue
+        by = {}  # H40: each source's depths, grouped once (a scan of the whole reach per source was quadratic)
+        for s, d in reach:
+            by.setdefault(s, []).append(d)
+        sources = []
+        for s in sorted(by):
+            entry = {"sig": s, "depths": sorted(d for d in by[s] if d <= max_depth)}
+            if any(d > max_depth for d in by[s]):
+                entry["saturated"] = True
+            sources.append(entry)
+        targets[t] = {"sources": sources}
+    # a target that became unknown may be in the cone of one processed earlier: repeat until stable
+    changed = True
+    while changed:
+        changed = False
+        for t in list(targets):
+            if any(s["sig"] in unknown and s["depths"] for s in targets[t]["sources"]):
+                del targets[t]
+                unknown.add(t)
+                changed = True
+    return targets, unknown

@@ -47,6 +47,13 @@ public:
   /// @brief Returns the base of the integer/logic variable
   size_t getInputBase() const;
 
+  /// @brief The range declared in the trace ([left:right], from the VCD), D-028. Without one, a
+  /// vector's bit selects are positions counted from the right, as before H11c.
+  void setRange(long left, long right);
+  bool hasRange() const;
+  long getLeft() const;
+  long getRight() const;
+
 private:
   /// @brief Stores the name of the variable.
   std::string _name;
@@ -56,6 +63,8 @@ private:
 
   /// @brief Stores the size of the variable.
   size_t _size;
+  long _left = -1;
+  long _right = -1;
 
   /// @brief Specifies how the values of the corresponding series should be interpreted (2 or 10 int/logic types, 0 for the others)
   size_t _input_base = 0;

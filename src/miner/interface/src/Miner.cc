@@ -1,10 +1,14 @@
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Context.hh"
+#include "Location.hh"
+#include "expUtils/expUtils.hh"
 #include "ContextMiner.hh"
 #include "Miner.hh"
 #include "PropertyMiner.hh"
@@ -54,6 +58,10 @@ void Miner::run() {
   //2) Read the contexts from the configuration file, store them in 'contexts'
   _config.contextMiner->mineContexts(trace, contexts);
 
+  if (clc::dumpPropTable != "") {
+    writePropTable(contexts, trace, _config.traceReader->getReadFiles());
+  }
+
   messageInfo("Mining " + std::to_string(contexts.size()) +
               " context" + (contexts.size() > 1 ? "s" : ""));
 
@@ -83,17 +91,154 @@ void Miner::run() {
 
     // store the time to mine of this context
     hs::timeToMine_ms += dirtyTimerMilliseconds("minerTimer", 0);
+    messageInfoIf(hs::mineCut, "Deadline: mining cut, " + std::to_string(hs::permutationsDone) + " of " +
+                                   std::to_string(hs::permutationsTotal) + " permutations done, " +
+                                   std::to_string(hs::templatesNotStarted) + " templates not started (--mine-deadline)");
 
     //4) Qualify the mined temporal assertions (additionally print and dump)
     _config.propertyQualifier->qualify(*context, trace);
 
     // handle "check" templates
     for (const TemplateImplicationPtr &t : toCheck) {
-      t->check();
+      t->check(context->_name);
     }
   }
 
+  if (clc::checkDumpEvalDirectory != "") {
+    // D-030: map every dumped file back to its assertion
+    std::ofstream out(clc::checkDumpEvalDirectory + "/index.json");
+    out << "{\n  \"version\": \"1\",\n  \"assertions\": [\n";
+    for (size_t i = 0; i < hs::checkDumpEvalIndex.size(); i++) {
+      out << hs::checkDumpEvalIndex[i]
+          << (i + 1 < hs::checkDumpEvalIndex.size() ? ",\n" : "\n");
+    }
+    out << "  ]\n}\n";
+  }
+
   handleStatistics();
+}
+
+namespace {
+/// a domain id as written in loc: a, c, ac, dt, or the restricted domain's number
+std::string domainName(int id) {
+  switch (id) {
+  case (int)Location::Ant:
+    return "a";
+  case (int)Location::Con:
+    return "c";
+  case (int)Location::AntCon:
+    return "ac";
+  case (int)Location::DecTree:
+    return "dt";
+  default:
+    return std::to_string(id);
+  }
+}
+
+std::string domainList(std::vector<int> ids) {
+  std::sort(ids.begin(), ids.end()); // a, c, ac, dt, then the numbered domains
+  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  std::string r = "[";
+  for (size_t i = 0; i < ids.size(); i++) {
+    r += (i ? ", " : "") + jsonString(domainName(ids[i]));
+  }
+  return r + "]";
+}
+} // namespace
+
+void Miner::writePropTable(const std::vector<ContextPtr> &contexts,
+                           const TracePtr &trace,
+                           const std::vector<std::pair<std::string, size_t>> &files) {
+  // H15, D-031: prop-table v1
+  std::ofstream out(clc::dumpPropTable);
+  messageErrorIf(!out.is_open(), "Could not open file '" +
+                                     clc::dumpPropTable +
+                                     "' for writing");
+  const size_t length = trace->getLength();
+  const std::vector<size_t> &cuts = trace->getCuts();
+
+  out << "{\n  \"format\": \"prop-table\", \"version\": \"1\", \"harm\": "
+      << jsonString(clc::harmVersion) << ",\n";
+  if (clc::parserType == "vcd") {
+    out << "  \"sampling\": {\"input\": \"vcd\", \"clock\": "
+        << jsonString(clc::clk)
+        << ", \"edge\": \"posedge\", \"values\": \"preponed\"},\n";
+  } else {
+    out << "  \"sampling\": {\"input\": \"csv\"},\n";
+  }
+  out << "  \"length\": " << length << ",\n";
+
+  // one sub-trace per file read, in merge order
+  out << "  \"traces\": [";
+  size_t first = 0;
+  for (size_t i = 0; i < files.size(); i++) {
+    out << (i ? ", " : "") << "{\"file\": " << jsonString(files[i].first)
+        << ", \"first\": " << first
+        << ", \"last\": " << first + files[i].second - 1 << "}";
+    first += files[i].second;
+  }
+  out << "],\n";
+  // the trace's cuts: the end of each sub-trace and, with --reset, of each reset interval
+  out << "  \"segments\": [";
+  first = 0;
+  for (size_t i = 0; i < cuts.size(); i++) {
+    out << (i ? ", " : "") << "[" << first << ", " << cuts[i] << "]";
+    first = cuts[i] + 1;
+  }
+  out << "],\n  \"contexts\": [";
+
+  for (size_t ci = 0; ci < contexts.size(); ci++) {
+    const Context &ctx = *contexts[ci];
+    // one entry per text, in configuration order, with the union of the domains
+    std::vector<std::string> texts;
+    std::unordered_map<std::string, std::pair<size_t, std::vector<int>>> byText;
+    for (size_t i = 0; i < ctx._loadedProps.size(); i++) {
+      std::string text = prop2String(ctx._loadedProps[i].prop);
+      auto it = byText.find(text);
+      if (it == byText.end()) {
+        texts.push_back(text);
+        byText[text] = {i, ctx._loadedProps[i].domains};
+      } else {
+        auto &d = it->second.second;
+        d.insert(d.end(), ctx._loadedProps[i].domains.begin(),
+                 ctx._loadedProps[i].domains.end());
+      }
+    }
+    out << (ci ? ",\n" : "\n") << "    {\"name\": " << jsonString(ctx._name)
+        << ",\n     \"propositions\": [";
+    for (size_t id = 0; id < texts.size(); id++) {
+      const auto &[index, domains] = byText.at(texts[id]);
+      const auto &lp = ctx._loadedProps[index];
+      auto origin = ctx._origin.find(texts[id]);
+      std::string values(length, '0');
+      for (size_t t = 0; t < length; t++) {
+        if (lp.prop->evaluate(t)) {
+          values[t] = '1';
+        }
+      }
+      out << (id ? ",\n" : "\n") << "      {\"id\": " << id
+          << ", \"text\": " << jsonString(texts[id])
+          << ", \"domains\": " << domainList(domains)
+          << ", \"source\": "
+          << (lp.numeric.empty() ? "\"prop\"" : "\"numeric\"");
+      if (!lp.numeric.empty()) {
+        out << ", \"numeric\": " << jsonString(lp.numeric);
+      }
+      out << ", \"origin\": "
+          << (origin == ctx._origin.end() ? "null"
+                                          : jsonString(origin->second))
+          << ", \"values\": \"" << values << "\"}";
+    }
+    out << "],\n     \"unexpanded_numerics\": [";
+    for (size_t i = 0; i < ctx._unexpandedNumerics.size(); i++) {
+      out << (i ? ", " : "") << "{\"text\": "
+          << jsonString(ctx._unexpandedNumerics[i].first)
+          << ", \"domains\": "
+          << domainList(ctx._unexpandedNumerics[i].second) << "}";
+    }
+    out << "]}";
+  }
+  out << "\n  ]\n}\n";
 }
 
 void Miner::handleStatistics() {

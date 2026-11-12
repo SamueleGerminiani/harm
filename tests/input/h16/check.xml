@@ -1,0 +1,19 @@
+<harm>
+  <!-- H16: --check-dump-eval names (tests/regression/check_dump_eval.py) -->
+  <context name="c1">
+    <template check="1" exp="G(x != y -> c)"/>
+    <template check="1" exp="G(x &lt;= y -> c)"/>
+    <template check="1" exp="G(a &amp;&amp; b -> c)"/>
+    <template check="1" exp="G(a &amp; b -> c)"/>
+    <template check="1" exp="G(ab -> c)"/>
+    <template check="1" exp="G(!a -> c)"/>
+    <template check="1" exp="G(a -> c)"/>
+    <template check="1" exp="G(a |-> c)"/>
+    <template check="1" exp="G(a |=> c)"/>
+    <template check="1" exp="G(a_rather_long_signal_name_for_h16 != 0 &amp;&amp; a_rather_long_signal_name_for_h16 != 1 &amp;&amp; a_rather_long_signal_name_for_h16 != 2 &amp;&amp; a_rather_long_signal_name_for_h16 != 3 &amp;&amp; a_rather_long_signal_name_for_h16 != 4 &amp;&amp; a_rather_long_signal_name_for_h16 != 5 &amp;&amp; a_rather_long_signal_name_for_h16 != 6 &amp;&amp; a_rather_long_signal_name_for_h16 != 7 &amp;&amp; a_rather_long_signal_name_for_h16 != 8 &amp;&amp; a_rather_long_signal_name_for_h16 != 9 &amp;&amp; a_rather_long_signal_name_for_h16 != 10 &amp;&amp; a_rather_long_signal_name_for_h16 != 11 &amp;&amp; a_rather_long_signal_name_for_h16 != 12 &amp;&amp; a_rather_long_signal_name_for_h16 != 13 &amp;&amp; a_rather_long_signal_name_for_h16 != 14 &amp;&amp; a_rather_long_signal_name_for_h16 != 15 &amp;&amp; a_rather_long_signal_name_for_h16 != 16 &amp;&amp; a_rather_long_signal_name_for_h16 != 17 &amp;&amp; a_rather_long_signal_name_for_h16 != 18 &amp;&amp; a_rather_long_signal_name_for_h16 != 19 -> c)"/>
+    <template check="1" exp="G(b -> c)"/>
+  </context>
+  <context name="c2">
+    <template check="1" exp="G(a -> c)"/>
+  </context>
+</harm>

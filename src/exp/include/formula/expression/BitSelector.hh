@@ -41,6 +41,12 @@ public:
   size_t getLowerBound();
   size_t getUpperBound();
 
+  /// @brief The indices as written in the source ([left:right], SystemVerilog indices of a
+  /// variable with a declared range, D-028), printed instead of the bit positions; -1 if none
+  void setSourceIndices(long left, long right);
+  long getSourceLeft();
+  long getSourceRight();
+
 private:
   /// @brief Initialize the evaluation function, this method must me called in the constructor.
   void initEvaluate() override;
@@ -48,6 +54,8 @@ private:
   GenericPtr<ET> _e;
   size_t _lower_bound;
   size_t _upper_bound;
+  long _source_left = -1;
+  long _source_right = -1;
 
   using RT::directEvaluate;
   using RT::disableCache;

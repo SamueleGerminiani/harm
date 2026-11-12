@@ -1,4 +1,9 @@
+#include <fstream>
+#include <mutex>
 #include <algorithm>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 #include <cmath>
 #include <filesystem>
 #include <fstream> // IWYU pragma: keep
@@ -8,6 +13,10 @@
 #include <random>
 #include <string>
 #include <unordered_map>
+
+#include "CoiInfo.hh"
+#include "ImplicationReducer.hh"
+#include "PropositionCanonicalizer.hh"
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -82,20 +91,33 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     const std::vector<AssertionPtr> &inAssertions) {
 
   std::vector<AssertionPtr> outAssertions;
-  std::unordered_set<AssertionPtr> assP;
   std::unordered_set<std::string> keys;
-  //change data structer to allow constant access with id (in this context the pointer is the id)
-  for (const AssertionPtr &ass : inAssertions) {
-    assP.insert(ass);
+
+  // --reduce equiv: compare assertions with equivalent propositions replaced by one token
+  bool equiv = clc::reduce == "equiv" || clc::reduce == "implies";
+  PropositionCanonicalizer canon;
+  if (equiv) {
+    canon.build(inAssertions);
+    messageInfo("Propositions in " + std::to_string(canon.numberOfClasses()) +
+                " equivalence classes (" +
+                std::to_string(canon.solverCalls()) + " solver calls)");
   }
+  // with equiv, the kept assertion of a group is the one with the smallest text
+  std::unordered_map<std::string, size_t> keyToOut;
 
   progresscpp::ParallelProgressBar pb;
   pb.addInstance(0, "Filtering redundant assertions... 0 discarded",
                  inAssertions.size(), 70);
   size_t discarded = 0;
 
-  //discard assertions deemed 'equivalent'
-  for (auto &ass : assP) {
+  //discard assertions deemed 'equivalent'; iterate in input order (not in the pointer-hashed set's
+  //order) so that the output does not depend on memory addresses
+  std::unordered_set<AssertionPtr> visited;
+  for (auto &ass : inAssertions) {
+    if (!visited.insert(ass).second) {
+      //the same assertion object appears twice in the input
+      continue;
+    }
 
     pb.changeMessage(0, "Filtering redundant assertions... " +
                             std::to_string(discarded) + " discarded");
@@ -113,7 +135,7 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
                        std::to_string(ass->_ct[2][1]) +
                        std::to_string(ass->_ct[2][2]);
 
-    std::string assS = ass->toString();
+    std::string assS = equiv ? canon.canonicalString(ass) : ass->toString();
     assS.erase(remove_if(assS.begin(), assS.end(),
                          [](const char &c) {
                            return c == '\t' || c == '\n' ||
@@ -126,11 +148,21 @@ std::vector<AssertionPtr> Qualifier::extractUniqueAssertionsFast(
     std::string key = cont + assS;
     if (!keys.count(key)) {
       //add only if the key is unique
+      keyToOut[key] = outAssertions.size();
       outAssertions.push_back(ass);
       keys.insert(key);
     } else {
+      AssertionPtr discardedAss = ass;
+      if (equiv) {
+        // keep the smallest text of the group (deterministic, independent of the input order)
+        AssertionPtr &kept = outAssertions[keyToOut.at(key)];
+        if (ass->toString() < kept->toString()) {
+          discardedAss = kept;
+          kept = ass;
+        }
+      }
       if (clc::dumpDebugData) {
-        ddd::appendNote(ass.get(), "Redundant");
+        ddd::appendNote(discardedAss.get(), "Redundant");
       }
       discarded++;
     }
@@ -198,6 +230,225 @@ void Qualifier::init() {
   _originalAssertions.clear();
 }
 
+namespace {
+/// COI rank metrics (H6, D-014) of every assertion, if the context has a <coi>
+void fillCoiMetrics(const std::vector<AssertionPtr> &assertions,
+                    const Context &context) {
+  if (context._coi == nullptr) {
+    return;
+  }
+  for (const auto &a : assertions) {
+    CoiMetrics m = computeCoiMetrics(a->_formula, *context._coi);
+    a->_hasCoi = true;
+    a->_coiFrac = m.frac;
+    a->_coiDepthFit = m.depthFit;
+    a->_coiUnknown = m.unknown;
+  }
+}
+
+/// --reduce implies (H29): per context, the pairs to check, the cap, whether the step was
+/// skipped, the assertions dropped and the seconds taken, as JSON objects for --dump-assertion-info
+std::map<std::string, std::string> &implicationRecords() {
+  static std::map<std::string, std::string> records;
+  return records;
+}
+std::mutex &implicationRecordsGuard() {
+  static std::mutex guard;
+  return guard;
+}
+
+/// --dump-assertion-info: one JSON record per kept assertion, all contexts in one file
+void dumpAssertionInfo(const Context &context,
+                       const std::vector<AssertionPtr> &assertions) {
+  static std::vector<std::string> records;
+  static std::map<std::string, std::string> coiFilter; // by context (H7)
+  static std::mutex guard;
+  std::lock_guard<std::mutex> lock(guard);
+  if (context._coi != nullptr && context._coiMode == "filter") {
+    const auto &st = context._coiFilterStats;
+    coiFilter[context._name] =
+        "{\"permutationsBefore\": " + std::to_string(st.permutationsBefore) +
+        ", \"permutationsAfter\": " + std::to_string(st.permutationsAfter) +
+        ", \"dtCandidatesBefore\": " + std::to_string(st.dtCandidatesBefore) +
+        ", \"dtCandidatesAfter\": " + std::to_string(st.dtCandidatesAfter) +
+        (context._coiDepth == CoiDepth::Any
+             ? std::string()
+             : ", \"depth\": \"" +
+                   std::string(context._coiDepth == CoiDepth::Exact ? "exact" : "bounded") +
+                   "\", \"dtPairsBefore\": " + std::to_string(st.dtPairsBefore) +
+                   ", \"dtPairsAfter\": " + std::to_string(st.dtPairsAfter)) +
+        "}";
+  }
+  const char *ct[3] = {"t", "f", "u"};
+  for (const auto &a : assertions) {
+    std::string r = "    {\"context\": " + jsonString(context._name) +
+                    ", \"text\": " + jsonString(a->toString()) +
+                    ", \"metrics\": {";
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        r += std::string(i || j ? ", " : "") + "\"a" + ct[i] + "c" + ct[j] +
+             "\": " + std::to_string(a->_ct[i][j]);
+      }
+    }
+    r += ", \"ct\": " + std::to_string(a->_CT) +
+         ", \"traceLength\": " + std::to_string(a->_maxLength) +
+         ", \"complexity\": " + std::to_string(a->_complexity) +
+         ", \"finalScore\": " + std::to_string(a->_finalScore);
+    if (a->_hasCoi) {
+      r += ", \"coiFrac\": " + std::to_string(a->_coiFrac) +
+           ", \"coiDepthFit\": " + std::to_string(a->_coiDepthFit) +
+           ", \"coiUnknown\": " + std::to_string(a->_coiUnknown);
+    }
+    r += "}, \"leaves\": [";
+    bool first = true;
+    for (const auto &l : leafOffsets(a->_formula)) {
+      std::string text = prop2String(l.prop);
+      std::string vars;
+      for (const auto &[name, type] : getVars(l.prop)) {
+        vars += (vars.empty() ? "" : ", ") + jsonString(name);
+      }
+      auto o = context._origin.find(text);
+      r += std::string(first ? "" : ", ") + "{\"text\": " + jsonString(text) +
+           ", \"antecedent\": " + (l.inAntecedent ? "true" : "false") +
+           ", \"offset\": " +
+           (l.offset ? std::to_string(*l.offset) : std::string("null")) +
+           ", \"variables\": [" + vars + "], \"origin\": " +
+           (o == context._origin.end() ? std::string("null")
+                                       : jsonString(o->second)) +
+           "}";
+      first = false;
+    }
+    r += "]}";
+    records.push_back(r);
+  }
+  std::ofstream out(clc::dumpAssertionInfo);
+  messageErrorIf(!out.good(),
+                 "Cannot write '" + clc::dumpAssertionInfo + "'");
+  out << "{\n  \"version\": \"1\",\n  \"traceEnd\": \"" << clc::traceEnd << "\",\n";
+  if (!coiFilter.empty()) {
+    out << "  \"coiFilter\": {";
+    bool first = true;
+    for (const auto &[name, stats] : coiFilter) {
+      out << (first ? "" : ", ") << jsonString(name) << ": " << stats;
+      first = false;
+    }
+    out << "},\n";
+  }
+  {
+    std::lock_guard<std::mutex> lockRecords(implicationRecordsGuard());
+    const auto &imp = implicationRecords();
+    if (!imp.empty()) {
+      out << "  \"implication\": {";
+      bool first = true;
+      for (const auto &[name, rec] : imp) {
+        out << (first ? "" : ", ") << jsonString(name) << ": " << rec;
+        first = false;
+      }
+      out << "},\n";
+    }
+  }
+  if (clc::deadline >= 0 || clc::mineDeadline >= 0) {
+    // H39
+    std::stringstream d;
+    d << "  \"deadline\": {\"deadline\": " << (clc::deadline >= 0 ? std::to_string(clc::deadline) : "null")
+      << ", \"mineDeadline\": " << clc::mineDeadline << ", \"mineCut\": " << (hs::mineCut ? "true" : "false")
+      << ", \"permutationsDone\": " << hs::permutationsDone << ", \"permutationsTotal\": " << hs::permutationsTotal
+      << ", \"templatesNotStarted\": " << hs::templatesNotStarted << "},\n";
+    out << d.str();
+  }
+  out << "  \"assertions\": [\n";
+  for (size_t i = 0; i < records.size(); i++) {
+    out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
+  }
+  out << "  ]\n}\n";
+}
+
+/// --reduce implies: drops the assertions implied by (or, with --keep weaker, implying) a kept
+/// one; --dump-implications: one JSON record per dropped assertion, all contexts in one file
+void applyImplicationReduction(const Context &context,
+                               std::vector<AssertionPtr> &assertions) {
+  static std::vector<std::string> records;
+  static std::mutex guard;
+  std::vector<ImplicationRecord> dropped;
+  size_t before = assertions.size(), pairs = 0;
+  auto start = std::chrono::steady_clock::now();
+  AtomPremises premises;
+  premises.enabled = clc::atomPremises;
+  premises.maxQueries = clc::atomPremisesMax;
+  bool skipped = false, deadlineHit = false;
+  size_t unchecked = 0;
+  assertions = reduceByImplication(assertions, clc::keep, &dropped, 1000, &pairs, premises,
+                                   clc::impliesMaxPairs, &skipped, hs::reduceDeadline(),
+                                   &unchecked, &deadlineHit);
+  double seconds = std::chrono::duration<double>(
+                       std::chrono::steady_clock::now() - start)
+                       .count();
+  std::stringstream secs;
+  secs << std::fixed << std::setprecision(2) << seconds;
+  if (skipped) {
+    messageInfo("Implication: skipped, " + std::to_string(pairs) + " pairs > " +
+                std::to_string(clc::impliesMaxPairs) + " (--implies-max-pairs)");
+  } else {
+    messageInfo("Implication: dropped " + std::to_string(before - assertions.size()) +
+                " of " + std::to_string(before) + " assertions (keep " +
+                clc::keep + ", " + std::to_string(pairs - unchecked) + " pairs checked in " +
+                secs.str() + "s)");
+  }
+  messageInfoIf(deadlineHit, "Deadline: implication step cut, " + std::to_string(unchecked) +
+                                 " of " + std::to_string(pairs) + " pairs not checked (--deadline)");
+  {
+    std::lock_guard<std::mutex> lockRecords(implicationRecordsGuard());
+    implicationRecords()[context._name] =
+        "{\"pairs\": " + std::to_string(pairs) +
+        ", \"maxPairs\": " + std::to_string(clc::impliesMaxPairs) +
+        ", \"skipped\": " + (skipped ? "true" : "false") +
+        ", \"unchecked\": " + std::to_string(unchecked) +
+        ", \"deadlineHit\": " + (deadlineHit ? "true" : "false") +
+        ", \"dropped\": " + std::to_string(before - assertions.size()) +
+        ", \"seconds\": " + secs.str() + "}";
+  }
+  if (clc::dumpImplications.empty()) {
+    return;
+  }
+  std::lock_guard<std::mutex> lock(guard);
+  for (const auto &d : dropped) {
+    std::vector<std::string> kept;
+    for (const auto &k : d.kept) {
+      kept.push_back(jsonString(k->toString()));
+    }
+    std::sort(kept.begin(), kept.end());
+    std::string r = "    {\"context\": " + jsonString(context._name) +
+                    ", \"dropped\": " + jsonString(d.dropped->toString()) +
+                    ", \"kept\": [";
+    for (size_t i = 0; i < kept.size(); i++) {
+      r += (i ? ", " : "") + kept[i];
+    }
+    r += "], \"relation\": " + jsonString(d.relation);
+    if (!d.premises.empty()) {
+      // H3b: the facts between atoms the claim needed (an optional field)
+      std::vector<std::string> ps;
+      for (const auto &p : d.premises) {
+        ps.push_back(jsonString(p));
+      }
+      std::sort(ps.begin(), ps.end());
+      r += ", \"premises\": [";
+      for (size_t i = 0; i < ps.size(); i++) {
+        r += (i ? ", " : "") + ps[i];
+      }
+      r += "]";
+    }
+    records.push_back(r + "}");
+  }
+  std::ofstream out(clc::dumpImplications);
+  messageErrorIf(!out.good(), "Cannot write '" + clc::dumpImplications + "'");
+  out << "{\n  \"version\": \"1\",\n  \"implications\": [\n";
+  for (size_t i = 0; i < records.size(); i++) {
+    out << records[i] << (i + 1 < records.size() ? ",\n" : "\n");
+  }
+  out << "  ]\n}\n";
+}
+} // namespace
+
 std::vector<AssertionPtr> Qualifier::qualify(Context &context,
                                              const TracePtr &trace) {
 
@@ -207,10 +458,31 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   if (context._assertions.empty()) {
     messageWarning("Could not mine any assertions for context '" +
                    context._name + "'");
+    if (!clc::dumpAssertionInfo.empty() && (clc::deadline >= 0 || clc::mineDeadline >= 0)) {
+      dumpAssertionInfo(context, {}); // H39: the caller learns whether mining was cut
+    }
     return std::vector<AssertionPtr>();
   }
 
   std::vector<AssertionPtr> assertions = context._assertions;
+
+  if (context._coi != nullptr && context._coiMode == "filter") {
+    const auto &st = context._coiFilterStats;
+    messageInfo("COI filter (context '" + context._name + "'): permutations " +
+                std::to_string(st.permutationsBefore) + " -> " +
+                std::to_string(st.permutationsAfter) +
+                ", decision-tree candidates (summed over consequents) " +
+                std::to_string(st.dtCandidatesBefore) + " -> " +
+                std::to_string(st.dtCandidatesAfter) +
+                (context._coiDepth == CoiDepth::Any
+                     ? std::string()
+                     : ", depth " +
+                           std::string(context._coiDepth == CoiDepth::Exact ? "exact"
+                                                                            : "bounded") +
+                           ": (candidate, index) pairs tried " +
+                           std::to_string(st.dtPairsBefore) + " -> " +
+                           std::to_string(st.dtPairsAfter)));
+  }
 
   messageInfo("Qualifying " + std::to_string(assertions.size()) +
               " assertions");
@@ -218,6 +490,7 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   assertions = patchDiscardAssertions(assertions, trace);
 
   filterRedundantAssertions(assertions);
+  fillCoiMetrics(assertions, context);
   if (requiresFaultCoverage(context._filter)) {
     fillAssertionsWithFaultCoverage(assertions, trace);
   }
@@ -226,14 +499,25 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   if (rewriteUsingEdits(assertions, context._rewrite, trace) > 0) {
     //rewriting might have introduced redundant assertions
     filterRedundantAssertions(assertions);
+    fillCoiMetrics(assertions, context);
   }
   filterUsingEdits(assertions, context._remove, trace);
+
+  // --reduce implies (D-008): before ranking, so that the kept assertions are ranked as usual;
+  // --keep ranked needs the scores, so it runs on the ranked list (dropping keeps the order)
+  bool implies = clc::reduce == "implies";
+  if (implies && clc::keep != "ranked") {
+    applyImplicationReduction(context, assertions);
+  }
 
   if (requiresFaultCoverage(context._sort)) {
     fillAssertionsWithFaultCoverage(assertions, trace);
   }
   std::vector<AssertionPtr> rankedAssertions =
       rankAssertions(assertions, context._sort);
+  if (implies && clc::keep == "ranked") {
+    applyImplicationReduction(context, rankedAssertions);
+  }
 
   filterAssertionsWithFrank(rankedAssertions);
 
@@ -252,6 +536,9 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
   // dump to file
   if (clc::dumpAssToFile && !rankedAssertions.empty()) {
     dumpAssToFile(context, trace, rankedAssertions);
+  }
+  if (!clc::dumpAssertionInfo.empty()) {
+    dumpAssertionInfo(context, rankedAssertions);
   }
 
   return rankedAssertions;
@@ -390,7 +677,31 @@ std::vector<size_t> Qualifier::getCoverageSet() {
   std::vector<std::vector<int>> set_to_elements;
   std::unordered_map<int, int> setIdToAssId;
   size_t setId = 0;
-  for (auto &[aID, fIDS] : _aidToF) {
+  //ties in the greedy set cover are broken by the order of the sets: give them to the solver
+  //sorted by the assertion's text, because both the ids and the mining order depend on thread
+  //timing; ids without a known assertion (e.g. when _aidToF is filled directly) go last, by id
+  std::unordered_map<size_t, std::string> aidToText;
+  for (const AssertionPtr &a : _originalAssertions) {
+    if (_aidToF.count(a->_id)) {
+      aidToText[a->_id] = a->toString();
+    }
+  }
+  std::vector<size_t> aids;
+  for (const auto &[aID, fIDS] : _aidToF) {
+    aids.push_back(aID);
+  }
+  std::sort(aids.begin(), aids.end(), [&aidToText](size_t l, size_t r) {
+    bool lKnown = aidToText.count(l), rKnown = aidToText.count(r);
+    if (lKnown != rKnown) {
+      return lKnown;
+    }
+    if (lKnown && aidToText.at(l) != aidToText.at(r)) {
+      return aidToText.at(l) < aidToText.at(r);
+    }
+    return l < r;
+  });
+  for (size_t aID : aids) {
+    const std::vector<size_t> &fIDS = _aidToF.at(aID);
     std::vector<int> cfSubset;
     for (auto fID : fIDS) {
       cfSubset.push_back(fID);
@@ -433,10 +744,24 @@ void Qualifier::sortAssertionsWithMetrics(
     a->_finalScore = score;
   }
 
-  std::sort(assertions.begin(), assertions.end(),
-            [](const AssertionPtr &left, const AssertionPtr &right) {
-              return left->_finalScore > right->_finalScore;
+  //break ties by the assertion's text, so that the order (and the --max-ass cut) is deterministic;
+  //the texts are printed once (H39: printed in each comparison, ~25 s for 237,000 assertions)
+  std::vector<std::pair<std::string, AssertionPtr>> keyed;
+  keyed.reserve(assertions.size());
+  for (auto &a : assertions) {
+    keyed.emplace_back(a->toString(), a);
+  }
+  std::sort(keyed.begin(), keyed.end(),
+            [](const std::pair<std::string, AssertionPtr> &left,
+               const std::pair<std::string, AssertionPtr> &right) {
+              if (left.second->_finalScore != right.second->_finalScore) {
+                return left.second->_finalScore > right.second->_finalScore;
+              }
+              return left.first < right.first;
             });
+  for (size_t i = 0; i < keyed.size(); i++) {
+    assertions[i] = keyed[i].second;
+  }
 }
 
 void Qualifier::filterAssertionsWithMetrics(
@@ -639,7 +964,12 @@ void Qualifier::fbqUsingFaultyTraces(
 
     auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
     size_t elaborated = 0;
-    for (auto [aid, noCacheTemplate] : aid_to_noCacheTemplates) {
+    //iterate in the order of 'selected': assertion ids depend on thread timing, so the id-keyed
+    //map's order would decide (non-deterministically) which assertion is credited with a fault
+    for (const AssertionPtr &a : selected) {
+      size_t aid = a->_id;
+      const TemplateImplicationPtr &noCacheTemplate =
+          aid_to_noCacheTemplates.at(aid);
       //test if the assertion fails on the faulty trace
 
       //new assertion with faulty trace

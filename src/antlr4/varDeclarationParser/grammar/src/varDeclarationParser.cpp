@@ -1,5 +1,5 @@
 
-// Generated from varDeclaration.g4 by ANTLR 4.10.1
+// Generated from varDeclaration.g4 by ANTLR 4.13.2
 
 
 #include "varDeclarationListener.h"
@@ -36,137 +36,179 @@ struct VarDeclarationParserStaticData final {
   std::unique_ptr<antlr4::atn::ATN> atn;
 };
 
-std::once_flag vardeclarationParserOnceFlag;
-VarDeclarationParserStaticData *vardeclarationParserStaticData = nullptr;
+::antlr4::internal::OnceFlag vardeclarationParserOnceFlag;
+#if ANTLR4_USE_THREAD_LOCAL_CACHE
+static thread_local
+#endif
+std::unique_ptr<VarDeclarationParserStaticData> vardeclarationParserStaticData = nullptr;
 
 void vardeclarationParserInitialize() {
+#if ANTLR4_USE_THREAD_LOCAL_CACHE
+  if (vardeclarationParserStaticData != nullptr) {
+    return;
+  }
+#else
   assert(vardeclarationParserStaticData == nullptr);
+#endif
   auto staticData = std::make_unique<VarDeclarationParserStaticData>(
     std::vector<std::string>{
       "file", "varDec", "startBoolean", "startInt", "startLogic", "startFloat", 
-      "startString", "boolean", "booleanAtom", "numeric", "range", "sm_range", 
-      "min_dollar", "max_dollar", "sm_constant", "intAtom", "int_constant", 
-      "logicAtom", "logic_constant", "floatAtom", "string", "stringAtom", 
-      "nonTemporalFunction", "pfunc_arg", "relop", "cls_op"
+      "startString", "booleanTernary", "numericTernary", "boolean", "booleanAtom", 
+      "numeric", "concatenation", "concatItem", "range", "sm_range", "min_dollar", 
+      "max_dollar", "sm_constant", "intAtom", "int_constant", "logicAtom", 
+      "logic_constant", "floatAtom", "string", "stringAtom", "nonTemporalFunction", 
+      "signCast", "pfunc_arg", "relop", "cls_op"
     },
     std::vector<std::string>{
-      "", "','", "", "", "", "", "", "", "", "", "", "", "'.substr'", "", 
-      "", "'{'", "'}'", "'['", "']'", "'('", "')'", "'inside'", "", "", 
-      "", "", "", "", "", "", "'''", "'+'", "'-'", "'*'", "'/'", "'>'", 
-      "'>='", "'<'", "'<='", "'=='", "'!='", "'&'", "'|'", "'^'", "'~'", 
-      "'<<'", "'>>'", "'&&'", "'||'", "'!'", "':'", "'::'", "'$'", "'><'"
+      "", "','", "", "", "", "", "", "", "", "", "", "", "", "'.substr'", 
+      "", "", "'{'", "'}'", "'['", "']'", "'('", "')'", "'inside'", "", 
+      "", "", "", "", "", "", "", "'''", "'+'", "'-'", "'*'", "'/'", "'>'", 
+      "'>='", "'<'", "'<='", "'=='", "'!='", "'==='", "'!=='", "'\\u003F'", 
+      "'&'", "'|'", "'^'", "'~'", "'<<<'", "'>>>'", "'<<'", "'>>'", "'&&'", 
+      "'||'", "'!'", "':'", "'::'", "'$'", "'><'"
     },
     std::vector<std::string>{
       "", "", "Name", "VARTYPE", "WS", "BOOLEAN_CONSTANT", "BOOLEAN_VARIABLE", 
-      "INT_VARIABLE", "CONST_SUFFIX", "LOGIC_VARIABLE", "FLOAT_CONSTANT", 
-      "FLOAT_VARIABLE", "SUBSTR", "STRING_CONSTANT", "STRING_VARIABLE", 
+      "INT_VARIABLE", "CONST_SUFFIX", "LOGIC_VARIABLE", "BIT_VARIABLE", 
+      "FLOAT_CONSTANT", "FLOAT_VARIABLE", "SUBSTR", "STRING_CONSTANT", "STRING_VARIABLE", 
       "LCURLY", "RCURLY", "LSQUARED", "RSQUARED", "LROUND", "RROUND", "INSIDE", 
-      "FUNCTION", "SINTEGER", "UINTEGER", "FLOAT", "GCC_BINARY", "HEX", 
-      "VERILOG_BINARY", "FVL", "SINGLE_QUOTE", "PLUS", "MINUS", "TIMES", 
-      "DIV", "GT", "GE", "LT", "LE", "EQ", "NEQ", "BAND", "BOR", "BXOR", 
-      "NEG", "LSHIFT", "RSHIFT", "AND", "OR", "NOT", "COL", "DCOL", "DOLLAR", 
-      "RANGE", "CLS_TYPE"
+      "SIGN_CAST", "FUNCTION", "UINTEGER", "FLOAT", "GCC_BINARY", "HEX", 
+      "VERILOG_BASED", "FILL_LITERAL", "SINGLE_QUOTE", "PLUS", "MINUS", 
+      "TIMES", "DIV", "GT", "GE", "LT", "LE", "EQ", "NEQ", "CASE_EQ", "CASE_NEQ", 
+      "QUESTION", "BAND", "BOR", "BXOR", "NEG", "ALSHIFT", "ARSHIFT", "LSHIFT", 
+      "RSHIFT", "AND", "OR", "NOT", "COL", "DCOL", "DOLLAR", "RANGE", "CLS_TYPE"
     }
   );
   static const int32_t serializedATNSegment[] = {
-  	4,1,54,295,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
+  	4,1,60,376,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,
   	7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,
   	14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,
-  	21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,1,0,1,0,1,0,1,1,1,1,3,1,58,
-  	8,1,1,1,1,1,1,2,1,2,1,2,1,3,1,3,1,3,1,4,1,4,1,4,1,5,1,5,1,5,1,6,1,6,1,
-  	6,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,3,7,86,8,7,1,7,1,7,5,7,90,8,7,10,
-  	7,12,7,93,9,7,1,7,1,7,3,7,97,8,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,
-  	1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,
-  	7,1,7,1,7,1,7,1,7,1,7,3,7,131,8,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,
-  	1,7,1,7,1,7,5,7,145,8,7,10,7,12,7,148,9,7,1,8,1,8,1,9,1,9,1,9,1,9,1,9,
-  	1,9,1,9,1,9,1,9,1,9,1,9,3,9,163,8,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,
-  	9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,5,9,188,8,9,
-  	10,9,12,9,191,9,9,1,10,1,10,1,10,1,10,3,10,197,8,10,1,10,1,10,1,11,1,
-  	11,1,11,3,11,204,8,11,1,11,1,11,1,11,3,11,209,8,11,1,11,1,11,1,12,1,12,
-  	1,13,1,13,1,14,1,14,1,15,1,15,3,15,221,8,15,1,16,1,16,1,16,3,16,226,8,
-  	16,1,16,1,16,3,16,230,8,16,1,16,3,16,233,8,16,1,17,1,17,1,17,3,17,238,
-  	8,17,1,18,3,18,241,8,18,1,18,1,18,1,19,1,19,1,20,1,20,1,20,1,20,1,20,
-  	1,20,3,20,253,8,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,
-  	3,20,265,8,20,1,20,5,20,268,8,20,10,20,12,20,271,9,20,1,21,1,21,1,22,
-  	1,22,1,22,1,22,1,22,5,22,280,8,22,10,22,12,22,283,9,22,1,22,1,22,1,23,
-  	1,23,3,23,289,8,23,1,24,1,24,1,25,1,25,1,25,0,3,14,18,40,26,0,2,4,6,8,
-  	10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,0,8,1,
-  	0,5,6,1,0,33,34,1,0,31,32,1,0,23,24,1,0,10,11,1,0,13,14,1,0,35,38,2,0,
-  	35,39,53,53,319,0,52,1,0,0,0,2,55,1,0,0,0,4,61,1,0,0,0,6,64,1,0,0,0,8,
-  	67,1,0,0,0,10,70,1,0,0,0,12,73,1,0,0,0,14,130,1,0,0,0,16,149,1,0,0,0,
-  	18,162,1,0,0,0,20,192,1,0,0,0,22,200,1,0,0,0,24,212,1,0,0,0,26,214,1,
-  	0,0,0,28,216,1,0,0,0,30,220,1,0,0,0,32,232,1,0,0,0,34,237,1,0,0,0,36,
-  	240,1,0,0,0,38,244,1,0,0,0,40,252,1,0,0,0,42,272,1,0,0,0,44,274,1,0,0,
-  	0,46,288,1,0,0,0,48,290,1,0,0,0,50,292,1,0,0,0,52,53,3,2,1,0,53,54,5,
-  	0,0,1,54,1,1,0,0,0,55,57,5,3,0,0,56,58,3,20,10,0,57,56,1,0,0,0,57,58,
-  	1,0,0,0,58,59,1,0,0,0,59,60,5,2,0,0,60,3,1,0,0,0,61,62,3,14,7,0,62,63,
-  	5,0,0,1,63,5,1,0,0,0,64,65,3,18,9,0,65,66,5,0,0,1,66,7,1,0,0,0,67,68,
-  	3,18,9,0,68,69,5,0,0,1,69,9,1,0,0,0,70,71,3,18,9,0,71,72,5,0,0,1,72,11,
-  	1,0,0,0,73,74,3,40,20,0,74,75,5,0,0,1,75,13,1,0,0,0,76,77,6,7,-1,0,77,
-  	78,5,49,0,0,78,131,3,14,7,16,79,131,3,44,22,0,80,81,3,18,9,0,81,82,5,
-  	21,0,0,82,91,5,15,0,0,83,86,3,28,14,0,84,86,3,22,11,0,85,83,1,0,0,0,85,
-  	84,1,0,0,0,86,87,1,0,0,0,87,88,5,1,0,0,88,90,1,0,0,0,89,85,1,0,0,0,90,
-  	93,1,0,0,0,91,89,1,0,0,0,91,92,1,0,0,0,92,96,1,0,0,0,93,91,1,0,0,0,94,
-  	97,3,28,14,0,95,97,3,22,11,0,96,94,1,0,0,0,96,95,1,0,0,0,97,98,1,0,0,
-  	0,98,99,5,16,0,0,99,131,1,0,0,0,100,101,3,18,9,0,101,102,3,48,24,0,102,
-  	103,3,18,9,0,103,131,1,0,0,0,104,105,3,18,9,0,105,106,5,39,0,0,106,107,
-  	3,18,9,0,107,131,1,0,0,0,108,109,3,18,9,0,109,110,5,40,0,0,110,111,3,
-  	18,9,0,111,131,1,0,0,0,112,113,3,40,20,0,113,114,3,48,24,0,114,115,3,
-  	40,20,0,115,131,1,0,0,0,116,117,3,40,20,0,117,118,5,39,0,0,118,119,3,
-  	40,20,0,119,131,1,0,0,0,120,121,3,40,20,0,121,122,5,40,0,0,122,123,3,
-  	40,20,0,123,131,1,0,0,0,124,131,3,16,8,0,125,131,3,18,9,0,126,127,5,19,
-  	0,0,127,128,3,14,7,0,128,129,5,20,0,0,129,131,1,0,0,0,130,76,1,0,0,0,
-  	130,79,1,0,0,0,130,80,1,0,0,0,130,100,1,0,0,0,130,104,1,0,0,0,130,108,
-  	1,0,0,0,130,112,1,0,0,0,130,116,1,0,0,0,130,120,1,0,0,0,130,124,1,0,0,
-  	0,130,125,1,0,0,0,130,126,1,0,0,0,131,146,1,0,0,0,132,133,10,7,0,0,133,
-  	134,5,39,0,0,134,145,3,14,7,8,135,136,10,6,0,0,136,137,5,40,0,0,137,145,
-  	3,14,7,7,138,139,10,5,0,0,139,140,5,47,0,0,140,145,3,14,7,6,141,142,10,
-  	4,0,0,142,143,5,48,0,0,143,145,3,14,7,5,144,132,1,0,0,0,144,135,1,0,0,
-  	0,144,138,1,0,0,0,144,141,1,0,0,0,145,148,1,0,0,0,146,144,1,0,0,0,146,
-  	147,1,0,0,0,147,15,1,0,0,0,148,146,1,0,0,0,149,150,7,0,0,0,150,17,1,0,
-  	0,0,151,152,6,9,-1,0,152,153,5,44,0,0,153,163,3,18,9,14,154,163,3,44,
-  	22,0,155,163,3,30,15,0,156,163,3,34,17,0,157,163,3,38,19,0,158,159,5,
-  	19,0,0,159,160,3,18,9,0,160,161,5,20,0,0,161,163,1,0,0,0,162,151,1,0,
-  	0,0,162,154,1,0,0,0,162,155,1,0,0,0,162,156,1,0,0,0,162,157,1,0,0,0,162,
-  	158,1,0,0,0,163,189,1,0,0,0,164,165,10,11,0,0,165,166,7,1,0,0,166,188,
-  	3,18,9,12,167,168,10,10,0,0,168,169,7,2,0,0,169,188,3,18,9,11,170,171,
-  	10,9,0,0,171,172,5,45,0,0,172,188,3,18,9,10,173,174,10,8,0,0,174,175,
-  	5,46,0,0,175,188,3,18,9,9,176,177,10,7,0,0,177,178,5,41,0,0,178,188,3,
-  	18,9,8,179,180,10,6,0,0,180,181,5,43,0,0,181,188,3,18,9,7,182,183,10,
-  	5,0,0,183,184,5,42,0,0,184,188,3,18,9,6,185,186,10,12,0,0,186,188,3,20,
-  	10,0,187,164,1,0,0,0,187,167,1,0,0,0,187,170,1,0,0,0,187,173,1,0,0,0,
-  	187,176,1,0,0,0,187,179,1,0,0,0,187,182,1,0,0,0,187,185,1,0,0,0,188,191,
-  	1,0,0,0,189,187,1,0,0,0,189,190,1,0,0,0,190,19,1,0,0,0,191,189,1,0,0,
-  	0,192,193,5,17,0,0,193,196,7,3,0,0,194,195,5,50,0,0,195,197,7,3,0,0,196,
-  	194,1,0,0,0,196,197,1,0,0,0,197,198,1,0,0,0,198,199,5,18,0,0,199,21,1,
-  	0,0,0,200,203,5,17,0,0,201,204,3,18,9,0,202,204,3,24,12,0,203,201,1,0,
-  	0,0,203,202,1,0,0,0,204,205,1,0,0,0,205,208,5,50,0,0,206,209,3,18,9,0,
-  	207,209,3,26,13,0,208,206,1,0,0,0,208,207,1,0,0,0,209,210,1,0,0,0,210,
-  	211,5,18,0,0,211,23,1,0,0,0,212,213,5,52,0,0,213,25,1,0,0,0,214,215,5,
-  	52,0,0,215,27,1,0,0,0,216,217,3,18,9,0,217,29,1,0,0,0,218,221,3,32,16,
-  	0,219,221,5,7,0,0,220,218,1,0,0,0,220,219,1,0,0,0,221,31,1,0,0,0,222,
-  	233,5,26,0,0,223,225,5,23,0,0,224,226,5,8,0,0,225,224,1,0,0,0,225,226,
-  	1,0,0,0,226,233,1,0,0,0,227,229,5,24,0,0,228,230,5,8,0,0,229,228,1,0,
-  	0,0,229,230,1,0,0,0,230,233,1,0,0,0,231,233,5,27,0,0,232,222,1,0,0,0,
-  	232,223,1,0,0,0,232,227,1,0,0,0,232,231,1,0,0,0,233,33,1,0,0,0,234,238,
-  	3,36,18,0,235,238,3,32,16,0,236,238,5,9,0,0,237,234,1,0,0,0,237,235,1,
-  	0,0,0,237,236,1,0,0,0,238,35,1,0,0,0,239,241,5,24,0,0,240,239,1,0,0,0,
-  	240,241,1,0,0,0,241,242,1,0,0,0,242,243,5,28,0,0,243,37,1,0,0,0,244,245,
-  	7,4,0,0,245,39,1,0,0,0,246,247,6,20,-1,0,247,253,3,42,21,0,248,249,5,
-  	19,0,0,249,250,3,40,20,0,250,251,5,20,0,0,251,253,1,0,0,0,252,246,1,0,
-  	0,0,252,248,1,0,0,0,253,269,1,0,0,0,254,255,10,4,0,0,255,256,5,31,0,0,
-  	256,268,3,40,20,5,257,258,10,3,0,0,258,259,5,12,0,0,259,264,5,19,0,0,
-  	260,261,5,24,0,0,261,262,5,1,0,0,262,265,5,24,0,0,263,265,5,24,0,0,264,
-  	260,1,0,0,0,264,263,1,0,0,0,264,265,1,0,0,0,265,266,1,0,0,0,266,268,5,
-  	20,0,0,267,254,1,0,0,0,267,257,1,0,0,0,268,271,1,0,0,0,269,267,1,0,0,
-  	0,269,270,1,0,0,0,270,41,1,0,0,0,271,269,1,0,0,0,272,273,7,5,0,0,273,
-  	43,1,0,0,0,274,275,5,22,0,0,275,276,5,19,0,0,276,281,3,46,23,0,277,278,
-  	5,1,0,0,278,280,3,46,23,0,279,277,1,0,0,0,280,283,1,0,0,0,281,279,1,0,
-  	0,0,281,282,1,0,0,0,282,284,1,0,0,0,283,281,1,0,0,0,284,285,5,20,0,0,
-  	285,45,1,0,0,0,286,289,3,18,9,0,287,289,3,14,7,0,288,286,1,0,0,0,288,
-  	287,1,0,0,0,289,47,1,0,0,0,290,291,7,6,0,0,291,49,1,0,0,0,292,293,7,7,
-  	0,0,293,51,1,0,0,0,25,57,85,91,96,130,144,146,162,187,189,196,203,208,
-  	220,225,229,232,237,240,252,264,267,269,281,288
+  	21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,
+  	28,2,29,7,29,2,30,7,30,1,0,1,0,1,0,1,1,1,1,3,1,68,8,1,1,1,1,1,1,2,1,2,
+  	3,2,74,8,2,1,2,1,2,1,3,1,3,3,3,80,8,3,1,3,1,3,1,4,1,4,3,4,86,8,4,1,4,
+  	1,4,1,5,1,5,3,5,92,8,5,1,5,1,5,1,6,1,6,1,6,1,7,1,7,1,7,1,7,3,7,103,8,
+  	7,1,7,1,7,1,7,3,7,108,8,7,1,8,1,8,1,8,1,8,3,8,114,8,8,1,8,1,8,1,8,3,8,
+  	119,8,8,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,
+  	9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,3,9,147,8,9,1,9,1,9,1,9,1,9,
+  	1,9,1,9,1,9,1,9,1,9,5,9,158,8,9,10,9,12,9,161,9,9,1,10,1,10,1,11,1,11,
+  	1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,
+  	1,11,1,11,1,11,1,11,1,11,3,11,186,8,11,1,11,1,11,1,11,1,11,1,11,1,11,
+  	1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,
+  	1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,3,11,220,
+  	8,11,1,11,1,11,5,11,224,8,11,10,11,12,11,227,9,11,1,11,1,11,3,11,231,
+  	8,11,1,11,1,11,5,11,235,8,11,10,11,12,11,238,9,11,1,12,1,12,1,12,1,12,
+  	4,12,244,8,12,11,12,12,12,245,1,12,1,12,1,12,1,12,1,12,1,12,1,12,1,12,
+  	5,12,256,8,12,10,12,12,12,259,9,12,1,12,1,12,1,12,3,12,264,8,12,1,13,
+  	1,13,3,13,268,8,13,1,14,1,14,1,14,1,14,3,14,274,8,14,1,14,1,14,1,15,1,
+  	15,1,15,3,15,281,8,15,1,15,1,15,1,15,3,15,286,8,15,1,15,1,15,1,16,1,16,
+  	1,17,1,17,1,18,1,18,1,19,1,19,3,19,298,8,19,1,20,1,20,1,20,3,20,303,8,
+  	20,1,20,3,20,306,8,20,1,21,1,21,1,21,1,21,3,21,312,8,21,1,22,3,22,315,
+  	8,22,1,22,1,22,3,22,319,8,22,1,23,1,23,1,24,1,24,1,24,1,24,1,24,1,24,
+  	3,24,329,8,24,1,24,1,24,1,24,1,24,1,24,1,24,1,24,1,24,1,24,1,24,3,24,
+  	341,8,24,1,24,5,24,344,8,24,10,24,12,24,347,9,24,1,25,1,25,1,26,1,26,
+  	1,26,1,26,1,26,5,26,356,8,26,10,26,12,26,359,9,26,1,26,1,26,1,27,1,27,
+  	1,27,1,27,1,27,1,28,1,28,3,28,370,8,28,1,29,1,29,1,30,1,30,1,30,0,3,18,
+  	22,48,31,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
+  	44,46,48,50,52,54,56,58,60,0,11,1,0,40,41,1,0,5,6,3,0,32,33,48,48,55,
+  	55,1,0,34,35,1,0,32,33,1,0,49,52,1,0,40,43,1,0,11,12,1,0,14,15,1,0,36,
+  	39,2,0,36,40,59,59,409,0,62,1,0,0,0,2,65,1,0,0,0,4,73,1,0,0,0,6,79,1,
+  	0,0,0,8,85,1,0,0,0,10,91,1,0,0,0,12,95,1,0,0,0,14,98,1,0,0,0,16,109,1,
+  	0,0,0,18,146,1,0,0,0,20,162,1,0,0,0,22,185,1,0,0,0,24,263,1,0,0,0,26,
+  	267,1,0,0,0,28,269,1,0,0,0,30,277,1,0,0,0,32,289,1,0,0,0,34,291,1,0,0,
+  	0,36,293,1,0,0,0,38,297,1,0,0,0,40,305,1,0,0,0,42,311,1,0,0,0,44,318,
+  	1,0,0,0,46,320,1,0,0,0,48,328,1,0,0,0,50,348,1,0,0,0,52,350,1,0,0,0,54,
+  	362,1,0,0,0,56,369,1,0,0,0,58,371,1,0,0,0,60,373,1,0,0,0,62,63,3,2,1,
+  	0,63,64,5,0,0,1,64,1,1,0,0,0,65,67,5,3,0,0,66,68,3,28,14,0,67,66,1,0,
+  	0,0,67,68,1,0,0,0,68,69,1,0,0,0,69,70,5,2,0,0,70,3,1,0,0,0,71,74,3,18,
+  	9,0,72,74,3,14,7,0,73,71,1,0,0,0,73,72,1,0,0,0,74,75,1,0,0,0,75,76,5,
+  	0,0,1,76,5,1,0,0,0,77,80,3,22,11,0,78,80,3,16,8,0,79,77,1,0,0,0,79,78,
+  	1,0,0,0,80,81,1,0,0,0,81,82,5,0,0,1,82,7,1,0,0,0,83,86,3,22,11,0,84,86,
+  	3,16,8,0,85,83,1,0,0,0,85,84,1,0,0,0,86,87,1,0,0,0,87,88,5,0,0,1,88,9,
+  	1,0,0,0,89,92,3,22,11,0,90,92,3,16,8,0,91,89,1,0,0,0,91,90,1,0,0,0,92,
+  	93,1,0,0,0,93,94,5,0,0,1,94,11,1,0,0,0,95,96,3,48,24,0,96,97,5,0,0,1,
+  	97,13,1,0,0,0,98,99,3,18,9,0,99,102,5,44,0,0,100,103,3,18,9,0,101,103,
+  	3,14,7,0,102,100,1,0,0,0,102,101,1,0,0,0,103,104,1,0,0,0,104,107,5,56,
+  	0,0,105,108,3,18,9,0,106,108,3,14,7,0,107,105,1,0,0,0,107,106,1,0,0,0,
+  	108,15,1,0,0,0,109,110,3,18,9,0,110,113,5,44,0,0,111,114,3,22,11,0,112,
+  	114,3,16,8,0,113,111,1,0,0,0,113,112,1,0,0,0,114,115,1,0,0,0,115,118,
+  	5,56,0,0,116,119,3,22,11,0,117,119,3,16,8,0,118,116,1,0,0,0,118,117,1,
+  	0,0,0,119,17,1,0,0,0,120,121,6,9,-1,0,121,147,3,20,10,0,122,147,3,52,
+  	26,0,123,124,3,48,24,0,124,125,3,58,29,0,125,126,3,48,24,0,126,147,1,
+  	0,0,0,127,128,3,48,24,0,128,129,5,40,0,0,129,130,3,48,24,0,130,147,1,
+  	0,0,0,131,132,3,48,24,0,132,133,5,41,0,0,133,134,3,48,24,0,134,147,1,
+  	0,0,0,135,136,5,20,0,0,136,137,3,18,9,0,137,138,5,21,0,0,138,147,1,0,
+  	0,0,139,147,3,22,11,0,140,141,5,20,0,0,141,142,3,14,7,0,142,143,5,21,
+  	0,0,143,147,1,0,0,0,144,145,5,55,0,0,145,147,3,18,9,4,146,120,1,0,0,0,
+  	146,122,1,0,0,0,146,123,1,0,0,0,146,127,1,0,0,0,146,131,1,0,0,0,146,135,
+  	1,0,0,0,146,139,1,0,0,0,146,140,1,0,0,0,146,144,1,0,0,0,147,159,1,0,0,
+  	0,148,149,10,3,0,0,149,150,7,0,0,0,150,158,3,18,9,4,151,152,10,2,0,0,
+  	152,153,5,53,0,0,153,158,3,18,9,3,154,155,10,1,0,0,155,156,5,54,0,0,156,
+  	158,3,18,9,2,157,148,1,0,0,0,157,151,1,0,0,0,157,154,1,0,0,0,158,161,
+  	1,0,0,0,159,157,1,0,0,0,159,160,1,0,0,0,160,19,1,0,0,0,161,159,1,0,0,
+  	0,162,163,7,1,0,0,163,21,1,0,0,0,164,165,6,11,-1,0,165,166,7,2,0,0,166,
+  	186,3,22,11,19,167,186,3,52,26,0,168,186,3,54,27,0,169,186,3,38,19,0,
+  	170,186,3,42,21,0,171,186,3,46,23,0,172,186,3,24,12,0,173,174,5,20,0,
+  	0,174,175,3,22,11,0,175,176,5,21,0,0,176,186,1,0,0,0,177,178,5,20,0,0,
+  	178,179,3,16,8,0,179,180,5,21,0,0,180,186,1,0,0,0,181,182,5,20,0,0,182,
+  	183,3,18,9,0,183,184,5,21,0,0,184,186,1,0,0,0,185,164,1,0,0,0,185,167,
+  	1,0,0,0,185,168,1,0,0,0,185,169,1,0,0,0,185,170,1,0,0,0,185,171,1,0,0,
+  	0,185,172,1,0,0,0,185,173,1,0,0,0,185,177,1,0,0,0,185,181,1,0,0,0,186,
+  	236,1,0,0,0,187,188,10,16,0,0,188,189,7,3,0,0,189,235,3,22,11,17,190,
+  	191,10,15,0,0,191,192,7,4,0,0,192,235,3,22,11,16,193,194,10,14,0,0,194,
+  	195,7,5,0,0,195,235,3,22,11,15,196,197,10,13,0,0,197,198,3,58,29,0,198,
+  	199,3,22,11,14,199,235,1,0,0,0,200,201,10,11,0,0,201,202,7,6,0,0,202,
+  	235,3,22,11,12,203,204,10,10,0,0,204,205,5,45,0,0,205,235,3,22,11,11,
+  	206,207,10,9,0,0,207,208,5,47,0,0,208,235,3,22,11,10,209,210,10,8,0,0,
+  	210,211,5,46,0,0,211,235,3,22,11,9,212,213,10,20,0,0,213,235,3,28,14,
+  	0,214,215,10,12,0,0,215,216,5,22,0,0,216,225,5,16,0,0,217,220,3,36,18,
+  	0,218,220,3,30,15,0,219,217,1,0,0,0,219,218,1,0,0,0,220,221,1,0,0,0,221,
+  	222,5,1,0,0,222,224,1,0,0,0,223,219,1,0,0,0,224,227,1,0,0,0,225,223,1,
+  	0,0,0,225,226,1,0,0,0,226,230,1,0,0,0,227,225,1,0,0,0,228,231,3,36,18,
+  	0,229,231,3,30,15,0,230,228,1,0,0,0,230,229,1,0,0,0,231,232,1,0,0,0,232,
+  	233,5,17,0,0,233,235,1,0,0,0,234,187,1,0,0,0,234,190,1,0,0,0,234,193,
+  	1,0,0,0,234,196,1,0,0,0,234,200,1,0,0,0,234,203,1,0,0,0,234,206,1,0,0,
+  	0,234,209,1,0,0,0,234,212,1,0,0,0,234,214,1,0,0,0,235,238,1,0,0,0,236,
+  	234,1,0,0,0,236,237,1,0,0,0,237,23,1,0,0,0,238,236,1,0,0,0,239,240,5,
+  	16,0,0,240,243,3,26,13,0,241,242,5,1,0,0,242,244,3,26,13,0,243,241,1,
+  	0,0,0,244,245,1,0,0,0,245,243,1,0,0,0,245,246,1,0,0,0,246,247,1,0,0,0,
+  	247,248,5,17,0,0,248,264,1,0,0,0,249,250,5,16,0,0,250,251,5,25,0,0,251,
+  	252,5,16,0,0,252,257,3,26,13,0,253,254,5,1,0,0,254,256,3,26,13,0,255,
+  	253,1,0,0,0,256,259,1,0,0,0,257,255,1,0,0,0,257,258,1,0,0,0,258,260,1,
+  	0,0,0,259,257,1,0,0,0,260,261,5,17,0,0,261,262,5,17,0,0,262,264,1,0,0,
+  	0,263,239,1,0,0,0,263,249,1,0,0,0,264,25,1,0,0,0,265,268,3,22,11,0,266,
+  	268,3,20,10,0,267,265,1,0,0,0,267,266,1,0,0,0,268,27,1,0,0,0,269,270,
+  	5,18,0,0,270,273,5,25,0,0,271,272,5,56,0,0,272,274,5,25,0,0,273,271,1,
+  	0,0,0,273,274,1,0,0,0,274,275,1,0,0,0,275,276,5,19,0,0,276,29,1,0,0,0,
+  	277,280,5,18,0,0,278,281,3,22,11,0,279,281,3,32,16,0,280,278,1,0,0,0,
+  	280,279,1,0,0,0,281,282,1,0,0,0,282,285,5,56,0,0,283,286,3,22,11,0,284,
+  	286,3,34,17,0,285,283,1,0,0,0,285,284,1,0,0,0,286,287,1,0,0,0,287,288,
+  	5,19,0,0,288,31,1,0,0,0,289,290,5,58,0,0,290,33,1,0,0,0,291,292,5,58,
+  	0,0,292,35,1,0,0,0,293,294,3,22,11,0,294,37,1,0,0,0,295,298,3,40,20,0,
+  	296,298,5,7,0,0,297,295,1,0,0,0,297,296,1,0,0,0,298,39,1,0,0,0,299,306,
+  	5,27,0,0,300,302,5,25,0,0,301,303,5,8,0,0,302,301,1,0,0,0,302,303,1,0,
+  	0,0,303,306,1,0,0,0,304,306,5,28,0,0,305,299,1,0,0,0,305,300,1,0,0,0,
+  	305,304,1,0,0,0,306,41,1,0,0,0,307,312,3,44,22,0,308,312,3,40,20,0,309,
+  	312,5,9,0,0,310,312,5,10,0,0,311,307,1,0,0,0,311,308,1,0,0,0,311,309,
+  	1,0,0,0,311,310,1,0,0,0,312,43,1,0,0,0,313,315,5,25,0,0,314,313,1,0,0,
+  	0,314,315,1,0,0,0,315,316,1,0,0,0,316,319,5,29,0,0,317,319,5,30,0,0,318,
+  	314,1,0,0,0,318,317,1,0,0,0,319,45,1,0,0,0,320,321,7,7,0,0,321,47,1,0,
+  	0,0,322,323,6,24,-1,0,323,329,3,50,25,0,324,325,5,20,0,0,325,326,3,48,
+  	24,0,326,327,5,21,0,0,327,329,1,0,0,0,328,322,1,0,0,0,328,324,1,0,0,0,
+  	329,345,1,0,0,0,330,331,10,4,0,0,331,332,5,32,0,0,332,344,3,48,24,5,333,
+  	334,10,3,0,0,334,335,5,13,0,0,335,340,5,20,0,0,336,337,5,25,0,0,337,338,
+  	5,1,0,0,338,341,5,25,0,0,339,341,5,25,0,0,340,336,1,0,0,0,340,339,1,0,
+  	0,0,340,341,1,0,0,0,341,342,1,0,0,0,342,344,5,21,0,0,343,330,1,0,0,0,
+  	343,333,1,0,0,0,344,347,1,0,0,0,345,343,1,0,0,0,345,346,1,0,0,0,346,49,
+  	1,0,0,0,347,345,1,0,0,0,348,349,7,8,0,0,349,51,1,0,0,0,350,351,5,24,0,
+  	0,351,352,5,20,0,0,352,357,3,56,28,0,353,354,5,1,0,0,354,356,3,56,28,
+  	0,355,353,1,0,0,0,356,359,1,0,0,0,357,355,1,0,0,0,357,358,1,0,0,0,358,
+  	360,1,0,0,0,359,357,1,0,0,0,360,361,5,21,0,0,361,53,1,0,0,0,362,363,5,
+  	23,0,0,363,364,5,20,0,0,364,365,3,22,11,0,365,366,5,21,0,0,366,55,1,0,
+  	0,0,367,370,3,22,11,0,368,370,3,18,9,0,369,367,1,0,0,0,369,368,1,0,0,
+  	0,370,57,1,0,0,0,371,372,7,9,0,0,372,59,1,0,0,0,373,374,7,10,0,0,374,
+  	61,1,0,0,0,37,67,73,79,85,91,102,107,113,118,146,157,159,185,219,225,
+  	230,234,236,245,257,263,267,273,280,285,297,302,305,311,314,318,328,340,
+  	343,345,357,369
   };
   staticData->serializedATN = antlr4::atn::SerializedATNView(serializedATNSegment, sizeof(serializedATNSegment) / sizeof(serializedATNSegment[0]));
 
@@ -178,7 +220,7 @@ void vardeclarationParserInitialize() {
   for (size_t i = 0; i < count; i++) { 
     staticData->decisionToDFA.emplace_back(staticData->atn->getDecisionState(i), i);
   }
-  vardeclarationParserStaticData = staticData.release();
+  vardeclarationParserStaticData = std::move(staticData);
 }
 
 }
@@ -259,9 +301,9 @@ varDeclarationParser::FileContext* varDeclarationParser::file() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(52);
+    setState(62);
     varDec();
-    setState(53);
+    setState(63);
     match(varDeclarationParser::EOF);
    
   }
@@ -323,17 +365,17 @@ varDeclarationParser::VarDecContext* varDeclarationParser::varDec() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(55);
+    setState(65);
     match(varDeclarationParser::VARTYPE);
-    setState(57);
+    setState(67);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == varDeclarationParser::LSQUARED) {
-      setState(56);
+      setState(66);
       range();
     }
-    setState(59);
+    setState(69);
     match(varDeclarationParser::Name);
    
   }
@@ -352,12 +394,16 @@ varDeclarationParser::StartBooleanContext::StartBooleanContext(ParserRuleContext
   : ParserRuleContext(parent, invokingState) {
 }
 
+tree::TerminalNode* varDeclarationParser::StartBooleanContext::EOF() {
+  return getToken(varDeclarationParser::EOF, 0);
+}
+
 varDeclarationParser::BooleanContext* varDeclarationParser::StartBooleanContext::boolean() {
   return getRuleContext<varDeclarationParser::BooleanContext>(0);
 }
 
-tree::TerminalNode* varDeclarationParser::StartBooleanContext::EOF() {
-  return getToken(varDeclarationParser::EOF, 0);
+varDeclarationParser::BooleanTernaryContext* varDeclarationParser::StartBooleanContext::booleanTernary() {
+  return getRuleContext<varDeclarationParser::BooleanTernaryContext>(0);
 }
 
 
@@ -390,9 +436,25 @@ varDeclarationParser::StartBooleanContext* varDeclarationParser::startBoolean() 
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(61);
-    boolean(0);
-    setState(62);
+    setState(73);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 1, _ctx)) {
+    case 1: {
+      setState(71);
+      boolean(0);
+      break;
+    }
+
+    case 2: {
+      setState(72);
+      booleanTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(75);
     match(varDeclarationParser::EOF);
    
   }
@@ -411,12 +473,16 @@ varDeclarationParser::StartIntContext::StartIntContext(ParserRuleContext *parent
   : ParserRuleContext(parent, invokingState) {
 }
 
+tree::TerminalNode* varDeclarationParser::StartIntContext::EOF() {
+  return getToken(varDeclarationParser::EOF, 0);
+}
+
 varDeclarationParser::NumericContext* varDeclarationParser::StartIntContext::numeric() {
   return getRuleContext<varDeclarationParser::NumericContext>(0);
 }
 
-tree::TerminalNode* varDeclarationParser::StartIntContext::EOF() {
-  return getToken(varDeclarationParser::EOF, 0);
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::StartIntContext::numericTernary() {
+  return getRuleContext<varDeclarationParser::NumericTernaryContext>(0);
 }
 
 
@@ -449,9 +515,25 @@ varDeclarationParser::StartIntContext* varDeclarationParser::startInt() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(64);
-    numeric(0);
-    setState(65);
+    setState(79);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 2, _ctx)) {
+    case 1: {
+      setState(77);
+      numeric(0);
+      break;
+    }
+
+    case 2: {
+      setState(78);
+      numericTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(81);
     match(varDeclarationParser::EOF);
    
   }
@@ -470,12 +552,16 @@ varDeclarationParser::StartLogicContext::StartLogicContext(ParserRuleContext *pa
   : ParserRuleContext(parent, invokingState) {
 }
 
+tree::TerminalNode* varDeclarationParser::StartLogicContext::EOF() {
+  return getToken(varDeclarationParser::EOF, 0);
+}
+
 varDeclarationParser::NumericContext* varDeclarationParser::StartLogicContext::numeric() {
   return getRuleContext<varDeclarationParser::NumericContext>(0);
 }
 
-tree::TerminalNode* varDeclarationParser::StartLogicContext::EOF() {
-  return getToken(varDeclarationParser::EOF, 0);
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::StartLogicContext::numericTernary() {
+  return getRuleContext<varDeclarationParser::NumericTernaryContext>(0);
 }
 
 
@@ -508,9 +594,25 @@ varDeclarationParser::StartLogicContext* varDeclarationParser::startLogic() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(67);
-    numeric(0);
-    setState(68);
+    setState(85);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 3, _ctx)) {
+    case 1: {
+      setState(83);
+      numeric(0);
+      break;
+    }
+
+    case 2: {
+      setState(84);
+      numericTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(87);
     match(varDeclarationParser::EOF);
    
   }
@@ -529,12 +631,16 @@ varDeclarationParser::StartFloatContext::StartFloatContext(ParserRuleContext *pa
   : ParserRuleContext(parent, invokingState) {
 }
 
+tree::TerminalNode* varDeclarationParser::StartFloatContext::EOF() {
+  return getToken(varDeclarationParser::EOF, 0);
+}
+
 varDeclarationParser::NumericContext* varDeclarationParser::StartFloatContext::numeric() {
   return getRuleContext<varDeclarationParser::NumericContext>(0);
 }
 
-tree::TerminalNode* varDeclarationParser::StartFloatContext::EOF() {
-  return getToken(varDeclarationParser::EOF, 0);
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::StartFloatContext::numericTernary() {
+  return getRuleContext<varDeclarationParser::NumericTernaryContext>(0);
 }
 
 
@@ -567,9 +673,25 @@ varDeclarationParser::StartFloatContext* varDeclarationParser::startFloat() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(70);
-    numeric(0);
-    setState(71);
+    setState(91);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 4, _ctx)) {
+    case 1: {
+      setState(89);
+      numeric(0);
+      break;
+    }
+
+    case 2: {
+      setState(90);
+      numericTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(93);
     match(varDeclarationParser::EOF);
    
   }
@@ -626,10 +748,240 @@ varDeclarationParser::StartStringContext* varDeclarationParser::startString() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(73);
+    setState(95);
     string(0);
-    setState(74);
+    setState(96);
     match(varDeclarationParser::EOF);
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- BooleanTernaryContext ------------------------------------------------------------------
+
+varDeclarationParser::BooleanTernaryContext::BooleanTernaryContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<varDeclarationParser::BooleanContext *> varDeclarationParser::BooleanTernaryContext::boolean() {
+  return getRuleContexts<varDeclarationParser::BooleanContext>();
+}
+
+varDeclarationParser::BooleanContext* varDeclarationParser::BooleanTernaryContext::boolean(size_t i) {
+  return getRuleContext<varDeclarationParser::BooleanContext>(i);
+}
+
+tree::TerminalNode* varDeclarationParser::BooleanTernaryContext::QUESTION() {
+  return getToken(varDeclarationParser::QUESTION, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::BooleanTernaryContext::COL() {
+  return getToken(varDeclarationParser::COL, 0);
+}
+
+std::vector<varDeclarationParser::BooleanTernaryContext *> varDeclarationParser::BooleanTernaryContext::booleanTernary() {
+  return getRuleContexts<varDeclarationParser::BooleanTernaryContext>();
+}
+
+varDeclarationParser::BooleanTernaryContext* varDeclarationParser::BooleanTernaryContext::booleanTernary(size_t i) {
+  return getRuleContext<varDeclarationParser::BooleanTernaryContext>(i);
+}
+
+
+size_t varDeclarationParser::BooleanTernaryContext::getRuleIndex() const {
+  return varDeclarationParser::RuleBooleanTernary;
+}
+
+void varDeclarationParser::BooleanTernaryContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterBooleanTernary(this);
+}
+
+void varDeclarationParser::BooleanTernaryContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitBooleanTernary(this);
+}
+
+varDeclarationParser::BooleanTernaryContext* varDeclarationParser::booleanTernary() {
+  BooleanTernaryContext *_localctx = _tracker.createInstance<BooleanTernaryContext>(_ctx, getState());
+  enterRule(_localctx, 14, varDeclarationParser::RuleBooleanTernary);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(98);
+    boolean(0);
+    setState(99);
+    match(varDeclarationParser::QUESTION);
+    setState(102);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 5, _ctx)) {
+    case 1: {
+      setState(100);
+      boolean(0);
+      break;
+    }
+
+    case 2: {
+      setState(101);
+      booleanTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(104);
+    match(varDeclarationParser::COL);
+    setState(107);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 6, _ctx)) {
+    case 1: {
+      setState(105);
+      boolean(0);
+      break;
+    }
+
+    case 2: {
+      setState(106);
+      booleanTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- NumericTernaryContext ------------------------------------------------------------------
+
+varDeclarationParser::NumericTernaryContext::NumericTernaryContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+varDeclarationParser::BooleanContext* varDeclarationParser::NumericTernaryContext::boolean() {
+  return getRuleContext<varDeclarationParser::BooleanContext>(0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericTernaryContext::QUESTION() {
+  return getToken(varDeclarationParser::QUESTION, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericTernaryContext::COL() {
+  return getToken(varDeclarationParser::COL, 0);
+}
+
+std::vector<varDeclarationParser::NumericContext *> varDeclarationParser::NumericTernaryContext::numeric() {
+  return getRuleContexts<varDeclarationParser::NumericContext>();
+}
+
+varDeclarationParser::NumericContext* varDeclarationParser::NumericTernaryContext::numeric(size_t i) {
+  return getRuleContext<varDeclarationParser::NumericContext>(i);
+}
+
+std::vector<varDeclarationParser::NumericTernaryContext *> varDeclarationParser::NumericTernaryContext::numericTernary() {
+  return getRuleContexts<varDeclarationParser::NumericTernaryContext>();
+}
+
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::NumericTernaryContext::numericTernary(size_t i) {
+  return getRuleContext<varDeclarationParser::NumericTernaryContext>(i);
+}
+
+
+size_t varDeclarationParser::NumericTernaryContext::getRuleIndex() const {
+  return varDeclarationParser::RuleNumericTernary;
+}
+
+void varDeclarationParser::NumericTernaryContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterNumericTernary(this);
+}
+
+void varDeclarationParser::NumericTernaryContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitNumericTernary(this);
+}
+
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::numericTernary() {
+  NumericTernaryContext *_localctx = _tracker.createInstance<NumericTernaryContext>(_ctx, getState());
+  enterRule(_localctx, 16, varDeclarationParser::RuleNumericTernary);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(109);
+    boolean(0);
+    setState(110);
+    match(varDeclarationParser::QUESTION);
+    setState(113);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx)) {
+    case 1: {
+      setState(111);
+      numeric(0);
+      break;
+    }
+
+    case 2: {
+      setState(112);
+      numericTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
+    setState(115);
+    match(varDeclarationParser::COL);
+    setState(118);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
+    case 1: {
+      setState(116);
+      numeric(0);
+      break;
+    }
+
+    case 2: {
+      setState(117);
+      numericTernary();
+      break;
+    }
+
+    default:
+      break;
+    }
    
   }
   catch (RecognitionException &e) {
@@ -647,56 +999,20 @@ varDeclarationParser::BooleanContext::BooleanContext(ParserRuleContext *parent, 
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* varDeclarationParser::BooleanContext::NOT() {
-  return getToken(varDeclarationParser::NOT, 0);
-}
-
-std::vector<varDeclarationParser::BooleanContext *> varDeclarationParser::BooleanContext::boolean() {
-  return getRuleContexts<varDeclarationParser::BooleanContext>();
-}
-
-varDeclarationParser::BooleanContext* varDeclarationParser::BooleanContext::boolean(size_t i) {
-  return getRuleContext<varDeclarationParser::BooleanContext>(i);
+varDeclarationParser::BooleanAtomContext* varDeclarationParser::BooleanContext::booleanAtom() {
+  return getRuleContext<varDeclarationParser::BooleanAtomContext>(0);
 }
 
 varDeclarationParser::NonTemporalFunctionContext* varDeclarationParser::BooleanContext::nonTemporalFunction() {
   return getRuleContext<varDeclarationParser::NonTemporalFunctionContext>(0);
 }
 
-std::vector<varDeclarationParser::NumericContext *> varDeclarationParser::BooleanContext::numeric() {
-  return getRuleContexts<varDeclarationParser::NumericContext>();
+std::vector<varDeclarationParser::StringContext *> varDeclarationParser::BooleanContext::string() {
+  return getRuleContexts<varDeclarationParser::StringContext>();
 }
 
-varDeclarationParser::NumericContext* varDeclarationParser::BooleanContext::numeric(size_t i) {
-  return getRuleContext<varDeclarationParser::NumericContext>(i);
-}
-
-tree::TerminalNode* varDeclarationParser::BooleanContext::INSIDE() {
-  return getToken(varDeclarationParser::INSIDE, 0);
-}
-
-tree::TerminalNode* varDeclarationParser::BooleanContext::LCURLY() {
-  return getToken(varDeclarationParser::LCURLY, 0);
-}
-
-tree::TerminalNode* varDeclarationParser::BooleanContext::RCURLY() {
-  return getToken(varDeclarationParser::RCURLY, 0);
-}
-
-std::vector<varDeclarationParser::Sm_constantContext *> varDeclarationParser::BooleanContext::sm_constant() {
-  return getRuleContexts<varDeclarationParser::Sm_constantContext>();
-}
-
-varDeclarationParser::Sm_constantContext* varDeclarationParser::BooleanContext::sm_constant(size_t i) {
-  return getRuleContext<varDeclarationParser::Sm_constantContext>(i);
-}
-
-std::vector<varDeclarationParser::Sm_rangeContext *> varDeclarationParser::BooleanContext::sm_range() {
-  return getRuleContexts<varDeclarationParser::Sm_rangeContext>();
-}
-
-varDeclarationParser::Sm_rangeContext* varDeclarationParser::BooleanContext::sm_range(size_t i) {
-  return getRuleContext<varDeclarationParser::Sm_rangeContext>(i);
+varDeclarationParser::StringContext* varDeclarationParser::BooleanContext::string(size_t i) {
+  return getRuleContext<varDeclarationParser::StringContext>(i);
 }
 
 varDeclarationParser::RelopContext* varDeclarationParser::BooleanContext::relop() {
@@ -711,24 +1027,32 @@ tree::TerminalNode* varDeclarationParser::BooleanContext::NEQ() {
   return getToken(varDeclarationParser::NEQ, 0);
 }
 
-std::vector<varDeclarationParser::StringContext *> varDeclarationParser::BooleanContext::string() {
-  return getRuleContexts<varDeclarationParser::StringContext>();
-}
-
-varDeclarationParser::StringContext* varDeclarationParser::BooleanContext::string(size_t i) {
-  return getRuleContext<varDeclarationParser::StringContext>(i);
-}
-
-varDeclarationParser::BooleanAtomContext* varDeclarationParser::BooleanContext::booleanAtom() {
-  return getRuleContext<varDeclarationParser::BooleanAtomContext>(0);
-}
-
 tree::TerminalNode* varDeclarationParser::BooleanContext::LROUND() {
   return getToken(varDeclarationParser::LROUND, 0);
 }
 
+std::vector<varDeclarationParser::BooleanContext *> varDeclarationParser::BooleanContext::boolean() {
+  return getRuleContexts<varDeclarationParser::BooleanContext>();
+}
+
+varDeclarationParser::BooleanContext* varDeclarationParser::BooleanContext::boolean(size_t i) {
+  return getRuleContext<varDeclarationParser::BooleanContext>(i);
+}
+
 tree::TerminalNode* varDeclarationParser::BooleanContext::RROUND() {
   return getToken(varDeclarationParser::RROUND, 0);
+}
+
+varDeclarationParser::NumericContext* varDeclarationParser::BooleanContext::numeric() {
+  return getRuleContext<varDeclarationParser::NumericContext>(0);
+}
+
+varDeclarationParser::BooleanTernaryContext* varDeclarationParser::BooleanContext::booleanTernary() {
+  return getRuleContext<varDeclarationParser::BooleanTernaryContext>(0);
+}
+
+tree::TerminalNode* varDeclarationParser::BooleanContext::NOT() {
+  return getToken(varDeclarationParser::NOT, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::BooleanContext::AND() {
@@ -767,10 +1091,10 @@ varDeclarationParser::BooleanContext* varDeclarationParser::boolean(int preceden
   varDeclarationParser::BooleanContext *_localctx = _tracker.createInstance<BooleanContext>(_ctx, parentState);
   varDeclarationParser::BooleanContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 14;
-  enterRecursionRule(_localctx, 14, varDeclarationParser::RuleBoolean, precedence);
+  size_t startState = 18;
+  enterRecursionRule(_localctx, 18, varDeclarationParser::RuleBoolean, precedence);
 
-    
+    size_t _la = 0;
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -782,184 +1106,82 @@ varDeclarationParser::BooleanContext* varDeclarationParser::boolean(int preceden
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(130);
+    setState(146);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 4, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx)) {
     case 1: {
-      setState(77);
-      match(varDeclarationParser::NOT);
-      setState(78);
-      boolean(16);
+      setState(121);
+      booleanAtom();
       break;
     }
 
     case 2: {
-      setState(79);
+      setState(122);
       nonTemporalFunction();
       break;
     }
 
     case 3: {
-      setState(80);
-      numeric(0);
-      setState(81);
-      match(varDeclarationParser::INSIDE);
-      setState(82);
-      match(varDeclarationParser::LCURLY);
-      setState(91);
-      _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 2, _ctx);
-      while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
-        if (alt == 1) {
-          setState(85);
-          _errHandler->sync(this);
-          switch (_input->LA(1)) {
-            case varDeclarationParser::INT_VARIABLE:
-            case varDeclarationParser::LOGIC_VARIABLE:
-            case varDeclarationParser::FLOAT_CONSTANT:
-            case varDeclarationParser::FLOAT_VARIABLE:
-            case varDeclarationParser::LROUND:
-            case varDeclarationParser::FUNCTION:
-            case varDeclarationParser::SINTEGER:
-            case varDeclarationParser::UINTEGER:
-            case varDeclarationParser::GCC_BINARY:
-            case varDeclarationParser::HEX:
-            case varDeclarationParser::VERILOG_BINARY:
-            case varDeclarationParser::NEG: {
-              setState(83);
-              sm_constant();
-              break;
-            }
-
-            case varDeclarationParser::LSQUARED: {
-              setState(84);
-              sm_range();
-              break;
-            }
-
-          default:
-            throw NoViableAltException(this);
-          }
-          setState(87);
-          match(varDeclarationParser::T__0); 
-        }
-        setState(93);
-        _errHandler->sync(this);
-        alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 2, _ctx);
-      }
-      setState(96);
-      _errHandler->sync(this);
-      switch (_input->LA(1)) {
-        case varDeclarationParser::INT_VARIABLE:
-        case varDeclarationParser::LOGIC_VARIABLE:
-        case varDeclarationParser::FLOAT_CONSTANT:
-        case varDeclarationParser::FLOAT_VARIABLE:
-        case varDeclarationParser::LROUND:
-        case varDeclarationParser::FUNCTION:
-        case varDeclarationParser::SINTEGER:
-        case varDeclarationParser::UINTEGER:
-        case varDeclarationParser::GCC_BINARY:
-        case varDeclarationParser::HEX:
-        case varDeclarationParser::VERILOG_BINARY:
-        case varDeclarationParser::NEG: {
-          setState(94);
-          sm_constant();
-          break;
-        }
-
-        case varDeclarationParser::LSQUARED: {
-          setState(95);
-          sm_range();
-          break;
-        }
-
-      default:
-        throw NoViableAltException(this);
-      }
-      setState(98);
-      match(varDeclarationParser::RCURLY);
+      setState(123);
+      string(0);
+      setState(124);
+      relop();
+      setState(125);
+      string(0);
       break;
     }
 
     case 4: {
-      setState(100);
-      numeric(0);
-      setState(101);
-      relop();
-      setState(102);
-      numeric(0);
+      setState(127);
+      string(0);
+      setState(128);
+      match(varDeclarationParser::EQ);
+      setState(129);
+      string(0);
       break;
     }
 
     case 5: {
-      setState(104);
-      numeric(0);
-      setState(105);
-      match(varDeclarationParser::EQ);
-      setState(106);
-      numeric(0);
+      setState(131);
+      string(0);
+      setState(132);
+      match(varDeclarationParser::NEQ);
+      setState(133);
+      string(0);
       break;
     }
 
     case 6: {
-      setState(108);
-      numeric(0);
-      setState(109);
-      match(varDeclarationParser::NEQ);
-      setState(110);
-      numeric(0);
+      setState(135);
+      match(varDeclarationParser::LROUND);
+      setState(136);
+      boolean(0);
+      setState(137);
+      match(varDeclarationParser::RROUND);
       break;
     }
 
     case 7: {
-      setState(112);
-      string(0);
-      setState(113);
-      relop();
-      setState(114);
-      string(0);
-      break;
-    }
-
-    case 8: {
-      setState(116);
-      string(0);
-      setState(117);
-      match(varDeclarationParser::EQ);
-      setState(118);
-      string(0);
-      break;
-    }
-
-    case 9: {
-      setState(120);
-      string(0);
-      setState(121);
-      match(varDeclarationParser::NEQ);
-      setState(122);
-      string(0);
-      break;
-    }
-
-    case 10: {
-      setState(124);
-      booleanAtom();
-      break;
-    }
-
-    case 11: {
-      setState(125);
+      setState(139);
       numeric(0);
       break;
     }
 
-    case 12: {
-      setState(126);
+    case 8: {
+      setState(140);
       match(varDeclarationParser::LROUND);
-      setState(127);
-      boolean(0);
-      setState(128);
+      setState(141);
+      booleanTernary();
+      setState(142);
       match(varDeclarationParser::RROUND);
+      break;
+    }
+
+    case 9: {
+      setState(144);
+      match(varDeclarationParser::NOT);
+      setState(145);
+      boolean(4);
       break;
     }
 
@@ -967,66 +1189,63 @@ varDeclarationParser::BooleanContext* varDeclarationParser::boolean(int preceden
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(146);
+    setState(159);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 6, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 11, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(144);
+        setState(157);
         _errHandler->sync(this);
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 5, _ctx)) {
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 10, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(132);
+          setState(148);
 
-          if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(133);
-          match(varDeclarationParser::EQ);
-          setState(134);
-          boolean(8);
+          if (!(precpred(_ctx, 3))) throw FailedPredicateException(this, "precpred(_ctx, 3)");
+          setState(149);
+          antlrcpp::downCast<BooleanContext *>(_localctx)->eqop = _input->LT(1);
+          _la = _input->LA(1);
+          if (!(_la == varDeclarationParser::EQ
+
+          || _la == varDeclarationParser::NEQ)) {
+            antlrcpp::downCast<BooleanContext *>(_localctx)->eqop = _errHandler->recoverInline(this);
+          }
+          else {
+            _errHandler->reportMatch(this);
+            consume();
+          }
+          setState(150);
+          boolean(4);
           break;
         }
 
         case 2: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(135);
+          setState(151);
 
-          if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(136);
-          match(varDeclarationParser::NEQ);
-          setState(137);
-          boolean(7);
+          if (!(precpred(_ctx, 2))) throw FailedPredicateException(this, "precpred(_ctx, 2)");
+          setState(152);
+          antlrcpp::downCast<BooleanContext *>(_localctx)->booleanop = match(varDeclarationParser::AND);
+          setState(153);
+          boolean(3);
           break;
         }
 
         case 3: {
           _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(138);
+          setState(154);
 
-          if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(139);
-          antlrcpp::downCast<BooleanContext *>(_localctx)->booleanop = match(varDeclarationParser::AND);
-          setState(140);
-          boolean(6);
-          break;
-        }
-
-        case 4: {
-          _localctx = _tracker.createInstance<BooleanContext>(parentContext, parentState);
-          pushNewRecursionContext(_localctx, startState, RuleBoolean);
-          setState(141);
-
-          if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(142);
+          if (!(precpred(_ctx, 1))) throw FailedPredicateException(this, "precpred(_ctx, 1)");
+          setState(155);
           antlrcpp::downCast<BooleanContext *>(_localctx)->booleanop = match(varDeclarationParser::OR);
-          setState(143);
-          boolean(5);
+          setState(156);
+          boolean(2);
           break;
         }
 
@@ -1034,9 +1253,9 @@ varDeclarationParser::BooleanContext* varDeclarationParser::boolean(int preceden
           break;
         } 
       }
-      setState(148);
+      setState(161);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 6, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 11, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -1080,7 +1299,7 @@ void varDeclarationParser::BooleanAtomContext::exitRule(tree::ParseTreeListener 
 
 varDeclarationParser::BooleanAtomContext* varDeclarationParser::booleanAtom() {
   BooleanAtomContext *_localctx = _tracker.createInstance<BooleanAtomContext>(_ctx, getState());
-  enterRule(_localctx, 16, varDeclarationParser::RuleBooleanAtom);
+  enterRule(_localctx, 20, varDeclarationParser::RuleBooleanAtom);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1092,7 +1311,7 @@ varDeclarationParser::BooleanAtomContext* varDeclarationParser::booleanAtom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(149);
+    setState(162);
     _la = _input->LA(1);
     if (!(_la == varDeclarationParser::BOOLEAN_CONSTANT
 
@@ -1120,10 +1339,6 @@ varDeclarationParser::NumericContext::NumericContext(ParserRuleContext *parent, 
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* varDeclarationParser::NumericContext::NEG() {
-  return getToken(varDeclarationParser::NEG, 0);
-}
-
 std::vector<varDeclarationParser::NumericContext *> varDeclarationParser::NumericContext::numeric() {
   return getRuleContexts<varDeclarationParser::NumericContext>();
 }
@@ -1132,8 +1347,28 @@ varDeclarationParser::NumericContext* varDeclarationParser::NumericContext::nume
   return getRuleContext<varDeclarationParser::NumericContext>(i);
 }
 
+tree::TerminalNode* varDeclarationParser::NumericContext::NEG() {
+  return getToken(varDeclarationParser::NEG, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::NOT() {
+  return getToken(varDeclarationParser::NOT, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::MINUS() {
+  return getToken(varDeclarationParser::MINUS, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::PLUS() {
+  return getToken(varDeclarationParser::PLUS, 0);
+}
+
 varDeclarationParser::NonTemporalFunctionContext* varDeclarationParser::NumericContext::nonTemporalFunction() {
   return getRuleContext<varDeclarationParser::NonTemporalFunctionContext>(0);
+}
+
+varDeclarationParser::SignCastContext* varDeclarationParser::NumericContext::signCast() {
+  return getRuleContext<varDeclarationParser::SignCastContext>(0);
 }
 
 varDeclarationParser::IntAtomContext* varDeclarationParser::NumericContext::intAtom() {
@@ -1148,12 +1383,24 @@ varDeclarationParser::FloatAtomContext* varDeclarationParser::NumericContext::fl
   return getRuleContext<varDeclarationParser::FloatAtomContext>(0);
 }
 
+varDeclarationParser::ConcatenationContext* varDeclarationParser::NumericContext::concatenation() {
+  return getRuleContext<varDeclarationParser::ConcatenationContext>(0);
+}
+
 tree::TerminalNode* varDeclarationParser::NumericContext::LROUND() {
   return getToken(varDeclarationParser::LROUND, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::NumericContext::RROUND() {
   return getToken(varDeclarationParser::RROUND, 0);
+}
+
+varDeclarationParser::NumericTernaryContext* varDeclarationParser::NumericContext::numericTernary() {
+  return getRuleContext<varDeclarationParser::NumericTernaryContext>(0);
+}
+
+varDeclarationParser::BooleanContext* varDeclarationParser::NumericContext::boolean() {
+  return getRuleContext<varDeclarationParser::BooleanContext>(0);
 }
 
 tree::TerminalNode* varDeclarationParser::NumericContext::TIMES() {
@@ -1164,20 +1411,40 @@ tree::TerminalNode* varDeclarationParser::NumericContext::DIV() {
   return getToken(varDeclarationParser::DIV, 0);
 }
 
-tree::TerminalNode* varDeclarationParser::NumericContext::PLUS() {
-  return getToken(varDeclarationParser::PLUS, 0);
-}
-
-tree::TerminalNode* varDeclarationParser::NumericContext::MINUS() {
-  return getToken(varDeclarationParser::MINUS, 0);
-}
-
 tree::TerminalNode* varDeclarationParser::NumericContext::LSHIFT() {
   return getToken(varDeclarationParser::LSHIFT, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::NumericContext::RSHIFT() {
   return getToken(varDeclarationParser::RSHIFT, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::ALSHIFT() {
+  return getToken(varDeclarationParser::ALSHIFT, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::ARSHIFT() {
+  return getToken(varDeclarationParser::ARSHIFT, 0);
+}
+
+varDeclarationParser::RelopContext* varDeclarationParser::NumericContext::relop() {
+  return getRuleContext<varDeclarationParser::RelopContext>(0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::EQ() {
+  return getToken(varDeclarationParser::EQ, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::NEQ() {
+  return getToken(varDeclarationParser::NEQ, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::CASE_EQ() {
+  return getToken(varDeclarationParser::CASE_EQ, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::CASE_NEQ() {
+  return getToken(varDeclarationParser::CASE_NEQ, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::NumericContext::BAND() {
@@ -1194,6 +1461,34 @@ tree::TerminalNode* varDeclarationParser::NumericContext::BOR() {
 
 varDeclarationParser::RangeContext* varDeclarationParser::NumericContext::range() {
   return getRuleContext<varDeclarationParser::RangeContext>(0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::INSIDE() {
+  return getToken(varDeclarationParser::INSIDE, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::LCURLY() {
+  return getToken(varDeclarationParser::LCURLY, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::NumericContext::RCURLY() {
+  return getToken(varDeclarationParser::RCURLY, 0);
+}
+
+std::vector<varDeclarationParser::Sm_constantContext *> varDeclarationParser::NumericContext::sm_constant() {
+  return getRuleContexts<varDeclarationParser::Sm_constantContext>();
+}
+
+varDeclarationParser::Sm_constantContext* varDeclarationParser::NumericContext::sm_constant(size_t i) {
+  return getRuleContext<varDeclarationParser::Sm_constantContext>(i);
+}
+
+std::vector<varDeclarationParser::Sm_rangeContext *> varDeclarationParser::NumericContext::sm_range() {
+  return getRuleContexts<varDeclarationParser::Sm_rangeContext>();
+}
+
+varDeclarationParser::Sm_rangeContext* varDeclarationParser::NumericContext::sm_range(size_t i) {
+  return getRuleContext<varDeclarationParser::Sm_rangeContext>(i);
 }
 
 
@@ -1224,8 +1519,8 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
   varDeclarationParser::NumericContext *_localctx = _tracker.createInstance<NumericContext>(_ctx, parentState);
   varDeclarationParser::NumericContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 18;
-  enterRecursionRule(_localctx, 18, varDeclarationParser::RuleNumeric, precedence);
+  size_t startState = 22;
+  enterRecursionRule(_localctx, 22, varDeclarationParser::RuleNumeric, precedence);
 
     size_t _la = 0;
 
@@ -1239,47 +1534,88 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(162);
+    setState(185);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 7, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 12, _ctx)) {
     case 1: {
-      setState(152);
-      match(varDeclarationParser::NEG);
-      setState(153);
-      numeric(14);
+      setState(165);
+      antlrcpp::downCast<NumericContext *>(_localctx)->unop = _input->LT(1);
+      _la = _input->LA(1);
+      if (!((((_la & ~ 0x3fULL) == 0) &&
+        ((1ULL << _la) & 36310284880576512) != 0))) {
+        antlrcpp::downCast<NumericContext *>(_localctx)->unop = _errHandler->recoverInline(this);
+      }
+      else {
+        _errHandler->reportMatch(this);
+        consume();
+      }
+      setState(166);
+      numeric(19);
       break;
     }
 
     case 2: {
-      setState(154);
+      setState(167);
       nonTemporalFunction();
       break;
     }
 
     case 3: {
-      setState(155);
-      intAtom();
+      setState(168);
+      signCast();
       break;
     }
 
     case 4: {
-      setState(156);
-      logicAtom();
+      setState(169);
+      intAtom();
       break;
     }
 
     case 5: {
-      setState(157);
-      floatAtom();
+      setState(170);
+      logicAtom();
       break;
     }
 
     case 6: {
-      setState(158);
+      setState(171);
+      floatAtom();
+      break;
+    }
+
+    case 7: {
+      setState(172);
+      concatenation();
+      break;
+    }
+
+    case 8: {
+      setState(173);
       match(varDeclarationParser::LROUND);
-      setState(159);
+      setState(174);
       numeric(0);
-      setState(160);
+      setState(175);
+      match(varDeclarationParser::RROUND);
+      break;
+    }
+
+    case 9: {
+      setState(177);
+      match(varDeclarationParser::LROUND);
+      setState(178);
+      numericTernary();
+      setState(179);
+      match(varDeclarationParser::RROUND);
+      break;
+    }
+
+    case 10: {
+      setState(181);
+      match(varDeclarationParser::LROUND);
+      setState(182);
+      boolean(0);
+      setState(183);
       match(varDeclarationParser::RROUND);
       break;
     }
@@ -1288,24 +1624,24 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
       break;
     }
     _ctx->stop = _input->LT(-1);
-    setState(189);
+    setState(236);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(187);
+        setState(234);
         _errHandler->sync(this);
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 8, _ctx)) {
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 16, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(164);
+          setState(187);
 
-          if (!(precpred(_ctx, 11))) throw FailedPredicateException(this, "precpred(_ctx, 11)");
-          setState(165);
+          if (!(precpred(_ctx, 16))) throw FailedPredicateException(this, "precpred(_ctx, 16)");
+          setState(188);
           antlrcpp::downCast<NumericContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == varDeclarationParser::TIMES
@@ -1317,18 +1653,18 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(166);
-          numeric(12);
+          setState(189);
+          numeric(17);
           break;
         }
 
         case 2: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(167);
+          setState(190);
 
-          if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
-          setState(168);
+          if (!(precpred(_ctx, 15))) throw FailedPredicateException(this, "precpred(_ctx, 15)");
+          setState(191);
           antlrcpp::downCast<NumericContext *>(_localctx)->artop = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == varDeclarationParser::PLUS
@@ -1340,84 +1676,212 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
             _errHandler->reportMatch(this);
             consume();
           }
-          setState(169);
-          numeric(11);
+          setState(192);
+          numeric(16);
           break;
         }
 
         case 3: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(170);
+          setState(193);
 
-          if (!(precpred(_ctx, 9))) throw FailedPredicateException(this, "precpred(_ctx, 9)");
-          setState(171);
-          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::LSHIFT);
-          setState(172);
-          numeric(10);
+          if (!(precpred(_ctx, 14))) throw FailedPredicateException(this, "precpred(_ctx, 14)");
+          setState(194);
+          antlrcpp::downCast<NumericContext *>(_localctx)->logop = _input->LT(1);
+          _la = _input->LA(1);
+          if (!((((_la & ~ 0x3fULL) == 0) &&
+            ((1ULL << _la) & 8444249301319680) != 0))) {
+            antlrcpp::downCast<NumericContext *>(_localctx)->logop = _errHandler->recoverInline(this);
+          }
+          else {
+            _errHandler->reportMatch(this);
+            consume();
+          }
+          setState(195);
+          numeric(15);
           break;
         }
 
         case 4: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(173);
+          setState(196);
 
-          if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
-          setState(174);
-          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::RSHIFT);
-          setState(175);
-          numeric(9);
+          if (!(precpred(_ctx, 13))) throw FailedPredicateException(this, "precpred(_ctx, 13)");
+          setState(197);
+          relop();
+          setState(198);
+          numeric(14);
           break;
         }
 
         case 5: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(176);
+          setState(200);
 
-          if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
-          setState(177);
-          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BAND);
-          setState(178);
-          numeric(8);
+          if (!(precpred(_ctx, 11))) throw FailedPredicateException(this, "precpred(_ctx, 11)");
+          setState(201);
+          antlrcpp::downCast<NumericContext *>(_localctx)->eqop = _input->LT(1);
+          _la = _input->LA(1);
+          if (!((((_la & ~ 0x3fULL) == 0) &&
+            ((1ULL << _la) & 16492674416640) != 0))) {
+            antlrcpp::downCast<NumericContext *>(_localctx)->eqop = _errHandler->recoverInline(this);
+          }
+          else {
+            _errHandler->reportMatch(this);
+            consume();
+          }
+          setState(202);
+          numeric(12);
           break;
         }
 
         case 6: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(179);
+          setState(203);
 
-          if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
-          setState(180);
-          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BXOR);
-          setState(181);
-          numeric(7);
+          if (!(precpred(_ctx, 10))) throw FailedPredicateException(this, "precpred(_ctx, 10)");
+          setState(204);
+          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BAND);
+          setState(205);
+          numeric(11);
           break;
         }
 
         case 7: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(182);
+          setState(206);
 
-          if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
-          setState(183);
-          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BOR);
-          setState(184);
-          numeric(6);
+          if (!(precpred(_ctx, 9))) throw FailedPredicateException(this, "precpred(_ctx, 9)");
+          setState(207);
+          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BXOR);
+          setState(208);
+          numeric(10);
           break;
         }
 
         case 8: {
           _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleNumeric);
-          setState(185);
+          setState(209);
+
+          if (!(precpred(_ctx, 8))) throw FailedPredicateException(this, "precpred(_ctx, 8)");
+          setState(210);
+          antlrcpp::downCast<NumericContext *>(_localctx)->logop = match(varDeclarationParser::BOR);
+          setState(211);
+          numeric(9);
+          break;
+        }
+
+        case 9: {
+          _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
+          pushNewRecursionContext(_localctx, startState, RuleNumeric);
+          setState(212);
+
+          if (!(precpred(_ctx, 20))) throw FailedPredicateException(this, "precpred(_ctx, 20)");
+          setState(213);
+          range();
+          break;
+        }
+
+        case 10: {
+          _localctx = _tracker.createInstance<NumericContext>(parentContext, parentState);
+          pushNewRecursionContext(_localctx, startState, RuleNumeric);
+          setState(214);
 
           if (!(precpred(_ctx, 12))) throw FailedPredicateException(this, "precpred(_ctx, 12)");
-          setState(186);
-          range();
+          setState(215);
+          match(varDeclarationParser::INSIDE);
+          setState(216);
+          match(varDeclarationParser::LCURLY);
+          setState(225);
+          _errHandler->sync(this);
+          alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 14, _ctx);
+          while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
+            if (alt == 1) {
+              setState(219);
+              _errHandler->sync(this);
+              switch (_input->LA(1)) {
+                case varDeclarationParser::INT_VARIABLE:
+                case varDeclarationParser::LOGIC_VARIABLE:
+                case varDeclarationParser::BIT_VARIABLE:
+                case varDeclarationParser::FLOAT_CONSTANT:
+                case varDeclarationParser::FLOAT_VARIABLE:
+                case varDeclarationParser::LCURLY:
+                case varDeclarationParser::LROUND:
+                case varDeclarationParser::SIGN_CAST:
+                case varDeclarationParser::FUNCTION:
+                case varDeclarationParser::UINTEGER:
+                case varDeclarationParser::GCC_BINARY:
+                case varDeclarationParser::HEX:
+                case varDeclarationParser::VERILOG_BASED:
+                case varDeclarationParser::FILL_LITERAL:
+                case varDeclarationParser::PLUS:
+                case varDeclarationParser::MINUS:
+                case varDeclarationParser::NEG:
+                case varDeclarationParser::NOT: {
+                  setState(217);
+                  sm_constant();
+                  break;
+                }
+
+                case varDeclarationParser::LSQUARED: {
+                  setState(218);
+                  sm_range();
+                  break;
+                }
+
+              default:
+                throw NoViableAltException(this);
+              }
+              setState(221);
+              match(varDeclarationParser::T__0); 
+            }
+            setState(227);
+            _errHandler->sync(this);
+            alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 14, _ctx);
+          }
+          setState(230);
+          _errHandler->sync(this);
+          switch (_input->LA(1)) {
+            case varDeclarationParser::INT_VARIABLE:
+            case varDeclarationParser::LOGIC_VARIABLE:
+            case varDeclarationParser::BIT_VARIABLE:
+            case varDeclarationParser::FLOAT_CONSTANT:
+            case varDeclarationParser::FLOAT_VARIABLE:
+            case varDeclarationParser::LCURLY:
+            case varDeclarationParser::LROUND:
+            case varDeclarationParser::SIGN_CAST:
+            case varDeclarationParser::FUNCTION:
+            case varDeclarationParser::UINTEGER:
+            case varDeclarationParser::GCC_BINARY:
+            case varDeclarationParser::HEX:
+            case varDeclarationParser::VERILOG_BASED:
+            case varDeclarationParser::FILL_LITERAL:
+            case varDeclarationParser::PLUS:
+            case varDeclarationParser::MINUS:
+            case varDeclarationParser::NEG:
+            case varDeclarationParser::NOT: {
+              setState(228);
+              sm_constant();
+              break;
+            }
+
+            case varDeclarationParser::LSQUARED: {
+              setState(229);
+              sm_range();
+              break;
+            }
+
+          default:
+            throw NoViableAltException(this);
+          }
+          setState(232);
+          match(varDeclarationParser::RCURLY);
           break;
         }
 
@@ -1425,9 +1889,9 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
           break;
         } 
       }
-      setState(191);
+      setState(238);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 9, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -1435,6 +1899,231 @@ varDeclarationParser::NumericContext* varDeclarationParser::numeric(int preceden
     _localctx->exception = std::current_exception();
     _errHandler->recover(this, _localctx->exception);
   }
+  return _localctx;
+}
+
+//----------------- ConcatenationContext ------------------------------------------------------------------
+
+varDeclarationParser::ConcatenationContext::ConcatenationContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+std::vector<tree::TerminalNode *> varDeclarationParser::ConcatenationContext::LCURLY() {
+  return getTokens(varDeclarationParser::LCURLY);
+}
+
+tree::TerminalNode* varDeclarationParser::ConcatenationContext::LCURLY(size_t i) {
+  return getToken(varDeclarationParser::LCURLY, i);
+}
+
+std::vector<varDeclarationParser::ConcatItemContext *> varDeclarationParser::ConcatenationContext::concatItem() {
+  return getRuleContexts<varDeclarationParser::ConcatItemContext>();
+}
+
+varDeclarationParser::ConcatItemContext* varDeclarationParser::ConcatenationContext::concatItem(size_t i) {
+  return getRuleContext<varDeclarationParser::ConcatItemContext>(i);
+}
+
+std::vector<tree::TerminalNode *> varDeclarationParser::ConcatenationContext::RCURLY() {
+  return getTokens(varDeclarationParser::RCURLY);
+}
+
+tree::TerminalNode* varDeclarationParser::ConcatenationContext::RCURLY(size_t i) {
+  return getToken(varDeclarationParser::RCURLY, i);
+}
+
+tree::TerminalNode* varDeclarationParser::ConcatenationContext::UINTEGER() {
+  return getToken(varDeclarationParser::UINTEGER, 0);
+}
+
+
+size_t varDeclarationParser::ConcatenationContext::getRuleIndex() const {
+  return varDeclarationParser::RuleConcatenation;
+}
+
+void varDeclarationParser::ConcatenationContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterConcatenation(this);
+}
+
+void varDeclarationParser::ConcatenationContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitConcatenation(this);
+}
+
+varDeclarationParser::ConcatenationContext* varDeclarationParser::concatenation() {
+  ConcatenationContext *_localctx = _tracker.createInstance<ConcatenationContext>(_ctx, getState());
+  enterRule(_localctx, 24, varDeclarationParser::RuleConcatenation);
+  size_t _la = 0;
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    setState(263);
+    _errHandler->sync(this);
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
+    case 1: {
+      enterOuterAlt(_localctx, 1);
+      setState(239);
+      match(varDeclarationParser::LCURLY);
+      setState(240);
+      concatItem();
+      setState(243); 
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+      do {
+        setState(241);
+        match(varDeclarationParser::T__0);
+        setState(242);
+        concatItem();
+        setState(245); 
+        _errHandler->sync(this);
+        _la = _input->LA(1);
+      } while (_la == varDeclarationParser::T__0);
+      setState(247);
+      match(varDeclarationParser::RCURLY);
+      break;
+    }
+
+    case 2: {
+      enterOuterAlt(_localctx, 2);
+      setState(249);
+      match(varDeclarationParser::LCURLY);
+      setState(250);
+      match(varDeclarationParser::UINTEGER);
+      setState(251);
+      match(varDeclarationParser::LCURLY);
+      setState(252);
+      concatItem();
+      setState(257);
+      _errHandler->sync(this);
+      _la = _input->LA(1);
+      while (_la == varDeclarationParser::T__0) {
+        setState(253);
+        match(varDeclarationParser::T__0);
+        setState(254);
+        concatItem();
+        setState(259);
+        _errHandler->sync(this);
+        _la = _input->LA(1);
+      }
+      setState(260);
+      match(varDeclarationParser::RCURLY);
+      setState(261);
+      match(varDeclarationParser::RCURLY);
+      break;
+    }
+
+    default:
+      break;
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- ConcatItemContext ------------------------------------------------------------------
+
+varDeclarationParser::ConcatItemContext::ConcatItemContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+varDeclarationParser::NumericContext* varDeclarationParser::ConcatItemContext::numeric() {
+  return getRuleContext<varDeclarationParser::NumericContext>(0);
+}
+
+varDeclarationParser::BooleanAtomContext* varDeclarationParser::ConcatItemContext::booleanAtom() {
+  return getRuleContext<varDeclarationParser::BooleanAtomContext>(0);
+}
+
+
+size_t varDeclarationParser::ConcatItemContext::getRuleIndex() const {
+  return varDeclarationParser::RuleConcatItem;
+}
+
+void varDeclarationParser::ConcatItemContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterConcatItem(this);
+}
+
+void varDeclarationParser::ConcatItemContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitConcatItem(this);
+}
+
+varDeclarationParser::ConcatItemContext* varDeclarationParser::concatItem() {
+  ConcatItemContext *_localctx = _tracker.createInstance<ConcatItemContext>(_ctx, getState());
+  enterRule(_localctx, 26, varDeclarationParser::RuleConcatItem);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    setState(267);
+    _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case varDeclarationParser::INT_VARIABLE:
+      case varDeclarationParser::LOGIC_VARIABLE:
+      case varDeclarationParser::BIT_VARIABLE:
+      case varDeclarationParser::FLOAT_CONSTANT:
+      case varDeclarationParser::FLOAT_VARIABLE:
+      case varDeclarationParser::LCURLY:
+      case varDeclarationParser::LROUND:
+      case varDeclarationParser::SIGN_CAST:
+      case varDeclarationParser::FUNCTION:
+      case varDeclarationParser::UINTEGER:
+      case varDeclarationParser::GCC_BINARY:
+      case varDeclarationParser::HEX:
+      case varDeclarationParser::VERILOG_BASED:
+      case varDeclarationParser::FILL_LITERAL:
+      case varDeclarationParser::PLUS:
+      case varDeclarationParser::MINUS:
+      case varDeclarationParser::NEG:
+      case varDeclarationParser::NOT: {
+        enterOuterAlt(_localctx, 1);
+        setState(265);
+        numeric(0);
+        break;
+      }
+
+      case varDeclarationParser::BOOLEAN_CONSTANT:
+      case varDeclarationParser::BOOLEAN_VARIABLE: {
+        enterOuterAlt(_localctx, 2);
+        setState(266);
+        booleanAtom();
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
+    }
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
   return _localctx;
 }
 
@@ -1448,24 +2137,16 @@ tree::TerminalNode* varDeclarationParser::RangeContext::LSQUARED() {
   return getToken(varDeclarationParser::LSQUARED, 0);
 }
 
-tree::TerminalNode* varDeclarationParser::RangeContext::RSQUARED() {
-  return getToken(varDeclarationParser::RSQUARED, 0);
-}
-
-std::vector<tree::TerminalNode *> varDeclarationParser::RangeContext::SINTEGER() {
-  return getTokens(varDeclarationParser::SINTEGER);
-}
-
-tree::TerminalNode* varDeclarationParser::RangeContext::SINTEGER(size_t i) {
-  return getToken(varDeclarationParser::SINTEGER, i);
-}
-
 std::vector<tree::TerminalNode *> varDeclarationParser::RangeContext::UINTEGER() {
   return getTokens(varDeclarationParser::UINTEGER);
 }
 
 tree::TerminalNode* varDeclarationParser::RangeContext::UINTEGER(size_t i) {
   return getToken(varDeclarationParser::UINTEGER, i);
+}
+
+tree::TerminalNode* varDeclarationParser::RangeContext::RSQUARED() {
+  return getToken(varDeclarationParser::RSQUARED, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::RangeContext::COL() {
@@ -1491,7 +2172,7 @@ void varDeclarationParser::RangeContext::exitRule(tree::ParseTreeListener *liste
 
 varDeclarationParser::RangeContext* varDeclarationParser::range() {
   RangeContext *_localctx = _tracker.createInstance<RangeContext>(_ctx, getState());
-  enterRule(_localctx, 20, varDeclarationParser::RuleRange);
+  enterRule(_localctx, 28, varDeclarationParser::RuleRange);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -1503,39 +2184,21 @@ varDeclarationParser::RangeContext* varDeclarationParser::range() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(192);
+    setState(269);
     match(varDeclarationParser::LSQUARED);
-    setState(193);
-    _la = _input->LA(1);
-    if (!(_la == varDeclarationParser::SINTEGER
-
-    || _la == varDeclarationParser::UINTEGER)) {
-    _errHandler->recoverInline(this);
-    }
-    else {
-      _errHandler->reportMatch(this);
-      consume();
-    }
-    setState(196);
+    setState(270);
+    match(varDeclarationParser::UINTEGER);
+    setState(273);
     _errHandler->sync(this);
 
     _la = _input->LA(1);
     if (_la == varDeclarationParser::COL) {
-      setState(194);
+      setState(271);
       match(varDeclarationParser::COL);
-      setState(195);
-      _la = _input->LA(1);
-      if (!(_la == varDeclarationParser::SINTEGER
-
-      || _la == varDeclarationParser::UINTEGER)) {
-      _errHandler->recoverInline(this);
-      }
-      else {
-        _errHandler->reportMatch(this);
-        consume();
-      }
+      setState(272);
+      match(varDeclarationParser::UINTEGER);
     }
-    setState(198);
+    setState(275);
     match(varDeclarationParser::RSQUARED);
    
   }
@@ -1601,7 +2264,7 @@ void varDeclarationParser::Sm_rangeContext::exitRule(tree::ParseTreeListener *li
 
 varDeclarationParser::Sm_rangeContext* varDeclarationParser::sm_range() {
   Sm_rangeContext *_localctx = _tracker.createInstance<Sm_rangeContext>(_ctx, getState());
-  enterRule(_localctx, 22, varDeclarationParser::RuleSm_range);
+  enterRule(_localctx, 30, varDeclarationParser::RuleSm_range);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1612,30 +2275,36 @@ varDeclarationParser::Sm_rangeContext* varDeclarationParser::sm_range() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(200);
+    setState(277);
     match(varDeclarationParser::LSQUARED);
-    setState(203);
+    setState(280);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case varDeclarationParser::INT_VARIABLE:
       case varDeclarationParser::LOGIC_VARIABLE:
+      case varDeclarationParser::BIT_VARIABLE:
       case varDeclarationParser::FLOAT_CONSTANT:
       case varDeclarationParser::FLOAT_VARIABLE:
+      case varDeclarationParser::LCURLY:
       case varDeclarationParser::LROUND:
+      case varDeclarationParser::SIGN_CAST:
       case varDeclarationParser::FUNCTION:
-      case varDeclarationParser::SINTEGER:
       case varDeclarationParser::UINTEGER:
       case varDeclarationParser::GCC_BINARY:
       case varDeclarationParser::HEX:
-      case varDeclarationParser::VERILOG_BINARY:
-      case varDeclarationParser::NEG: {
-        setState(201);
+      case varDeclarationParser::VERILOG_BASED:
+      case varDeclarationParser::FILL_LITERAL:
+      case varDeclarationParser::PLUS:
+      case varDeclarationParser::MINUS:
+      case varDeclarationParser::NEG:
+      case varDeclarationParser::NOT: {
+        setState(278);
         numeric(0);
         break;
       }
 
       case varDeclarationParser::DOLLAR: {
-        setState(202);
+        setState(279);
         min_dollar();
         break;
       }
@@ -1643,30 +2312,36 @@ varDeclarationParser::Sm_rangeContext* varDeclarationParser::sm_range() {
     default:
       throw NoViableAltException(this);
     }
-    setState(205);
+    setState(282);
     match(varDeclarationParser::COL);
-    setState(208);
+    setState(285);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case varDeclarationParser::INT_VARIABLE:
       case varDeclarationParser::LOGIC_VARIABLE:
+      case varDeclarationParser::BIT_VARIABLE:
       case varDeclarationParser::FLOAT_CONSTANT:
       case varDeclarationParser::FLOAT_VARIABLE:
+      case varDeclarationParser::LCURLY:
       case varDeclarationParser::LROUND:
+      case varDeclarationParser::SIGN_CAST:
       case varDeclarationParser::FUNCTION:
-      case varDeclarationParser::SINTEGER:
       case varDeclarationParser::UINTEGER:
       case varDeclarationParser::GCC_BINARY:
       case varDeclarationParser::HEX:
-      case varDeclarationParser::VERILOG_BINARY:
-      case varDeclarationParser::NEG: {
-        setState(206);
+      case varDeclarationParser::VERILOG_BASED:
+      case varDeclarationParser::FILL_LITERAL:
+      case varDeclarationParser::PLUS:
+      case varDeclarationParser::MINUS:
+      case varDeclarationParser::NEG:
+      case varDeclarationParser::NOT: {
+        setState(283);
         numeric(0);
         break;
       }
 
       case varDeclarationParser::DOLLAR: {
-        setState(207);
+        setState(284);
         max_dollar();
         break;
       }
@@ -1674,7 +2349,7 @@ varDeclarationParser::Sm_rangeContext* varDeclarationParser::sm_range() {
     default:
       throw NoViableAltException(this);
     }
-    setState(210);
+    setState(287);
     match(varDeclarationParser::RSQUARED);
    
   }
@@ -1716,7 +2391,7 @@ void varDeclarationParser::Min_dollarContext::exitRule(tree::ParseTreeListener *
 
 varDeclarationParser::Min_dollarContext* varDeclarationParser::min_dollar() {
   Min_dollarContext *_localctx = _tracker.createInstance<Min_dollarContext>(_ctx, getState());
-  enterRule(_localctx, 24, varDeclarationParser::RuleMin_dollar);
+  enterRule(_localctx, 32, varDeclarationParser::RuleMin_dollar);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1727,7 +2402,7 @@ varDeclarationParser::Min_dollarContext* varDeclarationParser::min_dollar() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(212);
+    setState(289);
     match(varDeclarationParser::DOLLAR);
    
   }
@@ -1769,7 +2444,7 @@ void varDeclarationParser::Max_dollarContext::exitRule(tree::ParseTreeListener *
 
 varDeclarationParser::Max_dollarContext* varDeclarationParser::max_dollar() {
   Max_dollarContext *_localctx = _tracker.createInstance<Max_dollarContext>(_ctx, getState());
-  enterRule(_localctx, 26, varDeclarationParser::RuleMax_dollar);
+  enterRule(_localctx, 34, varDeclarationParser::RuleMax_dollar);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1780,7 +2455,7 @@ varDeclarationParser::Max_dollarContext* varDeclarationParser::max_dollar() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(214);
+    setState(291);
     match(varDeclarationParser::DOLLAR);
    
   }
@@ -1822,7 +2497,7 @@ void varDeclarationParser::Sm_constantContext::exitRule(tree::ParseTreeListener 
 
 varDeclarationParser::Sm_constantContext* varDeclarationParser::sm_constant() {
   Sm_constantContext *_localctx = _tracker.createInstance<Sm_constantContext>(_ctx, getState());
-  enterRule(_localctx, 28, varDeclarationParser::RuleSm_constant);
+  enterRule(_localctx, 36, varDeclarationParser::RuleSm_constant);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1833,7 +2508,7 @@ varDeclarationParser::Sm_constantContext* varDeclarationParser::sm_constant() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(216);
+    setState(293);
     numeric(0);
    
   }
@@ -1879,7 +2554,7 @@ void varDeclarationParser::IntAtomContext::exitRule(tree::ParseTreeListener *lis
 
 varDeclarationParser::IntAtomContext* varDeclarationParser::intAtom() {
   IntAtomContext *_localctx = _tracker.createInstance<IntAtomContext>(_ctx, getState());
-  enterRule(_localctx, 30, varDeclarationParser::RuleIntAtom);
+  enterRule(_localctx, 38, varDeclarationParser::RuleIntAtom);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1889,22 +2564,21 @@ varDeclarationParser::IntAtomContext* varDeclarationParser::intAtom() {
     exitRule();
   });
   try {
-    setState(220);
+    setState(297);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
-      case varDeclarationParser::SINTEGER:
       case varDeclarationParser::UINTEGER:
       case varDeclarationParser::GCC_BINARY:
       case varDeclarationParser::HEX: {
         enterOuterAlt(_localctx, 1);
-        setState(218);
+        setState(295);
         int_constant();
         break;
       }
 
       case varDeclarationParser::INT_VARIABLE: {
         enterOuterAlt(_localctx, 2);
-        setState(219);
+        setState(296);
         match(varDeclarationParser::INT_VARIABLE);
         break;
       }
@@ -1933,16 +2607,12 @@ tree::TerminalNode* varDeclarationParser::Int_constantContext::GCC_BINARY() {
   return getToken(varDeclarationParser::GCC_BINARY, 0);
 }
 
-tree::TerminalNode* varDeclarationParser::Int_constantContext::SINTEGER() {
-  return getToken(varDeclarationParser::SINTEGER, 0);
+tree::TerminalNode* varDeclarationParser::Int_constantContext::UINTEGER() {
+  return getToken(varDeclarationParser::UINTEGER, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::Int_constantContext::CONST_SUFFIX() {
   return getToken(varDeclarationParser::CONST_SUFFIX, 0);
-}
-
-tree::TerminalNode* varDeclarationParser::Int_constantContext::UINTEGER() {
-  return getToken(varDeclarationParser::UINTEGER, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::Int_constantContext::HEX() {
@@ -1968,7 +2638,7 @@ void varDeclarationParser::Int_constantContext::exitRule(tree::ParseTreeListener
 
 varDeclarationParser::Int_constantContext* varDeclarationParser::int_constant() {
   Int_constantContext *_localctx = _tracker.createInstance<Int_constantContext>(_ctx, getState());
-  enterRule(_localctx, 32, varDeclarationParser::RuleInt_constant);
+  enterRule(_localctx, 40, varDeclarationParser::RuleInt_constant);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -1978,46 +2648,26 @@ varDeclarationParser::Int_constantContext* varDeclarationParser::int_constant() 
     exitRule();
   });
   try {
-    setState(232);
+    setState(305);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case varDeclarationParser::GCC_BINARY: {
         enterOuterAlt(_localctx, 1);
-        setState(222);
+        setState(299);
         match(varDeclarationParser::GCC_BINARY);
         break;
       }
 
-      case varDeclarationParser::SINTEGER: {
-        enterOuterAlt(_localctx, 2);
-        setState(223);
-        match(varDeclarationParser::SINTEGER);
-        setState(225);
-        _errHandler->sync(this);
-
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 14, _ctx)) {
-        case 1: {
-          setState(224);
-          match(varDeclarationParser::CONST_SUFFIX);
-          break;
-        }
-
-        default:
-          break;
-        }
-        break;
-      }
-
       case varDeclarationParser::UINTEGER: {
-        enterOuterAlt(_localctx, 3);
-        setState(227);
+        enterOuterAlt(_localctx, 2);
+        setState(300);
         match(varDeclarationParser::UINTEGER);
-        setState(229);
+        setState(302);
         _errHandler->sync(this);
 
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 15, _ctx)) {
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 26, _ctx)) {
         case 1: {
-          setState(228);
+          setState(301);
           match(varDeclarationParser::CONST_SUFFIX);
           break;
         }
@@ -2029,8 +2679,8 @@ varDeclarationParser::Int_constantContext* varDeclarationParser::int_constant() 
       }
 
       case varDeclarationParser::HEX: {
-        enterOuterAlt(_localctx, 4);
-        setState(231);
+        enterOuterAlt(_localctx, 3);
+        setState(304);
         match(varDeclarationParser::HEX);
         break;
       }
@@ -2067,6 +2717,10 @@ tree::TerminalNode* varDeclarationParser::LogicAtomContext::LOGIC_VARIABLE() {
   return getToken(varDeclarationParser::LOGIC_VARIABLE, 0);
 }
 
+tree::TerminalNode* varDeclarationParser::LogicAtomContext::BIT_VARIABLE() {
+  return getToken(varDeclarationParser::BIT_VARIABLE, 0);
+}
+
 
 size_t varDeclarationParser::LogicAtomContext::getRuleIndex() const {
   return varDeclarationParser::RuleLogicAtom;
@@ -2086,7 +2740,7 @@ void varDeclarationParser::LogicAtomContext::exitRule(tree::ParseTreeListener *l
 
 varDeclarationParser::LogicAtomContext* varDeclarationParser::logicAtom() {
   LogicAtomContext *_localctx = _tracker.createInstance<LogicAtomContext>(_ctx, getState());
-  enterRule(_localctx, 34, varDeclarationParser::RuleLogicAtom);
+  enterRule(_localctx, 42, varDeclarationParser::RuleLogicAtom);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2096,27 +2750,34 @@ varDeclarationParser::LogicAtomContext* varDeclarationParser::logicAtom() {
     exitRule();
   });
   try {
-    setState(237);
+    setState(311);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 17, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 28, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(234);
+      setState(307);
       logic_constant();
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(235);
+      setState(308);
       int_constant();
       break;
     }
 
     case 3: {
       enterOuterAlt(_localctx, 3);
-      setState(236);
+      setState(309);
       match(varDeclarationParser::LOGIC_VARIABLE);
+      break;
+    }
+
+    case 4: {
+      enterOuterAlt(_localctx, 4);
+      setState(310);
+      match(varDeclarationParser::BIT_VARIABLE);
       break;
     }
 
@@ -2140,12 +2801,16 @@ varDeclarationParser::Logic_constantContext::Logic_constantContext(ParserRuleCon
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* varDeclarationParser::Logic_constantContext::VERILOG_BINARY() {
-  return getToken(varDeclarationParser::VERILOG_BINARY, 0);
+tree::TerminalNode* varDeclarationParser::Logic_constantContext::VERILOG_BASED() {
+  return getToken(varDeclarationParser::VERILOG_BASED, 0);
 }
 
 tree::TerminalNode* varDeclarationParser::Logic_constantContext::UINTEGER() {
   return getToken(varDeclarationParser::UINTEGER, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::Logic_constantContext::FILL_LITERAL() {
+  return getToken(varDeclarationParser::FILL_LITERAL, 0);
 }
 
 
@@ -2167,7 +2832,7 @@ void varDeclarationParser::Logic_constantContext::exitRule(tree::ParseTreeListen
 
 varDeclarationParser::Logic_constantContext* varDeclarationParser::logic_constant() {
   Logic_constantContext *_localctx = _tracker.createInstance<Logic_constantContext>(_ctx, getState());
-  enterRule(_localctx, 36, varDeclarationParser::RuleLogic_constant);
+  enterRule(_localctx, 44, varDeclarationParser::RuleLogic_constant);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2178,17 +2843,35 @@ varDeclarationParser::Logic_constantContext* varDeclarationParser::logic_constan
     exitRule();
   });
   try {
-    enterOuterAlt(_localctx, 1);
-    setState(240);
+    setState(318);
     _errHandler->sync(this);
+    switch (_input->LA(1)) {
+      case varDeclarationParser::UINTEGER:
+      case varDeclarationParser::VERILOG_BASED: {
+        enterOuterAlt(_localctx, 1);
+        setState(314);
+        _errHandler->sync(this);
 
-    _la = _input->LA(1);
-    if (_la == varDeclarationParser::UINTEGER) {
-      setState(239);
-      match(varDeclarationParser::UINTEGER);
+        _la = _input->LA(1);
+        if (_la == varDeclarationParser::UINTEGER) {
+          setState(313);
+          match(varDeclarationParser::UINTEGER);
+        }
+        setState(316);
+        match(varDeclarationParser::VERILOG_BASED);
+        break;
+      }
+
+      case varDeclarationParser::FILL_LITERAL: {
+        enterOuterAlt(_localctx, 2);
+        setState(317);
+        match(varDeclarationParser::FILL_LITERAL);
+        break;
+      }
+
+    default:
+      throw NoViableAltException(this);
     }
-    setState(242);
-    match(varDeclarationParser::VERILOG_BINARY);
    
   }
   catch (RecognitionException &e) {
@@ -2233,7 +2916,7 @@ void varDeclarationParser::FloatAtomContext::exitRule(tree::ParseTreeListener *l
 
 varDeclarationParser::FloatAtomContext* varDeclarationParser::floatAtom() {
   FloatAtomContext *_localctx = _tracker.createInstance<FloatAtomContext>(_ctx, getState());
-  enterRule(_localctx, 38, varDeclarationParser::RuleFloatAtom);
+  enterRule(_localctx, 46, varDeclarationParser::RuleFloatAtom);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2245,7 +2928,7 @@ varDeclarationParser::FloatAtomContext* varDeclarationParser::floatAtom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(244);
+    setState(320);
     _la = _input->LA(1);
     if (!(_la == varDeclarationParser::FLOAT_CONSTANT
 
@@ -2337,8 +3020,8 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
   varDeclarationParser::StringContext *_localctx = _tracker.createInstance<StringContext>(_ctx, parentState);
   varDeclarationParser::StringContext *previousContext = _localctx;
   (void)previousContext; // Silence compiler, in case the context is not used by generated code.
-  size_t startState = 40;
-  enterRecursionRule(_localctx, 40, varDeclarationParser::RuleString, precedence);
+  size_t startState = 48;
+  enterRecursionRule(_localctx, 48, varDeclarationParser::RuleString, precedence);
 
     
 
@@ -2352,22 +3035,22 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
   try {
     size_t alt;
     enterOuterAlt(_localctx, 1);
-    setState(252);
+    setState(328);
     _errHandler->sync(this);
     switch (_input->LA(1)) {
       case varDeclarationParser::STRING_CONSTANT:
       case varDeclarationParser::STRING_VARIABLE: {
-        setState(247);
+        setState(323);
         stringAtom();
         break;
       }
 
       case varDeclarationParser::LROUND: {
-        setState(248);
+        setState(324);
         match(varDeclarationParser::LROUND);
-        setState(249);
+        setState(325);
         string(0);
-        setState(250);
+        setState(326);
         match(varDeclarationParser::RROUND);
         break;
       }
@@ -2376,26 +3059,26 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
       throw NoViableAltException(this);
     }
     _ctx->stop = _input->LT(-1);
-    setState(269);
+    setState(345);
     _errHandler->sync(this);
-    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 22, _ctx);
+    alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx);
     while (alt != 2 && alt != atn::ATN::INVALID_ALT_NUMBER) {
       if (alt == 1) {
         if (!_parseListeners.empty())
           triggerExitRuleEvent();
         previousContext = _localctx;
-        setState(267);
+        setState(343);
         _errHandler->sync(this);
-        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 21, _ctx)) {
+        switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 33, _ctx)) {
         case 1: {
           _localctx = _tracker.createInstance<StringContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleString);
-          setState(254);
+          setState(330);
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
-          setState(255);
+          setState(331);
           match(varDeclarationParser::PLUS);
-          setState(256);
+          setState(332);
           string(5);
           break;
         }
@@ -2403,29 +3086,29 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
         case 2: {
           _localctx = _tracker.createInstance<StringContext>(parentContext, parentState);
           pushNewRecursionContext(_localctx, startState, RuleString);
-          setState(257);
+          setState(333);
 
           if (!(precpred(_ctx, 3))) throw FailedPredicateException(this, "precpred(_ctx, 3)");
-          setState(258);
+          setState(334);
           match(varDeclarationParser::SUBSTR);
-          setState(259);
+          setState(335);
           match(varDeclarationParser::LROUND);
-          setState(264);
+          setState(340);
           _errHandler->sync(this);
 
-          switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 20, _ctx)) {
+          switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 32, _ctx)) {
           case 1: {
-            setState(260);
+            setState(336);
             match(varDeclarationParser::UINTEGER);
-            setState(261);
+            setState(337);
             match(varDeclarationParser::T__0);
-            setState(262);
+            setState(338);
             match(varDeclarationParser::UINTEGER);
             break;
           }
 
           case 2: {
-            setState(263);
+            setState(339);
             match(varDeclarationParser::UINTEGER);
             break;
           }
@@ -2433,7 +3116,7 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
           default:
             break;
           }
-          setState(266);
+          setState(342);
           match(varDeclarationParser::RROUND);
           break;
         }
@@ -2442,9 +3125,9 @@ varDeclarationParser::StringContext* varDeclarationParser::string(int precedence
           break;
         } 
       }
-      setState(271);
+      setState(347);
       _errHandler->sync(this);
-      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 22, _ctx);
+      alt = getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 34, _ctx);
     }
   }
   catch (RecognitionException &e) {
@@ -2488,7 +3171,7 @@ void varDeclarationParser::StringAtomContext::exitRule(tree::ParseTreeListener *
 
 varDeclarationParser::StringAtomContext* varDeclarationParser::stringAtom() {
   StringAtomContext *_localctx = _tracker.createInstance<StringAtomContext>(_ctx, getState());
-  enterRule(_localctx, 42, varDeclarationParser::RuleStringAtom);
+  enterRule(_localctx, 50, varDeclarationParser::RuleStringAtom);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2500,7 +3183,7 @@ varDeclarationParser::StringAtomContext* varDeclarationParser::stringAtom() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(272);
+    setState(348);
     _la = _input->LA(1);
     if (!(_la == varDeclarationParser::STRING_CONSTANT
 
@@ -2567,7 +3250,7 @@ void varDeclarationParser::NonTemporalFunctionContext::exitRule(tree::ParseTreeL
 
 varDeclarationParser::NonTemporalFunctionContext* varDeclarationParser::nonTemporalFunction() {
   NonTemporalFunctionContext *_localctx = _tracker.createInstance<NonTemporalFunctionContext>(_ctx, getState());
-  enterRule(_localctx, 44, varDeclarationParser::RuleNonTemporalFunction);
+  enterRule(_localctx, 52, varDeclarationParser::RuleNonTemporalFunction);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2579,25 +3262,96 @@ varDeclarationParser::NonTemporalFunctionContext* varDeclarationParser::nonTempo
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(274);
+    setState(350);
     match(varDeclarationParser::FUNCTION);
-    setState(275);
+    setState(351);
     match(varDeclarationParser::LROUND);
-    setState(276);
+    setState(352);
     pfunc_arg();
-    setState(281);
+    setState(357);
     _errHandler->sync(this);
     _la = _input->LA(1);
     while (_la == varDeclarationParser::T__0) {
-      setState(277);
+      setState(353);
       match(varDeclarationParser::T__0);
-      setState(278);
+      setState(354);
       pfunc_arg();
-      setState(283);
+      setState(359);
       _errHandler->sync(this);
       _la = _input->LA(1);
     }
-    setState(284);
+    setState(360);
+    match(varDeclarationParser::RROUND);
+   
+  }
+  catch (RecognitionException &e) {
+    _errHandler->reportError(this, e);
+    _localctx->exception = std::current_exception();
+    _errHandler->recover(this, _localctx->exception);
+  }
+
+  return _localctx;
+}
+
+//----------------- SignCastContext ------------------------------------------------------------------
+
+varDeclarationParser::SignCastContext::SignCastContext(ParserRuleContext *parent, size_t invokingState)
+  : ParserRuleContext(parent, invokingState) {
+}
+
+tree::TerminalNode* varDeclarationParser::SignCastContext::SIGN_CAST() {
+  return getToken(varDeclarationParser::SIGN_CAST, 0);
+}
+
+tree::TerminalNode* varDeclarationParser::SignCastContext::LROUND() {
+  return getToken(varDeclarationParser::LROUND, 0);
+}
+
+varDeclarationParser::NumericContext* varDeclarationParser::SignCastContext::numeric() {
+  return getRuleContext<varDeclarationParser::NumericContext>(0);
+}
+
+tree::TerminalNode* varDeclarationParser::SignCastContext::RROUND() {
+  return getToken(varDeclarationParser::RROUND, 0);
+}
+
+
+size_t varDeclarationParser::SignCastContext::getRuleIndex() const {
+  return varDeclarationParser::RuleSignCast;
+}
+
+void varDeclarationParser::SignCastContext::enterRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->enterSignCast(this);
+}
+
+void varDeclarationParser::SignCastContext::exitRule(tree::ParseTreeListener *listener) {
+  auto parserListener = dynamic_cast<varDeclarationListener *>(listener);
+  if (parserListener != nullptr)
+    parserListener->exitSignCast(this);
+}
+
+varDeclarationParser::SignCastContext* varDeclarationParser::signCast() {
+  SignCastContext *_localctx = _tracker.createInstance<SignCastContext>(_ctx, getState());
+  enterRule(_localctx, 54, varDeclarationParser::RuleSignCast);
+
+#if __cplusplus > 201703L
+  auto onExit = finally([=, this] {
+#else
+  auto onExit = finally([=] {
+#endif
+    exitRule();
+  });
+  try {
+    enterOuterAlt(_localctx, 1);
+    setState(362);
+    match(varDeclarationParser::SIGN_CAST);
+    setState(363);
+    match(varDeclarationParser::LROUND);
+    setState(364);
+    numeric(0);
+    setState(365);
     match(varDeclarationParser::RROUND);
    
   }
@@ -2643,7 +3397,7 @@ void varDeclarationParser::Pfunc_argContext::exitRule(tree::ParseTreeListener *l
 
 varDeclarationParser::Pfunc_argContext* varDeclarationParser::pfunc_arg() {
   Pfunc_argContext *_localctx = _tracker.createInstance<Pfunc_argContext>(_ctx, getState());
-  enterRule(_localctx, 46, varDeclarationParser::RulePfunc_arg);
+  enterRule(_localctx, 56, varDeclarationParser::RulePfunc_arg);
 
 #if __cplusplus > 201703L
   auto onExit = finally([=, this] {
@@ -2653,19 +3407,19 @@ varDeclarationParser::Pfunc_argContext* varDeclarationParser::pfunc_arg() {
     exitRule();
   });
   try {
-    setState(288);
+    setState(369);
     _errHandler->sync(this);
-    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 24, _ctx)) {
+    switch (getInterpreter<atn::ParserATNSimulator>()->adaptivePredict(_input, 36, _ctx)) {
     case 1: {
       enterOuterAlt(_localctx, 1);
-      setState(286);
+      setState(367);
       numeric(0);
       break;
     }
 
     case 2: {
       enterOuterAlt(_localctx, 2);
-      setState(287);
+      setState(368);
       boolean(0);
       break;
     }
@@ -2725,7 +3479,7 @@ void varDeclarationParser::RelopContext::exitRule(tree::ParseTreeListener *liste
 
 varDeclarationParser::RelopContext* varDeclarationParser::relop() {
   RelopContext *_localctx = _tracker.createInstance<RelopContext>(_ctx, getState());
-  enterRule(_localctx, 48, varDeclarationParser::RuleRelop);
+  enterRule(_localctx, 58, varDeclarationParser::RuleRelop);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2737,13 +3491,10 @@ varDeclarationParser::RelopContext* varDeclarationParser::relop() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(290);
+    setState(371);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << varDeclarationParser::GT)
-      | (1ULL << varDeclarationParser::GE)
-      | (1ULL << varDeclarationParser::LT)
-      | (1ULL << varDeclarationParser::LE))) != 0))) {
+      ((1ULL << _la) & 1030792151040) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2810,7 +3561,7 @@ void varDeclarationParser::Cls_opContext::exitRule(tree::ParseTreeListener *list
 
 varDeclarationParser::Cls_opContext* varDeclarationParser::cls_op() {
   Cls_opContext *_localctx = _tracker.createInstance<Cls_opContext>(_ctx, getState());
-  enterRule(_localctx, 50, varDeclarationParser::RuleCls_op);
+  enterRule(_localctx, 60, varDeclarationParser::RuleCls_op);
   size_t _la = 0;
 
 #if __cplusplus > 201703L
@@ -2822,15 +3573,10 @@ varDeclarationParser::Cls_opContext* varDeclarationParser::cls_op() {
   });
   try {
     enterOuterAlt(_localctx, 1);
-    setState(292);
+    setState(373);
     _la = _input->LA(1);
     if (!((((_la & ~ 0x3fULL) == 0) &&
-      ((1ULL << _la) & ((1ULL << varDeclarationParser::GT)
-      | (1ULL << varDeclarationParser::GE)
-      | (1ULL << varDeclarationParser::LT)
-      | (1ULL << varDeclarationParser::LE)
-      | (1ULL << varDeclarationParser::EQ)
-      | (1ULL << varDeclarationParser::RANGE))) != 0))) {
+      ((1ULL << _la) & 576462882607202304) != 0))) {
     _errHandler->recoverInline(this);
     }
     else {
@@ -2850,9 +3596,9 @@ varDeclarationParser::Cls_opContext* varDeclarationParser::cls_op() {
 
 bool varDeclarationParser::sempred(RuleContext *context, size_t ruleIndex, size_t predicateIndex) {
   switch (ruleIndex) {
-    case 7: return booleanSempred(antlrcpp::downCast<BooleanContext *>(context), predicateIndex);
-    case 9: return numericSempred(antlrcpp::downCast<NumericContext *>(context), predicateIndex);
-    case 20: return stringSempred(antlrcpp::downCast<StringContext *>(context), predicateIndex);
+    case 9: return booleanSempred(antlrcpp::downCast<BooleanContext *>(context), predicateIndex);
+    case 11: return numericSempred(antlrcpp::downCast<NumericContext *>(context), predicateIndex);
+    case 24: return stringSempred(antlrcpp::downCast<StringContext *>(context), predicateIndex);
 
   default:
     break;
@@ -2862,10 +3608,9 @@ bool varDeclarationParser::sempred(RuleContext *context, size_t ruleIndex, size_
 
 bool varDeclarationParser::booleanSempred(BooleanContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
-    case 0: return precpred(_ctx, 7);
-    case 1: return precpred(_ctx, 6);
-    case 2: return precpred(_ctx, 5);
-    case 3: return precpred(_ctx, 4);
+    case 0: return precpred(_ctx, 3);
+    case 1: return precpred(_ctx, 2);
+    case 2: return precpred(_ctx, 1);
 
   default:
     break;
@@ -2875,14 +3620,16 @@ bool varDeclarationParser::booleanSempred(BooleanContext *_localctx, size_t pred
 
 bool varDeclarationParser::numericSempred(NumericContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
-    case 4: return precpred(_ctx, 11);
-    case 5: return precpred(_ctx, 10);
-    case 6: return precpred(_ctx, 9);
-    case 7: return precpred(_ctx, 8);
-    case 8: return precpred(_ctx, 7);
-    case 9: return precpred(_ctx, 6);
-    case 10: return precpred(_ctx, 5);
-    case 11: return precpred(_ctx, 12);
+    case 3: return precpred(_ctx, 16);
+    case 4: return precpred(_ctx, 15);
+    case 5: return precpred(_ctx, 14);
+    case 6: return precpred(_ctx, 13);
+    case 7: return precpred(_ctx, 11);
+    case 8: return precpred(_ctx, 10);
+    case 9: return precpred(_ctx, 9);
+    case 10: return precpred(_ctx, 8);
+    case 11: return precpred(_ctx, 20);
+    case 12: return precpred(_ctx, 12);
 
   default:
     break;
@@ -2892,8 +3639,8 @@ bool varDeclarationParser::numericSempred(NumericContext *_localctx, size_t pred
 
 bool varDeclarationParser::stringSempred(StringContext *_localctx, size_t predicateIndex) {
   switch (predicateIndex) {
-    case 12: return precpred(_ctx, 4);
-    case 13: return precpred(_ctx, 3);
+    case 13: return precpred(_ctx, 4);
+    case 14: return precpred(_ctx, 3);
 
   default:
     break;
@@ -2902,5 +3649,9 @@ bool varDeclarationParser::stringSempred(StringContext *_localctx, size_t predic
 }
 
 void varDeclarationParser::initialize() {
-  std::call_once(vardeclarationParserOnceFlag, vardeclarationParserInitialize);
+#if ANTLR4_USE_THREAD_LOCAL_CACHE
+  vardeclarationParserInitialize();
+#else
+  ::antlr4::internal::call_once(vardeclarationParserOnceFlag, vardeclarationParserInitialize);
+#endif
 }

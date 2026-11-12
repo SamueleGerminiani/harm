@@ -1,6 +1,8 @@
 
 #include <algorithm>
+#include <set>
 #include <stddef.h>
+#include <string>
 #include <type_traits>
 #include <unordered_set>
 #include <utility>
@@ -174,6 +176,16 @@ template <typename Original, typename Signed>
 std::vector<Signed> gatherElements(const std::vector<size_t> &ivs,
                                    const NumericExpressionPtr &cn) {
   std::vector<Signed> elements;
+  // floats: the excluded constants as numbers, so that 2E and 2.0E both exclude 2.0 (H17)
+  std::set<double> excludedFloats;
+  if constexpr (!std::is_same_v<Original, UInt> &&
+                !std::is_same_v<Original, SInt> &&
+                !std::is_same_v<Original, ULogic> &&
+                !std::is_same_v<Original, SLogic>) {
+    for (const auto &e : cn->_clsConfig._excluded) {
+      excludedFloats.insert(std::stod(e));
+    }
+  }
   for (auto &iv : ivs) {
     if constexpr (std::is_same_v<Original, UInt> ||
                   std::is_same_v<Original, SInt>) {
@@ -191,8 +203,8 @@ std::vector<Signed> gatherElements(const std::vector<size_t> &ivs,
         elements.push_back(val);
       }
     } else {
-      if (!cn->_clsConfig._excluded.count(std::to_string(iv))) {
-        Signed val = (Signed)cn->evaluate<Signed>(iv);
+      Signed val = (Signed)cn->evaluate<Signed>(iv);
+      if (!excludedFloats.count((double)val)) {
         elements.push_back(val);
       }
     }

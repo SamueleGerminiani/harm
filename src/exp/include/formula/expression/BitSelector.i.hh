@@ -28,4 +28,18 @@ size_t BitSelector<ET, RT>::getLowerBound() {
   return _lower_bound;
 }
 
+template <typename ET, typename RT>
+void BitSelector<ET, RT>::setSourceIndices(long left, long right) {
+  _source_left = left;
+  _source_right = right;
+}
+template <typename ET, typename RT>
+long BitSelector<ET, RT>::getSourceLeft() {
+  return _source_left;
+}
+template <typename ET, typename RT>
+long BitSelector<ET, RT>::getSourceRight() {
+  return _source_right;
+}
+
 } // namespace expression

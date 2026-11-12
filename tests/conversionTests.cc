@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <type_traits>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string>
@@ -56,6 +57,54 @@ using namespace expression;
     FAIL();                                                          \
   }
 
+// H19 (D-035): the expected values follow SystemVerilog's rules (IEEE 1800-2017 11.8.1, 11.8.2;
+// checked with Icarus Verilog 12), which replaced C's for every operation (the user's decision Q1):
+// an operation is signed only if both operands are; it is as wide as the wider operand (a C
+// integer narrower than 32 bits counts as 32); each operand is extended from its own width,
+// sign-extended only if the operation is signed ("sign-extended only if the propagated type is
+// signed", 11.8.2); the result is cut to that width. A C-integer division by zero is 0 (Q3).
+// Before H19 this test checked C's usual arithmetic conversions.
+template <typename R1, typename R2, ExpType T1, ExpType T2, bool logic> struct Sv {
+  static constexpr bool sgn = (T1 == ExpType::SInt || T1 == ExpType::SLogic) &&
+                               (T2 == ExpType::SInt || T2 == ExpType::SLogic);
+  static constexpr size_t w1 = logic ? sizeof(R1) * 8 : std::max<size_t>(sizeof(R1) * 8, 32);
+  static constexpr size_t w2 = logic ? sizeof(R2) * 8 : std::max<size_t>(sizeof(R2) * 8, 32);
+  static constexpr size_t w = std::max(w1, w2);
+  template <typename R> static uint64_t ext(R v) {
+    return sgn ? (uint64_t)(int64_t)(std::make_signed_t<R>)v
+               : (uint64_t)(std::make_unsigned_t<R>)v;
+  }
+  /// the result at width w, as HARM stores an integer (sign-extended when signed)
+  static uint64_t fit(uint64_t r) {
+    if (w >= 64) {
+      return r;
+    }
+    uint64_t m = (uint64_t(1) << w) - 1;
+    r &= m;
+    return sgn && ((r >> (w - 1)) & 1) ? r | ~m : r;
+  }
+  static uint64_t sum(R1 a, R2 b) { return fit(ext(a) + ext(b)); }
+  static uint64_t sub(R1 a, R2 b) { return fit(ext(a) - ext(b)); }
+  static uint64_t mul(R1 a, R2 b) { return fit(ext(a) * ext(b)); }
+  static uint64_t div(R1 a, R2 b) {
+    uint64_t x = fit(ext(a)), y = fit(ext(b));
+    if (y == 0) {
+      return 0;
+    }
+    return fit(sgn ? (uint64_t)((int64_t)x / (int64_t)y) : x / y);
+  }
+  static uint64_t band(R1 a, R2 b) { return fit(ext(a) & ext(b)); }
+  static uint64_t bor(R1 a, R2 b) { return fit(ext(a) | ext(b)); }
+  static uint64_t bxor(R1 a, R2 b) { return fit(ext(a) ^ ext(b)); }
+  static bool lt(R1 a, R2 b) {
+    uint64_t x = fit(ext(a)), y = fit(ext(b));
+    return sgn ? (int64_t)x < (int64_t)y : x < y;
+  }
+  static bool eq(R1 a, R2 b) { return fit(ext(a)) == fit(ext(b)); }
+  /// as a SLogic, the way Logic::getSignedValue reads a result of this type
+  static SLogic asLogic(uint64_t r) { return sgn ? (SLogic)(int64_t)r : (SLogic)r; }
+};
+
 template <typename R1, typename R2, ExpType T1, ExpType T2, int line>
 void checkBinaryOpInt(R1 a, R2 b) {
   //  static_assert(
@@ -80,43 +129,43 @@ void checkBinaryOpInt(R1 a, R2 b) {
   v2->assign(0, b);
 
   auto res = hparser::parseIntExpression("v1 + v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), a + b, line, '+');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::sum(a, b)), line, '+');
 
   res = hparser::parseIntExpression("v1 - v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), a - b, line, '-');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::sub(a, b)), line, '-');
 
   res = hparser::parseIntExpression("v1 * v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), a * b, line, '*');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::mul(a, b)), line, '*');
 
   res = hparser::parseIntExpression("v1 / v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), a / b, line, '/');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::div(a, b)), line, '/');
 
   auto pres = hparser::parseProposition("v1 == v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a == b), line, "==");
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R1, R2, T1, T2, false>::eq(a, b)), line, "==");
 
   pres = hparser::parseProposition("v1 != v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a != b), line, "!=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R1, R2, T1, T2, false>::eq(a, b)), line, "!=");
 
   pres = hparser::parseProposition("v1 > v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a > b), line, '>');
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R2, R1, T2, T1, false>::lt(b, a)), line, '>');
 
   pres = hparser::parseProposition("v1 >= v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a >= b), line, ">=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R1, R2, T1, T2, false>::lt(a, b)), line, ">=");
 
   pres = hparser::parseProposition("v1 < v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a < b), line, "<");
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R1, R2, T1, T2, false>::lt(a, b)), line, "<");
 
   pres = hparser::parseProposition("v1 <= v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a <= b), line, "<=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R2, R1, T2, T1, false>::lt(b, a)), line, "<=");
 
   res = hparser::parseIntExpression("v1 | v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), (a | b), line, '|');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::bor(a, b)), line, '|');
 
   res = hparser::parseIntExpression("v1 & v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), (a & b), line, '&');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::band(a, b)), line, '&');
 
   res = hparser::parseIntExpression("v1 ^ v2", trace);
-  customASSERT_EQ_Int(res->evaluate(0), (a ^ b), line, '^');
+  customASSERT_EQ_Int(res->evaluate(0), (Sv<R1, R2, T1, T2, false>::bxor(a, b)), line, '^');
 
   res = hparser::parseIntExpression("~v1", trace);
   customASSERT_EQ_Int(res->evaluate(0), ~a, line, '~');
@@ -349,53 +398,53 @@ void checkBinaryOpLogic(R1 a, R2 b) {
 
   auto res = hparser::parseLogicExpression("v1 * v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a * b), line, '*');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::mul(a, b))), line, '*');
 
   res = hparser::parseLogicExpression("v1 + v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a + b), line, '+');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::sum(a, b))), line, '+');
 
   res = hparser::parseLogicExpression("v1 - v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a - b), line, '-');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::sub(a, b))), line, '-');
 
   res = hparser::parseLogicExpression("v1 / v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a / b), line, '/');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::div(a, b))), line, '/');
 
   res = hparser::parseLogicExpression("v1 & v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a & b), line, '&');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::band(a, b))), line, '&');
 
   res = hparser::parseLogicExpression("v1 | v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a | b), line, '|');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::bor(a, b))), line, '|');
 
   res = hparser::parseLogicExpression("v1 ^ v2", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(a ^ b), line, '^');
+                        (Sv<R1, R2, T1, T2, true>::asLogic(Sv<R1, R2, T1, T2, true>::bxor(a, b))), line, '^');
 
   res = hparser::parseLogicExpression("~v1", trace);
   customASSERT_EQ_Logic(res->evaluate(0).getSignedValue(),
-                        (SLogic)(~a), line, '~');
+                        (Sv<R1, R1, T1, T1, true>::asLogic(Sv<R1, R1, T1, T1, true>::fit(~Sv<R1, R1, T1, T1, true>::ext(a)))), line, '~');
 
   auto pres = hparser::parseProposition("v1 == v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a == b), line, "==");
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R1, R2, T1, T2, true>::eq(a, b)), line, "==");
 
   pres = hparser::parseProposition("v1 != v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a != b), line, "!=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R1, R2, T1, T2, true>::eq(a, b)), line, "!=");
 
   pres = hparser::parseProposition("v1 > v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a > b), line, '>');
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R2, R1, T2, T1, true>::lt(b, a)), line, '>');
 
   pres = hparser::parseProposition("v1 >= v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a >= b), line, ">=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R1, R2, T1, T2, true>::lt(a, b)), line, ">=");
 
   pres = hparser::parseProposition("v1 < v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a < b), line, "<");
+  customASSERT_EQ_Prop(pres->evaluate(0), (Sv<R1, R2, T1, T2, true>::lt(a, b)), line, "<");
 
   pres = hparser::parseProposition("v1 <= v2", trace);
-  customASSERT_EQ_Prop(pres->evaluate(0), (a <= b), line, "<=");
+  customASSERT_EQ_Prop(pres->evaluate(0), (!Sv<R2, R1, T2, T1, true>::lt(b, a)), line, "<=");
 
   if (a >= 0) {
     b = 5;

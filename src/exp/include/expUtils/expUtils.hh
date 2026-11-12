@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 
 #include "Language.hh"
 #include "PrintMode.hh"
@@ -66,6 +67,9 @@ dec_expToString(num, NumericExpressionPtr)
 
 dec_expOutOp(prop, PropositionPtr)
 std::string temp2ColoredString(const TemporalExpressionPtr &exp,const Language lang, const PrintMode mode);
+/// @brief temp2String with the propositions in 'subst' printed as their tokens
+std::string temp2StringSubst(const TemporalExpressionPtr &exp, const Language lang,
+                             const std::unordered_map<const Proposition *, std::string> &subst);
 dec_expOutOp(float, FloatExpressionPtr)
 dec_expOutOp(int, IntExpressionPtr)
 dec_expOutOp(log, LogicExpressionPtr)
