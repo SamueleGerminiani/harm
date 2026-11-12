@@ -3,8 +3,8 @@
 
 - A4: every command-line option, XML name and metric variable that v3 did not have (current sources
   minus doc/report/inventory/v3_*.txt) appears in the release notes, the README and the report; every
-  decision in inventory/default_output_decisions.txt appears in the migration guide
-  and the report.
+  decision in inventory/default_output_decisions.txt appears in the report
+  (the user-facing documents carry no internal codes).
 - A5: every milestone on PLAN.md's status board (except H14) and every finding F-L<n>/F-M<n> in
   VALIDATION.md is cited in the report (the release notes and the README carry no internal codes: the user,
   2026-11-12); every decision D-<nnn> named in doc/plan is cited in the report.
@@ -84,7 +84,7 @@ decisions_text = (root / "doc/plan/DECISIONS.md").read_text()
 for d in sorted(listed("default_output_decisions.txt")):
     if f"## {d}:" not in decisions_text:
         failures.append(f"inventory: {d} is not a decision in DECISIONS.md")
-    need(f"default-output decision {d}", rf"\b{d}\b", ["migration guide", "report"])
+    need(f"default-output decision {d}", rf"\b{d}\b", ["report"])
 
 # ---- A5: milestones, findings, decisions ---------------------------------------------------------------
 plan = (root / "doc/plan/PLAN.md").read_text()
