@@ -1,5 +1,5 @@
 # Decisions that change HARM's output for a v3 user who changes nothing (one per line, by hand
-# from doc/plan/DECISIONS.md). Each must be explained in the migration guide and
+# from doc/plan/DECISIONS.md). Each must be explained in
 # the report.
 D-001
 D-002
