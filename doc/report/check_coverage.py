@@ -3,11 +3,11 @@
 
 - A4: every command-line option, XML name and metric variable that v3 did not have (current sources
   minus doc/report/inventory/v3_*.txt) appears in the release notes, the README and the report; every
-  decision in inventory/default_output_decisions.txt appears in the release notes, the migration guide
+  decision in inventory/default_output_decisions.txt appears in the migration guide
   and the report.
 - A5: every milestone on PLAN.md's status board (except H14) and every finding F-L<n>/F-M<n> in
-  VALIDATION.md is cited in the report and in the release notes; every decision D-<nnn> named in
-  doc/plan is cited in the report.
+  VALIDATION.md is cited in the report (the release notes and the README carry no internal codes: the user,
+  2026-11-12); every decision D-<nnn> named in doc/plan is cited in the report.
 - A2: the developer guide names every top-level directory, every module under src/, src/miner/ and
   src/miner/modules/src/, every directory under tests/, every harm-coi module and every file in eval/;
   every repository path cited in the guide or the report (`\\file{...}`) exists.
@@ -84,7 +84,7 @@ decisions_text = (root / "doc/plan/DECISIONS.md").read_text()
 for d in sorted(listed("default_output_decisions.txt")):
     if f"## {d}:" not in decisions_text:
         failures.append(f"inventory: {d} is not a decision in DECISIONS.md")
-    need(f"default-output decision {d}", rf"\b{d}\b", ["release notes", "migration guide", "report"])
+    need(f"default-output decision {d}", rf"\b{d}\b", ["migration guide", "report"])
 
 # ---- A5: milestones, findings, decisions ---------------------------------------------------------------
 plan = (root / "doc/plan/PLAN.md").read_text()
@@ -93,11 +93,11 @@ milestones = [m for m in re.findall(r"^\| (H\w+) \|", board, re.M) if m != "H14"
 if len(milestones) < 20:
     failures.append(f"PLAN.md status board: only {len(milestones)} milestones read")
 for m in milestones:
-    need(f"milestone {m}", rf"\b{m}\b", ["release notes", "report"])
+    need(f"milestone {m}", rf"\b{m}\b", ["report"])
 
 validation = (root / "doc/plan/VALIDATION.md").read_text()
 for f in sorted(set(re.findall(r"\bF-[LM]\d+\b", validation)), key=lambda s: (s[2], int(s[3:]))):
-    need(f"finding {f}", rf"\b{f}\b", ["release notes", "report"])
+    need(f"finding {f}", rf"\b{f}\b", ["report"])
 
 plan_docs = "\n".join(p.read_text() for p in (root / "doc/plan").glob("*.md"))
 for d in sorted(set(re.findall(r"\bD-0\d\d\b", plan_docs))):
