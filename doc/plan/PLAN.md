@@ -381,3 +381,12 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H31 | The report brought up to date: `harm-coi`'s features since H10 in its own section, the introduction, limitations contradicted by H23 and H29, the validation section, `harm-coi`'s options; the PDF rebuilt (documentation only) | done (signed off by the user 2026-10-16; merged after H30) |
 | H32 | The decision tree's known solutions in text order: `isKnownSolution` keyed antecedents by the memory order of their propositions, so with several threads the same antecedent was new in one run and known in another (trivergence's F7 parity test: harm-rel on `i2c_slave` kept 11,039 or 11,037 assertions from identical inputs) | done (signed off by the user 2026-10-16) |
 | H33 | No default cap on `--reduce implies`: `--implies-max-pairs` defaults to 0 (the miner portfolio measured the step at about 1% of the prover time it saves; harm-rel on `i2c_slave`, 2.29 M pairs, was above the 2,000,000 cap) | done (signed off by the user 2026-10-16) |
+| H34 | harm-coi `--aliases`: one HARM name per port-connected net (D-042), asked by the miner portfolio | done (signed off by trivergence's lead for the user 2026-10-24) |
+| H35 | harm-coi `--domains`: the clock-domain map (domains v1: clock roots, derived clocks, crossings, synchronizers, resets; D-043), for the miner portfolio's MC1 | done (signed off by the user 2026-10-26) |
+| H36 | harm-coi `--cut-domains`: one clock domain mined, the other domains' registers, clocks and the signals only they compute cut (D-044) | done (signed off by the user 2026-10-26, with H35) |
+| H37 | The domain map records each asynchronous reset's edge (`reset_edges`, D-045) | done (signed off by the user 2026-10-28) |
+| H38 | 1-bit `[k:k]` VCD variables; a net's kept name is its shallowest visible name, then a top port; selects rebased to the kept name's range (the miner portfolio's FX1) | done (signed off by the user 2026-10-28) |
+| H39 | `--deadline`, `--mine-deadline`, `--implies-workers`; the implication step's pairs in worker processes and kept per pair; the ranking's sort; harm-coi's use before declaration (the miner portfolio's HX1) | done (signed off by the user 2026-10-29) |
+| H40 | harm-coi's cone closure in linear time (the miner portfolio's BR1) | done (signed off by the user 2026-11-09) |
+| H41 | A template's `!` over a comparison prints with brackets, `!(x == c)` (the miner portfolio's DD1) | done (signed off by the user 2026-11-09) |
+| H42 | The v4 release: documentation through H41, `dev` into `main` with the tag `v4` | in-progress |
