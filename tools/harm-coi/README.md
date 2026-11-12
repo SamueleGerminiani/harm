@@ -14,7 +14,8 @@ python3.12 -m venv .venv
 harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include DIR]...
          --vcd-scope <tb::dut> --vcd-recursion <r> [--vcd <trace.vcd>] [--clock <clk>]
          [--max-depth 3] [--edges edges.txt] [--predicates] [--emit-config cfg.xml]
-         [--hints hints.json [--hints-use all|placement] [--reset NAME]...] [-v] -o coi.json
+         [--hints hints.json [--hints-use all|placement] [--reset NAME]...] [--no-relations]
+         [--aliases] [--domains domains.json] [--cut-domains] [-v] -o coi.json
 ```
 - `--vcd-scope` and `--vcd-recursion` are HARM's `--vcd-ss` and `--vcd-r`. Names are HARM's: relative to the scope, `::` between sub-scopes (`g[1]::w`, `bus::valid`, `c::mode`), D-013.
 - **`--vcd` (recommended): the trace decides which signals are visible.**
@@ -26,6 +27,8 @@ harm-coi --top <module> --files <f.sv>... [--define NAME[=VALUE]]... [--include 
 - `--predicates`: also harvests the RTL's predicates into `coi.json → predicates` (below).
 - `--emit-config <file.xml>`: writes a starter HARM configuration from them (implies `--predicates`).
 - `-v`: prints why each signal is unknown, and why each predicate was dropped.
+- `--aliases` (H34, H38): one name per port-connected net; `--domains FILE` (H35, H37): the clock-domain map; `--cut-domains` (H36): with `--clock`, that clock's domain only. They are described in HARM's README, sections "One name per net" and "Clock domains".
+- Elaboration: slang gets `--timescale 1ns/1ps` (H28: the default for a file without a `timescale`) and `--allow-use-before-declare` (H39: a signal used before its declaration, AssertLLM2's `sdspi`, elaborates).
 
 As a library: `harm_coi.cli.main(argv)` returns the exit code.
 

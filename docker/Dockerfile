@@ -1,8 +1,8 @@
 # HARM with its optional tools (H11, D-027): Z3 (--reduce equiv/implies, --atom-premises), harm-coi
 # (RTL cones and predicates, Python + pyslang), Verilator, Icarus and yosys (the simulation oracles and
 # the cross-check; built from source by third_party/install_all.sh, H11d).
-# HARM_REF selects what is built: "dev" until the release (the merge into main and the tag v4 are
-# deferred), then a tag.
+# HARM_REF selects what is built: the release tag v4 by default (H42); a branch such as dev for a
+# newer build.
 FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -20,7 +20,7 @@ RUN wget -q https://github.com/Kitware/CMake/releases/download/v3.31.1/cmake-3.3
     && rm cmake.sh
 
 ARG HARM_REPO=https://github.com/SamueleGerminiani/harm.git
-ARG HARM_REF=dev
+ARG HARM_REF=v4
 # no cache from here, so that the ref is fetched again
 ARG CACHE_DATE=not_a_date
 RUN git clone ${HARM_REPO} /harm && cd /harm && git checkout ${HARM_REF}

@@ -920,7 +920,7 @@ $ cat $OUT/implications.json
     Name of this execution (used when dumping statistics).
 
 * **`--version`**
-    Print HARM's version and exit: `HARM <git describe>`, e.g. `HARM v4`, or `HARM v3-215-gf0b2a8b` for a build of `dev` 215 commits after `v3`, with ` (dirty)` if the sources had uncommitted changes.
+    Print HARM's version and exit: `HARM <git describe>`, e.g. `HARM v4`, or `HARM v4-15-gf0b2a8b` for a build of `dev` 15 commits after `v4`, with ` (dirty)` if the sources had uncommitted changes.
 
 
 # Docker
@@ -935,7 +935,7 @@ Run it:
 docker run -it samger/harm:latest
 ```
 
-Build it yourself from a branch or tag (`dev` by default): `docker/build.sh [ref]`. The image contains Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
+Build it yourself from a branch or tag (`v4` by default): `docker/build.sh [ref]`. The image contains Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
 
 # Citations
 If you need to reference HARM in an academic publication, refer to the following paper:

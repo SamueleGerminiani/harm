@@ -64,6 +64,7 @@ The C2 and C3 results go into VALIDATION's H42 entry.
 1. `ms/H42-v4-release` merged into `dev` with `--no-ff`.
 2. `dev` merged into `main` with `--no-ff`: "Merge H42-v4-release: HARM v4".
 3. The annotated tag `v4` on that merge.
+3b. `dev` fast-forwarded to `main`, so a later build of `dev` describes itself as `v4-<n>-g<commit>` (README, `--version`). This was added while writing the documentation.
 4. `main`, `dev` and `v4` pushed to origin (SamueleGerminiani/harm; never upstream).
 5. Then: a build from `main` prints `HARM v4`, and the Docker image's default ref is `v4`.
 

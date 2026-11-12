@@ -74,7 +74,7 @@ H18 & the old precedence of \code|!| & the operator fixture (23 cases) \\
 Writing tests first means some expectations turn out wrong. They were changed only with a recorded reason, and none to make an implementation pass. Examples: \ms{H5}'s blocking-temporary expectation (\cref{sec:harmcoi}); an \ms{H1} expectation that encoded the SVA precedence bug (\code|s_eventually b_1 until b_2| for \code|F b_1 W b_2|); an \ms{H1c} hand label (\code|!(b W c)| is a strong until, not safety); an \ms{H6} expected order with two equal scores in the wrong order (\code|X| sorts before \code|r| in ASCII, which is the D-001 tie-break).
 
 \subsection{The test suite}
-v3 had 35 tests; v4 has 277, run by \code|ctest -j8| in about 32 minutes on the Mac and 35 on the Linux machine. They include the frozen regression baselines of every example (\ms{H0}), the determinism checks, the unit tests, the oracles above, and the documentation checks of this report (\ms{H14}). Tests that need a tool (Verilator, Icarus, yosys, \texttt{harm-coi}'s Python) are registered only when it is found.
+v3 had 35 tests; v4 has 284 (\ms{H41}), run by \code|ctest -j8| in about 32 minutes on the Mac and 35 on the Linux machine. They include the frozen regression baselines of every example (\ms{H0}), the determinism checks, the unit tests, the oracles above, and the documentation checks of this report (\ms{H14}). Tests that need a tool (Verilator, Icarus, yosys, \texttt{harm-coi}'s Python) are registered only when it is found.
 
 \subsection{Not validated}
 \begin{itemize}
