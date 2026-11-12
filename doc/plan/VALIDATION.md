@@ -1585,3 +1585,4 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
   1 error, 0 warnings") from a test that expects an elaboration error (`frontend.elaborate` reports it before raising);
   slang's output is buffered and flushed at the process's exit. It does not change any result.
 
+**H42-v4-release signed off by the user 2026-11-12** ("Sign off, release"), at `12c1464`; merged into `dev`, `dev` into `main`, tagged `v4`.

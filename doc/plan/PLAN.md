@@ -352,7 +352,7 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H8 | Depth-aware COI filter | done |
 | H9 | Out-of-cone report | done |
 | H10 | RTL predicate harvesting | done |
-| H11 | Evaluation, docs and release | merged into `dev`; the Linux checks (`ms/H11-linux`) and the macOS checks (`ms/H11-macos`) reviewed and merged into `dev` 2026-10-08; F-M2 (Mac/Linux fixture counts) deferred; release to `main` deferred until the user says so |
+| H11 | Evaluation, docs and release | merged into `dev`; the Linux checks (`ms/H11-linux`) and the macOS checks (`ms/H11-macos`) reviewed and merged into `dev` 2026-10-08; F-M2 (Mac/Linux fixture counts) deferred; released to `main` as `v4` in H42 (2026-11-12) |
 | H11b | HARM builds on Linux (F-L1) | done (A4 on the Mac: pass) |
 | H11c | Linux findings F-L3 (yosys probe), F-L4 (VCD ranges, SystemVerilog indexing, D-028), F-L5 (wide predicates) | done (A4 on the Mac: pass) |
 | H11d | Verilator, Icarus and yosys in `third_party` (Linux and macOS) | done (macOS: F-M1 fixed in H11g) |
@@ -389,4 +389,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H39 | `--deadline`, `--mine-deadline`, `--implies-workers`; the implication step's pairs in worker processes and kept per pair; the ranking's sort; harm-coi's use before declaration (the miner portfolio's HX1) | done (signed off by the user 2026-10-29) |
 | H40 | harm-coi's cone closure in linear time (the miner portfolio's BR1) | done (signed off by the user 2026-11-09) |
 | H41 | A template's `!` over a comparison prints with brackets, `!(x == c)` (the miner portfolio's DD1) | done (signed off by the user 2026-11-09) |
-| H42 | The v4 release: documentation through H41, `dev` into `main` with the tag `v4` | in-progress |
+| H42 | The v4 release: documentation through H41, `dev` into `main` with the tag `v4` | done (signed off by the user 2026-11-12; `main` tagged `v4`) |
