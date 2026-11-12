@@ -50,6 +50,23 @@ the release commit's tree is `dev`'s plus documentation and the Dockerfile's def
 - Release notes header: "The release is deferred..." becomes the release date.
 - PLAN.md: H11's row records the release; H42 is done at the sign-off.
 
+## Part B2: fixes from C3's first run (the user, 2026-11-12: "Fix both now")
+C3 on saturn at `273dead` failed in the image's build-time `ctest -j32 -LE slow` (2 of 249). On the Mac, C1 failed 1 of
+284.
+- **`h27_fetch`** (always fails in the image): the image has `wget` but not `curl`, and `check_fetch.sh`'s local
+  `file://` download works only through curl (`fetch.sh` refuses a non-HTTPS URL with wget). The Dockerfile now
+  installs `curl`, as every other build of HARM has it.
+- **`h5_unit`'s `test_t1_wide_cone_is_fast`** (load): 30.07 s against `< 30` with 32 jobs. The bound (30 s, the user,
+  2026-11-09) now applies to the process's CPU time (`time.process_time`), not wall time, so other jobs do not count
+  against it. The closure is single-threaded.
+- **`DTOTest`'s `DTSolutionTest.keyIgnoresObjectOrder`** (load; open since HX1: 7 of 120 runs at 8 at a time; C1: 1
+  of 1 full run): the test took a false/true pair from the same iteration and needed both address orders among such
+  pairs. An allocator that hands out increasing addresses never gives the second order. The test now pairs across
+  iterations: the lowest `false` object with the highest `true` one, and the highest `false` with the lowest `true`.
+  With alternating allocations, both orders exist for any allocator whose addresses increase or decrease.
+- Test-only and image-only changes: no HARM or harm-coi source changes. A flaky test cannot be shown failing on demand,
+  so the old DTOTest is measured beside the new one: 120 runs at 8 at a time.
+
 ## Part C: checks on the release candidate (`ms/H42-v4-release` after A and B)
 | # | Check | Where |
 |---|---|---|

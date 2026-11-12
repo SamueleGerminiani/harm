@@ -883,17 +883,31 @@ TEST(DTSolutionTest, keyIgnoresObjectOrder) {
   // objects of two texts, until one pair of each address order exists
   std::vector<PropositionPtr> keep;
   PropositionPtr lowA, lowB, highA, highB; // (lowA < lowB) and (highB < highA) by address
+  // H42: pairs are taken across allocations (the lowest false with the highest true, the highest false
+  // with the lowest true). Pairs from one iteration had one address order only when the allocator's
+  // addresses only increase (a flaky failure under load). Alternating allocations give both orders for
+  // any allocator whose addresses increase or decrease.
+  PropositionPtr minF, maxF, minT, maxT;
   for (int i = 0; i < 4096 && !(lowA && highA); i++) {
     PropositionPtr a = generatePtr<BooleanConstant>(false, ExpType::Bool, 1, 10);
     PropositionPtr b = generatePtr<BooleanConstant>(true, ExpType::Bool, 1, 10);
     keep.push_back(a);
     keep.push_back(b);
-    if (a.get() < b.get() && !lowA) {
-      lowA = a;
-      lowB = b;
-    } else if (b.get() < a.get() && !highA) {
-      highA = a;
-      highB = b;
+    if (!minF || a.get() < minF.get()) minF = a;
+    if (!maxF || maxF.get() < a.get()) maxF = a;
+    if (!minT || b.get() < minT.get()) minT = b;
+    if (!maxT || maxT.get() < b.get()) maxT = b;
+    if (minF.get() < maxT.get()) {
+      lowA = minF;
+      lowB = maxT;
+    } else {
+      lowA = lowB = nullptr;
+    }
+    if (minT.get() < maxF.get()) {
+      highA = maxF;
+      highB = minT;
+    } else {
+      highA = highB = nullptr;
     }
   }
   ASSERT_TRUE(lowA && highA) << "no pair of each address order";

@@ -7,7 +7,7 @@ FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-        git build-essential uuid-dev pkg-config wget unzip \
+        git build-essential uuid-dev pkg-config wget curl unzip \
         python3 python3-dev python3-venv \
         autoconf flex bison help2man gperf perl gawk libfl-dev zlib1g-dev libreadline-dev \
         tcl-dev libffi-dev \
