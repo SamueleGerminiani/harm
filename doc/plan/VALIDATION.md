@@ -1586,3 +1586,5 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
   slang's output is buffered and flushed at the process's exit. It does not change any result.
 
 **H42-v4-release signed off by the user 2026-11-12** ("Sign off, release"), at `12c1464`; merged into `dev`, `dev` into `main`, tagged `v4`.
+
+**Docker Hub (part D step 6), 2026-11-12:** `docker/build.sh v4` on saturn (trivergence) at `41d5e96`: build exit 0 in 32 min, in-image `ctest -LE slow` 249 of 249 (`h14_report_builds` skipped), `git describe` `v4`. Pushed from saturn after the user's own `docker login` (logged out right after): `samger/harm:v4` and `samger/harm:latest`, the same manifest `sha256:065d5b7db834ae20d3a3cac09160639e0256c60e63f99813b8cbb4c65ce5d367` (linux/amd64), checked from the Mac with `docker buildx imagetools inspect`.
