@@ -67,6 +67,10 @@ The C2 and C3 results go into VALIDATION's H42 entry.
 3b. `dev` fast-forwarded to `main`, so a later build of `dev` describes itself as `v4-<n>-g<commit>` (README, `--version`). This was added while writing the documentation.
 4. `main`, `dev` and `v4` pushed to origin (SamueleGerminiani/harm; never upstream).
 5. Then: a build from `main` prints `HARM v4`, and the Docker image's default ref is `v4`.
+6. The Docker Hub image (added by the user, 2026-11-12: "yes, push the docker after the release"): `docker/build.sh v4`
+   builds `samger/harm:v4`, which is tagged `latest` too, and both are pushed (the README's `docker pull samger/harm:latest`).
+   It is built where Docker runs on x86_64, and the push needs the user's `docker login` there. No credentials are
+   put in an image or a file.
 
 `main` is the branch other people use. **The push is the step that cannot be taken back**, so it waits for the
 sign-off.
