@@ -154,7 +154,7 @@ The user can find several working examples in the "examples" directory.
 
 * clock is the signal used to sample time (every posedge).
 * config.xml is the configuration file containing propositions and templates.
-* Use --vcd-dir <DIRECTORY> to give as input a set of .vcd traces (concatenated in path order, D-033)
+* Use --vcd-dir <DIRECTORY> to give as input a set of .vcd traces (concatenated in path order)
 * IMPORTANT: see the options --vcd-ss and --vcd-r to make harm capture the correct VCD scope and signals
 
 ## Run with a csv trace
@@ -162,7 +162,7 @@ The user can find several working examples in the "examples" directory.
 ```
 ./harm --csv trace.csv --conf config.xml
 ```
-* Use --csv-dir <DIRECTORY> to give as input a set of .csv traces (concatenated in path order, D-033)
+* Use --csv-dir <DIRECTORY> to give as input a set of .csv traces (concatenated in path order)
 * Note that you do not have to specify a clock signal when using a csv file, as each row is already considered a clock event.
 * A CSV trace must contain the declaration of the design's variables in the first row, following a C/Verilog style.
 	
@@ -222,7 +222,7 @@ For csv:
 
  HARM will create the configuration file on the path given as an argument.
 
-From the RTL, `harm-coi --emit-config` (tools/harm-coi, D-023) writes a configuration whose propositions are the conditions, case labels, FSM states, comparisons and reset values of the design, with `origin="rtl"` and a `<coi>` element.
+From the RTL, `harm-coi --emit-config` (tools/harm-coi) writes a configuration whose propositions are the conditions, case labels, FSM states, comparisons and reset values of the design, with `origin="rtl"` and a `<coi>` element.
 
 # The configuration file
 
@@ -264,19 +264,19 @@ Propositions are non-temporal boolean expressions defined in the `exp` attribute
 ### Data Types & Internal Representation
 Harm supports standard C/C++ operators (boolean, relational, arithmetic, bitwise, string).
 
-* **Integers:** C/C++ integer types are **2-valued integers** of their declared width (`char` 8 bits … `long int` 64), signed or unsigned. `integer` and `time` are 4-state, as in SystemVerilog (D-035).
+* **Integers:** C/C++ integer types are **2-valued integers** of their declared width (`char` 8 bits … `long int` 64), signed or unsigned. `integer` and `time` are 4-state, as in SystemVerilog.
 * **Logic/Net:** Verilog types (e.g., `reg`, `wire`, `logic`) are represented as **4-value bit vectors** (0, 1, x, z) with a max width of **511 bits**.
 * **Floats:** All float types are internally represented as **C doubles**.
 
 > **Note:** All operators available for integer types are also supported for logic types. For the full grammar, refer to `src/antlr4/propositionParser/grammar/proposition.g4`.
 
-### Operator precedence (D-034)
+### Operator precedence
 Operators bind as in C and SystemVerilog (IEEE 1800-2017 Table 11-2), from the tightest:
 
 | Operators | Notes |
 | :--- | :--- |
 | `x[i]`, `x[a:b]` | selects |
-| `!` `~` `-` `+` (unary) | `!x` is 1 where `x` has no known 1 bit, else 0 (HARM's 2-valued rule, D-011) |
+| `!` `~` `-` `+` (unary) | `!x` is 1 where `x` has no known 1 bit, else 0 (HARM's 2-valued rule) |
 | `*` `/` | |
 | `+` `-` | `x-1` needs no blanks |
 | `<<` `>>` | |
@@ -285,15 +285,15 @@ Operators bind as in C and SystemVerilog (IEEE 1800-2017 Table 11-2), from the t
 | `&`, then `^`, then `\|` | below the comparisons: `x & y == y` is `x & (y == y)` |
 | `&&`, then `\|\|`, then `?:` | |
 
-All binary operators are left-associative. A CSV `bool` is a 1-bit number wherever it is an operand of one of these operators (`a + a == 2`, `a ^ b`, `!a ^ b` is `(!a) ^ b`); a bracketed Boolean can be one too (`(a && b) ^ c`). HARM prints propositions with the brackets these rules need, so a printed proposition re-parses to itself. **Changed in v4 (H18):** `!x == y`, `x & y == y` and `(x > 0) == y` used to read `!(x == y)`, `(x & y) == y` and `(x > 0) == (y != 0)`; write those brackets if that is what you mean.
+All binary operators are left-associative. A CSV `bool` is a 1-bit number wherever it is an operand of one of these operators (`a + a == 2`, `a ^ b`, `!a ^ b` is `(!a) ^ b`); a bracketed Boolean can be one too (`(a && b) ^ c`). HARM prints propositions with the brackets these rules need, so a printed proposition re-parses to itself. **Changed in v4:** `!x == y`, `x & y == y` and `(x > 0) == y` used to read `!(x == y)`, `(x & y) == y` and `(x > 0) == (y != 0)`; write those brackets if that is what you mean.
 
-### Evaluation and conversions (D-035)
+### Evaluation and conversions
 Operations evaluate as in SystemVerilog (IEEE 1800-2017 §11.4, §11.6, §11.8), so that a mined assertion holds in a simulator exactly where it holds in HARM:
 - **Signedness:** an operation is unsigned if any operand is unsigned (also for C types), and as wide as its widest operand; an unsized decimal literal is 32 bits (64 if it does not fit); each operand is extended from its own width, sign-extended only when the operation is signed.
 - **Context-determined widths:** a comparison is computed at the width of its widest operand, and its arithmetic operands with it: with an 8-bit `ch`, `ch << am == 0` is computed at 32 bits (the literal `0`), `q + r == 5'd16` at 5 bits.
 - **Shifts:** the amount is unsigned and taken at its own width; shifting by the width or more gives 0; `>>` is logical, `>>>` arithmetic on a signed value, `<<<` is `<<`. A shift never stops HARM.
 - **Division by zero:** x for `logic` (false when compared), 0 for the 2-valued C types (they have no x).
-- **x and z:** an x/z bit in an operand of `+ - * /` makes the whole result x; bitwise operators work bit by bit (as before); a comparison with an x/z operand is false (D-011, unchanged).
+- **x and z:** an x/z bit in an operand of `+ - * /` makes the whole result x; bitwise operators work bit by bit (as before); a comparison with an x/z operand is false (unchanged).
 - **Printing:** a literal prints as text that re-parses to the same value and type: `4'b0x01` (not `4'bx01`, which means `4'bxx01`), `8'sb…` keeps its `s`, an unsigned C constant prints as a sized literal (`0x1F` as `8'b11111`), a real keeps its point (`2.0`).
 
 ### SystemVerilog Syntax in Propositions
@@ -305,16 +305,16 @@ Besides C/C++ operators, propositions accept these SystemVerilog forms:
 | Fill literals | `q4 == '1`, `r8 !== 'z` | `'0 '1 'x 'z` take the width of the other operand. A fill literal must meet a sized operand. |
 | Concatenation | `{go, s} == 3'b110` | At least two items. Items can be logic, int (with its declared width) or bool variables. Unsized integer constants are not allowed (use e.g. `4'd3`). |
 | Replication | `{2{q4}}`, `{4{1'b0}}` | |
-| Sign casts (H25, D-039) | `$signed(sum) < -13'sd2047`, `$unsigned(sw) > 8'd200` | IEEE 1800-2017 §20.5: the argument's bits and width, the sign changed; the argument is self-determined. A VCD vector is unsigned in HARM, so `$signed(x)` is how a proposition reads a signal the RTL declares `signed`. |
+| Sign casts | `$signed(sum) < -13'sd2047`, `$unsigned(sw) > 8'd200` | IEEE 1800-2017 §20.5: the argument's bits and width, the sign changed; the argument is self-determined. A VCD vector is unsigned in HARM, so `$signed(x)` is how a proposition reads a signal the RTL declares `signed`. |
 | Conditional | `(go === 1'b1 ? cnt : 4'h0) > 4'd5` | As in SystemVerilog, `?:` has the lowest precedence: write it in parentheses when it is an operand of another operator. The condition is a proposition; the branches have a common type. |
 | Case equality | `q4 === 4'b1x0z`, `q4 !== '0` | Bitwise identity, including `x` and `z` (always true or false). |
-| Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` (and, since D-034, of every numeric operator) is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so they are not bitwise inline there. See D-032, D-034. |
+| Bitwise operators on `bool` | `a ^ b`, `~a & c`, `a ^ q4` | A CSV `bool` operand of `&`, `\|`, `^`, `~` (and of every numeric operator) is a 1-bit unsigned value, as in SystemVerilog (`a ^ q4` zero-extends `a`). In templates, `&` and `\|` stay temporal operators (`G(a & b -> c)` is `{a & b}`), so they are not bitwise inline there. |
 | Hierarchical names | `u_core.state` | The same as `u_core::state` (the name used in VCD traces). |
-| Bit and part selects | `asc[2]`, `off[6:3] == 4'd9` | On a vector with a declared range in the VCD (`[1:10]`, `[10:3]`, `[7:0]`), the indices are SystemVerilog's: inside the range and in its direction, otherwise an error. Assertions print them as written. Without a declared range (CSV traces), an index is a bit position counted from the right, from 0. Packed multi-dimensional vectors are seen flattened (`[1:0][3:0]` is `[7:0]`). Bit-blasted vectors (one VCD `$var` per bit) take the highest index as the MSB. See D-028. |
+| Bit and part selects | `asc[2]`, `off[6:3] == 4'd9` | On a vector with a declared range in the VCD (`[1:10]`, `[10:3]`, `[7:0]`), the indices are SystemVerilog's: inside the range and in its direction, otherwise an error. Assertions print them as written. Without a declared range (CSV traces), an index is a bit position counted from the right, from 0. Packed multi-dimensional vectors are seen flattened (`[1:0][3:0]` is `[7:0]`). Bit-blasted vectors (one VCD `$var` per bit) take the highest index as the MSB. |
 
 Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (where `{...}` is a SERE).
 
-> **x and z values (D-011).** HARM's propositions are always true or false, and a proposition and its negation are always complementary. Wherever a 4-valued value becomes a truth value, `x`/`z` counts as **false**:
+> **x and z values.** HARM's propositions are always true or false, and a proposition and its negation are always complementary. Wherever a 4-valued value becomes a truth value, `x`/`z` counts as **false**:
 > - a comparison (`== != < <= > >=`) is false if any bit of an operand is `x` or `z`;
 > - a value used as a condition (`v`, `a[1]`) is true only if it has a known 1 bit;
 > - `!`, `&&` and `||` then work on true/false values;
@@ -335,42 +335,42 @@ Concatenation is supported in `<prop>`/`<numeric>`, not inline in templates (whe
 > - write propositions with `===`/`!==` where `x`/`z` must be told apart (`sda !== 1'b0` instead of `!(sda == 1'b0)`): those agree with a simulator;
 > - treat a "HARM holds, simulator fails" disagreement on an `x`/`z` cycle as this known difference.
 >
-> `tests/input/h1b` pins these values. An option with SystemVerilog's semantics was considered and not adopted (H1b): it would make a proposition and its negation both false on `x` cycles, which HARM's decision trees and reductions assume never happens.
+> `tests/input/h1b` pins these values. An option with SystemVerilog's semantics was considered and not adopted: it would make a proposition and its negation both false on `x` cycles, which HARM's decision trees and reductions assume never happens.
 
 ### Invalid propositions
 By default, a proposition that cannot be parsed stops HARM. With **`--skip-invalid-props`**, it is skipped with a warning (`Invalid proposition skipped`) and mining continues with the others.
 
-### Signals named after HARM keywords (D-037)
+### Signals named after HARM keywords
 A trace may have variables named after HARM's keywords (`X`, `W`, `G`, `F`, `R`, `next`, `until`, `always`, `eventually`, `s_eventually`, `nexttime`, `substr`, `first_match`, `intersect`, `inside`, `and`, `or`, `not`, `true`, `false`). In a formula (a proposition, a template, an assertion file), write such a variable as a SystemVerilog escaped identifier: a backslash, the name and a blank, `\W `. A bare keyword keeps its meaning (`W` is the weak until, `true` the constant), so `G(\W  -> X \next )` reads the variables `W` and `next` with the operators `G` and `X`. In a proposition, a bare name that is a variable and not a proposition word (`true`, `false`, `and`, `or`, `not`, `inside`) stops HARM with a message naming the escape. Any other variable may be written escaped too (`\a ` is `a`). SVA output prints the plain name (`W` is a legal SystemVerilog name); HARM's own syntax (`--dump-to`, read back with `--ass-file`) prints the escaped form. harm-coi writes such signals escaped in the propositions it emits.
 
-### Relations from the RTL (harm-coi, D-038)
-`harm-coi --hints FILE --emit-config CFG` (with `--reset R`, or `--reset !R` for an active-low reset) adds to the configuration by default (`--no-relations` turns it off and writes what harm-coi wrote before H24):
+### Relations from the RTL (harm-coi)
+`harm-coi --hints FILE --emit-config CFG` (with `--reset R`, or `--reset !R` for an active-low reset) adds to the configuration by default (`--no-relations` turns it off):
 - **relations from assignments:** `x <= e` in a clocked process gives `x == ($past(e, 1) & M)`, `assign x = e` gives `x == (e & M)` (`M` the mask of `x`'s width, written only where SystemVerilog would truncate);
 - **fixed templates:** an unconditional relation goes to `G({!R}|=> P0(4))` (registered) or `G({!R}|-> P0(5))` (combinational), so it is mined without unrelated antecedents; the reset values also go to `G({$fell(R)}|-> P0(3))`, the first cycle after the reset, which `disable iff (R)` does not switch off;
 - **both polarities** of a 1-bit flag's reset-value predicate, and `x`/`!x` for a 1-bit signal that is only assigned;
-- **single-cycle trees for relations:** a conditional relation or `$stable(x)` is a consequent of its own template, `G({..#1&..}|=> P0(7))` (`|->`, domain 6, for combinational logic), with `dtLimits="1D,3W,3A,-0.1E,U"`: the condition guarding an assignment is one cycle's, of up to three propositions (two before H26). No `<numeric>` is written.
-- **signed RTL (H25, D-039):** a comparison of two signed operands is written on `$signed` (`$signed(sum) < -13'sd2047`; a negative constant is kept), a sign extension as `$unsigned($signed(x) + 13'sd0)` and a signed `>>>` as `$unsigned($signed(a) >>> n)` (self-determined, so the relation's unsigned mask cannot turn them unsigned); before H25 the first was written unsigned and the others were dropped.
-- **constants (H26, D-040):** a constant assigned to a whole signal outside the reset branch (`acc <= 12'sd2047` under `sum > 13'sd2047`) is a consequent `acc == 12'd2047` in the same single-cycle trees; not for a constant signal, a 1-bit target (both polarities already) or a lookup table (more than 8 distinct constants). Before H26 only the reset branch's constants were propositions.
+- **single-cycle trees for relations:** a conditional relation or `$stable(x)` is a consequent of its own template, `G({..#1&..}|=> P0(7))` (`|->`, domain 6, for combinational logic), with `dtLimits="1D,3W,3A,-0.1E,U"`: the condition guarding an assignment is one cycle's, of up to three propositions. No `<numeric>` is written.
+- **signed RTL:** a comparison of two signed operands is written on `$signed` (`$signed(sum) < -13'sd2047`; a negative constant is kept), a sign extension as `$unsigned($signed(x) + 13'sd0)` and a signed `>>>` as `$unsigned($signed(a) >>> n)` (self-determined, so the relation's unsigned mask cannot turn them unsigned).
+- **constants:** a constant assigned to a whole signal outside the reset branch (`acc <= 12'sd2047` under `sum > 13'sd2047`) is a consequent `acc == 12'd2047` in the same single-cycle trees; not for a constant signal, a 1-bit target (both polarities already) or a lookup table (more than 8 distinct constants).
 
 Such relations restate the RTL: mined from a design, they describe that design, bugs included. They catch a *changed* design (a regression, a mutant); a bug already in the RTL shows only when the statement is compared with the intent (the specification).
 
-### One name per net (`harm-coi --aliases`, H34, D-042)
+### One name per net (`harm-coi --aliases`)
 A net that crosses a module port is dumped once per scope (`u_i2cSlave::sdaOut` and `u_i2cSlave::u_serialInterface::sdaOut`). Without `--aliases` each copy is its own signal, and HARM mines their equality and repeats other assertions once per copy. With `--aliases`, harm-coi gives the copies one name:
 - **one net:** a port connection, `assign a = b` or `wire a = b` whose other side is a plain reference to one signal of an equivalent type (struct fields pair one by one), when nothing else drives the driven side and neither side is unknown or on the clock's path. An operator (`.rst(a | b)`), a select, a concatenation, a constant, a width change or an inout port is not one net. Trace values are never used;
-- **the name kept** is the shallowest visible one (fewest scope levels), then a top input port, then a top output port (H38), ties broken by string order. Predicates, hints, relations and cones use it, so the copies' predicates are one, and `assign a = b` gives no relation;
+- **the name kept** is the shallowest visible one (fewest scope levels), then a top input port, then a top output port, ties broken by string order. Predicates, hints, relations and cones use it, so the copies' predicates are one, and `assign a = b` gives no relation;
 - **recorded** in `coi.json`'s `aliases`, `{kept: [merged names]}`, and in `--edges` (`alias kept = merged, ...`).
 
-### Clock domains (`harm-coi --domains`, H35, D-043)
+### Clock domains (`harm-coi --domains`)
 harm-coi samples one clock. `--domains FILE` maps a design's clock domains first, without choosing one (`-o` is then optional):
 - **domains:** one per clock root, a process's clock followed back through wires and ports, with its edges, its registers and its resets (the roots of their asynchronous controls). A clock made by logic or a register (a divider, a gate) is `derived`, `from` the domains it comes from;
 - **crossings:** a register of another domain that reaches a domain's register through wires and logic, `{signal, from, to, into}`;
 - **synchronizers:** a register fed through wires only by one foreign register, followed by a register fed only by it (the 2-flop chain), `{clock, from, first, second}`;
-- **reset edges (H37, D-045):** `reset_edges` gives each asynchronous reset's edge (`neg`: active low);
+- **reset edges:** `reset_edges` gives each asynchronous reset's edge (`neg`: active low);
 - **with `--reset NAME`**, each domain lists the given resets its registers read; `unclocked` lists the registers whose clock cannot be told.
 
 `coi.json` and the other outputs are unchanged. The schema is `doc/schemas/domains.v1.json`.
 
-**One domain (`--cut-domains`, H36, D-044).** Without it, a register on another clock is `unknown`, and HARM treats unknown signals as in every cone, so they are mined on the sampling clock's ticks (assertions over two clocks). With it, every signal of another domain is cut: its registers, its clock, the top inputs only it reads and the signals computed only from those are no target, source, predicate, hint or relation, and the cones stop at them (`coi.json`'s `cut` lists them). A register fed from another domain, such as a synchronizer's first stage, is mined from its own domain's sources. On a single-clock design nothing changes.
+**One domain (`--cut-domains`).** Without it, a register on another clock is `unknown`, and HARM treats unknown signals as in every cone, so they are mined on the sampling clock's ticks (assertions over two clocks). With it, every signal of another domain is cut: its registers, its clock, the top inputs only it reads and the signals computed only from those are no target, source, predicate, hint or relation, and the cones stop at them (`coi.json`'s `cut` lists them). A register fed from another domain, such as a synchronizer's first stage, is mined from its own domain's sources. On a single-clock design nothing changes.
 
 ### ⚠️ Important Warnings
 
@@ -574,7 +574,7 @@ In `rank` mode nothing is pruned. Three metric variables become available for `<
 | `coiDepthFit` | fraction of antecedent propositions placed at a delay, relative to the consequent, that matches a depth of the cone. Under `until`, `eventually`, repetitions and ranges, being in the cone is enough |
 | `coiUnknown` | number of antecedent propositions with a signal the cone file does not know (these are never penalised) |
 
-An assertion without antecedent propositions (e.g. an invariant) scores 1. Example: `<sort name="structure" exp="coiDepthFit"/>`. See `doc/plan/DECISIONS.md` (D-014) for the exact definitions.
+An assertion without antecedent propositions (e.g. an invariant) scores 1. Example: `<sort name="structure" exp="coiDepthFit"/>`. See `doc/plan/DECISIONS.md` for the exact definitions.
 
 **`mode="filter"`** prunes the search instead of ranking, GoldMine-style.
 - **What is pruned:** for each consequent, antecedent propositions outside its cone are never tried.
@@ -584,8 +584,8 @@ An assertion without antecedent propositions (e.g. an invariant) scores 1. Examp
 - **The other metrics** (`coiDepthFit`, `coiUnknown`) are still computed and can be used to sort.
 - **Statistics:** HARM reports the search space before and after pruning, and `--dump-assertion-info` records it under `coiFilter`.
 - **Assumes the RTL is correct.** Behaviour that an RTL bug removed or added cannot be mined, and HARM warns about it once. Use `mode="rank"` when looking for bugs.
-- **A proposition written in the template itself** (`G({!rst}|=> P0)`, `G({$fell(rst)}|-> P0)`) is not filtered, only what placeholders load (H24, D-038).
-- **Not "rank mode minus out-of-cone assertions."** For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. The guarantee is that filter mode gives the same result as rank mode on a configuration from which you deleted, for each consequent, the propositions outside its cone. See D-017 and D-018.
+- **A proposition written in the template itself** (`G({!rst}|=> P0)`, `G({$fell(rst)}|-> P0)`) is not filtered, only what placeholders load.
+- **Not "rank mode minus out-of-cone assertions."** For plain templates the two are the same. With decision trees, pruning changes what the greedy tree explores, so filter mode can find in-cone assertions that rank mode misses. The guarantee is that filter mode gives the same result as rank mode on a configuration from which you deleted, for each consequent, the propositions outside its cone.
 
 **`depth="any|bounded|exact"`** (filter mode only; default `any`) also uses the depths of the cone. An antecedent proposition is checked at its distance `d`, in cycles, from each consequent proposition:
 
@@ -602,10 +602,9 @@ An assertion without antecedent propositions (e.g. an invariant) scores 1. Examp
   - with `|->` the consequent starts at the end of the antecedent, with `|=>` one cycle later, and with `->` together with the antecedent;
   - a proposition after the consequent (`d < 0`) never fits;
   - where the offset is not fixed (`until`, `eventually`, repetitions, ranges), being in the cone is enough.
-- **Decision trees:** each position of the operator has a fixed distance from the consequent. In `{..##1..} |-> c`, the last element is at distance 0, the one before at 1, and so on (D-007). A candidate is tried only at the positions where it fits.
+- **Decision trees:** each position of the operator has a fixed distance from the consequent. In `{..##1..} |-> c`, the last element is at distance 0, the one before at 1, and so on. A candidate is tried only at the positions where it fits.
 - **The rule is `coiDepthFit`'s,** so with `exact` every assertion has `coiDepthFit` = 1.
 - **Statistics:** the (candidate, position) pairs the trees tried, before and after the depth filter, in the info message and under `coiFilter` (`dtPairsBefore`, `dtPairsAfter`).
-- See D-020.
 
 Propositions and numerics can carry an `origin` attribute (free text, e.g. `origin="spec"`), reported by `--dump-assertion-info`.
 
@@ -768,8 +767,8 @@ Harm produces three main types of textual outputs:
     Write, for every kept assertion, a JSON record with its context, text, metric values (contingency table, `complexity`, final score, and the `<coi>` metrics when available) and its propositions (text, antecedent or consequent, cycle offset, variables, `origin`).
 
 * **`--dump-prop-table <FILE>`**
-    Write the proposition table (`prop-table` v1, D-031) as JSON: for every context, its propositions and the value HARM's evaluator gives each at every cycle of the trace. It is written when the configuration has been read, before mining, and changes nothing else; for the table alone, a configuration without templates is enough. It is what the miner portfolio's SAT miner reads instead of the traces.
-    - **Header:** `format` (`prop-table`), `version` (`1`), `harm` (the version), `sampling` (`{"input": "vcd", "clock": <--clk>, "edge": "posedge", "values": "preponed"}`: the values just before each rising edge, D-005; or `{"input": "csv"}`: a row is a cycle), `length` (cycles), `traces` (each input file, in the order they were concatenated, with its `first` and `last` cycle), `segments` (the trace's cuts as `[first, last]`: the end of each file and, with `--reset`, of each reset interval). With `--vcd-dir`/`--csv-dir`, the files are in path order (D-033).
+    Write the proposition table (`prop-table` v1) as JSON: for every context, its propositions and the value HARM's evaluator gives each at every cycle of the trace. It is written when the configuration has been read, before mining, and changes nothing else; for the table alone, a configuration without templates is enough. It is what the miner portfolio's SAT miner reads instead of the traces.
+    - **Header:** `format` (`prop-table`), `version` (`1`), `harm` (the version), `sampling` (`{"input": "vcd", "clock": <--clk>, "edge": "posedge", "values": "preponed"}`: the values just before each rising edge; or `{"input": "csv"}`: a row is a cycle), `length` (cycles), `traces` (each input file, in the order they were concatenated, with its `first` and `last` cycle), `segments` (the trace's cuts as `[first, last]`: the end of each file and, with `--reset`, of each reset interval). With `--vcd-dir`/`--csv-dir`, the files are in path order.
     - **Per context:** `propositions`, each with `id`, `text` (Spot LTL, as in `--dump-assertion-info`), `domains` (`a`, `c`, `ac`, `dt` or a domain number), `source` (`prop` or `numeric`, with `numeric` the numeric it was expanded from), `origin` (or `null`), and `values`: one character per cycle, `1` where the proposition is true, else `0` (x/z as in "x and z values"). A text listed twice in the configuration is one entry, with the union of its domains.
     - **`unexpanded_numerics`:** numerics with a bracketed domain (`loc="[dt]"`) are clustered by the decision tree while it mines, differently for every template, so they have no propositions in the table. Write `loc="dt"` to have them expanded over the whole trace, and listed.
 
@@ -780,7 +779,6 @@ Harm produces three main types of textual outputs:
     - **Use:** a proposition with `origin="spec"` outside the cone is a disagreement between the specification and the RTL.
     - A context without `<coi>` is listed with `"coi": null`.
     - Numerics expanded into propositions (`loc="dt"`, not `"[dt]"`) are reported as their propositions, which do not carry the numeric's origin.
-    - See D-022.
 
 * **`--reduce <syntactic|equiv|implies>`**
     How redundant assertions are removed.
@@ -802,11 +800,11 @@ $ cat $OUT/implications.json
 {"context": "default", "dropped": "G({a && d} -> c)", "kept": ["G(a -> c)", "G(d -> c)"], "relation": "implied"},
 {"context": "default", "dropped": "G({b && d} -> c)", "kept": ["G(d -> c)"], "relation": "implied"}
 ```
-* **`--implies-max-pairs <N>`** (with `--reduce implies`; default `0`: no cap, since H33)
-    Only the pairs of assertions that share a consequent atom (or whose consequent atoms a proved fact links) are checked (H29). With a cap `N` > 0 and more than `N` such pairs in a context, HARM skips the implication step for it and says so; the equivalence step still runs, so the kept assertions are those of `--reduce equiv`. `--dump-assertion-info` records, per context, `"implication": {"pairs", "maxPairs", "skipped", "dropped", "seconds"}`.
+* **`--implies-max-pairs <N>`** (with `--reduce implies`; default `0`: no cap)
+    Only the pairs of assertions that share a consequent atom (or whose consequent atoms a proved fact links) are checked. With a cap `N` > 0 and more than `N` such pairs in a context, HARM skips the implication step for it and says so; the equivalence step still runs, so the kept assertions are those of `--reduce equiv`. `--dump-assertion-info` records, per context, `"implication": {"pairs", "maxPairs", "skipped", "dropped", "seconds"}`.
 * **`--implies-workers <N>`** (with `--reduce implies`; default: `--max-threads`, from 2,000 pairs per worker)
-    The implication step's pairs are checked in `N` worker processes (each with its own copy of BuDDy's and Spot's state) and merged in the pairs' order, so the result does not depend on `N` (H39).
-* **`--deadline <S>`**, **`--mine-deadline <S>`** (seconds from HARM's start, H39)
+    The implication step's pairs are checked in `N` worker processes (each with its own copy of BuDDy's and Spot's state) and merged in the pairs' order, so the result does not depend on `N`.
+* **`--deadline <S>`**, **`--mine-deadline <S>`** (seconds from HARM's start)
     With `--deadline`, the implication step checks pairs until then; a pair not checked counts as unrelated, so nothing is dropped that would not have been (fewer drops). With `--mine-deadline` (default: 0.75 of `--deadline`), mining starts no template, permutation or decision-tree step after it, and what was mined is qualified and written. `--dump-assertion-info` records `"deadline": {"deadline", "mineDeadline", "mineCut", "permutationsDone", "permutationsTotal", "templatesNotStarted"}` (written even when nothing was mined) and, per context, the implication step's `"unchecked"` pairs and `"deadlineHit"`.
 * **`--atom-premises`** (with `--reduce implies`), **`--atom-premises-max <N>`** (default 2000)
     Also use facts between the comparisons inside propositions, proved with Z3 under HARM's semantics (x/z included):
@@ -817,7 +815,7 @@ $ cat $OUT/implications.json
     - **The facts are assumed by both checks** (Spot, and HARM's finite-trace model). They hold on every trace HARM evaluates.
     - **They respect HARM's x/z rule:** `cnt != 1` implies `!(cnt == 1)`, but not the converse.
     - **Which pairs are asked:** only comparisons over a common variable, at most `N` Z3 queries per reduction. Beyond that, HARM prints a message and the reduction stays sound, only weaker.
-    - **Where it helps:** outputs with numeric ranges or FSM states. It removed at least 16–22% of the survivors of `--reduce implies` on such examples (H3b measurement). See D-025.
+    - **Where it helps:** outputs with numeric ranges or FSM states. It removed at least 16–22% of the survivors of `--reduce implies` on such examples.
 * **`--keep <stronger|weaker|ranked>`** (with `--reduce implies`)
     Which side of an implication is kept: `stronger` (default) keeps the implying assertion, `weaker` keeps the implied one, and `ranked` keeps the better ranked. Equivalent assertions keep the smallest text.
 
@@ -857,7 +855,7 @@ $ cat $OUT/implications.json
     - `G({a ##1 b} -> X c)` is printed `a ##1 b |-> c`;
     - `G({a ##1 b} -> c)` is printed `a ##1 b |-> $past(c, 1)`.
 
-    When that is not possible (an antecedent of variable length, or a non-Boolean consequent), it is printed with `implies`, which starts both sides together: `(a and nexttime b) implies nexttime c`. A single-cycle `->` (`a |=> b`) is printed as before. See D-021.
+    When that is not possible (an antecedent of variable length, or a non-Boolean consequent), it is printed with `implies`, which starts both sides together: `(a and nexttime b) implies nexttime c`. A single-cycle `->` (`a |=> b`) is printed as before.
   - unbounded eventually is printed `s_eventually`;
   - brackets follow SVA's operator precedence (IEEE 1800-2017 Table 16-3), which differs from HARM's: in SVA, `until` binds looser than `and`/`or`, and `s_eventually` looser than everything. So `(b W c) && F d` is printed `(b until c) and (s_eventually d)`.
 * **`--trace-end <harm|sva>`**: how an assertion instance still pending at the end of a trace is judged.
@@ -868,10 +866,10 @@ $ cat $OUT/implications.json
     * `not (p until q)`.
 
     For example, `G(a -> F b)` fails on a trace whose last `a` is never followed by `b`, and `G(a -> !X b)` fails when `a` holds on the last cycle.
-  * Use `sva` when the mined SVA will be checked by a simulator. Each input trace (`--csv-dir`, `--vcd-dir`) ends separately. `--reduce implies` follows the selected semantics. See D-016.
+  * Use `sva` when the mined SVA will be checked by a simulator. Each input trace (`--csv-dir`, `--vcd-dir`) ends separately. `--reduce implies` follows the selected semantics.
 
-  `<edit>` rules still match the previous printing (`true`, `::`, `nexttime`, `eventually`), so existing rules keep working. See `doc/plan/DECISIONS.md` (D-002).
-* **Spot LTL (the default output):** a proposition with `&&`, `||` or `^` at its top is printed in brackets under `X`, `F`, `!`, `W`/`U` and `R` (and `||`/`^` under `&&`), because Spot binds those operators tighter: `G(a -> X(b && c))`, not `G(a -> Xb && c)` (D-021).
+  `<edit>` rules still match the previous printing (`true`, `::`, `nexttime`, `eventually`), so existing rules keep working.
+* **Spot LTL (the default output):** a proposition with `&&`, `||` or `^` at its top is printed in brackets under `X`, `F`, `!`, `W`/`U` and `R` (and `||`/`^` under `&&`), because Spot binds those operators tighter: `G(a -> X(b && c))`, not `G(a -> Xb && c)`.
 * **`--psl`**: PSL format.
 * **`--spotltl`**: Spot LTL format.
 
@@ -899,7 +897,7 @@ $ cat $OUT/implications.json
     Do not print the table of mined assertions (useful with `--dump-to`).
 
 * **`--check-dump-eval <DIRECTORY>`**
-    For each `check` assertion, dump the evaluation on the input traces to `<DIRECTORY>/<k>_<text>.csv`, one row per cycle: `t, Ant, Shift, Con, Ass` (the antecedent, its shift, the consequent, and the assertion's verdict at cycle `t`). `k` is the order in which the assertions are checked (contexts in order, `check` templates in configuration order); `<text>` is a shortened, readable form of the assertion. `<DIRECTORY>/index.json` maps each file to its assertion: `{"version": "1", "assertions": [{"file", "context", "spot", "sva"}, ...]}` with the exact Spot-LTL and SVA text (D-030). Find files through the index, not by their names. An existing `<DIRECTORY>` is removed first.
+    For each `check` assertion, dump the evaluation on the input traces to `<DIRECTORY>/<k>_<text>.csv`, one row per cycle: `t, Ant, Shift, Con, Ass` (the antecedent, its shift, the consequent, and the assertion's verdict at cycle `t`). `k` is the order in which the assertions are checked (contexts in order, `check` templates in configuration order); `<text>` is a shortened, readable form of the assertion. `<DIRECTORY>/index.json` maps each file to its assertion: `{"version": "1", "assertions": [{"file", "context", "spot", "sva"}, ...]}` with the exact Spot-LTL and SVA text. Find files through the index, not by their names. An existing `<DIRECTORY>` is removed first.
 
 ---
 
