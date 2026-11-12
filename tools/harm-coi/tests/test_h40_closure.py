@@ -71,7 +71,7 @@ def test_t1_wide_cone_is_fast() -> None:
     direct = {f"t{i}": [(f"r{j}", 1 + j % 2) for j in range(w)] for i in range(n)}
     direct |= {f"r{j}": [(f"r{(j + 1) % w}", 1)] for j in range(w)}
     names = set(direct)
-    t = time.time()
+    t = time.process_time()  # H42 (the user, 2026-11-12): CPU time, so other jobs' load does not count (30.07 s wall with 32 jobs)
     out = cone.closure(names, direct, set(), 3)
-    assert time.time() - t < 30  # CR1 (C9-3; the user, 2026-10-31): every source at any depth is listed, clipped (8 s on the Mac; H39 cut them, < 3 s); 30 s, not 10 (the user, 2026-11-09): 10.8-11.5 s on jupiter, a Ryzen 9 3950X; the quadratic version this guards against is far slower
+    assert time.process_time() - t < 30  # CR1 (C9-3; the user, 2026-10-31): every source at any depth is listed, clipped (8 s on the Mac; H39 cut them, < 3 s); 30 s, not 10 (the user, 2026-11-09): 10.8-11.5 s on jupiter, a Ryzen 9 3950X; the quadratic version this guards against is far slower
     assert out == reference(names, direct, set(), 3)

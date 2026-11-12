@@ -1,6 +1,6 @@
 # HARM v4: release notes
 
-*For the `v4` release. The release (merging `dev` into `main` and tagging it `v4`) is deferred until the user decides; until then these notes describe `dev`. `harm --version` tells which build you run. Coming from v3? See also `doc/MIGRATING_v3_to_v4.md`. The full account, with how each part was validated, is the technical report in `doc/report/` (`make -C doc/report`).*
+*HARM v4, released 2026-11-12 (H42: `dev` merged into `main`, tagged `v4`). `harm --version` tells which build you run: `HARM v4` for the release, `HARM v4-<n>-g<commit>` for a later build of `dev`. Coming from v3? See also `doc/MIGRATING_v3_to_v4.md`. The full account, with how each part was validated, is the technical report in `doc/report/` (`make -C doc/report`).*
 
 Every new feature is opt-in. With a v3 configuration and no new option, the output changes only as listed in the first section.
 
@@ -27,6 +27,13 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
   - a float `<numeric>`'s excluded values (`clustering="...,2E"`) are compared with the values: v3 compared them with the cycle index, so it kept `f == 2` and dropped the value at cycle 2 instead (H17);
   - `--vcd-dir` and `--csv-dir` concatenate the files in path order (D-033), not the directory's order, which differs between machines; the cycle numbering of a multi-trace run (`--dump-prop-table`, failing sub-traces) is the same everywhere. The mined assertions did not depend on it;
   - on macOS arm64, the same assertions as on Linux x86_64 (H12, F-M2). v3 could choose a different decision-tree antecedent among near-equal scores, because GCC fused a multiply-subtract on arm64. The fix changes nothing on Linux x86_64.
+  - **`!` over a comparison in a template** (H41) prints with brackets, `!(x == c)`: the miner printed `!x == c`, which SystemVerilog and HARM read as `(!x) == c`, another property. A bare signal still prints `!b`; a parsed formula was already right;
+  - **trace segments and the ranking** (CR1, C7b-1, C7b-5): a `|=>` (or offset) instance whose consequent falls past the end of its trace segment is pending, not judged on the next segment's first cycle; a decision-tree template expanded to `{a ##1 b} |=> c` gets the contingency table of the same text parsed. Some assertions with a `##` antecedent rank differently (the regression baselines `sub_platform1k`, `bl_master1h`, `svaFunctions` and `fsm` were rewritten, with the user's approval);
+  - **concatenated VCD files** (CR1, C7a-7, C8b-1): `$past`, `$stable`, `$rose` and `$fell` do not read across the start of a file; a later one-file trace in the same run (a faulty trace of `--fd`) no longer uses an earlier trace's file starts;
+  - **VCD times** past 2^31 units (2.1 ms at Verilator's 1 ps) are read correctly (CR1, C7a-1); `--dump-trace-as-csv` keeps each row's last character (C7a-3);
+  - **a 1-bit VCD variable declared `[k:k]`** with `k` not 0 loads as a vector of range `[k:k]`, so `x` and `x[k]` name it (H38); HARM stopped on it;
+  - **with `--sva`, a plain `=>` is an error** (CR1, C7b-2): it was evaluated as `->` but printed as `|=>`, another property; `->` keeps its warning;
+  - **the permutator** no longer crashes on a template with two equivalence clusters of placeholders (CR1, C7b-3), and every `--dump-implications` record of an `equivalent, implied` assertion names the kept assertions it was dropped for (C7b-4, C8b-2).
 
 ## New in propositions (H1)
 - **SystemVerilog syntax:**
@@ -76,6 +83,10 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **Install:** Python ≥ 3.11, `pip install -e tools/harm-coi`. See `tools/harm-coi/README.md`.
 
 - **Default timescale** (H28): `harm-coi` gives slang `--timescale 1ns/1ps`, the default for a file without a `timescale`, as trivergence and OpenFPV do; a design that mixes files with and without one (AssertLLM2's `i2c_slave`) no longer fails to elaborate.
+- **One name per net** (H34, D-042; H38): `harm-coi --aliases` (off by default) gives a port-connected net or an `assign a = b` one name in predicates, hints, relations and cones: its shallowest visible name, then a top input, then a top output (H38), then string order. A select of a merged name is rebased to the kept name's declared range (H38). `coi.json` gains `aliases`. On AssertLLM2's `i2c_slave` with traces, harm's assertions went from 4,737 to 3,439 (18 nets merged).
+- **Clock domains** (H35, H36, H37; D-043, D-044, D-045): `--domains` writes the clock-domain map (`doc/schemas/domains.v1.json`): clock roots with their registers, derived clocks, crossings, synchronizers, the resets each domain reads and each asynchronous reset's edge (`reset_edges`). `--cut-domains` with `--clock C` keeps C's domain only: other domains' registers, clocks, the inputs only they read and the signals computed only from those are cut (`coi.json`'s `cut`). Without the flags the output is unchanged; on a single-clock design it is byte-identical with them.
+- **Larger designs** (H39, H40): harm-coi passes slang `--allow-use-before-declare` (a signal used before its declaration, AssertLLM2's `sdspi`, elaborates); the cone closure runs in linear time (`pci_bridge`'s domain map for `pci_clk_i`: 255 s before, 13.5 s after).
+- **Correctness fixes** (CR1, C9-1 to C9-7): a packed array's element select is not a bit; relations keep the context width (`sum <= a + b`); a path past the depth limit is clipped at `max_depth + 1`, not cut; a truncating cast is not its operand's signal, and a signed signal compared with a constant above its range gives no predicate; an `always_ff` with an event control harm-coi cannot read (`@(posedge clk iff en)`) makes its targets unknown (it crashed); a top `inout` port's leaves are unknown; relations walk generate-for blocks and instance arrays.
 
 ## Build, platforms and tests
 - **Linux and macOS** (arm64): HARM builds and passes the same tests on both (H11b: the Linux build, F-L1), and mines the same assertions (H12).
@@ -87,15 +98,16 @@ Every new feature is opt-in. With a v3 configuration and no new option, the outp
 - **The tools the tests use** (Verilator 5.052, Icarus Verilog 13.0, yosys 0.69 with `read_slang`) have install scripts in `third_party` (H11d, H11g; `install_all.sh --no-tools` skips them). Without them, the tests that need them are skipped.
 - **The Docker image** (`docker/build.sh [ref]`) includes Z3, harm-coi, Verilator and Icarus, and runs the fast tests while building.
 - **The warning and error logs** (`warning.log`, `error.log`) are appended at a constant cost per message (H21; found in H19): before, every message rewrote the whole file, so a run that emitted many warnings slowed down as the logs grew. The files' format is unchanged.
-- **The test suite** has grown from 35 to about 230 tests, with independent oracles: brute-force enumeration, iverilog and Verilator simulation, Spot, and hand-labelled fixtures (the report's validation chapter).
+- **The test suite** has grown from 35 to 284 tests (`ctest` at H41), with independent oracles: brute-force enumeration, iverilog and Verilator simulation, Spot, and hand-labelled fixtures (the report's validation chapter).
 
 ## Known limitations
 - **The missing operators** `%`, `**`, reduction operators (`&v`, `|v`, …) and `~^` are future work (H20, planned, not scheduled).
 - **x/z values:** on cycles where a signal has `x` or `z` bits, HARM's verdicts can differ from a SystemVerilog simulator's (README, "x and z values").
-- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Since H29 only pairs sharing a consequent atom are checked (AssertLLM2's `i2c_slave`, 6,481 assertions: 1.2 M pairs instead of 5.7 M, 71 s instead of 479 s on an M-series Mac, 87 more assertions kept), and `--implies-max-pairs N` skips the step for larger contexts. There is no cap by default (H33): the miner portfolio measured the step at about 1% of the prover time it saves (36 runs: 9 s of reduction against 964 s of proving the 384 dropped assertions), and on `i2c_slave` harm-rel (2.29 M pairs) it takes 139 s and drops 2,550 of 11,041 assertions.
+- **Reduction cost:** `--reduce implies` and `--atom-premises` grow with the square of the number of assertions. Since H29 only pairs sharing a consequent atom are checked (AssertLLM2's `i2c_slave`, 6,481 assertions: 1.2 M pairs instead of 5.7 M, 71 s instead of 479 s on an M-series Mac, 87 more assertions kept), and `--implies-max-pairs N` skips the step for larger contexts. Since H39 the pairs are checked in worker processes (`--implies-workers`) and their relations kept per pair, not in an n × n matrix (AssertLLM2's `openmsp430`: 1,163 s before, 384 s after, the same 11,532 assertions in the same order); with `--deadline`, a pair not checked by then counts as unrelated, so a cut run keeps assertions that a full run drops. There is no cap by default (H33): the miner portfolio measured the step at about 1% of the prover time it saves (36 runs: 9 s of reduction against 964 s of proving the 384 dropped assertions), and on `i2c_slave` harm-rel (2.29 M pairs) it takes 139 s and drops 2,550 of 11,041 assertions.
 - **Ties in the decision tree** are decided by the last bit of a floating-point score. Platforms agree because they now round the same way (H12); a change of `libm` could still change a choice with `ENT`.
 - **Some formulas the grammar accepts cannot be evaluated** (e.g. `F X X (a W c)`), and a trace signal named like an operator (`W`) cannot be loaded. Both predate v4.
 - **The `camellia` example's configuration is not valid XML** (a raw `&`); `sub_platform` is the same design and runs.
+- **harm-coi and packed structs** (CR1, C9-4): a truncating cast of a packed struct's member is still taken as the member's signal; Verilog designs, which have no structs, are not affected.
 
 ## Where each change comes from
 The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`) and a validation entry (`doc/plan/VALIDATION.md`); decisions are in `doc/plan/DECISIONS.md`.
@@ -145,3 +157,13 @@ The plan is `doc/plan/PLAN.md`; each milestone has a plan (`doc/plan/H*_PLAN.md`
 | H31 | the report brought up to date: `harm-coi`'s hints, relations, signed RTL and constants in its own section; limitations, validation and reference current; the PDF rebuilt |
 | H32 | the decision tree's known solutions keyed in text order: the same assertions in every run, whatever the threads do |
 | H33 | no default cap on `--reduce implies` (`--implies-max-pairs` defaults to 0) |
+| H34 | `harm-coi --aliases`: one HARM name per port-connected net (D-042) |
+| H35 | `harm-coi --domains`: the clock-domain map (D-043) |
+| H36 | `harm-coi --cut-domains`: one clock domain (D-044) |
+| H37 | `reset_edges` in the domain map (D-045) |
+| H38 | 1-bit `[k:k]` VCD variables; a top port kept as its net's name; selects rebased to the kept name's range |
+| H39 | `--deadline`, `--mine-deadline`, `--implies-workers`; the implication step per pair; harm-coi's use before declaration |
+| H40 | harm-coi's cone closure in linear time |
+| CR1 | the miner portfolio's correctness review: segment ends, the DT template's contingency table, concatenated VCD files, VCD times, `=>` with `--sva`, harm-coi's widths, casts, depth clipping and event controls |
+| H41 | `!` over a comparison in a template printed with brackets |
+| H42 | the v4 release: the documentation through H41, the Dockerfile builds `v4` |

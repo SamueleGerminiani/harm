@@ -2,7 +2,7 @@
 
 For users who run HARM v3 today: what changes when you run v4 with the same configuration, what you may have to change, and what you can now use. The release notes (`doc/RELEASE_NOTES_v4.md`) list everything new; the technical report (`doc/report/`) explains it.
 
-**In short:** your configurations, traces and command lines still work. Every new feature is opt-in. With no new option, the output changes in five ways: the order of the assertions, the SVA text, the Spot-LTL brackets, vector indices on VCD vectors not declared `[n:0]`, and a few bug fixes. If a script parses HARM's output, check the sections "The SVA text" and "The order".
+**In short:** your configurations, traces and command lines still work. Every new feature is opt-in. With no new option, the output changes in five ways: the order of the assertions, the SVA text, the Spot-LTL brackets, vector indices on VCD vectors not declared `[n:0]`, and a few bug fixes (among them H41's `!(x == c)` and CR1's fixes at trace segment ends, which rank some assertions differently). If a script parses HARM's output, check the sections "The SVA text" and "The order".
 
 ## 1. Building
 | | v3 | v4 |
@@ -15,7 +15,7 @@ For users who run HARM v3 today: what changes when you run v4 with the same conf
 - **Rebuild the libraries** if they were built with another compiler than HARM: mixing C++ runtimes makes HARM crash at start-up. CMake now warns about it.
 - **Z3:** `bash third_party/install_z3.sh`, or configure with `-DHARM_WITH_Z3=OFF` to build without it. Without Z3, `--reduce equiv`, `--reduce implies` and `--atom-premises` are not available.
 - **No more `gmon.out`:** v3 wrote a 2.6 MB `gmon.out` in the working directory on every run. v4 does so only when built with `-DHARM_PROFILE=ON` (H13).
-- **`harm --version`** tells which build you run (`HARM v4` on the release, `HARM v3-<n>-g<commit>` on `dev`).
+- **`harm --version`** tells which build you run (`HARM v4` on the release, `HARM v4-<n>-g<commit>` on a later `dev`).
 
 ## 2. What changes in the output
 ### The order (D-001)
@@ -71,13 +71,20 @@ On a vector declared in the VCD with a range other than `[n:0]` (e.g. `[1:10]` o
 | Float `<numeric>` exclusions (H17) | `clustering="...,2E"` on a float compared 2 with the cycle index: it dropped the value at cycle 2 and kept `f == 2` |
 | `--vcd-dir`/`--csv-dir` order (H17, D-033) | the files were concatenated in the directory's order, which differs between machines; v4 uses path order |
 | Determinism of `--fd` (D-001) | the faulty traces were shuffled with a random seed, so `--find-min-subset` could change between runs |
+| `!` over a comparison in a template (H41) | (v4 before H41) the miner printed `!x == c`, read as `(!x) == c`; v4 prints `!(x == c)` |
+| Trace segments (CR1, C7b-1) | a `\|=>` instance at a segment's last cycle was judged on the next segment's first cycle (a trace file, or a cut at reset); v4 leaves it pending |
+| The decision tree's expanded templates (CR1, C7b-5) | `{a ##1 b} \|=> c` got another contingency table than its text: some assertions with a `##` antecedent rank differently in v4 |
+| Concatenated VCD files (CR1, C7a-7) | `$past`, `$stable`, `$rose`, `$fell` read the previous file's last cycle |
+| VCD times past 2^31 units (CR1, C7a-1) | read wrong (2.1 ms at Verilator's 1 ps) |
+| A plain `=>` with `--sva` (CR1, C7b-2) | evaluated as `->` but printed as `\|=>`; v4 stops with an error: **write `->`, `\|->` or `\|=>`** |
 
 ## 3. What you can now use
 All opt-in; see the README for each.
 - **Propositions:** `8'd9`, `4'hA`, `'0`, `{a, b}`, `{4{a}}`, `?:`, `===`, `a.b`, bitwise operators on CSV `bool`s (`a ^ b`); invariant templates `G(P0)`; `--skip-invalid-props` to skip a proposition that does not parse.
 - **Fewer, non-redundant assertions:** `--reduce equiv` (equivalent propositions, Z3), `--reduce implies` (assertions implied by another one), `--atom-premises`, `--keep`, `--dump-implications`.
 - **Simulator semantics at the end of a trace:** `--trace-end sva`, if the mined SVA will be checked by a simulator (`s_eventually` still pending at the end fails).
-- **The RTL as a hint:** `harm-coi` computes cones of influence and harvests the RTL's predicates; `<coi mode="rank">` sorts by `coiFrac`/`coiDepthFit`, `<coi mode="filter">` prunes the search, `--dump-coi-report` lists the propositions outside each cone.
+- **The RTL as a hint:** `harm-coi` computes cones of influence and harvests the RTL's predicates, hints and relations, and maps clock domains (`--domains`, `--cut-domains`, `--aliases`); `<coi mode="rank">` sorts by `coiFrac`/`coiDepthFit`, `<coi mode="filter">` prunes the search, `--dump-coi-report` lists the propositions outside each cone.
+- **A time limit:** `--deadline` and `--mine-deadline` end a run with what it has (H39).
 - **Machine-readable output:** `--dump-assertion-info` (metrics, propositions, cycle offsets, `origin`); `--dump-prop-table` (every proposition's value at every cycle).
 
 ## 4. What stays the same

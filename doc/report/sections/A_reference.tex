@@ -189,5 +189,11 @@ H34 & one name per port-connected net (\code|harm-coi --aliases|) & a net that c
 H35 & the clock-domain map (\code|harm-coi --domains|) & \code|harm-coi| samples one clock and makes every register on another clock unknown; 23 of AssertLLM2's 83 designs list more than one clock, and mining each domain on its own clock needs the domains first \\
 H36 & mine one clock domain (\code|harm-coi --cut-domains|) & a register on another clock was unknown, which HARM treats as in every cone, so it was mined on the sampling clock's ticks (\code|two_counters| on \code|clk_a|: assertions over both clocks) \\
 H37 & reset edges in the domain map & a domain's reset came without its polarity, needed for its \code|disable iff| when each domain is mined on its own clock \\
+H38 & 1-bit \code|[k:k]| VCD variables; a top port kept as its net's name; selects rebased to the kept name's range & HARM stopped on \code|[1:1]|; a reset merged into a top-level wire was not a top input; a merged name kept the submodule's index (\code|pci_bridge|) \\
+H39 & \opt{deadline}, \opt{mine-deadline}, \opt{implies-workers}; the implication step per pair; use before declaration & HARM wrote nothing until it ended and spent a budget in the implication step (\code|openmsp430|: 2.85\,M pairs in 1{,}010\,s) \\
+H40 & \texttt{harm-coi}'s cone closure in linear time & quadratic closure: \code|pci_bridge|'s domain map took 255\,s \\
+CR1 & the miner portfolio's correctness review & segment ends, expanded templates' contingency tables, concatenated VCD files, VCD times, \code|=>| with \opt{sva}; \texttt{harm-coi}'s widths, casts, depth clipping, event controls \\
+H41 & \code|!| over a comparison printed with brackets & the miner printed \code|!x == c|, read as \code|(!x) == c| \\
+H42 & the v4 release (D-027) & --- \\
 \bottomrule
 \end{longtable}

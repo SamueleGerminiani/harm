@@ -1549,3 +1549,40 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 - **In use:** the portfolio's DD1 A6-A7 check (uart_to_bus, harm and harm-rel): one harm-rel false alarm's text
   corrected (`uart_rx_1.ce_1_mid |-> !(main_sm == 4'b1) until addr_auto_inc`); e2's and e3's top 100 held no
   misprinted candidate, so their results stand.
+
+**H41 signed off by the user 2026-11-09**, as part of the miner portfolio's DD1-deep-designs; merged into `dev` (`5a96497`).
+
+## H39 and H40 (pointers)
+- **H39** (`--deadline`, `--mine-deadline`, `--implies-workers`, the faster implication step, the ranking's sort,
+  harm-coi's use before declaration) was validated in the miner portfolio's HX1 (its doc/plan/VALIDATION.md, HX1):
+  openmsp430's implication step 1,163 s → 384 s with the same 11,532 kept assertions and 1,138 records. **Signed off by
+  the user 2026-10-29**; merged into `dev` (`798fe28`).
+- **H40** (harm-coi's cone closure in linear time) was validated in the portfolio's BR1-best-effort: T1 against H39's
+  closure on random graphs; `pci_bridge`'s domain map for `pci_clk_i` 255 s → 13.5 s with the same `domains.json` and
+  `domains_coi.json`; the wide-cone bound 30 s (the user, 2026-11-09). **Signed off by the user 2026-11-09**; merged
+  into `dev` (`ddbecc2`).
+
+## H42-v4-release: HARM v4 released (2026-11-12; owner the portfolio's Mac session)
+- **Why:** the user, 2026-11-12: "a good time to finally complete harm v4 release". Plan: H42_PLAN.md (approved
+  2026-11-12). Branch `ms/H42-v4-release` from `dev` at `5a96497`.
+- **Change:** documentation through H41 and CR1 (release notes, migration guide, report and its PDF, harm-coi's README,
+  the README); the Dockerfile's default ref `v4`; part B2's test and image fixes. No HARM or harm-coi source change.
+- **Tests:**
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `h14_doc_coverage` with PLAN.md's rows H34-H42 (committed failing in `b0e0d12`) | fail (17 uncited) | pass (`e809b8a`) |
+| C1 | full `ctest -j4` on macOS at `e809b8a` (includes `h14_doc_examples` and `h11_readme_commands`, C4) | | 283 of 284 in 1,902 s; the one failure DTOTest's `keyIgnoresObjectOrder`, passed 5 of 5 alone (fixed in B2) |
+| C3 | the Docker image (`docker/build.sh ms/H42-v4-release`) on saturn (trivergence, Linux, 32 cores) at `273dead` | | fail: in-image `ctest -j32 -LE slow` 247 of 249: `h27_fetch` (no curl), `h5_unit` (30.07 s wall against `< 30`) |
+| B2a | `h27_fetch` in the image | fail | the Dockerfile installs curl |
+| B2b | `test_t1_wide_cone_is_fast` bounds `time.process_time()` | 30.07 s wall at 32 jobs | 8.6 s CPU, 8.9 s wall on the Mac; the test 419 s (the reference comparison) |
+| B2c | `DTSolutionTest.keyIgnoresObjectOrder` pairs across allocations | old test: 28 of 120 full DTOTest runs failed at 8 at a time (Mac) | 120 of 120 at 8, 500 of 500 at 16 |
+| C3 | the Docker image on saturn at `f8b9c79` (trivergence, 2026-11-12) | | build exit 0 in 33 min; in-image `ctest -j32 -LE slow` 249 of 249 (`h14_report_builds` skipped: no LaTeX), 1,221 s |
+| C2 | full `ctest -j8` (slow included) in that image | | 284 of 284 (`h14_report_builds` skipped), 1,570 s |
+| C2 | harm-coi `pytest -q` in that image | | 156 passed, 445 s |
+
+- **Note:** after pytest's summary the log has slang's diagnostic report ("Top level design units: m", "Build failed:
+  1 error, 0 warnings") from a test that expects an elaboration error (`frontend.elaborate` reports it before raising);
+  slang's output is buffered and flushed at the process's exit. It does not change any result.
+
+**H42-v4-release signed off by the user 2026-11-12** ("Sign off, release"), at `12c1464`; merged into `dev`, `dev` into `main`, tagged `v4`.
