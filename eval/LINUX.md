@@ -67,6 +67,7 @@ python3 eval/run_eval.py eval/manifests/examples.json eval/results/linux-example
   - the trace and its scope, as trivergence's adapter uses it (`--vcd-r 16`);
   - the clock;
   - `faults`: a directory with traces of the mutants, for fault coverage (`--fd`).
+- **Paths** in a manifest are relative to the repository root. The committed `assertllm2.json` reads the RTL from `build/assertllm2/designs` (a link to trivergence's `data/assertllm2/designs`) and the traces from `build/assertllm2/traces`.
 - **Run:**
   ```
   python3 eval/run_eval.py eval/manifests/assertllm2.json eval/results/assertllm2 \

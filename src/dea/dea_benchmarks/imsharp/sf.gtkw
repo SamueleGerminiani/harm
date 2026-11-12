@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Mon Nov 11 13:34:27 2024
 [*]
-[dumpfile] "/home/sam/harm-public/src/dea/dea_benchmarks/imsharp/sim.vcd"
+[dumpfile] "sim.vcd"
 [dumpfile_mtime] "Mon Nov 11 13:33:52 2024"
 [dumpfile_size] 43533432
-[savefile] "/home/sam/harm-public/src/dea/dea_benchmarks/imsharp/sf.gtkw"
+[savefile] "sf.gtkw"
 [timestart] 0
 [size] 1870 932
 [pos] -1 -1

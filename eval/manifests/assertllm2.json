@@ -9,10 +9,10 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/aes_cipher_top.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_key_expand_128.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_rcon.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_sbox.v"
+    "build/assertllm2/designs/CRYPTO_CORE/aes_cipher/aes_cipher_top.v",
+    "build/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_key_expand_128.v",
+    "build/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_rcon.v",
+    "build/assertllm2/designs/CRYPTO_CORE/aes_cipher/include/aes_sbox.v"
    ],
    "top": "aes_cipher_top"
   },
@@ -29,10 +29,10 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/baud_gen.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_rx.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_tx.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/uart_top.v"
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/baud_gen.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_rx.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/include/uart_tx.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart/uart_top.v"
    ],
    "top": "uart_top"
   },
@@ -49,12 +49,12 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/baud_gen.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_parser.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_rx.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_top.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_tx.v",
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/uart2bus_top.v"
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/baud_gen.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_parser.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_rx.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_top.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/include/uart_tx.v",
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/uart_to_bus/uart2bus_top.v"
    ],
    "top": "uart2bus_top"
   },
@@ -71,7 +71,7 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/COMMUNICATION_CONTROLLER/ethernet_smii_txrx/smii_txrx.v"
+    "build/assertllm2/designs/COMMUNICATION_CONTROLLER/ethernet_smii_txrx/smii_txrx.v"
    ],
    "top": "smii_txrx"
   },
@@ -88,11 +88,11 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/behave1p_mem.v",
-    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_input.v",
-    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_output.v",
-    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_scoreboard_fsm.v",
-    "/home/sam/triad/data/assertllm2/designs/LIBRARY/srdy-drdy-library/sd_scoreboard.v"
+    "build/assertllm2/designs/LIBRARY/srdy-drdy-library/include/behave1p_mem.v",
+    "build/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_input.v",
+    "build/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_output.v",
+    "build/assertllm2/designs/LIBRARY/srdy-drdy-library/include/sd_scoreboard_fsm.v",
+    "build/assertllm2/designs/LIBRARY/srdy-drdy-library/sd_scoreboard.v"
    ],
    "top": "sd_scoreboard"
   },
@@ -109,7 +109,7 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/DSP_CORE/ima_adpcm_encoder/ima_adpcm_enc.v"
+    "build/assertllm2/designs/DSP_CORE/ima_adpcm_encoder/ima_adpcm_enc.v"
    ],
    "top": "ima_adpcm_enc"
   },
@@ -126,7 +126,7 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/DSP_CORE/ima_adpcm_decoder/ima_adpcm_dec.v"
+    "build/assertllm2/designs/DSP_CORE/ima_adpcm_decoder/ima_adpcm_dec.v"
    ],
    "top": "ima_adpcm_dec"
   },
@@ -143,12 +143,12 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/f_permutation.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/padder.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/padder1.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/rconst2in1.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/include/round2in1.v",
-    "/home/sam/triad/data/assertllm2/designs/CRYPTO_CORE/sha3/keccak.v"
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/include/f_permutation.v",
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/include/padder.v",
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/include/padder1.v",
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/include/rconst2in1.v",
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/include/round2in1.v",
+    "build/assertllm2/designs/CRYPTO_CORE/sha3/keccak.v"
    ],
    "top": "keccak"
   },
@@ -165,13 +165,13 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/gng.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_coef.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_ctg.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_interp.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_lzd.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18.v",
-    "/home/sam/triad/data/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18_sadd_37.v"
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/gng.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_coef.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_ctg.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_interp.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_lzd.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18.v",
+    "build/assertllm2/designs/ARITHMETIC_CORE/gaussian_noise_generator/include/gng_smul_16_18_sadd_37.v"
    ],
    "top": "gng"
   },
@@ -188,7 +188,7 @@
   },
   "rtl": {
    "files": [
-    "/home/sam/triad/data/assertllm2/designs/VIDEO_CONTROLLER/video_stream_scaler/streamScaler.v"
+    "build/assertllm2/designs/VIDEO_CONTROLLER/video_stream_scaler/streamScaler.v"
    ],
    "top": "streamScaler"
   },
