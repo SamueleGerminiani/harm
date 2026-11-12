@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
 [*] Tue Nov 12 09:26:39 2024
 [*]
-[dumpfile] "/home/sam/harm-public/src/dea/dea_benchmarks/gauss_blur/sim.vcd"
+[dumpfile] "sim.vcd"
 [dumpfile_mtime] "Tue Nov 12 09:12:27 2024"
 [dumpfile_size] 15013209
-[savefile] "/home/sam/harm-public/src/dea/dea_benchmarks/gauss_blur/sf.gtkw"
+[savefile] "sf.gtkw"
 [timestart] 0
 [size] 1651 888
 [pos] -1 -1

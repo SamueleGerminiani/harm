@@ -2,7 +2,7 @@ import json, os, re, subprocess, sys, tempfile
 from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 from measure import measure
-R = Path("/Users/sam/harm"); HARM = str(R / "build/harm")
+R = Path(__file__).resolve().parents[3]; HARM = str(R / "build/harm")  # the repository root
 V = {"EX": str(R / "examples"), "H1": str(R / "tests/input/h1"), "H3": str(R / "tests/input/h3"),
      "COI": str(R / "tests/input/coi"), "H6": str(R / "tests/input/h6"), "CMAKE_SOURCE_DIR": str(R)}
 want = sys.argv[1:]
