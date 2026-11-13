@@ -15,7 +15,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "spill_register",
@@ -34,7 +35,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "fall_through_register",
@@ -53,7 +55,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "rr_arb_tree",
@@ -73,7 +76,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "delta_counter",
@@ -91,7 +95,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "lfsr",
@@ -109,7 +114,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "id_queue",
@@ -130,7 +136,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "plru_tree",
@@ -148,7 +155,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "exp_backoff",
@@ -166,7 +174,8 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  },
  {
   "name": "credit_counter",
@@ -184,6 +193,7 @@
   "includes": [
    "../../build/h45/common_cells/include",
    "corpus"
-  ]
+  ],
+  "reset": "!rst_ni"
  }
 ]

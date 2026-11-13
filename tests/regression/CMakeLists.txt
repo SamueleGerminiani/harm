@@ -132,6 +132,11 @@ if(PYTHON3_FOUND)
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h45_faults.py $<TARGET_FILE:harm>
                 ${CMAKE_SOURCE_DIR}/tests/input/h45/faults)
     set_tests_properties(h45_assertion_faults PROPERTIES LABELS regression)
+    # H45 amendment, T11: fault traces of another length than the mining trace (one trace and a directory)
+    add_test(NAME h45_fault_lengths
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h45_lengths.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h45/lengths)
+    set_tests_properties(h45_fault_lengths PROPERTIES LABELS regression)
 endif()
 
 # ---- H3: --dump-implications ----------------------------------------------------------------------
