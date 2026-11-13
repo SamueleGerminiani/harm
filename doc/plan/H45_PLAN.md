@@ -104,3 +104,35 @@ above cannot be computed from it. Option (the user: "Small HARM addition"): `--d
 false`). Opt-in: the field appears only with `--fd`; no other output changes. Test first (T7): on a CSV fixture with
 three faulty traces, each assertion's `faults` equals the hand-computed set, and their union equals the covered set
 that HARM prints.
+
+## Amendment (DRAFT, for the user's approval, 2026-11-13): traces of verification quality; the study moves to the portfolio
+Why: the paper's main result is now bug finding by hint level (the user, 2026-11-13), run by the portfolio's
+HL1-hint-levels on this corpus. The first full run (5,000 cycles, one random seed per trace) is a pilot: its false
+positives (e.g. 376 assertions of R+F+X failing on golden seed 2) show the traces are too weak. The user: traces must
+be like real design verification, random and directed tests. trivergence (2026-11-13): our own SV testbenches are
+fine; its trace tooling is not used (no formal or witness traces, no stimulus search); the tests are called "directed
+tests", coverage is plain Verilator coverage, the traces are setup, not a contribution.
+
+Changes:
+1. **Testbenches.** Each `<design>_tb.sv` runs, after reset: directed tests written for the design's corner cases
+   (FIFOs filled and drained to full and empty, back-pressure, flush/clear; arbiters with all requests and with
+   one; counters through overflow and load; back-off to saturation; id_queue full, lookup hits and misses), each
+   started from reset, then a constrained-random phase whose seed is `+seed=`. Length per design set so coverage
+   stops rising (see 2).
+2. **Coverage.** `eval/mutants/coverage.py` builds each golden testbench with `verilator --coverage` and reports
+   line, toggle and branch coverage of the design (not the testbench) per seed set; the corpus table gets the
+   numbers; a design below 90% line coverage gets more directed tests, or the paper says why (unreachable code).
+3. **Trace sets.** Mining: seeds 1-5 (HARM `--vcd-dir`). Held-out: seeds 101-103, for false positives and for the
+   mutants (each mutant simulated on each held-out seed; a kill on any of them counts; activation as before).
+4. **Reset.** HARM gets the design's reset (`--reset`), as the portfolio adapter does, so reset-fixed (L2) assertions
+   can appear.
+5. **Driver.** `mutants_eval.py` takes several mining and held-out seeds; its configurations stay for the HARM-side
+   checks; the paper's arms are HL1's.
+6. **Pilot results** (Mac, 2026-11-13, 49 of 50 runs) stay in the VALIDATION entry as a pilot, not in the results.
+
+Tests (first, failing): T8 coverage report on the counter fixture (a directed test raises line coverage to 100%);
+T9 several mining seeds and held-out seeds: a kill on held-out seed 102 only is counted, a failure on any held-out
+golden seed makes a false positive; T10 `--reset` is passed and a reset-antecedent assertion is mined on the counter.
+
+Release: after sign-off, merge to dev and release HARM v4.1 (dev, the H44 parser fix, the `faults` field), whose
+commit the paper cites (trivergence D-066 condition).
