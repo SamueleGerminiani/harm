@@ -1,0 +1,4 @@
+[
+  {"name": "counter", "top": "counter", "files": ["rtl/counter.sv"], "tb": "rtl/tb_counter.sv", "clk": "clk",
+   "cycles": 400}
+]
