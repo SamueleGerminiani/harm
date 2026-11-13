@@ -1,6 +1,6 @@
 # H45-mutant-eval plan: bug-finding on open designs with classical mutants, for the HARM v4 paper
 
-*Status: draft, for the user's approval. Asked by the user (2026-11-13: "should we use different designs with more
+*Status: approved by the user 2026-11-13 ("Approve as drafted"; Q1 (a), Q2 (a), Q3 (a), Q4 (b): no v3-vs-v4 table). Asked by the user (2026-11-13: "should we use different designs with more
 classical mutants (such as stuck-at) for this paper?" ... "yes, do it"). Owner: the portfolio's Mac session. Branch
 `ms/H45-mutant-eval` from `dev` (`f8d01c9`).*
 
@@ -33,16 +33,19 @@ golden seed 2 checked first (an assertion that fails on golden seed 2 is a false
 counted as a kill).
 
 ## The corpus
-**Designs:** 8-10 public designs, single clock, synthesizable, mixing Verilog and SystemVerilog (packages, structs,
-parameters: what GoldMine cannot read). Candidates (final list after trivergence's overlap check and a first
-build):
-- PULP `common_cells`: `fifo_v3`, `stream_fifo`, `spill_register`, `rr_arb_tree`, `lzc`, `delta_counter`,
-  `stream_register`;
-- OpenTitan `prim`: `prim_fifo_sync`, `prim_arbiter_ppc`, `prim_lfsr`, `prim_count`; one small IP (`pwm` or
-  `rv_timer`);
-- one or two OpenCores Verilog cores not in AssertLLM2, if needed for variety.
-Each design is pinned to a commit; its licence is recorded (Apache-2.0 / Solderpad for these); the sources are
-fetched by a script, not copied into HARM (`eval/mutants/fetch.sh`), like `eval/LINUX.md` does for AssertLLM2.
+**Designs:** 8-10 public designs, single clock, synthesizable, in SystemVerilog (packages, parameters, structs where
+the design has them: what GoldMine cannot read), all from PULP `common_cells` (Solderpad 0.51), pinned to one commit.
+Candidates: `fifo_v3`, `stream_fifo`, `spill_register`, `fall_through_register`, `rr_arb_tree`, `stream_arbiter`,
+`lzc`, `delta_counter`, `stream_register`, `lfsr`, `id_queue`, `plru_tree`, `ecc_encode`/`ecc_decode`; the final list
+is those that pass the selection criteria, preferring variety (FIFOs, arbiters, counters, datapath).
+*Overlap check (trivergence, 2026-11-13):* common_cells are in none of trivergence's corpora (AssertLLM2, the A5 twins,
+the post-cutoff set, HierSVA, FVEval, AssertionBench, Hack@DAC). Hack@DAC's Ariane/PULP SoCs vendor common_cells
+files, but none of their bug-carrying modules; the paper says so in one sentence. OpenTitan is left out entirely
+(`pwm` and `rv_timer` are in trivergence's OpenTitan corpus, `pwm` in its held-out split; the `prim_*` cells sit
+inside those IPs, and Paper D's planned real-bug sources include OpenTitan bugs). OpenCores cores only if needed, and
+only after trivergence checks the names (its AssertionBench split holds many OpenCores modules).
+The sources are fetched by a script, not copied into HARM (`eval/mutants/fetch.sh`), like `eval/LINUX.md` does for
+AssertLLM2.
 
 **Selection criteria**, checked by a script: elaborates with pyslang and Verilator; one clock; harm-coi runs on it;
 the golden run of R finishes in 600 s.
@@ -87,8 +90,8 @@ Nothing goes to trivergence beyond the design list check, and nothing goes to th
 | Q1 | Where the corpus runs | (a) the Mac only (b) saturn for the mining runs | **(a)** first; (b) only if the full set exceeds an hour, with your go and trivergence told first |
 | Q2 | Mutation tool | (a) our pyslang mutator (b) Yosys `mutate` on Verilog-only designs | **(a)**: SystemVerilog is the point of the paper; (b) would drop the SV designs |
 | Q3 | Mutants per design | (a) 100 (b) 50 (c) all | **(a)**: steps of about 1 point after activation, runs stay short |
-| Q4 | Also a v3-vs-v4 table on HARM's examples (`faultCov`, `sobel`, `paperRE`, `bl_master`, no RTL: assertions, time, fault coverage) | (a) yes, in this milestone (b) no | **(a)**: cheap (tag `v3` built once), and it is the "updated HARM" story |
+| Q4 (answered: b) | Also a v3-vs-v4 table on HARM's examples (`faultCov`, `sobel`, `paperRE`, `bl_master`, no RTL: assertions, time, fault coverage) | (a) yes, in this milestone (b) no | **(a)**: cheap (tag `v3` built once), and it is the "updated HARM" story |
 
 ## Cost
 Testbenches and the mutator are most of the work: about 2-3 days. Runs: about 10 designs x 6 configurations x (1
-golden + 100 mutants) trace checks; mining dominates, minutes per design on the Mac. Plus `v3` built once for Q4.
+golden + 100 mutants) trace checks; mining dominates, minutes per design on the Mac. 
