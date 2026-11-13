@@ -1,0 +1,5 @@
+design,config,assertions,wall_s,dropped,permutations,dt_pairs,coi_frac,coi_depth_fit,coverage,ok,error
+aes_cipher,C0,,600,,,,,,,False,timeout (600 s)
+uart,C0,,600,,,,,,,False,timeout (600 s)
+srdy-drdy-library,C0,,600,,,,,,,False,timeout (600 s)
+sha3,C0,,600,,,,,,,False,timeout (600 s)

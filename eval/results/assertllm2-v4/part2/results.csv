@@ -1,0 +1,4 @@
+design,config,assertions,wall_s,dropped,permutations,dt_pairs,coi_frac,coi_depth_fit,coverage,ok,error
+uart_to_bus,C0,,600,,,,,,,False,timeout (600 s)
+ethernet_smii_txrx,C0,,600,,,,,,,False,timeout (600 s)
+ima_adpcm_encoder,C0,,600,,,,,,,False,timeout (600 s)
