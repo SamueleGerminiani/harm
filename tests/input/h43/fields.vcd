@@ -1,0 +1,46 @@
+$timescale 1ps $end
+$scope module tb $end
+$scope module dut $end
+$var wire 1 ! clk $end
+$var wire 1 " rst $end
+$var wire 4 # a [3:0] $end
+$var wire 3 $ c [2:0] $end
+$var wire 1 % y $end
+$var wire 4 & q [3:0] $end
+$var wire 1 ( z $end
+$var wire 1 ) v $end
+$scope struct s $end
+$var wire 4 * hi [3:0] $end
+$var wire 4 , lo [3:0] $end
+$upscope $end
+$scope struct u $end
+$var wire 1 + f $end
+$scope struct in $end
+$var wire 1 - g $end
+$var wire 3 . b [2:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+1"
+0%
+0(
+0)
+b0 #
+b0 $
+b0 &
+b0 *
+b0 ,
+b0 .
+0+
+0-
+#5
+1!
+#10
+0!
+0"
+#15
+1!

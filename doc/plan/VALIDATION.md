@@ -1588,3 +1588,16 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 **H42-v4-release signed off by the user 2026-11-12** ("Sign off, release"), at `12c1464`; merged into `dev`, `dev` into `main`, tagged `v4`.
 
 **Docker Hub (part D step 6), 2026-11-12:** `docker/build.sh v4` on saturn (trivergence) at `41d5e96`: build exit 0 in 32 min, in-image `ctest -LE slow` 249 of 249 (`h14_report_builds` skipped), `git describe` `v4`. Pushed from saturn after the user's own `docker login` (logged out right after): `samger/harm:v4` and `samger/harm:latest`, the same manifest `sha256:065d5b7db834ae20d3a3cac09160639e0256c60e63f99813b8cbb4c65ce5d367` (linux/amd64), checked from the Mac with `docker buildx imagetools inspect`.
+
+## H43-struct-fields: a packed struct's field, when the trace has only the struct (2026-11-13; owner the portfolio's Mac session)
+- **Why:** the open case of CR1's C9-4 (the portfolio's CR1_FINDINGS.md). Verilator dumps a packed struct as one vector unless it runs with `--trace-structs`; with `--vcd`, harm-coi named a field by the whole vector, so predicates and relations stated something else: `s.hi == 4'd3` became `s == 4'd3`, `s.hi <= a` the relation `s == $past(a, 1)`. Plan: H43_PLAN.md (approved by the user 2026-11-13).
+- **Change:** the frontend records each packed field's bits in its struct (slang's `bitOffset`, nested fields summed). A field visible only through the vector is written as the vector's part-select (`s[7:4]`), a bit select of it at the field's lsb + i; a field whose bits are not known is not visible (dropped with a reason). Signal sets and roles keep the visible name; relation targets are keyed by their text, so each field has its own `$stable` and constants. Cones are unchanged.
+- **Tests** (written first, committed failing in `a355993`; fixture `tests/input/h43`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | one vector per struct: `s[7:4] == 4'd3`; `s[7:4] == $past(a, 1)`, `s[3:0] == ($past(~a, 1) & 4'd15)`, `q == $past(s[7:4], 1)` | fail (`s == 4'd3`, `s == $past(a, 1)`) | pass |
+| T2 | the fields traced one by one: `s::hi`, `u::in::b` as before | pass | pass |
+| T3 | a nested struct and a field's bit select: `u[2:0] == 3'd5`, `u[2:0] == $past(c, 1)`, `z == $past(u[1], 1)` | fail (`u == 3'd5`) | pass |
+| — | HARM mines the fixture with the emitted configuration | | 15 assertions, no error |
+| T4 | `ctest -j4` on macOS at `6a7fae3` (harm-coi's pytest included, `h5_unit`) | | 284 of 284, 1,937 s |
