@@ -11,6 +11,13 @@ a results table (CSV and Markdown).
   C6  harm-coi --emit-config: the RTL predicates                     (needs RTL)
   C7  C6 + filter depth="exact" + --reduce implies --atom-premises   (needs RTL)
 
+H44 (v4: each effect apart; all from harm-coi --emit-config, so they need RTL):
+  R       the RTL predicates, <coi mode="rank"> (= C6)
+  R+F     R + filter depth="exact"
+  R+F+X   R+F + --reduce implies --atom-premises (= C7)
+  RR      the RTL predicates and relations (harm-coi --hints: H24-H26), rank
+  RR+F+X  RR + filter depth="exact" + --reduce implies --atom-premises
+
 Measures per run: assertions out, wall time, assertions dropped by the reduction, the COI filter's
 search space (permutations, decision-tree pairs), mean coiFrac and coiDepthFit of the output, and
 fault coverage when the design has faulty traces (--fd). These are measurements, not thresholds.
@@ -64,11 +71,14 @@ def insert_after_context_start(xml, text):
     return xml[:m.end()] + "\n        " + text + xml[m.end():]
 
 
+THREADS = 8  # --threads
+
+
 def run_harm(harm, args, d, timeout):
     info = Path(d) / "info.json"
     if info.exists():
         info.unlink()
-    cmd = [harm, *args, "--max-threads", "8", "--psilent", "--dump-assertion-info", str(info)]
+    cmd = [harm, *args, "--max-threads", str(THREADS), "--psilent", "--dump-assertion-info", str(info)]
     t0 = time.time()
     try:
         r = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=timeout)
@@ -137,6 +147,26 @@ def configs_for(design, harm, py, d):
                 cfg["C6"] = (em, [])
                 cfg["C7"] = (em.replace('mode="rank"', 'mode="filter" depth="exact"'),
                              ["--reduce", "implies", "--atom-premises"])
+                # H44: the cone filter and the reduction apart
+                flt = em.replace('mode="rank"', 'mode="filter" depth="exact"')
+                cfg["R"], cfg["R+F"], cfg["R+F+X"] = (em, []), (flt, []), (flt, ["--reduce", "implies", "--atom-premises"])
+            # H44: the relations from the RTL (harm-coi --hints adds them by default)
+            rel_coi, rel_xml = Path(d) / "coi_rel.json", Path(d) / "emitted_rel.xml"
+            r2 = subprocess.run([py, "-m", "harm_coi", "--top", rtl["top"],
+                                 "--files", *[str(ROOT / f) for f in rtl["files"]],
+                                 "--vcd-scope", t["scope"], "--vcd-recursion", str(t.get("recursion", 0)),
+                                 *(["--vcd", str(ROOT / vcd)] if vcd else []),
+                                 "--hints", str(Path(d) / "hints.json"),
+                                 "--emit-config", str(rel_xml), "-o", str(rel_coi)],
+                                env={**os.environ, "PYTHONPATH": str(ROOT / "tools" / "harm-coi" / "src")},
+                                capture_output=True, text=True)
+            if r2.returncode == 0:
+                rel = rel_xml.read_text().replace('file="coi_rel.json"', f'file="{rel_coi}"')
+                cfg["RR"] = (rel, [])
+                cfg["RR+F+X"] = (rel.replace('mode="rank"', 'mode="filter" depth="exact"'),
+                                 ["--reduce", "implies", "--atom-premises"])
+            else:
+                print(f"  harm-coi --hints failed on {design['name']}: {r2.stderr.strip()[-200:]}", file=sys.stderr)
         else:
             print(f"  harm-coi failed on {design['name']}: {r.stderr.strip()[-200:]}", file=sys.stderr)
     return base_args, cfg
@@ -151,9 +181,15 @@ def main():
     ap.add_argument("--configs", default="C0,C1,C2,C3,C4,C5,C6,C7")
     ap.add_argument("--check", help="a previous results.csv: the counts must be equal")
     ap.add_argument("--timeout", type=int, default=1800, help="seconds per HARM run (default 1800)")
+    ap.add_argument("--threads", type=int, default=8, help="HARM's --max-threads (default 8)")
+    ap.add_argument("--designs", help="only these designs (comma-separated names)")
     a = ap.parse_args()
+    global THREADS
+    THREADS = a.threads
     wanted = a.configs.split(",")
     designs = json.loads(Path(a.manifest).read_text())
+    if a.designs:
+        designs = [x for x in designs if x["name"] in a.designs.split(",")]
     version = subprocess.run([a.harm, "--version"], capture_output=True, text=True).stdout.strip()
     rows = []
     for design in designs:

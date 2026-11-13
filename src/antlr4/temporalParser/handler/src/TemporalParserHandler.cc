@@ -20,6 +20,7 @@
 #include "misc.hh"
 #include "propositionParsingUtils.hh"
 #include "temporalParsingUtils.hh"
+#include "misc/Interval.h"
 #include "tree/ErrorNode.h"
 #include "tree/TerminalNode.h"
 
@@ -41,12 +42,16 @@ TemporalParserHandler::handleNewPP(const std::string &ph) {
 }
 
 std::string
-TemporalParserHandler::handleNewInst(const std::string &prop) {
+TemporalParserHandler::handleNewInst(const std::string &prop,
+                                     const std::string &source) {
 
   if (_propStrToInst.count(prop))
     return _propStrToInst.at(prop);
 
-  PropositionPtr p = parsePropositionAlreadyTyped(prop, _trace);
+  //H44: parse the source text with its spaces; 'prop' (getText) has none, and without them a
+  //based literal can swallow the next characters ('8'b1?1' is one literal: '?' is a z digit)
+  PropositionPtr p =
+      parsePropositionAlreadyTyped(source.empty() ? prop : source, _trace);
 
   if (_useCache)
     p->enableCache();
@@ -354,7 +359,11 @@ void TemporalParserHandler::enterBooleanLayer(
   }
 
   if (ctx->boolean() != nullptr) {
-    std::string inst = handleNewInst(ctx->boolean()->getText());
+    auto *b = ctx->boolean();
+    std::string source =
+        b->start->getInputStream()->getText(antlr4::misc::Interval(
+            b->start->getStartIndex(), b->stop->getStopIndex()));
+    std::string inst = handleNewInst(b->getText(), source);
     _tsubFormulas.push(
         generatePtr<BooleanLayerInst>(_instToPP.at(inst), inst));
     return;
