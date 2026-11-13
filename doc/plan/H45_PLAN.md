@@ -105,7 +105,7 @@ false`). Opt-in: the field appears only with `--fd`; no other output changes. Te
 three faulty traces, each assertion's `faults` equals the hand-computed set, and their union equals the covered set
 that HARM prints.
 
-## Amendment (DRAFT, for the user's approval, 2026-11-13): traces of verification quality; the study moves to the portfolio
+## Amendment (approved by the user 2026-11-13: "approve both"): traces of verification quality; the study moves to the portfolio
 Why: the paper's main result is now bug finding by hint level (the user, 2026-11-13), run by the portfolio's
 HL1-hint-levels on this corpus. The first full run (5,000 cycles, one random seed per trace) is a pilot: its false
 positives (e.g. 376 assertions of R+F+X failing on golden seed 2) show the traces are too weak. The user: traces must
