@@ -1,6 +1,6 @@
 # H20 plan: the missing SystemVerilog operators (H18 audit finding L4)
 
-*Status: kept as future work by the user (2026-10-10): not approved, not scheduled; Q1–Q3 stay open. The plan was written on branch: `ms/H20-missing-operators` (from `dev` @ `1f10fa0`, with H18 and H19). Effort: 2 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest`: in Docker, as for H19; the real machine stays pending.*
+*Status: kept as future work by the user (2026-10-10, again 2026-11-13: "Not now"): not approved, not scheduled. Q1–Q3 decided by the user 2026-11-13 ("Accept all three"): Q1 (a), Q2 (a), Q3 (a). The plan was written on branch: `ms/H20-missing-operators` (from `dev` @ `1f10fa0`, with H18 and H19). Effort: 2 d, plus `ctest -L parser` while iterating and one full `ctest`. Linux `ctest`: in Docker, as for H19; the real machine stays pending.*
 
 ## Why
 Hints, `--check` assertions and trivergence's LLM-written SVA use SystemVerilog's operators. Today HARM rejects some of them with a parse error: a hint or a checked assertion that uses one cannot be read. Reductions (`|req`, `^data`) are common in SVA.
