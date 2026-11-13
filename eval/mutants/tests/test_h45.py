@@ -282,3 +282,77 @@ def test_t12_watchdog_ends_a_stalled_mutant(tmp_path: Path) -> None:
     assert time.time() - t0 < 60
     last = max(int(line[1:]) for line in vcd.read_text().splitlines() if line.startswith("#"))
     assert last // 10 <= 200 + traces.WATCHDOG_MARGIN + 10
+
+
+# HL1's RQ3 amendment (miner-portfolio doc/plan/HL1_PLAN.md): depth variants of four designs.
+BASE_GOLDEN_SHA256 = {  # seed 101, 300 cycles, $date removed; recorded before the variants were added
+    "fifo_v3": "04470597f826713990e55ea872efaad0944fcfbd3810636e494449c4572c2307",
+    "delta_counter": "211bc7011fc8eb7a971704bf0cc52bc33715191296dcc2b1c8ede4704406a850",
+    "exp_backoff": "c7d3fa04a472dc62df48b723550db99482808ba9d0df3b91072d34dc8d2fa2a3",
+    "credit_counter": "295a4b8cb867961e4d070f54299c97e52e7e552a8e3eb6bbc0c37b49d13c7a43",
+}
+VARIANTS = {"exp_backoff": ("H45_MAXEXP", (10, 14)), "delta_counter": ("H45_WIDTH", (10, 14)),
+            "credit_counter": ("H45_NUMCREDITS", (16, 64)), "fifo_v3": ("H45_DEPTH", (16, 64))}
+
+
+def _vcd_body(vcd: Path) -> bytes:
+    out, skip = [], False
+    for line in vcd.read_text().splitlines():
+        if line.startswith("$date"):
+            skip = True
+        if not skip:
+            out.append(line)
+        if skip and "$end" in line:
+            skip = False
+    return "\n".join(out).encode()
+
+
+def _corpus() -> tuple[Path, dict]:
+    corpus = ROOT / "eval" / "mutants" / "corpus.json"
+    return corpus.parent, {d["name"]: d for d in json.loads(corpus.read_text())}
+
+
+def _build(d: dict, base: Path, out: Path) -> Path:
+    extra = [f"+define+{x}" for x in d.get("defines", [])] + [f"-I{base / i}" for i in d.get("includes", [])]
+    return traces.build([base / f for f in d["files"]] + [base / d["tb"]], "tb", out, extra)
+
+
+# T5: each variant is a corpus entry with one more define and builds; the base entries' golden traces are unchanged
+@needs_verilator
+@pytest.mark.parametrize("name", sorted(VARIANTS))
+def test_t5_depth_variants(tmp_path: Path, name: str) -> None:
+    import hashlib
+    base, entries = _corpus()
+    if not (base / entries[name]["files"][0]).exists():
+        pytest.skip("PULP common_cells not fetched (eval/mutants/fetch.sh)")
+    vcd = traces.run(_build(entries[name], base, tmp_path / "base"), 101, 300, tmp_path / "base.vcd")
+    assert hashlib.sha256(_vcd_body(vcd)).hexdigest() == BASE_GOLDEN_SHA256[name]
+    define, depths = VARIANTS[name]
+    for n in depths:
+        v = entries[f"{name}_d{n}"]
+        assert v["files"] == entries[name]["files"] and v["tb"] == entries[name]["tb"]
+        assert v["defines"] == entries[name]["defines"] + [f"{define}={n}"]
+        assert v["cycles"] >= entries[name]["cycles"]
+        traces.run(_build(v, base, tmp_path / f"d{n}"), 101, 300, tmp_path / f"d{n}.vcd",
+                   plusargs=[f"+watchdog={v['watchdog']}"] if v.get("watchdog") else [])
+
+
+# T6: the watchdog margin is a plusarg (+watchdog=), 10000 cycles without it
+@needs_verilator
+def test_t6_watchdog_plusarg(tmp_path: Path) -> None:
+    base, entries = _corpus()
+    d = entries["exp_backoff"]
+    files = [base / f for f in d["files"]]
+    if not files[0].exists():
+        pytest.skip("PULP common_cells not fetched (eval/mutants/fetch.sh)")
+    incs = [str(base / i) for i in d["includes"]]
+    site = next(s for s in mutate.sites(files, d["top"], d["defines"], incs) if s.id == "sa1-exp_backoff-cnt_q-b6")
+    src = mutate.apply(site, files, tmp_path / "src")
+    exe = traces.build(src + [base / d["tb"]], "tb", tmp_path / "build",
+                       [f"+define+{x}" for x in d["defines"]] + [f"-I{i}" for i in incs])
+
+    def last(vcd: Path) -> int:
+        return max(int(line[1:]) for line in vcd.read_text().splitlines() if line.startswith("#")) // 10
+
+    assert last(traces.run(exe, 101, 200, tmp_path / "a.vcd", plusargs=["+watchdog=500"])) <= 200 + 500 + 10
+    assert 200 + 500 + 10 < last(traces.run(exe, 101, 200, tmp_path / "b.vcd")) <= 200 + 10000 + 10
