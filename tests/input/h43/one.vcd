@@ -1,0 +1,34 @@
+$timescale 1ps $end
+$scope module tb $end
+$scope module dut $end
+$var wire 1 ! clk $end
+$var wire 1 " rst $end
+$var wire 4 # a [3:0] $end
+$var wire 3 $ c [2:0] $end
+$var wire 1 % y $end
+$var wire 4 & q [3:0] $end
+$var wire 1 ( z $end
+$var wire 1 ) v $end
+$var wire 8 * s [7:0] $end
+$var wire 5 + u [4:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+1"
+0%
+0(
+0)
+b0 #
+b0 $
+b0 &
+b0 *
+b0 +
+#5
+1!
+#10
+0!
+0"
+#15
+1!

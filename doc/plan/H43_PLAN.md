@@ -1,6 +1,6 @@
 # H43-struct-fields plan: a packed struct's field, when the trace has only the struct
 
-*Status: draft, for the user's approval. The open case of CR1's C9-4 (the portfolio's CR1_FINDINGS.md: "the
+*Status: approved by the user 2026-11-13 ("Approve"). The open case of CR1's C9-4 (the portfolio's CR1_FINDINGS.md: "the
 struct-field case open, latent"). Owner: the portfolio's Mac session. Branch `ms/H43-struct-fields` from `dev`
 (`46d610d`).*
 
