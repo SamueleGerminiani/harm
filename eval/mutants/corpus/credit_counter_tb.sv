@@ -4,7 +4,7 @@
 module tb;
   `include "tb_common.svh"
   logic credit_give_i = 0, credit_take_i = 0, credit_init_i = 0;
-  logic [2:0] credit_o;
+  logic [$clog2(`H45_NUMCREDITS):0] credit_o;
   logic credit_left_o, credit_crit_o, credit_full_o;
   h45_credit_counter dut (.*);
   task automatic quiet(); credit_give_i = 0; credit_take_i = 0; credit_init_i = 0; endtask

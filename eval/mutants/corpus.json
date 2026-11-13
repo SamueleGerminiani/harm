@@ -195,5 +195,166 @@
    "corpus"
   ],
   "reset": "!rst_ni"
+ },
+ {
+  "name": "exp_backoff_d10",
+  "top": "h45_exp_backoff",
+  "files": [
+   "../../build/h45/common_cells/src/exp_backoff.sv",
+   "corpus/exp_backoff_wrap.sv"
+  ],
+  "tb": "corpus/exp_backoff_tb.sv",
+  "clk": "clk_i",
+  "cycles": 20000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_MAXEXP=10"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "exp_backoff_d14",
+  "top": "h45_exp_backoff",
+  "files": [
+   "../../build/h45/common_cells/src/exp_backoff.sv",
+   "corpus/exp_backoff_wrap.sv"
+  ],
+  "tb": "corpus/exp_backoff_tb.sv",
+  "clk": "clk_i",
+  "cycles": 200000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_MAXEXP=14"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni",
+  "watchdog": 100000
+ },
+ {
+  "name": "delta_counter_d10",
+  "top": "h45_delta_counter",
+  "files": [
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "corpus/delta_counter_wrap.sv"
+  ],
+  "tb": "corpus/delta_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 20000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_WIDTH=10"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "delta_counter_d14",
+  "top": "h45_delta_counter",
+  "files": [
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "corpus/delta_counter_wrap.sv"
+  ],
+  "tb": "corpus/delta_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 50000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_WIDTH=14"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "credit_counter_d16",
+  "top": "h45_credit_counter",
+  "files": [
+   "../../build/h45/common_cells/src/credit_counter.sv",
+   "corpus/credit_counter_wrap.sv"
+  ],
+  "tb": "corpus/credit_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_NUMCREDITS=16"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "credit_counter_d64",
+  "top": "h45_credit_counter",
+  "files": [
+   "../../build/h45/common_cells/src/credit_counter.sv",
+   "corpus/credit_counter_wrap.sv"
+  ],
+  "tb": "corpus/credit_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 10000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_NUMCREDITS=64"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "fifo_v3_d16",
+  "top": "h45_fifo_v3",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "corpus/fifo_v3_wrap.sv"
+  ],
+  "tb": "corpus/fifo_v3_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_DEPTH=16"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "fifo_v3_d64",
+  "top": "h45_fifo_v3",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "corpus/fifo_v3_wrap.sv"
+  ],
+  "tb": "corpus/fifo_v3_tb.sv",
+  "clk": "clk_i",
+  "cycles": 10000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_DEPTH=64"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
  }
 ]

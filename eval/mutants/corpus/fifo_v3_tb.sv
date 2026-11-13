@@ -5,7 +5,7 @@ module tb;
   `include "tb_common.svh"
   logic flush_i = 0, push_i = 0, pop_i = 0, full_o, empty_o;
   logic [7:0] data_i = 0, data_o;
-  logic [1:0] usage_o;
+  logic [$clog2(`H45_DEPTH)-1:0] usage_o;
   h45_fifo_v3 dut (.*);
   task automatic quiet(); flush_i = 0; push_i = 0; pop_i = 0; endtask
   task automatic step(bit push, bit pop, bit flush = 0);
@@ -16,19 +16,19 @@ module tb;
     start();
     // fill to full, hold, drain to empty
     quiet(); do_reset();
-    repeat (6) step(1, 0);
+    repeat (`H45_DEPTH + 2) step(1, 0);
     quiet(); idle(3);
-    repeat (6) step(0, 1);
+    repeat (`H45_DEPTH + 2) step(0, 1);
     quiet(); idle(3);
     // push and pop together at each fill level 0..3
-    for (int lvl = 0; lvl < 4; lvl++) begin
+    for (int lvl = 0; lvl < `H45_DEPTH; lvl++) begin
       quiet(); do_reset();
       repeat (lvl) step(1, 0);
       repeat (8) step(1, 1);
     end
     // flush when full, when empty, and together with a push
     quiet(); do_reset();
-    repeat (4) step(1, 0);
+    repeat (`H45_DEPTH) step(1, 0);
     step(0, 0, 1);
     step(0, 0, 1);
     step(1, 0, 1);

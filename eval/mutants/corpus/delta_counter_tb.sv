@@ -5,10 +5,10 @@
 module tb;
   `include "tb_common.svh"
   logic clear_i = 0, en_i = 0, load_i = 0, down_i = 0, overflow_o;
-  logic [5:0] delta_i = 0, d_i = 0, q_o;
+  logic [`H45_WIDTH-1:0] delta_i = 0, d_i = 0, q_o;
   h45_delta_counter dut (.*);
   task automatic quiet(); clear_i = 0; en_i = 0; load_i = 0; down_i = 0; delta_i = 0; d_i = 0; endtask
-  task automatic count(bit down, logic [5:0] delta, int unsigned n);
+  task automatic count(bit down, logic [`H45_WIDTH-1:0] delta, int unsigned n);
     en_i = 1; down_i = down; delta_i = delta;
     repeat (n) @(negedge clk_i);
     en_i = 0;
@@ -17,19 +17,19 @@ module tb;
     start();
     // up by the largest delta, through overflow (sticky)
     quiet(); do_reset();
-    count(0, 6'd63, 4);
+    count(0, {`H45_WIDTH{1'b1}}, 4);
     idle(3);
     // down through zero
     quiet(); do_reset();
-    count(1, 6'd5, 4);
+    count(1, `H45_WIDTH'(5), 4);
     idle(2);
     // load the maximum, then +1
     quiet(); do_reset();
-    load_i = 1; d_i = 6'd63; @(negedge clk_i); load_i = 0;
-    count(0, 6'd1, 2);
+    load_i = 1; d_i = {`H45_WIDTH{1'b1}}; @(negedge clk_i); load_i = 0;
+    count(0, `H45_WIDTH'(1), 2);
     // clear while counting
     quiet(); do_reset();
-    en_i = 1; delta_i = 6'd3;
+    en_i = 1; delta_i = `H45_WIDTH'(3);
     repeat (5) @(negedge clk_i);
     clear_i = 1; @(negedge clk_i); clear_i = 0;
     repeat (3) @(negedge clk_i);
@@ -43,7 +43,7 @@ module tb;
       @(negedge clk_i);
       en_i = chance(3, 4);
       down_i = ((c / 150) % 2) ? chance(7, 8) : chance(1, 8);
-      delta_i = chance(3, 4) ? 6'($urandom % 5) : 6'($urandom);
+      delta_i = chance(3, 4) ? `H45_WIDTH'($urandom % 5) : `H45_WIDTH'($urandom);
       load_i = chance(1, 64);
       d_i = $urandom;
       clear_i = chance(1, 200);

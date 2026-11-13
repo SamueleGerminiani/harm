@@ -31,10 +31,11 @@ def build(files: list[Path], top: str, builddir: Path, extra: list[str] = ()) ->
     return exe
 
 
-def run(exe: Path, seed: int, cycles: int, vcd: Path, timeout_s: float = RUN_TIMEOUT_S) -> Path:
+def run(exe: Path, seed: int, cycles: int, vcd: Path, timeout_s: float = RUN_TIMEOUT_S, plusargs=()) -> Path:
+    """plusargs: more of the testbench's plusargs (e.g. +watchdog=, HL1 RQ3 amendment)."""
     vcd.parent.mkdir(parents=True, exist_ok=True)
     try:
-        r = subprocess.run([str(exe), f"+seed={seed}", f"+cycles={cycles}", f"+vcd={vcd}"], capture_output=True,
+        r = subprocess.run([str(exe), f"+seed={seed}", f"+cycles={cycles}", f"+vcd={vcd}", *plusargs], capture_output=True,
                            text=True, cwd=vcd.parent, timeout=timeout_s)
     except subprocess.TimeoutExpired:
         vcd.unlink(missing_ok=True)

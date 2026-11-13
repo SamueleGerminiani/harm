@@ -7,13 +7,19 @@ int unsigned seed, cycles;
 string vcd;
 always #5 clk_i = ~clk_i;
 // H45 amendment (T12): a watchdog. A mutant can stall a directed test (e.g. a wait for a flag it never raises); the run
-// then stops after +cycles plus 10000 cycles (traces.WATCHDOG_MARGIN), far above every directed phase (golden runs end
-// within +cycles plus 500), so its trace is scored like any other.
+// then stops after +cycles plus +watchdog= cycles (default 10000, traces.WATCHDOG_MARGIN), far above every directed
+// phase (base golden runs end within +cycles plus 500), so its trace is scored like any other. HL1 RQ3 amendment:
+// the margin is a plusarg, for the depth variants' longer directed phases.
+function automatic int unsigned watchdog_margin();  // a function, so the trace has no new variable
+  int unsigned w;
+  if (!$value$plusargs("watchdog=%d", w)) w = 10000;
+  return w;
+endfunction
 initial begin : watchdog
   int unsigned n;
   if (!$value$plusargs("cycles=%d", n)) n = 5000;
-  repeat (n + 10000) @(negedge clk_i);
-  $display("H45 watchdog: stopped after %0d cycles", n + 10000);
+  repeat (n + watchdog_margin()) @(negedge clk_i);
+  $display("H45 watchdog: stopped after %0d cycles", n + watchdog_margin());
   $finish;
 end
 task automatic start();

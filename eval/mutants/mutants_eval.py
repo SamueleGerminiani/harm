@@ -75,12 +75,13 @@ def prepare(d: dict, base: Path, work: Path, n: int, seed: int, jobs: int, minin
     defs, incs = d.get("defines", []), [str(base / i) for i in d.get("includes", [])]
     extra = [f"+define+{x}" for x in defs] + [f"-I{i}" for i in incs]
     cycles = d.get("cycles", 5000)
+    pa = [f"+watchdog={d['watchdog']}"] if d.get("watchdog") else []  # HL1 RQ3 amendment: longer directed phases
     gold = traces.build(files + [tb], "tb", work / "build" / "golden", extra)
     mining = work / "mining"
     for s in mining_seeds:
-        traces.run(gold, s, cycles, mining / f"golden_s{s}.vcd")
+        traces.run(gold, s, cycles, mining / f"golden_s{s}.vcd", plusargs=pa)
     faults = work / "faults"
-    goldens = {s: traces.run(gold, s, cycles, faults / f"golden_s{s}.vcd") for s in heldout_seeds}
+    goldens = {s: traces.run(gold, s, cycles, faults / f"golden_s{s}.vcd", plusargs=pa) for s in heldout_seeds}
     outs = outputs_of(files, d["top"], defs, incs)
     all_sites = mutate.sites(files, d["top"], defs, incs)
     chosen = mutate.sample(all_sites, n, seed)
@@ -101,7 +102,7 @@ def prepare(d: dict, base: Path, work: Path, n: int, seed: int, jobs: int, minin
         acts, kept = [], []
         for hs, g in goldens.items():
             try:
-                vcd = traces.run(exe, hs, cycles, work / "mutants" / f"{s.id}_s{hs}.vcd")
+                vcd = traces.run(exe, hs, cycles, work / "mutants" / f"{s.id}_s{hs}.vcd", plusargs=pa)
             except traces.SimTimeout:  # set aside as hung (T12), replaced like an uncompiled mutant
                 for k in kept:
                     Path(k).unlink(missing_ok=True)
