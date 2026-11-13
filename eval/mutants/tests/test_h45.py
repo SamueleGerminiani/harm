@@ -165,3 +165,88 @@ def test_t6_run_eval_configurations_unchanged() -> None:
     import mutants_eval  # noqa: E402  (the H45 driver reuses run_eval's configurations)
     assert mutants_eval.CONFIGS == ["C0", "R", "R+F", "R+F+X", "RR", "RR+F+X"]
     assert mutants_eval.configs_for is mutants_eval.run_eval.configs_for
+
+
+# ---- H45 amendment (2026-11-13): verification-quality traces ---------------------------------------------------------
+# T8: Verilator coverage of the design (not the testbench), per seed set
+@needs_verilator
+def test_t8_coverage(tmp_path: Path) -> None:
+    import vcov  # noqa: E402
+    rnd = vcov.measure([COUNTER], TB, "tb.dut", tmp_path / "rnd", seeds=[1, 2], cycles=600)
+    idle = vcov.measure([COUNTER], TB, "tb.dut", tmp_path / "idle", seeds=[1], cycles=600, plusargs=["+idle=1"])
+    for r in (rnd, idle):
+        assert set(r) >= {"line", "toggle", "branch"}
+        for hit, total in (r["line"], r["toggle"], r["branch"]):
+            assert 0 < total and 0 <= hit <= total
+    # only the design's points: the testbench's own lines are not counted
+    assert all(f.endswith("counter.sv") for f in rnd["files"]), rnd["files"]
+    assert rnd["line"][0] == rnd["line"][1], rnd  # random stimulus reaches every line of the counter
+    assert idle["toggle"][0] < rnd["toggle"][0]  # en held low: q never moves
+    assert idle["branch"][0] < rnd["branch"][0]
+
+
+# T9: several held-out seeds: activation is the strongest over the seeds; a kill on any seed counts; a failure on any
+# held-out golden trace makes a false positive
+def test_t9_activation_over_seeds() -> None:
+    assert traces.combine(["none", "none"]) == "none"
+    assert traces.combine(["none", "internal"]) == "internal"
+    assert traces.combine(["internal", "output", "none"]) == "output"
+
+
+def test_t9_score_over_seeds(tmp_path: Path) -> None:
+    info = {"version": "1", "assertions": [
+        {"text": "A1", "faults": ["f/g102.vcd", "f/m1_s101.vcd"], "faultsComplete": True},  # false positive
+        {"text": "A2", "faults": ["f/m2_s102.vcd"], "faultsComplete": True},  # m2 killed on seed 102 only
+        {"text": "A3", "faults": [], "faultsComplete": True},
+    ]}
+    p = tmp_path / "info.json"
+    p.write_text(json.dumps(info))
+    mutants = {"m1": ("output", "sa0", ["f/m1_s101.vcd", "f/m1_s102.vcd"]),
+               "m2": ("internal", "op", ["f/m2_s102.vcd"]),
+               "m3": ("internal", "const", ["f/m3_s101.vcd"]),
+               "m4": ("none", "cond", [])}
+    r = score.score_multi(p, ["f/g101.vcd", "f/g102.vcd"], mutants)
+    assert r["false_positives"] == 1 and r["assertions"] == 3
+    assert r["activated"] == 3 and r["not_activated"] == 1
+    assert r["killed"] == 1 and r["score"] == pytest.approx(1 / 3)
+    assert r["activated_output"] == 1 and r["killed_output"] == 0
+    assert r["by_op"]["op"] == {"activated": 1, "killed": 1}
+
+
+@needs_verilator
+def test_t9_prepare_seeds(tmp_path: Path) -> None:
+    import mutants_eval  # noqa: E402
+    corpus = ROOT / "tests" / "input" / "h45" / "corpus.json"
+    d = json.loads(corpus.read_text())[0]
+    prep = mutants_eval.prepare(d, corpus.parent, tmp_path / "w", 4, 1, 2, mining_seeds=[1, 2], heldout_seeds=[101, 102])
+    mining = sorted(Path(prep["mining_dir"]).glob("*.vcd"))
+    assert [m.name for m in mining] == ["golden_s1.vcd", "golden_s2.vcd"]
+    assert [Path(g).name for g in prep["goldens"]] == ["golden_s101.vcd", "golden_s102.vcd"]
+    assert all(Path(g).parent == Path(prep["faults"]) for g in prep["goldens"])
+    assert len(prep["mutants"]) == 4
+    for mid, (act, op, files) in prep["mutants"].items():
+        assert act in ("none", "internal", "output") and op
+        assert (act == "none") == (not files)  # only activated seeds' traces go to the fault directory
+        for f in files:
+            assert Path(f).parent == Path(prep["faults"]) and Path(f).exists()
+            assert Path(f).name.startswith(mid + "_s") and Path(f).name[len(mid) + 2:-4] in ("101", "102")
+
+
+# T10: HARM gets the design's reset, so reset-fixed (L2) assertions are mined
+@needs_verilator
+def test_t10_reset(tmp_path: Path) -> None:
+    import os
+    import mutants_eval  # noqa: E402
+    harm = os.environ.get("HARM_BIN")
+    if not harm:
+        pytest.skip("HARM_BIN not set (ctest sets it)")
+    assert mutants_eval.reset_args({"reset": "!rst_n"}) == ["--reset", "!rst_n"]
+    assert mutants_eval.reset_args({}) == []
+    corpus = ROOT / "tests" / "input" / "h45" / "corpus.json"
+    out = tmp_path / "out"
+    r = subprocess.run([sys.executable, str(ROOT / "eval" / "mutants" / "mutants_eval.py"), str(corpus), str(out),
+                        "--harm", harm, "--python", sys.executable, "--configs", "RR", "--mutants", "4",
+                        "--mining-seeds", "1", "--heldout-seeds", "101"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    texts = [a["text"] for a in json.loads((out / "counter" / "harm" / "info.json").read_text())["assertions"]]
+    assert "G({!rst_n} |=> q == 8'b0)" in texts, texts[:20]
