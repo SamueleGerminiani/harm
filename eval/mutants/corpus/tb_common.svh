@@ -1,5 +1,7 @@
 // H45-mutant-eval: shared testbench part (written for this evaluation). Clock clk_i, active-low reset rst_ni held
-// for 3 cycles; +seed=, +cycles= (default 5000), +vcd=. Stimulus changes at falling edges.
+// for 3 cycles; +seed=, +cycles= (default 5000: the random phase), +vcd=. Stimulus changes at falling edges.
+// H45 amendment: each testbench runs its directed tests first (each one from reset, data from the seed), then the
+// constrained-random phase of +cycles cycles.
 logic clk_i = 1'b0, rst_ni = 1'b0;
 int unsigned seed, cycles;
 string vcd;
@@ -13,6 +15,16 @@ task automatic start();
   void'($urandom(seed));
   repeat (3) @(negedge clk_i);
   rst_ni = 1'b1;
+endtask
+// a directed test starts from reset (the caller sets the inputs to their idle values first)
+task automatic do_reset();
+  rst_ni = 1'b0;
+  repeat (3) @(negedge clk_i);
+  rst_ni = 1'b1;
+  @(negedge clk_i);
+endtask
+task automatic idle(int unsigned n);
+  repeat (n) @(negedge clk_i);
 endtask
 // true with probability n/d
 function automatic bit chance(int unsigned n, int unsigned d);
