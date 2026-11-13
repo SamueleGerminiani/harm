@@ -42,3 +42,13 @@ Nothing from it goes to trivergence or a paper without the user.
 ## Cost
 On the Mac, 3 designs at a time with 3 threads each: 10 designs x 6 runs, at most 600 s each, so 1-3 hours. The Mac
 runs nothing else meanwhile.
+
+## Deviation (2026-11-13): one HARM fix
+The run found a parser bug, so the milestone also changes HARM (the plan said no change; for the user at sign-off).
+On uart_to_bus, RR and RR+F+X failed: harm-coi's relation
+`bin_last_byte == ((bin_byte_count == 8'd1) ? 1'd1 : 1'd0)` mined fine, but the fault-based qualification parses
+each printed assertion again, and a proposition inside a template reached the proposition parser as ANTLR's
+`getText()`, without its spaces: `c==8'b1?1'b1:1'b0`, where the lexer reads `8'b1?1` as one based literal (`?` is a
+z digit). Fix: the template handler parses the proposition's source text (spaces kept); the space-free text stays
+the cache key. Test first: `tests/h44Tests.cc` (H44Test, label `parser`). The two uart_to_bus runs were repeated
+with the fixed HARM; every other run is the release (`41d5e96`).
