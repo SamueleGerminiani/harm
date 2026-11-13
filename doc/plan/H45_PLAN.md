@@ -95,3 +95,12 @@ Nothing goes to trivergence beyond the design list check, and nothing goes to th
 ## Cost
 Testbenches and the mutator are most of the work: about 2-3 days. Runs: about 10 designs x 6 configurations x (1
 golden + 100 mutants) trace checks; mining dominates, minutes per design on the Mac. 
+
+## Change approved by the user (2026-11-13): per-assertion fault results from HARM
+HARM's `--fd` prints only which fault traces are covered, not by which assertion, so the false-positive exclusion
+above cannot be computed from it. Option (the user: "Small HARM addition"): `--dump-assertion-info` gets a field
+`faults`, the fault traces (paths, sorted) on which the assertion fails; complete when `--find-min-subset` is given
+(otherwise HARM stops at the first assertion that covers a fault, and the field says so with `"faultsComplete":
+false`). Opt-in: the field appears only with `--fd`; no other output changes. Test first (T7): on a CSV fixture with
+three faulty traces, each assertion's `faults` equals the hand-computed set, and their union equals the covered set
+that HARM prints.
