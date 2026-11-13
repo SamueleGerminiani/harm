@@ -48,6 +48,10 @@ class Site:
     bit: int | None = None
 
 
+class MacroCode(Exception):
+    pass
+
+
 class Collector:
     def __init__(self, comp):
         self.sm = comp.sourceManager
@@ -57,6 +61,9 @@ class Collector:
         self.targets: dict[tuple[str, str], dict] = {}
 
     def src(self, rng) -> tuple[str, int, int]:
+        """The range's file and offsets; MacroCode for text that comes from a macro expansion (not editable)."""
+        if self.sm.isMacroLoc(rng.start) or self.sm.isMacroLoc(rng.end):
+            raise MacroCode
         f = self.sm.getFullPath(rng.start.buffer)
         if f not in self.text:
             self.text[f] = Path(f).read_text()
@@ -99,6 +106,13 @@ class Collector:
         selectors: list[tuple[str, int, int]] = []
 
         def cb(e):
+            try:
+                act(e)
+            except MacroCode:
+                pass
+            return True
+
+        def act(e):
             k = getattr(e, "kind", None)
             if k in (EK.ElementSelect, EK.RangeSelect):
                 for part in ((e.selector,) if k == EK.ElementSelect else (e.left, e.right)):
@@ -111,7 +125,7 @@ class Collector:
                 while syn is not None and syn.kind.name == "ParenthesizedExpression":
                     syn = syn.expression
                 tok = getattr(syn, "operatorToken", None)
-                if tok is not None:
+                if tok is not None and not self.sm.isMacroLoc(tok.location):
                     f = self.sm.getFullPath(tok.location.buffer)
                     self.src(e.sourceRange)
                     a = tok.location.offset
@@ -123,7 +137,6 @@ class Collector:
                 self.negate(e.conditions[0].expr, module)
             elif k == EK.IntegerLiteral:
                 self.literal(e, module, selectors)
-            return True
 
         node.visit(cb)
 
@@ -173,7 +186,11 @@ class Collector:
                 t["type"] = self.text[f][a:b]
         else:
             t["partial"] = True
-        f, a, b = self.src(e.right.sourceRange)
+        try:
+            f, a, b = self.src(e.right.sourceRange)
+        except MacroCode:
+            t["partial"] = True  # an assignment inside a macro: the bit cannot be forced at every assignment
+            return
         t["rhs"].add((f, a, b))
 
     def stuck_at(self, inputs: set[tuple[str, str]]):

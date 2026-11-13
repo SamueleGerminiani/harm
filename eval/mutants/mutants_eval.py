@@ -127,10 +127,17 @@ def main() -> None:
     a.out.mkdir(parents=True, exist_ok=True)
     for d in corpus:
         work = (a.out / d["name"]).resolve()
-        prep = prepare(d, base, work, a.mutants, a.seed, a.jobs)
+        try:
+            prep = prepare(d, base, work, a.mutants, a.seed, a.jobs)
+        except Exception as e:  # a design that does not build or elaborate: reported, the others go on
+            msg = " ".join(str(e).split())[:300]
+            rows.append({"design": d["name"], "config": "-", "ok": False, "error": f"prepare: {msg}"})
+            print(f"{d['name']:22} prepare failed: {msg}", flush=True)
+            continue
         entry = {"name": d["name"], "trace": {"vcd": prep["golden1"], "clk": d["clk"], "scope": "tb::dut",
                                               "recursion": 16},
-                 "rtl": {"files": [str(base / f) for f in d["files"]], "top": d["top"]}}
+                 "rtl": {"files": [str(base / f) for f in d["files"]], "top": d["top"],
+                         "defines": d.get("defines", []), "includes": [str(base / i) for i in d.get("includes", [])]}}
         hd = work / "harm"
         hd.mkdir(exist_ok=True)
         base_args, cfg = configs_for(entry, a.harm, a.python, str(hd))
