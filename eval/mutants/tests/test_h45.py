@@ -250,3 +250,35 @@ def test_t10_reset(tmp_path: Path) -> None:
     assert r.returncode == 0, r.stdout + r.stderr
     texts = [a["text"] for a in json.loads((out / "counter" / "harm" / "info.json").read_text())["assertions"]]
     assert "G({!rst_n} |=> q == 8'b0)" in texts, texts[:20]
+
+
+# T12 (H45 amendment): a mutant that stalls the testbench still ends. The shared testbench part stops the run after
+# +cycles plus a fixed margin (WATCHDOG_MARGIN cycles: far above every directed phase); traces.run has a wall-clock
+# limit as a backstop, and prepare() sets a mutant that reaches it aside as hung (replaced like an uncompiled one).
+def test_t12_run_timeout(tmp_path: Path) -> None:
+    exe = tmp_path / "Vtb"
+    exe.write_text("#!/bin/sh\nsleep 30\n")
+    exe.chmod(0o755)
+    with pytest.raises(traces.SimTimeout):
+        traces.run(exe, 1, 10, tmp_path / "t.vcd", timeout_s=1)
+
+
+@needs_verilator
+def test_t12_watchdog_ends_a_stalled_mutant(tmp_path: Path) -> None:
+    import time
+    corpus = ROOT / "eval" / "mutants" / "corpus.json"
+    d = next(x for x in json.loads(corpus.read_text()) if x["name"] == "exp_backoff")
+    base = corpus.parent
+    files = [base / f for f in d["files"]]
+    if not files[0].exists():
+        pytest.skip("PULP common_cells not fetched (eval/mutants/fetch.sh)")
+    incs = [str(base / i) for i in d["includes"]]
+    site = next(s for s in mutate.sites(files, d["top"], d["defines"], incs) if s.id == "sa1-exp_backoff-cnt_q-b6")
+    src = mutate.apply(site, files, tmp_path / "src")
+    extra = [f"+define+{x}" for x in d["defines"]] + [f"-I{i}" for i in incs]
+    exe = traces.build(src + [base / d["tb"]], "tb", tmp_path / "build", extra)
+    t0 = time.time()
+    vcd = traces.run(exe, 101, 200, tmp_path / "m.vcd", timeout_s=120)
+    assert time.time() - t0 < 60
+    last = max(int(line[1:]) for line in vcd.read_text().splitlines() if line.startswith("#"))
+    assert last // 10 <= 200 + traces.WATCHDOG_MARGIN + 10
