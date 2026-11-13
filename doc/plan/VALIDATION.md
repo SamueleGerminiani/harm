@@ -1603,3 +1603,18 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 | T4 | `ctest -j4` on macOS at `6a7fae3` (harm-coi's pytest included, `h5_unit`) | | 284 of 284, 1,937 s |
 
 **H43-struct-fields signed off by the user 2026-11-13** ("Sign off, merge to dev"); merged into `dev`.
+
+## H44-eval-v4: H11's AssertLLM2 evaluation on v4, each effect apart (2026-11-13; owner the portfolio's Mac session)
+- **Why:** numbers for a possible tool paper on HARM v4. H11 (v3-154) mixed the cone filter and the reduction in C7 and predates the relations from the RTL. Plan: H44_PLAN.md (approved by the user 2026-11-13).
+- **Change:** `eval/run_eval.py` runs R, R+F, R+F+X, RR, RR+F+X (`--configs`, `--threads`, `--designs`). Deviation from the plan: one HARM fix. A proposition in a template is parsed from its source text, spaces kept; `getText()` dropped them, and `c == 8'b1 ? 1'b1 : 1'b0` read as the based literal `8'b1?1`. The fault-based qualification hit it when parsing a printed relation again (uart_to_bus RR and RR+F+X).
+- **Results:** `eval/results/assertllm2-v4/results.md`. C0 times out on 10 of 10 designs; with the RTL, 9 of 10 run (aes_cipher times out everywhere). R+F+X equals H11's C7 counts and coverage on its 8 designs, and uart_to_bus now completes. The filter makes most of the cut (1.5-19x) and both coverage drops; the reduction adds at most 1.8x and changes no coverage. The relations (RR) kill more mutants on 7 of 9 designs (+20 to +40 points).
+- **Tests** (the fix's test written first, committed failing in `9818e10`):
+
+| # | Test | Before | After |
+|---|---|---|---|
+| T1 | `H44Test.TernaryAfterBasedLiteralInTemplate`: `G(a -> x == (c == 8'b1 ? 1'b1 : 1'b0))` and two spellings parse and hold | fail (Antlr parse error) | pass |
+| T2 | `H44Test.PrintedTernaryParsesAgain`: the printed assertion parses again to the same text | fail | pass |
+| T3 | `H44Test.QuestionDigitInBasedLiteral`: `8'b0000001?` still one literal | pass | pass |
+| T4 | uart_to_bus, the relation alone with `--fd` (the failing case) | Antlr parse error | 2,905 assertions, 2 of 5 faults |
+| T5 | `ctest -j3` on macOS at `0b7a45f` (harm-coi's pytest included) | | 285 of 285, 1,915 s |
+| T6 | on the fixtures, R equals C6 and R+F+X equals C7, run for run (`56b0677`) | | equal |
