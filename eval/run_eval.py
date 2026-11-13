@@ -135,7 +135,7 @@ def configs_for(design, harm, py, d):
     if rtl and py:
         coi = Path(d) / "coi.json"
         emitted = Path(d) / "emitted.xml"
-        vcd = t.get("vcd")
+        vcd = t.get("vcd") or t.get("coi_vcd")  # H45: with a trace directory, harm-coi reads one of its traces
         r = subprocess.run([py, "-m", "harm_coi", "--top", rtl["top"],
                             "--files", *[str(ROOT / f) for f in rtl["files"]], *rtl_opts(rtl),
                             "--vcd-scope", t["scope"], "--vcd-recursion", str(t.get("recursion", 0)),

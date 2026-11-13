@@ -106,5 +106,13 @@ def classify(golden: dict[str, list[str]], mutant: dict[str, list[str]], outputs
     return "internal" if diff else "none"
 
 
+RANK = {"none": 0, "internal": 1, "output": 2}
+
+
+def combine(acts: list[str]) -> str:
+    """The activation of a mutant over several stimulus seeds: the strongest one."""
+    return max(acts, key=RANK.__getitem__, default="none")
+
+
 def activation(golden_vcd: Path, mutant_vcd: Path, scope: str, clk: str, outputs: set[str]) -> str:
     return classify(sample(golden_vcd, scope, clk), sample(mutant_vcd, scope, clk), outputs)
