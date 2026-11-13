@@ -6,6 +6,16 @@ logic clk_i = 1'b0, rst_ni = 1'b0;
 int unsigned seed, cycles;
 string vcd;
 always #5 clk_i = ~clk_i;
+// H45 amendment (T12): a watchdog. A mutant can stall a directed test (e.g. a wait for a flag it never raises); the run
+// then stops after +cycles plus 10000 cycles (traces.WATCHDOG_MARGIN), far above every directed phase (golden runs end
+// within +cycles plus 500), so its trace is scored like any other.
+initial begin : watchdog
+  int unsigned n;
+  if (!$value$plusargs("cycles=%d", n)) n = 5000;
+  repeat (n + 10000) @(negedge clk_i);
+  $display("H45 watchdog: stopped after %0d cycles", n + 10000);
+  $finish;
+end
 task automatic start();
   if (!$value$plusargs("seed=%d", seed)) seed = 1;
   if (!$value$plusargs("cycles=%d", cycles)) cycles = 5000;

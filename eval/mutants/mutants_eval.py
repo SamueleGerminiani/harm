@@ -100,7 +100,13 @@ def prepare(d: dict, base: Path, work: Path, n: int, seed: int, jobs: int, minin
             return s, None
         acts, kept = [], []
         for hs, g in goldens.items():
-            vcd = traces.run(exe, hs, cycles, work / "mutants" / f"{s.id}_s{hs}.vcd")
+            try:
+                vcd = traces.run(exe, hs, cycles, work / "mutants" / f"{s.id}_s{hs}.vcd")
+            except traces.SimTimeout:  # set aside as hung (T12), replaced like an uncompiled mutant
+                for k in kept:
+                    Path(k).unlink(missing_ok=True)
+                shutil.rmtree(work / "build" / s.id, ignore_errors=True)
+                return s, "hung"
             act = traces.activation(g, vcd, "tb.dut", d["clk"], outs)
             acts.append(act)
             if act != "none":
@@ -112,13 +118,14 @@ def prepare(d: dict, base: Path, work: Path, n: int, seed: int, jobs: int, minin
 
     results: dict[str, tuple] = {}
     uncompiled: list[str] = []
+    hung: list[str] = []
     queue = list(chosen)
     with ThreadPoolExecutor(jobs) as ex:
         while queue:
             nxt = []
             for s, res in ex.map(one, queue):
-                if res is None:
-                    uncompiled.append(s.id)
+                if res is None or res == "hung":
+                    (uncompiled if res is None else hung).append(s.id)
                     if spare[mutate.GROUP[s.op]]:
                         nxt.append(spare[mutate.GROUP[s.op]].pop(0))
                 else:
@@ -127,7 +134,8 @@ def prepare(d: dict, base: Path, work: Path, n: int, seed: int, jobs: int, minin
     prep = {"sites": len(all_sites), "outputs": sorted(outs), "mining_dir": str(mining),
             "mining_seeds": list(mining_seeds), "heldout_seeds": list(heldout_seeds), "faults": str(faults),
             "goldens": [str(goldens[s]) for s in heldout_seeds],
-            "mutants": {sid: list(v) for sid, v in sorted(results.items())}, "uncompiled": sorted(uncompiled)}
+            "mutants": {sid: list(v) for sid, v in sorted(results.items())}, "uncompiled": sorted(uncompiled),
+            "hung": sorted(hung)}
     done.write_text(json.dumps(prep, indent=1))
     return prep
 

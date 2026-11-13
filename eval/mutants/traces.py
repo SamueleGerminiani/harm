@@ -10,6 +10,14 @@ import os
 import subprocess
 from pathlib import Path
 
+WATCHDOG_MARGIN = 10000  # corpus/tb_common.svh stops a run after +cycles plus this many cycles (H45 amendment, T12)
+RUN_TIMEOUT_S = 600  # the wall-clock backstop of one simulation
+
+
+class SimTimeout(RuntimeError):
+    """A simulation that did not end within its wall-clock limit (prepare() sets such a mutant aside as hung)."""
+
+
 VERILATOR_ARGS = ["--binary", "--timing", "--trace", "-Wno-fatal", "-Wno-lint", "-Wno-style", "-O0"]
 
 
@@ -23,10 +31,14 @@ def build(files: list[Path], top: str, builddir: Path, extra: list[str] = ()) ->
     return exe
 
 
-def run(exe: Path, seed: int, cycles: int, vcd: Path) -> Path:
+def run(exe: Path, seed: int, cycles: int, vcd: Path, timeout_s: float = RUN_TIMEOUT_S) -> Path:
     vcd.parent.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run([str(exe), f"+seed={seed}", f"+cycles={cycles}", f"+vcd={vcd}"], capture_output=True,
-                       text=True, cwd=vcd.parent)
+    try:
+        r = subprocess.run([str(exe), f"+seed={seed}", f"+cycles={cycles}", f"+vcd={vcd}"], capture_output=True,
+                           text=True, cwd=vcd.parent, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        vcd.unlink(missing_ok=True)
+        raise SimTimeout(f"simulation did not end in {timeout_s} s: {exe} +seed={seed}") from None
     if r.returncode != 0 or not vcd.exists():
         raise RuntimeError(f"simulation failed: {(r.stdout + r.stderr)[-1500:]}")
     return vcd
