@@ -1,6 +1,6 @@
 # H44-eval-v4 plan: H11's AssertLLM2 evaluation on v4, with each effect measured apart
 
-*Status: draft, for the user's approval. Asked by the user (2026-11-13: "yes, rerun the H11 evaluation on v4"), for a
+*Status: approved by the user 2026-11-13 ("Approve"). Asked by the user (2026-11-13: "yes, rerun the H11 evaluation on v4"), for a
 possible tool paper on HARM v4. Owner: the portfolio's Mac session. Branch `ms/H44-eval-v4` from `dev` (`8cfc422`).*
 
 ## Why
