@@ -127,6 +127,11 @@ if(PYTHON3_FOUND)
                 ${H6}/multipath_rank_expected.txt --vcd ${MP} --clk clk --vcd-ss tb::dut
                 --conf ${H6}/multipath_rank.xml)
     set_tests_properties(h6_assertion_info PROPERTIES LABELS regression)
+    # H45-mutant-eval, T7: per-assertion fault traces in --dump-assertion-info
+    add_test(NAME h45_assertion_faults
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h45_faults.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h45/faults)
+    set_tests_properties(h45_assertion_faults PROPERTIES LABELS regression)
 endif()
 
 # ---- H3: --dump-implications ----------------------------------------------------------------------
@@ -183,6 +188,10 @@ if(HARM_COI_OK)
     add_test(NAME h5_unit
         COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/tools/harm-coi/tests)
     set_tests_properties(h5_unit PROPERTIES LABELS coi)
+    # H45-mutant-eval, T1-T6: the mutator, activation and scoring (pytest; Verilator from PATH for T2, T4)
+    add_test(NAME h45_unit
+        COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/eval/mutants/tests)
+    set_tests_properties(h45_unit PROPERTIES LABELS coi)
     # yosys with read_slang (>= 0.67; third_party/install_yosys.sh) for the validation cross-check
     set(HARM_COI_YOSYS ${HARM_YOSYS})
     set(HARM_COI_XCHECK FALSE)
