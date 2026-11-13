@@ -390,3 +390,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H40 | harm-coi's cone closure in linear time (the miner portfolio's BR1) | done (signed off by the user 2026-11-09) |
 | H41 | A template's `!` over a comparison prints with brackets, `!(x == c)` (the miner portfolio's DD1) | done (signed off by the user 2026-11-09) |
 | H42 | The v4 release: documentation through H41, `dev` into `main` with the tag `v4` | done (signed off by the user 2026-11-12; `main` tagged `v4`) |
+| H43 | harm-coi: a packed struct's field traced only in the struct's vector is that vector's part-select (CR1's C9-4) | done (signed off by the user 2026-11-13; merged into `dev`) |

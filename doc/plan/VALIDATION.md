@@ -1601,3 +1601,5 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 | T3 | a nested struct and a field's bit select: `u[2:0] == 3'd5`, `u[2:0] == $past(c, 1)`, `z == $past(u[1], 1)` | fail (`u == 3'd5`) | pass |
 | — | HARM mines the fixture with the emitted configuration | | 15 assertions, no error |
 | T4 | `ctest -j4` on macOS at `6a7fae3` (harm-coi's pytest included, `h5_unit`) | | 284 of 284, 1,937 s |
+
+**H43-struct-fields signed off by the user 2026-11-13** ("Sign off, merge to dev"); merged into `dev`.

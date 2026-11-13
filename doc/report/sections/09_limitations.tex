@@ -7,7 +7,6 @@
 \item \textbf{Ties in the decision tree} are decided by the last bit of a floating-point score. Platforms agree because they now round the same operations the same way (\cref{sec:fma}); a different \code|libm| could still change a choice under the entropy heuristic. Rounding-independent tie-breaking would change every platform's results, and was left for a later decision.
 \item \textbf{Cones are signal-level.} A write to one bit of a register makes the whole register depend on itself; the schema reserves a per-bit field that is not used. The out-of-cone report does not use depths.
 \item \textbf{Mining on real designs.} On the AssertLLM2 designs used in the evaluation, the decision-tree template that \opt{generate-config} writes, over every signal, timed out within 10 minutes on every design tried, so the evaluation there ran only the configurations built from the RTL's predicates (\texttt{harm-coi} \code|--emit-config|), which have far fewer propositions.
-\item \textbf{Packed structs in \texttt{harm-coi}.} A truncating cast of a packed struct's member is still taken as the member's signal (CR1, C9-4); Verilog designs have no structs.
 \item \textbf{Older limits, unchanged.} Some formulas the grammar accepts cannot be evaluated (\code|F X X (a W c)|, for which Spot gives a non-deterministic automaton); the \texttt{camellia} example's configuration is not valid XML.
 \end{itemize}
 
