@@ -1,4 +1,4 @@
-# H46-hint-levels-eval plan: scripts that reproduce the HARM v4 letter's experiments (draft, 2026-11-14, for the user's approval)
+# H46-hint-levels-eval plan: scripts that reproduce the HARM v4 letter's experiments (approved by the user 2026-11-14: "approved, Q1 a, Q2 a, go ahead")
 
 ## Why
 - The user, 2026-11-14: "put it in HARM as eval/hint-levels". The hint levels stay out of HARM's features: no new
