@@ -1,0 +1,11 @@
+design,killed_R,killed_RF,lost,gained,reset,delay,out_of_cone
+credit_counter,29,24,5,0,4,1,0
+delta_counter,59,51,8,0,6,2,0
+exp_backoff,61,61,2,2,2,0,0
+fall_through_register,59,54,5,0,2,2,1
+fifo_v3,55,43,12,0,2,8,2
+id_queue,44,21,23,0,13,5,5
+lfsr,48,48,0,0,0,0,0
+plru_tree,31,28,3,0,3,0,0
+rr_arb_tree,65,65,0,0,0,0,0
+spill_register,72,69,3,0,0,2,1

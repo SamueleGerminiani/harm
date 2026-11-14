@@ -42,7 +42,7 @@ def test_t1_standalone() -> None:
     bad = re.compile(r"trivergence|/Users/|/home/|/private/|\b(DD1|HL1|RV1|CR1|BR1|HX1|MC1[ab]?|D-0\d\d|RQ3b|"
                      r"miner.portfolio)\b", re.I)
     for p in sorted(HERE.rglob("*")):
-        if p.is_file() and p.suffix in (".py", ".sh", ".md", ".csv", ".json"):
+        if p.is_file() and p.suffix in (".py", ".sh", ".md", ".csv", ".json") and p != Path(__file__).resolve():
             m = bad.search(p.read_text(errors="replace"))
             assert not m, f"{p.relative_to(HERE)}: {m.group(0)!r}"
 
