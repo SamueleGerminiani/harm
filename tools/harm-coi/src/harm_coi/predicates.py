@@ -46,6 +46,20 @@ class Harvester:
         self.ranges = {path: typ.fixedRange for path, typ, _ in extractor.sig.values()
                        if typ.isPackedArray and typ.hasFixedRange}
         self.kept = {n: self.ranges.get(a) for a, n in vis.items() if "::".join(a) == n}
+        # H43: a packed struct's field that the trace has only through the struct's vector (Verilator without
+        # --trace-structs): (vector name, the field's lsb in it, its width, its declared range), or None when its bits
+        # are not known (an unpacked struct): such a field is not visible
+        self.field_types = getattr(extractor, "field_types", {})
+        self.fields = {}
+        for a, n in vis.items():
+            if len(a) < 2 or "::".join(a) == n:
+                continue
+            for k in range(len(a) - 1, 0, -1):
+                if "::".join(a[:k]) == n:
+                    fb, pb = getattr(extractor, "field_bits", {}).get(a), getattr(extractor, "field_bits", {}).get(a[:k])
+                    rng = self.field_range(a)
+                    self.fields[a] = (n, fb[0] - pb[0], fb[1], rng) if fb and pb else None
+                    break
 
     def index(self, atom, i):
         """bit i of atom's declared range, as an index of atom's visible name (H38): an alias's kept name can be
@@ -162,18 +176,58 @@ class Harvester:
         return max(self.width(i) for i in p[1])
 
     # ------------------------------------------------------------------ rendering
+    def field_range(self, atom):
+        """the declared (left, right) of a struct field's own type, if it has one"""
+        t = self.field_types.get(atom)
+        return (t.fixedRange.left, t.fixedRange.right) if t is not None and t.hasFixedRange else None
+
     def name(self, atom):
+        """the visible HARM name of a signal (H43: a field traced only in its struct's vector, the vector's; a field
+        whose bits are not known is not visible)"""
         n = self.vis.get(atom)
-        if n is None:
+        if n is None or (atom in self.fields and self.fields[atom] is None):
             raise KeyError(atom)
         return n
+
+    def text(self, atom):
+        """a whole signal as a formula writes it: its escaped name, or (H43) its part-select of the struct's vector"""
+        n = self.name(atom)
+        if self.fields.get(atom) is not None:
+            vec, lsb, w, _ = self.fields[atom]
+            return f"{escaped(vec)}[{lsb}]" if w == 1 else f"{escaped(vec)}[{lsb + w - 1}:{lsb}]"
+        return escaped(n)
+
+    def field_pos(self, atom, i):
+        """H43: bit i (a declared index of the field) as a position from the field's lsb"""
+        _, _, w, rng = self.fields[atom]
+        if rng is None:
+            return i
+        left, right = rng
+        return i - right if left >= right else right - i
+
+    def bit_text(self, atom, i):
+        """bit i of a signal, as HARM text"""
+        if self.fields.get(atom) is not None:
+            vec, lsb, _, _ = self.fields[atom]
+            return f"{escaped(vec)}[{lsb + self.field_pos(atom, i)}]"
+        return f"{escaped(self.name(atom))}[{self.index(atom, i)}]"
+
+    def range_text(self, atom, hi, lo):
+        """bits hi:lo of a signal, as HARM text, or None if the visible name's range ascends (H38)"""
+        if self.fields.get(atom) is not None:
+            vec, lsb, _, _ = self.fields[atom]
+            h, l = lsb + self.field_pos(atom, hi), lsb + self.field_pos(atom, lo)
+            return f"{escaped(vec)}[{max(h, l)}:{min(h, l)}]"
+        n = self.name(atom)
+        h, l = self.index(atom, hi), self.index(atom, lo)
+        return None if h < l else f"{escaped(n)}[{h}:{l}]"
 
     def render(self, p, top=True):
         k = p[0]
         if k == "sig":
-            return escaped(self.name(p[1]))
+            return self.text(p[1])
         if k == "bit":
-            return f"{escaped(self.name(p[1]))}[{self.index(p[1], p[2])}]"
+            return self.bit_text(p[1], p[2])
         if k == "cmp" and len(p) > 5 and p[5]:
             return f"$signed({self.render(p[2], False)}) {p[1]} {signed_literal(p[3], p[4])}"
         if k == "cmp":

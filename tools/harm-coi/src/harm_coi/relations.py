@@ -139,11 +139,11 @@ class Relations:
                 if op[2] > HARM_MAX_LOGIC_BITS:
                     raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
                 n = self.h.name(op[1])
-                return Val(escaped(n), op[2], False, False, 0, {n})
+                return Val(self.h.text(op[1]), op[2], False, False, 0, {n})
             if self.h.out.widths.get(op[1], 0) > HARM_MAX_LOGIC_BITS:
                 raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
-            return Val(f"{escaped(n)}[{self.h.index(op[1], op[2])}]", 1, False, False, 0, {n})
+            return Val(self.h.bit_text(op[1], op[2]), 1, False, False, 0, {n})
         if k == EK.RangeSelect:
             op = self.h.operand(e.value)
             hi, lo = self.h.constant(e.left), self.h.constant(e.right)
@@ -152,10 +152,10 @@ class Relations:
             if op[2] > HARM_MAX_LOGIC_BITS:
                 raise NotTranslatable(f"wider than HARM's {HARM_MAX_LOGIC_BITS}-bit limit")
             n = self.h.name(op[1])
-            w, hi, lo = hi - lo + 1, self.h.index(op[1], hi), self.h.index(op[1], lo)
-            if hi < lo:
+            w, text = hi - lo + 1, self.h.range_text(op[1], hi, lo)
+            if text is None:
                 raise NotTranslatable("range select")  # the kept name's range ascends (H38)
-            return Val(f"{escaped(n)}[{hi}:{lo}]", w, False, False, 0, {n})
+            return Val(text, w, False, False, 0, {n})
         if k == EK.Concatenation:
             parts = [self.clean(self.render(o)) for o in e.operands]
             total = sum(p.width for p in parts)
@@ -236,8 +236,8 @@ class Relations:
         if op is None or op[0] != "sig":
             self.dropped.append(("relation: not a whole signal", where))
             return
-        try:
-            target = self.h.name(op[1])
+        try:  # H43: the target's text (a struct field traced in its struct's vector is the vector's part-select)
+            target, tname = self.h.text(op[1]), self.h.name(op[1])
         except KeyError:
             self.dropped.append(("relation: target not visible", where))
             return
@@ -260,7 +260,7 @@ class Relations:
             return
         if not v.signals:
             return                              # a constant: a reset value or a constant comparison already
-        if not registered and v.text == escaped(target):
+        if not registered and v.text == target:
             self.dropped.append(("relation: the target itself (a merged net, H34)", where))
             return
         if v.ops > MAX_OPS:
@@ -271,10 +271,10 @@ class Relations:
             strip = v.compound and v.text.startswith("(") and _balanced(v.text[1:-1]) and a.right.kind != EK.ConditionalOp
             core = v.text[1:-1] if strip else v.text  # HARM reads $past((c ? a : b), 1), not $past(c ? a : b, 1)
             past = f"$past({core}, 1)"
-            expr = f"{escaped(target)} == ({past} & {self.mask(w)})" if masked else f"{escaped(target)} == {past}"
+            expr = f"{target} == ({past} & {self.mask(w)})" if masked else f"{target} == {past}"
         else:
-            expr = f"{escaped(target)} == ({v.text} & {self.mask(w)})" if masked else f"{escaped(target)} == {v.text}"
-        self.found.append(Relation(target, w, expr, registered, conditional, target in v.signals, where))
+            expr = f"{target} == ({v.text} & {self.mask(w)})" if masked else f"{target} == {v.text}"
+        self.found.append(Relation(target, w, expr, registered, conditional, tname in v.signals, where))
 
     def stmt(self, s, registered, conditional, top=False):
         k = s.kind

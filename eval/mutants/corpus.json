@@ -1,0 +1,401 @@
+[
+ {
+  "name": "fifo_v3",
+  "top": "h45_fifo_v3",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "corpus/fifo_v3_wrap.sv"
+  ],
+  "tb": "corpus/fifo_v3_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "spill_register",
+  "top": "h45_spill_register",
+  "files": [
+   "../../build/h45/common_cells/src/spill_register_flushable.sv",
+   "../../build/h45/common_cells/src/spill_register.sv",
+   "corpus/spill_register_wrap.sv"
+  ],
+  "tb": "corpus/spill_register_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "fall_through_register",
+  "top": "h45_fall_through_register",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "../../build/h45/common_cells/src/fall_through_register.sv",
+   "corpus/fall_through_register_wrap.sv"
+  ],
+  "tb": "corpus/fall_through_register_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "rr_arb_tree",
+  "top": "h45_rr_arb_tree",
+  "files": [
+   "../../build/h45/common_cells/src/cf_math_pkg.sv",
+   "../../build/h45/common_cells/src/lzc.sv",
+   "../../build/h45/common_cells/src/rr_arb_tree.sv",
+   "corpus/rr_arb_tree_wrap.sv"
+  ],
+  "tb": "corpus/rr_arb_tree_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "delta_counter",
+  "top": "h45_delta_counter",
+  "files": [
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "corpus/delta_counter_wrap.sv"
+  ],
+  "tb": "corpus/delta_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "lfsr",
+  "top": "h45_lfsr",
+  "files": [
+   "../../build/h45/common_cells/src/lfsr.sv",
+   "corpus/lfsr_wrap.sv"
+  ],
+  "tb": "corpus/lfsr_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "id_queue",
+  "top": "h45_id_queue",
+  "files": [
+   "../../build/h45/common_cells/src/cf_math_pkg.sv",
+   "../../build/h45/common_cells/src/lzc.sv",
+   "../../build/h45/common_cells/src/onehot_to_bin.sv",
+   "../../build/h45/common_cells/src/id_queue.sv",
+   "corpus/id_queue_wrap.sv"
+  ],
+  "tb": "corpus/id_queue_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "plru_tree",
+  "top": "h45_plru_tree",
+  "files": [
+   "../../build/h45/common_cells/src/plru_tree.sv",
+   "corpus/plru_tree_wrap.sv"
+  ],
+  "tb": "corpus/plru_tree_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "exp_backoff",
+  "top": "h45_exp_backoff",
+  "files": [
+   "../../build/h45/common_cells/src/exp_backoff.sv",
+   "corpus/exp_backoff_wrap.sv"
+  ],
+  "tb": "corpus/exp_backoff_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "credit_counter",
+  "top": "h45_credit_counter",
+  "files": [
+   "../../build/h45/common_cells/src/credit_counter.sv",
+   "corpus/credit_counter_wrap.sv"
+  ],
+  "tb": "corpus/credit_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "exp_backoff_d10",
+  "top": "h45_exp_backoff",
+  "files": [
+   "../../build/h45/common_cells/src/exp_backoff.sv",
+   "corpus/exp_backoff_wrap.sv"
+  ],
+  "tb": "corpus/exp_backoff_tb.sv",
+  "clk": "clk_i",
+  "cycles": 20000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_MAXEXP=10"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "exp_backoff_d14",
+  "top": "h45_exp_backoff",
+  "files": [
+   "../../build/h45/common_cells/src/exp_backoff.sv",
+   "corpus/exp_backoff_wrap.sv"
+  ],
+  "tb": "corpus/exp_backoff_tb.sv",
+  "clk": "clk_i",
+  "cycles": 200000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_MAXEXP=14"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni",
+  "watchdog": 100000
+ },
+ {
+  "name": "delta_counter_d10",
+  "top": "h45_delta_counter",
+  "files": [
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "corpus/delta_counter_wrap.sv"
+  ],
+  "tb": "corpus/delta_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 20000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_WIDTH=10"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "delta_counter_d14",
+  "top": "h45_delta_counter",
+  "files": [
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "corpus/delta_counter_wrap.sv"
+  ],
+  "tb": "corpus/delta_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 50000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_WIDTH=14"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "credit_counter_d16",
+  "top": "h45_credit_counter",
+  "files": [
+   "../../build/h45/common_cells/src/credit_counter.sv",
+   "corpus/credit_counter_wrap.sv"
+  ],
+  "tb": "corpus/credit_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_NUMCREDITS=16"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "credit_counter_d64",
+  "top": "h45_credit_counter",
+  "files": [
+   "../../build/h45/common_cells/src/credit_counter.sv",
+   "corpus/credit_counter_wrap.sv"
+  ],
+  "tb": "corpus/credit_counter_tb.sv",
+  "clk": "clk_i",
+  "cycles": 10000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_NUMCREDITS=64"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "fifo_v3_d16",
+  "top": "h45_fifo_v3",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "corpus/fifo_v3_wrap.sv"
+  ],
+  "tb": "corpus/fifo_v3_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_DEPTH=16"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "fifo_v3_d64",
+  "top": "h45_fifo_v3",
+  "files": [
+   "../../build/h45/common_cells/src/fifo_v3.sv",
+   "corpus/fifo_v3_wrap.sv"
+  ],
+  "tb": "corpus/fifo_v3_tb.sv",
+  "clk": "clk_i",
+  "cycles": 10000,
+  "defines": [
+   "ASSERTS_OFF",
+   "H45_DEPTH=64"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "lossy_valid_to_stream",
+  "top": "h45_lossy_valid_to_stream",
+  "files": [
+   "../../build/h45/common_cells/src/lossy_valid_to_stream.sv",
+   "corpus/lossy_valid_to_stream_wrap.sv"
+  ],
+  "tb": "corpus/lossy_valid_to_stream_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "stream_delay",
+  "top": "h45_stream_delay",
+  "files": [
+   "../../build/h45/common_cells/src/counter.sv",
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "../../build/h45/common_cells/src/lfsr_16bit.sv",
+   "../../build/h45/common_cells/src/stream_delay.sv",
+   "corpus/stream_delay_wrap.sv"
+  ],
+  "tb": "corpus/stream_delay_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ }
+]

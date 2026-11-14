@@ -70,7 +70,8 @@ private:
       const std::string &ph);
 
   std::string handleNewPP(const std::string &ph);
-  std::string handleNewInst(const std::string &prop);
+  std::string handleNewInst(const std::string &prop,
+                            const std::string &source = "");
   std::string
   handleNewFunc(temporalParser::TemporalFunctionContext *ctx);
 

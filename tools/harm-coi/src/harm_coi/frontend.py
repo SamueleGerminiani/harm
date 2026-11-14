@@ -148,6 +148,8 @@ class Extractor:
         self.top_outputs = set()
         self.asyncs = set()                     # asynchronous controls of registers (H22: reset roles)
         self.alias_pairs = []                   # H34 (D-042): whole-signal connections, (driven, source) atoms
+        self.field_bits = {}                    # H43: path -> (lsb, width) of a packed struct and its fields in it
+        self.field_types = {}                   # H43: path -> type of each field of a packed struct
 
     # ------------------------------------------------------------------ names
     def path_of(self, sym):
@@ -165,6 +167,21 @@ class Extractor:
                     out += self.leaves(path + (f.name,), f.type)
             return out
         return [path]
+
+    def record_bits(self, path, typ, lsb=0):
+        """H43: the bits of a packed struct and of each of its fields (nested ones too) within the struct's vector, which
+        a simulator dumps when it does not trace structs field by field (Verilator's default). Not for unpacked structs:
+        their fields have no place in one vector."""
+        t = typ.canonicalType
+        if t.kind != SK.PackedStructType:
+            return
+        self.field_bits[path] = (lsb, t.bitWidth)
+        for f in t:
+            if f.kind == SK.Field:
+                fp, ft = path + (f.name,), f.type
+                self.field_bits[fp] = (lsb + f.bitOffset, ft.bitWidth)
+                self.field_types[fp] = ft.canonicalType
+                self.record_bits(fp, ft, lsb + f.bitOffset)
 
     def add_unknown(self, atom, reason):
         self.unknown.setdefault(atom, reason)
@@ -357,6 +374,7 @@ class Extractor:
                 path = self.path_of(m)
                 self.sig[sym_key(m)] = (path, m.type, m)
                 self.signals.update(self.leaves(path, m.type))
+                self.record_bits(path, m.type)
             elif k == SK.Parameter:
                 # a genvar loop creates an implicit parameter per block, which simulators do not dump
                 if m.syntax is not None and m.syntax.kind == syntax.SyntaxKind.Declarator:

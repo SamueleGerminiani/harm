@@ -258,8 +258,10 @@ std::mutex &implicationRecordsGuard() {
 }
 
 /// --dump-assertion-info: one JSON record per kept assertion, all contexts in one file
-void dumpAssertionInfo(const Context &context,
-                       const std::vector<AssertionPtr> &assertions) {
+/// with --fd, aidToF gives each assertion's fault traces (H45): complete with --find-min-subset
+void dumpAssertionInfo(
+    const Context &context, const std::vector<AssertionPtr> &assertions,
+    const std::unordered_map<size_t, std::vector<size_t>> *aidToF = nullptr) {
   static std::vector<std::string> records;
   static std::map<std::string, std::string> coiFilter; // by context (H7)
   static std::mutex guard;
@@ -299,7 +301,24 @@ void dumpAssertionInfo(const Context &context,
            ", \"coiDepthFit\": " + std::to_string(a->_coiDepthFit) +
            ", \"coiUnknown\": " + std::to_string(a->_coiUnknown);
     }
-    r += "}, \"leaves\": [";
+    r += "}";
+    if (aidToF != nullptr && !clc::faultyTraceFiles.empty()) {
+      std::vector<std::string> faults;
+      auto it = aidToF->find(a->_id);
+      if (it != aidToF->end()) {
+        for (size_t f : it->second) {
+          faults.push_back(clc::faultyTraceFiles.at(f));
+        }
+      }
+      std::sort(faults.begin(), faults.end());
+      faults.erase(std::unique(faults.begin(), faults.end()), faults.end());
+      r += ", \"faults\": [";
+      for (size_t i = 0; i < faults.size(); i++) {
+        r += (i ? ", " : "") + jsonString(faults[i]);
+      }
+      r += std::string("], \"faultsComplete\": ") + (clc::findMinSubset ? "true" : "false");
+    }
+    r += ", \"leaves\": [";
     bool first = true;
     for (const auto &l : leafOffsets(a->_formula)) {
       std::string text = prop2String(l.prop);
@@ -538,7 +557,7 @@ std::vector<AssertionPtr> Qualifier::qualify(Context &context,
     dumpAssToFile(context, trace, rankedAssertions);
   }
   if (!clc::dumpAssertionInfo.empty()) {
-    dumpAssertionInfo(context, rankedAssertions);
+    dumpAssertionInfo(context, rankedAssertions, &_aidToF);
   }
 
   return rankedAssertions;

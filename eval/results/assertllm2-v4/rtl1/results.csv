@@ -1,0 +1,21 @@
+design,config,assertions,wall_s,dropped,permutations,dt_pairs,coi_frac,coi_depth_fit,coverage,ok,error
+aes_cipher,R,,600,,,,,,,False,timeout (600 s)
+aes_cipher,R+F,,600,,,,,,,False,timeout (600 s)
+aes_cipher,R+F+X,,600,,,,,,,False,timeout (600 s)
+aes_cipher,RR,,600,,,,,,,False,timeout (600 s)
+aes_cipher,RR+F+X,,600,,,,,,,False,timeout (600 s)
+uart,R,1162,7.04,,,,0.513,0.425,60,True,
+uart,R+F,461,2.63,,23->23,7683->5604,1.0,1.0,60,True,
+uart,R+F+X,410,3.07,51,23->23,7683->5604,1.0,1.0,60,True,
+uart,RR,3946,26.38,,,,0.429,0.337,80,True,
+uart,RR+F+X,1127,8.8,121,81->81,27512->19369,1.0,1.0,80,True,
+srdy-drdy-library,R,479,4.47,,,,0.811,0.597,60,True,
+srdy-drdy-library,R+F,316,3.51,,19->19,12104->9582,1.0,1.0,60,True,
+srdy-drdy-library,R+F+X,277,3.85,39,19->19,12104->9582,1.0,1.0,60,True,
+srdy-drdy-library,RR,5630,49.57,,,,0.72,0.46,80,True,
+srdy-drdy-library,RR+F+X,2550,32.94,130,102->102,153297->125991,1.0,1.0,80,True,
+sha3,R,1496,18.9,,,,0.374,0.265,60,True,
+sha3,R+F,402,8.67,,29->29,9992->6495,1.0,1.0,60,True,
+sha3,R+F+X,398,8.96,4,29->29,9992->6495,1.0,1.0,60,True,
+sha3,RR,6110,40.34,,,,0.482,0.361,80,True,
+sha3,RR+F+X,2290,24.64,47,81->81,63817->52722,1.0,1.0,80,True,
