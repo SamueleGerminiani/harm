@@ -1677,8 +1677,10 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
   (`__API_DEPRECATED_MSG0`). The same tests pass with Verilator 5.034 from PATH (22 passed, and T10 with `HARM_BIN`).
   In a checkout with its own `third_party` this does not arise.
 - **`h14_doc_coverage`:** "report: milestone H44 not found". `dev` fails the same way, because H44 was merged without
-  its report entry. **To do before the merge:** H44 and H45 in the report (the milestone table, the evaluation
-  section), and the PDF rebuilt, as H43 did.
+  its report entry. Fixed on this branch: H44 and H45 in the report (the milestone table, the smaller changes, the
+  `faults` field of `--dump-assertion-info`, the test count, a limitation on `--fd`, the evaluation paragraph), and
+  H45 on PLAN.md's board. The PDF was rebuilt (37 pages). `check_coverage.py` passes, and so does `check.sh` (no
+  LaTeX error, no undefined reference); the PDF's text has no private path.
 
 **Runs:**
 - **Configurations:** C0, R, R+F, R+F+X, RR, RR+F+X on the 10 base designs (saturn, `h45-tools:1` = samger/harm:v4

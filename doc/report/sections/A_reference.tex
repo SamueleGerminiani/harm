@@ -17,7 +17,7 @@ Option & Effect (section) \\
 \opt{deadline} \code|<S>| & seconds from HARM's start: the implication step checks pairs until then, the rest count as unrelated (H39) \\
 \opt{mine-deadline} \code|<S>| & seconds from HARM's start: mining starts no template, permutation or decision-tree step after it (default 0.75 of \opt{deadline}); what was mined is written (H39) \\
 \opt{dump-implications} \code|<file>| & the dropped assertions and what implies them, as JSON \\
-\opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON \\
+\opt{dump-assertion-info} \code|<file>| & every kept assertion: metrics, leaves, cycle offsets, variables, origins, as JSON; with \opt{fd}, the fault traces it fails on (complete with \opt{find-min-subset}, \ms{H45}) \\
 \opt{dump-coi-report} \code|<file>| & the out-of-cone report (\cref{sec:coi}) \\
 \opt{dump-prop-table} \code|<file>| & every proposition's value at every cycle, as JSON (\code|prop-table| v1, D-031) \\
 \opt{trace-end} \code+harm|sva+ & the end-of-trace semantics (\cref{sec:traceend}) \\
@@ -196,5 +196,7 @@ CR1 & the miner portfolio's correctness review & segment ends, expanded template
 H41 & \code|!| over a comparison printed with brackets & the miner printed \code|!x == c|, read as \code|(!x) == c| \\
 H42 & the v4 release (D-027) & --- \\
 H43 & a packed struct's field traced in the struct's vector, as its part-select & a field's predicates and relations named the whole vector \\
+H44 & the AssertLLM2 evaluation on v4, the cone filter, the reduction and the relations measured apart & a ternary after a based literal in a template did not parse \\
+H45 & bug finding on PULP common\_cells with classical mutants; each assertion's fault traces in \opt{dump-assertion-info} & a fault trace of another length than the mining trace was read past its end \\
 \bottomrule
 \end{longtable}

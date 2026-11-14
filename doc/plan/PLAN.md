@@ -392,3 +392,4 @@ H0 ─┬─ H1 ─┬─ H2 ── H3 ── (H3b)
 | H42 | The v4 release: documentation through H41, `dev` into `main` with the tag `v4` | done (signed off by the user 2026-11-12; `main` tagged `v4`) |
 | H43 | harm-coi: a packed struct's field traced only in the struct's vector is that vector's part-select (CR1's C9-4) | done (signed off by the user 2026-11-13; merged into `dev`) |
 | H44 | H11's AssertLLM2 evaluation on v4, filter and reduction apart, relations measured; one parser fix (template propositions keep their spaces) | done (signed off by the user 2026-11-13; merged into `dev`) |
+| H45 | Bug finding on PULP common_cells with classical mutants (corpus, mutator, scoring); each assertion's fault traces in --dump-assertion-info; --fd with fault traces of another length | VALIDATION entry written; awaiting sign-off |
