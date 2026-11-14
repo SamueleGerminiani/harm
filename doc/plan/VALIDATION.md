@@ -1708,3 +1708,5 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 
 **Release:** per the amendment, after sign-off this merges into `dev` and is released as HARM v4.1 (dev, H44's parser
 fix, the `faults` field, the `--fd` trace-length fix); the paper cites that commit (a condition of trivergence, 2026-11-13).
+
+**H45-mutant-eval signed off by the user 2026-11-14** ("Ok, go ahead"); merged into `dev`, `dev` into `main`, tagged `v4.1`.
