@@ -1710,3 +1710,44 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 fix, the `faults` field, the `--fd` trace-length fix); the paper cites that commit (a condition of trivergence, 2026-11-13).
 
 **H45-mutant-eval signed off by the user 2026-11-14** ("Ok, go ahead"); merged into `dev`, `dev` into `main`, tagged `v4.1`.
+
+## H46-hint-levels-eval: the hint-level study's scripts, to reproduce the HARM v4 letter (2026-11-14; owner the portfolio's Mac session)
+- **Why:** the letter for IEEE Embedded Systems Letters measures HARM by hint level. Its arms, level rule and
+  long-range recipe were defined in a private wrapper. The user (2026-11-14): "put it in HARM as eval/hint-levels".
+  The hint levels stay out of HARM's features.
+- **Plan:** H46_PLAN.md, approved by the user 2026-11-14 ("approved, Q1 a, Q2 a, go ahead"). The trivergence
+  project's lead confirmed that publishing these definitions is no problem.
+
+**Change:** `eval/hint-levels/`, evaluation code only; `src/` and `tools/harm-coi/` are unchanged.
+- **`arms.py`:** the five arms as harm-coi and HARM command lines, the level rule (L0, L1, L2), and the deep recipe:
+  the long-range templates over the design's 1-bit flags and state encodings, the event-in-state template, the
+  two-pass budget, and the trivial forms dropped. Its helper functions are copied from the wrapper (`inspect`).
+  Compared by syntax tree, with docstrings and comments aside, all 26 equal the wrapper's. The one exception is the
+  free-text origin label of the added positive flags, `positive` here, which HARM does not use in mining. The
+  top-level `mine()` was written to follow the wrapper's, and T2 checks it.
+- **`cut.py`:** the trace cut, identical by syntax tree.
+- **`run_arms.py`:** the driver, with the wrapper's scoring (identical by syntax tree).
+- **`filter_check.py`, `tables.py`, `reproduce.sh`, `README.md`.**
+- **`results/`:** the letter's CSVs, with local paths in two error messages replaced by `<work>`.
+- **Registration:** ctest test `h46_unit`.
+- **Report:** H46 in the milestone table, 289 tests, the evaluation paragraph; the PDF rebuilt.
+
+**Tests** (written first, committed failing in `9ff8124`; at that commit T1, T3 and T5 fail because the scripts are
+absent):
+
+| # | Test | Result |
+|---|---|---|
+| T1 | only the standard library, pyslang and the directory's modules; no private path, hostname, internal code or the word trivergence in any file | pass, after one fix to the test: it scanned its own pattern |
+| T2 | on harm-coi's counter and fsm fixtures, for L0, L0+roles, rel and deep: the configuration files, HARM's command lines and the kept and dropped assertions equal the wrapper's (recorded in `tests/fixtures/adapter_reference.json`, machine paths as placeholders) | 8 of 8 pass |
+| T3 | the level rule, the reset-active drop, the trivial long-range forms and the cut, on hand-made cases | pass |
+| T4 | lossy_valid_to_stream and id_queue prepared on the Mac from `eval/mutants/corpus.json`: L0+roles and deep kill the same mutants as the letter's runs on Linux | 2 of 2 pass, 413 s |
+| T5 | `tables.py` rebuilds the letter's numbers from `results/` | pass |
+| — | `ctest -j3` on macOS at `2eeed86` | 288 of 289, 1,908 s. The one failure is `h45_unit`, as at H45: this worktree's `third_party` was a link to another checkout's tools, whose Verilator no longer compiles against the macOS SDK (`__API_DEPRECATED_MSG0`). The same tests pass with Verilator 5.034 from PATH |
+
+- **Found while testing:** the generator that copied the helper functions also stripped internal codes from comments.
+  Its pattern deleted the driver's first argument definition (`help="HARM H45's …"`), and T4 found it. That line
+  was restored, and the syntax-tree comparison above was added to rule out other changes.
+- **The doc checks:** `check_coverage.py` passes, and so does `check.sh` (37 pages). The PDF's text has no private
+  path.
+
+**H46-hint-levels-eval signed off by the user 2026-11-14** ("both fine, sign off H46 after ctest, tag v4.1.1"); merged into `dev`, `dev` into `main`, tagged `v4.1.1`.

@@ -1,0 +1,61 @@
+design,config,status,assertions,wall_s,activated,killed,false_positives
+credit_counter,C0,timeout (600 s),,,,,
+credit_counter,R,ok,87,127.29,46,29,14
+credit_counter,R+F,ok,40,40.44,46,24,9
+credit_counter,R+F+X,ok,33,36.59,46,24,9
+credit_counter,RR,ok,658,439.41,46,46,32
+credit_counter,RR+F+X,ok,186,129.94,46,46,6
+delta_counter,C0,timeout (600 s),,,,,
+delta_counter,R,ok,81,84.1,89,59,8
+delta_counter,R+F,ok,28,43.21,89,51,2
+delta_counter,R+F+X,ok,24,40.96,89,51,2
+delta_counter,RR,ok,326,251.18,89,88,14
+delta_counter,RR+F+X,ok,131,117.83,89,87,4
+exp_backoff,C0,timeout (600 s),,,,,
+exp_backoff,R,ok,76,120.7,88,61,1
+exp_backoff,R+F,ok,40,78.75,88,61,0
+exp_backoff,R+F+X,ok,40,74.25,88,61,0
+exp_backoff,RR,ok,235,371.74,88,83,1
+exp_backoff,RR+F+X,ok,118,194.03,88,80,0
+fall_through_register,C0,timeout (600 s),,,,,
+fall_through_register,R,ok,584,320.83,90,59,7
+fall_through_register,R+F,ok,367,203.51,90,54,0
+fall_through_register,R+F+X,ok,201,128.54,90,54,0
+fall_through_register,RR,timeout (600 s),,,,,
+fall_through_register,RR+F+X,ok,982,592.12,90,87,0
+fifo_v3,C0,timeout (600 s),,,,,
+fifo_v3,R,ok,219,198.93,92,55,3
+fifo_v3,R+F,ok,98,122.28,92,43,0
+fifo_v3,R+F+X,ok,79,100.0,92,43,0
+fifo_v3,RR,timeout (600 s),,,,,
+fifo_v3,RR+F+X,ok,198,213.86,92,77,0
+id_queue,C0,timeout (600 s),,,,,
+id_queue,R,ok,422,295.79,81,44,4
+id_queue,R+F,ok,209,172.39,81,21,0
+id_queue,R+F+X,ok,171,153.05,81,21,0
+id_queue,RR,timeout (600 s),,,,,
+id_queue,RR+F+X,ok,721,476.88,81,65,26
+lfsr,C0,timeout (600 s),,,,,
+lfsr,R,ok,27,54.39,98,48,1
+lfsr,R+F,ok,11,38.04,98,48,0
+lfsr,R+F+X,ok,11,37.14,98,48,0
+lfsr,RR,ok,35,62.31,98,75,1
+lfsr,RR+F+X,ok,17,46.91,98,75,0
+plru_tree,C0,timeout (600 s),,,,,
+plru_tree,R,ok,13,20.75,64,31,0
+plru_tree,R+F,ok,5,17.36,64,28,0
+plru_tree,R+F+X,ok,5,17.18,64,28,0
+plru_tree,RR,ok,16,22.55,64,38,0
+plru_tree,RR+F+X,ok,8,19.06,64,36,0
+rr_arb_tree,C0,timeout (600 s),,,,,
+rr_arb_tree,R,ok,490,434.0,91,65,16
+rr_arb_tree,R+F,ok,318,305.09,91,65,9
+rr_arb_tree,R+F+X,ok,99,150.09,91,65,8
+rr_arb_tree,RR,timeout (600 s),,,,,
+rr_arb_tree,RR+F+X,ok,192,230.74,91,65,18
+spill_register,C0,timeout (600 s),,,,,
+spill_register,R,ok,214,240.73,100,72,7
+spill_register,R+F,ok,74,106.35,100,69,5
+spill_register,R+F+X,ok,63,95.49,100,69,3
+spill_register,RR,timeout (600 s),,,,,
+spill_register,RR+F+X,ok,647,511.49,100,100,3

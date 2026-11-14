@@ -1,0 +1,788 @@
+{
+ "counter/L0": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"cnt == 4'd0\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"cnt == 4'd9\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"en\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|-&gt; P0)\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/counter/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (cnt == 4'b1001 && en ##1 1'b1 |-> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##1 cnt == 4'b1001 ##1 1'b1 |-> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##1 cnt == 4'b1001 ##1 1'b1 |-> cnt == 4'b0)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst ##1 1'b1 |-> cnt == 4'b0)"
+  ]
+ },
+ "counter/L0+roles": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"cnt == 4'd0\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"cnt == 4'd9\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"en\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/counter/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (cnt == 4'b1001 && en |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##4 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst |=> cnt == 4'b0)"
+  ]
+ },
+ "counter/rel": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"cnt == 4'd0\" loc=\"a, c, dt, 2, 3\" origin=\"rtl\"/>\n        <prop exp=\"cnt == 4'd9\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"en\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"wrap == (en &amp;&amp; (cnt == 4'd9))\" loc=\"c, 5\" origin=\"rtl-relation\"/>\n        <prop exp=\"cnt == ($past(((cnt == 4'd9) ? 4'd0 : (cnt + 4'd1)), 1) &amp; 4'd15)\" loc=\"c, 7\" origin=\"rtl-relation\"/>\n        <prop exp=\"$stable(cnt)\" loc=\"c, 7\" origin=\"rtl-relation\"/>\n        <prop exp=\"wrap\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <prop exp=\"!wrap\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|-&gt; P0(1))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({$fell(rst)}|-&gt; P0(3))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({!rst}|-&gt; P0(5))\"/>\n        <template dtLimits=\"1D,3W,3A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(7))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/counter/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (!rst |-> wrap == (en && cnt == 4'b1001))",
+    "L2",
+    ""
+   ],
+   [
+    "always (!(cnt == 4'b1001) |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (en |=> cnt == ($past((cnt == 4'b1001 ? 4'b0 : cnt + 4'b1)) & 4'b1111))",
+    "L1",
+    ""
+   ],
+   [
+    "always (!en |=> $stable(cnt))",
+    "L1",
+    ""
+   ],
+   [
+    "always (!en |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(cnt == 4'b1001) && !en ##1 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 && en |-> wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 && en |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always ($fell(rst) |-> cnt == 4'b0)",
+    "L2",
+    ""
+   ],
+   [
+    "always (cnt == 4'b0 ##4 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b0 ##3 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##1 cnt == 4'b1001 |-> wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##1 cnt == 4'b1001 |-> wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b0 ##1 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##4 cnt == 4'b1001 |-> wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!en ##4 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b0 ##2 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##4 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##2 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ],
+   [
+    "always (cnt == 4'b1001 ##3 1'b1 |-> !wrap)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst ##1 1'b1 |-> !wrap)",
+   "always (rst |=> $stable(cnt))",
+   "always (rst |=> cnt == 4'b0)"
+  ]
+ },
+ "counter/deep": {
+  "status": "ok",
+  "configs": {
+   "cut/config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"cnt == 4'd0\" loc=\"a, c, dt, 2, 7, 8\" origin=\"rtl\"/>\n        <prop exp=\"cnt == 4'd9\" loc=\"a, c, dt, 2, 7, 8\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/cut/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template exp=\"G({P0(8)} |-&gt; P1(7) W P2(8))\"/>\n        <template exp=\"G({P0(8)} |-&gt; !P1(8) W P2(8))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n",
+   "full/config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"cnt == 4'd0\" loc=\"a, c, dt, 2, 7, 8, 9\" origin=\"rtl\"/>\n        <prop exp=\"cnt == 4'd9\" loc=\"a, c, dt, 2, 7, 8, 9\" origin=\"rtl\"/>\n        <prop exp=\"en\" loc=\"a, dt, 7, 8, 10\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/full/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <template exp=\"G({P0(10) &amp; P1(9)} |=&gt; !P1(9) W P2(8))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/counter/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/full/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/full/info.json', '--deadline', '<D>']",
+   "['<HARM>/build-mac/harm', '--vcd', '<WORK>/cut/traces/0000_trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/cut/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/cut/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (cnt == 4'b1001 && en |=> cnt == 4'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (en and cnt == 4'b0 |=> !(cnt == 4'b0) until cnt == 4'b1001)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!en ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (cnt == 4'b1001 ##1 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (en and cnt == 4'b0 |=> !(cnt == 4'b0) until en)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (en and cnt == 4'b1001 |=> !(cnt == 4'b1001) until en)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!en ##4 cnt == 4'b1001 |=> cnt == 4'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (cnt == 4'b1001 |-> cnt == 4'b1001 until cnt == 4'b0)",
+    "L0",
+    "cut"
+   ]
+  ],
+  "dropped": [
+   "always (rst |=> cnt == 4'b0)"
+  ]
+ },
+ "fsm/L0": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"go\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd0\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd1\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd2\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <prop exp=\"stop\" loc=\"a, c, dt\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|-&gt; P0)\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/fsm/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (!(state == 2'b1) && !go ##1 1'b1 |-> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop && state == 2'b1 ##1 1'b1 |-> state == 2'b1)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) && stop ##1 1'b1 |-> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) ##1 1'b1 |-> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) ##1 1'b1 |-> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) && stop ##1 1'b1 |-> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) && stop ##1 1'b1 |-> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##2 !(state == 2'b0) && stop ##1 1'b1 |-> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) && stop ##1 1'b1 |-> state == 2'b10)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst ##1 1'b1 |-> state == 2'b0)"
+  ]
+ },
+ "fsm/L0+roles": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"go\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd0\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd1\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd2\" loc=\"a, c, dt, 2\" origin=\"rtl\"/>\n        <prop exp=\"stop\" loc=\"a, dt\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/fsm/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (!(state == 2'b1) && !go |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop && state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##1 !(state == 2'b10) ##1 !(state == 2'b10) && !stop ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (go ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) ##1 stop ##1 !stop ##1 state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) && stop ##1 !(state == 2'b10) ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##4 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst |=> state == 2'b0)"
+  ]
+ },
+ "fsm/rel": {
+  "status": "ok",
+  "configs": {
+   "config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"go\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd0\" loc=\"a, c, dt, 2, 3, 7\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd1\" loc=\"a, c, dt, 2, 7\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd2\" loc=\"a, c, dt, 2, 7\" origin=\"rtl\"/>\n        <prop exp=\"stop\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"busy == (state == 2'd1)\" loc=\"c, 5\" origin=\"rtl-relation\"/>\n        <prop exp=\"finished == (state == 2'd2)\" loc=\"c, 5\" origin=\"rtl-relation\"/>\n        <prop exp=\"$stable(state)\" loc=\"c, 7\" origin=\"rtl-relation\"/>\n        <prop exp=\"busy\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <prop exp=\"!busy\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <prop exp=\"finished\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <prop exp=\"!finished\" loc=\"a, c, dt, 1\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|-&gt; P0(1))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({$fell(rst)}|-&gt; P0(3))\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({!rst}|-&gt; P0(5))\"/>\n        <template dtLimits=\"1D,3W,3A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(7))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/fsm/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (!rst |-> busy == (state == 2'b1))",
+    "L2",
+    ""
+   ],
+   [
+    "always (!rst |-> finished == (state == 2'b10))",
+    "L2",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) |-> !busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) |-> busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) && !go && !stop |=> $stable(state))",
+    "L1",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) && !go |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) && !go ##1 1'b1 |-> !busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) |-> busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) && !go ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) && !(state == 2'b10) && !go |=> $stable(state))",
+    "L1",
+    ""
+   ],
+   [
+    "always (!stop && state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) && !stop ##2 !(state == 2'b1) ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) |-> busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) && stop ##1 1'b1 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && stop ##1 !(state == 2'b0) |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) ##1 1'b1 |-> !busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) ##1 1'b1 |-> !busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) && stop ##1 1'b1 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) ##1 !go ##1 !(state == 2'b1) ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##1 !(state == 2'b10) ##1 !(state == 2'b10) && !stop ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (go ##1 !go ##1 !(state == 2'b1) ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (go ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) ##2 1'b1 |-> !finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) ##1 stop ##1 !stop ##1 state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    ""
+   ],
+   [
+    "always ($fell(rst) |-> state == 2'b0)",
+    "L2",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) && stop ##1 1'b1 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) && stop ##1 !(state == 2'b10) ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) |-> busy)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##4 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##2 !(state == 2'b0) && stop ##1 1'b1 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (stop ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) && stop ##1 1'b1 |-> finished)",
+    "L0",
+    ""
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    ""
+   ]
+  ],
+  "dropped": [
+   "always (rst ##1 1'b1 |-> !busy)",
+   "always (rst ##1 1'b1 |-> !finished)",
+   "always (rst |=> $stable(state))",
+   "always (rst |=> state == 2'b0)"
+  ]
+ },
+ "fsm/deep": {
+  "status": "ok",
+  "configs": {
+   "cut/config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"state == 2'd0\" loc=\"a, c, dt, 2, 7, 8\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd1\" loc=\"a, c, dt, 2, 7, 8\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd2\" loc=\"a, c, dt, 2, 7, 8\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/cut/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template exp=\"G({P0(8)} |-&gt; P1(7) W P2(8))\"/>\n        <template exp=\"G({P0(8)} |-&gt; !P1(8) W P2(8))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n",
+   "full/config.xml": "<harm>\n    <!-- written by harm-coi --emit-config (H10): RTL predicates with origin=\"rtl\" -->\n    <context name=\"default\">\n        <prop exp=\"go\" loc=\"a, dt, 7, 8, 10\" origin=\"rtl\"/>\n        <prop exp=\"rst\" loc=\"a, dt\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd0\" loc=\"a, c, dt, 2, 7, 8, 9\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd1\" loc=\"a, c, dt, 2, 7, 8, 9\" origin=\"rtl\"/>\n        <prop exp=\"state == 2'd2\" loc=\"a, c, dt, 2, 7, 8, 9\" origin=\"rtl\"/>\n        <prop exp=\"stop\" loc=\"a, dt, 7, 8, 10\" origin=\"rtl\"/>\n        <coi file=\"<WORK>/full/coi.json\" mode=\"filter\" depth=\"exact\"/>\n        <template dtLimits=\"5D,3W,15A,-0.1E,U\" exp=\"G({..#1&amp;..}|=&gt; P0(2))\"/>\n        <template exp=\"G({P0(10) &amp; P1(9)} |=&gt; !P1(9) W P2(8))\"/>\n        <sort name=\"causality\" exp=\"1-afct/traceLength\"/>\n        <sort name=\"frequency\" exp=\"atct/traceLength\"/>\n    </context>\n</harm>\n"
+  },
+  "commands": [
+   "['<HARM>/build-mac/harm', '--vcd', '<HARM>/tests/input/coi/fsm/trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/full/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/full/info.json', '--deadline', '<D>']",
+   "['<HARM>/build-mac/harm', '--vcd', '<WORK>/cut/traces/0000_trace.vcd', '--clk', 'clk', '--vcd-ss', 'tb::dut', '--conf', '<WORK>/cut/config.xml', '--reduce', 'implies', '--atom-premises', '--sva', '--max-threads', '2', '--reset', 'rst', '--psilent', '--isilent', '--dont-print-ass', '--dump-assertion-info', '<WORK>/cut/info.json', '--deadline', '<D>']"
+  ],
+  "candidates": [
+   [
+    "always (!(state == 2'b1) && !go |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!stop && state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b0 |=> !(state == 2'b0) until state == 2'b1)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b0 |=> !(state == 2'b0) until stop)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b10) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b0 |=> !(state == 2'b0) until state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (state == 2'b1 ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b0) && !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop and state == 2'b1 |=> !(state == 2'b1) until state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!stop ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop and state == 2'b1 |=> !(state == 2'b1) until go)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b0) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop ##1 !(state == 2'b10) ##1 !(state == 2'b10) && !stop ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b10) ##1 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) ##1 stop ##1 !stop ##1 state == 2'b1 |=> state == 2'b1)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b1) ##1 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (!(state == 2'b10) ##1 !(state == 2'b10) && stop ##1 !(state == 2'b10) ##2 !(state == 2'b1) |=> state == 2'b0)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b10 |=> !(state == 2'b10) until go)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop and state == 2'b10 |=> !(state == 2'b10) until go)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (state == 2'b10 ##4 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (state == 2'b10 ##2 !(state == 2'b0) && stop |=> state == 2'b10)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b10 |=> !(state == 2'b10) until state == 2'b1)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop and state == 2'b10 |=> !(state == 2'b10) until state == 2'b1)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (go and state == 2'b10 |=> !(state == 2'b10) until stop)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (stop and state == 2'b10 |=> !(state == 2'b10) until stop)",
+    "L0",
+    "full"
+   ],
+   [
+    "always (state == 2'b0 |-> state == 2'b0 until state == 2'b1)",
+    "L0",
+    "cut"
+   ],
+   [
+    "always (state == 2'b10 |-> state == 2'b10 until state == 2'b0)",
+    "L0",
+    "cut"
+   ]
+  ],
+  "dropped": [
+   "always (rst |=> state == 2'b0)"
+  ]
+ }
+}

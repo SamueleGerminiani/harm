@@ -197,6 +197,10 @@ if(HARM_COI_OK)
     add_test(NAME h45_unit
         COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/eval/mutants/tests)
     set_tests_properties(h45_unit PROPERTIES LABELS coi ENVIRONMENT "HARM_BIN=$<TARGET_FILE:harm>")
+    # H46-hint-levels-eval, T1-T5: the hint-level study's scripts (pytest; T4 runs only with HINT_LEVELS_PREPARED)
+    add_test(NAME h46_unit
+        COMMAND ${HARM_COI_PYTHON} -m pytest -q -p no:cacheprovider ${CMAKE_SOURCE_DIR}/eval/hint-levels/tests)
+    set_tests_properties(h46_unit PROPERTIES LABELS coi ENVIRONMENT "HARM_BIN=$<TARGET_FILE:harm>")
     # yosys with read_slang (>= 0.67; third_party/install_yosys.sh) for the validation cross-check
     set(HARM_COI_YOSYS ${HARM_YOSYS})
     set(HARM_COI_XCHECK FALSE)

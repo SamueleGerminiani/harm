@@ -1,0 +1,61 @@
+design,config,status,assertions,wall_s
+aes_cipher,C0,timeout (600 s),,
+aes_cipher,R,timeout (600 s),,
+aes_cipher,R+F,timeout (600 s),,
+aes_cipher,R+F+X,timeout (600 s),,
+aes_cipher,RR,timeout (600 s),,
+aes_cipher,RR+F+X,timeout (600 s),,
+ethernet_smii_txrx,C0,timeout (600 s),,
+ethernet_smii_txrx,R,ok,326,6.05
+ethernet_smii_txrx,R+F,ok,86,1.61
+ethernet_smii_txrx,R+F+X,ok,84,2.02
+ethernet_smii_txrx,RR,ok,821,13.12
+ethernet_smii_txrx,RR+F+X,ok,324,13.41
+gaussian_noise_generator,C0,timeout (600 s),,
+gaussian_noise_generator,R,ok,17014,111.72
+gaussian_noise_generator,R+F,ok,904,2.7
+gaussian_noise_generator,R+F+X,ok,902,59.03
+gaussian_noise_generator,RR,ok,32993,149.06
+gaussian_noise_generator,RR+F+X,timeout (600 s),,
+ima_adpcm_decoder,C0,timeout (600 s),,
+ima_adpcm_decoder,R,ok,2636,36.52
+ima_adpcm_decoder,R+F,ok,799,17.09
+ima_adpcm_decoder,R+F+X,ok,790,56.62
+ima_adpcm_decoder,RR,ok,4603,44.64
+ima_adpcm_decoder,RR+F+X,ok,1397,174.53
+ima_adpcm_encoder,C0,timeout (600 s),,
+ima_adpcm_encoder,R,ok,3259,13.28
+ima_adpcm_encoder,R+F,ok,1440,6.3
+ima_adpcm_encoder,R+F+X,ok,809,39.12
+ima_adpcm_encoder,RR,ok,4026,14.18
+ima_adpcm_encoder,RR+F+X,ok,2004,93.19
+sha3,C0,timeout (600 s),,
+sha3,R,ok,1496,3.35
+sha3,R+F,ok,402,0.92
+sha3,R+F+X,ok,398,1.3
+sha3,RR,ok,6110,8.53
+sha3,RR+F+X,ok,2290,8.74
+srdy-drdy-library,C0,timeout (600 s),,
+srdy-drdy-library,R,ok,479,1.45
+srdy-drdy-library,R+F,ok,316,1.11
+srdy-drdy-library,R+F+X,ok,277,1.99
+srdy-drdy-library,RR,ok,5630,16.31
+srdy-drdy-library,RR+F+X,ok,2550,16.93
+uart,C0,timeout (600 s),,
+uart,R,ok,1162,1.13
+uart,R+F,ok,461,0.36
+uart,R+F+X,ok,410,0.76
+uart,RR,ok,3946,7.39
+uart,RR+F+X,ok,1127,3.41
+uart_to_bus,C0,ok,58400,293.19
+uart_to_bus,R,ok,32612,17.29
+uart_to_bus,R+F,ok,12649,4.09
+uart_to_bus,R+F+X,ok,8837,95.36
+uart_to_bus,RR,ok,67714,57.13
+uart_to_bus,RR+F+X,ok,17741,156.49
+video_stream_scaler,C0,timeout (600 s),,
+video_stream_scaler,R,ok,12759,6.38
+video_stream_scaler,R+F,ok,4589,2.07
+video_stream_scaler,R+F+X,ok,3327,9.4
+video_stream_scaler,RR,ok,18135,11.77
+video_stream_scaler,RR+F+X,ok,5769,26.89
