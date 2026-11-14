@@ -45,6 +45,9 @@
    Neutral names throughout: no internal milestone or decision codes, no private paths or hostnames (HARM's public
    face).
 
+## Checked with the trivergence project
+Its lead confirmed on 2026-11-14 that publishing these definitions here, and the release after it, is no problem.
+
 ## Not added
 - Nothing in `src/` or `tools/harm-coi/`.
 - None of the portfolio's other code: its classifier, prover, caches, containers, other miners, or trivergence
