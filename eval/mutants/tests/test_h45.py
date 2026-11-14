@@ -356,3 +356,23 @@ def test_t6_watchdog_plusarg(tmp_path: Path) -> None:
 
     assert last(traces.run(exe, 101, 200, tmp_path / "a.vcd", plusargs=["+watchdog=500"])) <= 200 + 500 + 10
     assert 200 + 500 + 10 < last(traces.run(exe, 101, 200, tmp_path / "b.vcd")) <= 200 + 10000 + 10
+
+
+# T16 (miner-portfolio HL1's RQ3 amendment 2): two more entries, lossy_valid_to_stream and stream_delay, where
+# harm-deep's long-range relations between 1-bit state bits can matter. Each builds, its golden trace is the same on two
+# runs of a seed and differs between seeds, and its directed phase stays inside the watchdog margin.
+@needs_verilator
+@pytest.mark.parametrize("name", ["lossy_valid_to_stream", "stream_delay"])
+def test_t16_rq3_entries(tmp_path: Path, name: str) -> None:
+    base, entries = _corpus()
+    d = entries[name]
+    if not (base / d["files"][0]).exists():
+        pytest.skip("PULP common_cells not fetched (eval/mutants/fetch.sh)")
+    assert d["top"] == f"h45_{name}" and d["reset"] == "!rst_ni" and d["cycles"] == 5000
+    exe = _build(d, base, tmp_path / "b")
+    a = _vcd_body(traces.run(exe, 101, 500, tmp_path / "a.vcd"))
+    assert a == _vcd_body(traces.run(exe, 101, 500, tmp_path / "b.vcd"))
+    assert a != _vcd_body(traces.run(exe, 102, 500, tmp_path / "c.vcd"))
+    out = subprocess.run([str(exe), "+seed=101", "+cycles=500", f"+vcd={tmp_path / 'd.vcd'}"], capture_output=True,
+                         text=True, check=True).stdout
+    assert "H45 watchdog" not in out
