@@ -356,5 +356,46 @@
    "corpus"
   ],
   "reset": "!rst_ni"
+ },
+ {
+  "name": "lossy_valid_to_stream",
+  "top": "h45_lossy_valid_to_stream",
+  "files": [
+   "../../build/h45/common_cells/src/lossy_valid_to_stream.sv",
+   "corpus/lossy_valid_to_stream_wrap.sv"
+  ],
+  "tb": "corpus/lossy_valid_to_stream_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
+ },
+ {
+  "name": "stream_delay",
+  "top": "h45_stream_delay",
+  "files": [
+   "../../build/h45/common_cells/src/counter.sv",
+   "../../build/h45/common_cells/src/delta_counter.sv",
+   "../../build/h45/common_cells/src/lfsr_16bit.sv",
+   "../../build/h45/common_cells/src/stream_delay.sv",
+   "corpus/stream_delay_wrap.sv"
+  ],
+  "tb": "corpus/stream_delay_tb.sv",
+  "clk": "clk_i",
+  "cycles": 5000,
+  "defines": [
+   "ASSERTS_OFF"
+  ],
+  "includes": [
+   "../../build/h45/common_cells/include",
+   "corpus"
+  ],
+  "reset": "!rst_ni"
  }
 ]
