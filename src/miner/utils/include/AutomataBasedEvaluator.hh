@@ -80,7 +80,15 @@ private:
 
   void initCache();
 
+  /// frees the caches (their rows: the number of threads when they were allocated)
+  void freeCache();
+
+  /// the formula reads the new trace; the caches are sized to its length and the evaluation starts again
+  /// (H45: a fault trace may be longer or shorter than the mining trace, and has its own cuts)
   void changeTrace(const harm::TracePtr &trace) override;
+
+  ///rows of _cacheParallel and _sereShiftCacheParallel (l1Constants::MAX_THREADS when allocated)
+  size_t _cacheRows = 0;
 
   ///shift between the current time and the time of the sere match
   size_t *_sereShiftCache = nullptr;

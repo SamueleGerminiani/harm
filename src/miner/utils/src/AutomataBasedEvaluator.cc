@@ -67,38 +67,43 @@ AutomataBasedEvaluator::AutomataBasedEvaluator(
 }
 
 AutomataBasedEvaluator::~AutomataBasedEvaluator() {
-  // Free _cacheParallel
-  if (_cacheParallel) {
-    for (size_t i = 0; i < l1Constants::MAX_THREADS; i++) {
-      delete[] _cacheParallel[i]; // Delete each row
-    }
-    delete[] _cacheParallel;  // Delete the array of pointers
-    _cacheParallel = nullptr; // Set to nullptr for safety
-  }
-
-  // Free _cache
-  delete[] _cache;
-  _cache = nullptr; // Set to nullptr for safety
-
-  // Free _sereShiftCache
-  delete[] _sereShiftCache;
-  _sereShiftCache = nullptr; // Set to nullptr for safety
-
-  // Free _sereShiftCacheParallel
-  if (_sereShiftCacheParallel) {
-    for (size_t i = 0; i < l1Constants::MAX_THREADS; i++) {
-      delete[] _sereShiftCacheParallel[i]; // Delete each row
-    }
-    delete[] _sereShiftCacheParallel;  // Delete the array of pointers
-    _sereShiftCacheParallel = nullptr; // Set to nullptr for safety
-  }
-
+  freeCache();
   delete _automaton;
+}
+
+void AutomataBasedEvaluator::freeCache() {
+  if (_cacheParallel) {
+    for (size_t i = 0; i < _cacheRows; i++) {
+      delete[] _cacheParallel[i];
+    }
+    delete[] _cacheParallel;
+    _cacheParallel = nullptr;
+  }
+  delete[] _cache;
+  _cache = nullptr;
+  delete[] _sereShiftCache;
+  _sereShiftCache = nullptr;
+  if (_sereShiftCacheParallel) {
+    for (size_t i = 0; i < _cacheRows; i++) {
+      delete[] _sereShiftCacheParallel[i];
+    }
+    delete[] _sereShiftCacheParallel;
+    _sereShiftCacheParallel = nullptr;
+  }
+  _cacheRows = 0;
 }
 
 void AutomataBasedEvaluator::changeTrace(
     const harm::TracePtr &trace) {
   expression::changeTrace(_formula, trace);
+  // H45: the caches and the cuts are the trace's; before, they stayed those of the mining trace, so a fault trace
+  // of another length was read past its end (a crash) or only up to the mining trace's length
+  if (trace != _trace) {
+    freeCache();
+    _trace = trace;
+    initCache();
+  }
+  _inCache = false;
 }
 
 struct LinkedEntry {
@@ -637,6 +642,7 @@ void AutomataBasedEvaluator::applySvaTraceEnd(const Range &traceRange) {
 }
 
 void AutomataBasedEvaluator::initCache() {
+  _cacheRows = l1Constants::MAX_THREADS;
   _cacheParallel = new Trinary *[l1Constants::MAX_THREADS];
   for (size_t i = 0; i < l1Constants::MAX_THREADS; i++) {
     _cacheParallel[i] = new Trinary[_trace->getLength()];

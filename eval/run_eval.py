@@ -25,7 +25,8 @@ fault coverage when the design has faulty traces (--fd). These are measurements,
 Manifest (JSON list), one entry per design; paths relative to the repository root:
   {"name", "trace": {"vcd" | "csv" | "csv_dir": path, "clk", "scope", "recursion"},
    "config": path (optional: else --generate-config), "args": [extra HARM args] (optional),
-   "faults": dir (optional), "rtl": {"files": [...], "top"} (optional: enables C3-C7)}
+   "faults": dir (optional), "rtl": {"files": [...], "top", "defines", "includes"} (optional: enables C3-C7;
+   defines and includes are optional)}
 
 Usage: run_eval.py <manifest.json> <out-dir> [--harm build/harm] [--python <py with harm-coi>]
                    [--configs C0,C1,...] [--check <previous results.csv>]
@@ -111,6 +112,12 @@ def run_harm(harm, args, d, timeout):
     return row
 
 
+def rtl_opts(rtl):
+    """H45: the RTL's defines and include folders (optional), for harm-coi."""
+    return ([x for v in rtl.get("defines", []) for x in ("--define", v)]
+            + [x for i in rtl.get("includes", []) for x in ("--include", str(ROOT / i))])
+
+
 def configs_for(design, harm, py, d):
     """{name: (config xml text, extra args)}"""
     t = design.get("trace", {})
@@ -128,9 +135,9 @@ def configs_for(design, harm, py, d):
     if rtl and py:
         coi = Path(d) / "coi.json"
         emitted = Path(d) / "emitted.xml"
-        vcd = t.get("vcd")
+        vcd = t.get("vcd") or t.get("coi_vcd")  # H45: with a trace directory, harm-coi reads one of its traces
         r = subprocess.run([py, "-m", "harm_coi", "--top", rtl["top"],
-                            "--files", *[str(ROOT / f) for f in rtl["files"]],
+                            "--files", *[str(ROOT / f) for f in rtl["files"]], *rtl_opts(rtl),
                             "--vcd-scope", t["scope"], "--vcd-recursion", str(t.get("recursion", 0)),
                             *(["--vcd", str(ROOT / vcd)] if vcd else []),
                             "--emit-config", str(emitted), "-o", str(coi)],
@@ -153,7 +160,7 @@ def configs_for(design, harm, py, d):
             # H44: the relations from the RTL (harm-coi --hints adds them by default)
             rel_coi, rel_xml = Path(d) / "coi_rel.json", Path(d) / "emitted_rel.xml"
             r2 = subprocess.run([py, "-m", "harm_coi", "--top", rtl["top"],
-                                 "--files", *[str(ROOT / f) for f in rtl["files"]],
+                                 "--files", *[str(ROOT / f) for f in rtl["files"]], *rtl_opts(rtl),
                                  "--vcd-scope", t["scope"], "--vcd-recursion", str(t.get("recursion", 0)),
                                  *(["--vcd", str(ROOT / vcd)] if vcd else []),
                                  "--hints", str(Path(d) / "hints.json"),
