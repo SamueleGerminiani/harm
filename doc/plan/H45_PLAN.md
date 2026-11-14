@@ -135,4 +135,4 @@ T9 several mining seeds and held-out seeds: a kill on held-out seed 102 only is 
 golden seed makes a false positive; T10 `--reset` is passed and a reset-antecedent assertion is mined on the counter.
 
 Release: after sign-off, merge to dev and release HARM v4.1 (dev, the H44 parser fix, the `faults` field), whose
-commit the paper cites (trivergence D-066 condition).
+commit the paper cites (a condition of trivergence, 2026-11-13).

@@ -1618,3 +1618,91 @@ CR1_FINDINGS.md); fixing all four was the user's decision (2026-10-30). Branch `
 | T4 | uart_to_bus, the relation alone with `--fd` (the failing case) | Antlr parse error | 2,905 assertions, 2 of 5 faults |
 | T5 | `ctest -j3` on macOS at `0b7a45f` (harm-coi's pytest included) | | 285 of 285, 1,915 s |
 | T6 | on the fixtures, R equals C6 and R+F+X equals C7, run for run (`56b0677`) | | equal |
+
+## H45-mutant-eval: bug finding on open designs with classical mutants, for the HARM v4 paper (2026-11-13 to 2026-11-14; owner the portfolio's Mac session)
+- **Why:** the HARM v4 paper needs bug-finding numbers on designs outside trivergence's corpora (its overlap check:
+  PULP common_cells only, OpenTitan left out).
+- **Plan:** H45_PLAN.md:
+  - approved by the user 2026-11-13 (Q1-Q3 as recommended, Q4 no);
+  - the per-assertion fault results (approved 2026-11-13);
+  - the amendment on verification-quality traces, after which the hint-level study moves to miner-portfolio's
+    HL1-hint-levels (approved 2026-11-13: "approve both").
+- **Changes for HL1's RQ3,** approved in miner-portfolio's HL1_PLAN.md and not in H45_PLAN.md: the depth variants, the
+  `+watchdog=` plusarg, and the corpus entries lossy_valid_to_stream and stream_delay.
+
+**Change:**
+1. **HARM:**
+   - `--dump-assertion-info` gives, with `--fd`, each assertion's fault traces (`faults`, sorted) and `faultsComplete`
+     (true with `--find-min-subset`).
+   - An assertion switched to a fault trace evaluates it over that trace's own length (`AutomataBasedEvaluator::
+     changeTrace`, 1339b67). Before, a fault trace of another length than the mining trace was read past its end
+     (a bus error on the PULP corpus) or only up to the mining trace's length.
+2. **`eval/mutants/`:**
+   - the mutator (pyslang, source level: stuck-at, inversion, operator, condition, constant; sites in macro
+     expansions skipped);
+   - simulation and activation (Verilator; the strongest activation over the held-out seeds);
+   - scoring (a failure on any held-out golden trace is a false positive; a kill on any seed counts);
+   - coverage (`coverage_report.py`);
+   - the driver (`mutants_eval.py`, over run_eval.py's configurations).
+3. **The corpus:** 12 PULP common_cells v1.40.0 designs (pinned, `fetch.sh`) plus 8 depth variants (`<design>_d<n>`,
+   one more define; the base golden traces byte-identical). Each has a wrapper with fixed parameters and a testbench
+   written for this evaluation: directed tests from reset, then a constrained-random phase.
+   - A shared watchdog (`tb_common.svh`, `+watchdog=`, default 10,000 cycles) ends a run that a mutant stalls.
+   - `traces.run` has a 600 s wall-clock limit, and a mutant that reaches it is set aside as hung and replaced like an
+     uncompiled one.
+   - The cause: on exp_backoff, a stuck counter bit made a directed test wait forever. Four simulations wrote 216 GB of
+     VCD on the Mac before they were stopped and deleted.
+4. **Results:** `eval/results/mutants-v4/results.md` and `.csv`, HARM's configurations on the 10 base designs
+   (saturn).
+
+**Tests** (written first, committed failing; `eval/mutants/tests/test_h45.py`, run by ctest):
+
+| # | Test | Failing commit | Passing in |
+|---|---|---|---|
+| T1-T6 | mutator sites and kinds, every mutant compiles, stuck-at semantics, sampling, activation, scoring, run_eval unchanged | `2b0a179` | `a1f6281` |
+| T7 | per-assertion `faults` on a CSV fixture with three faulty traces; their union is HARM's covered set | `2b0a179` | `72c45a5` |
+| T8-T10 | coverage of the design, several mining and held-out seeds, `--reset` and a reset-fixed assertion | `9bda26e` | `61c6147` |
+| T11 | `--fd` with fault traces of another length than the mining trace | `3b64344` | `1339b67` |
+| T12 | a mutant that stalls the testbench ends (watchdog; the run's wall-clock limit) | `337236a` | `026468d` |
+| T5-T6 (variants) | each depth variant builds with its define; the base goldens' sha256 unchanged; `+watchdog=` | `04898fa` | `d3ba5d9` |
+| T16 | lossy_valid_to_stream and stream_delay build; golden traces deterministic per seed, different between seeds; the directed phase ends before the watchdog | `2f81b94` | `16011a2` |
+
+| | Mac |
+|---|---|
+| `eval/mutants/tests` (pytest) at `16011a2` | 22 passed, 1 skipped without `HARM_BIN`; T10 passes with it |
+| `ctest -j3` on macOS at `16011a2` (harm-coi's pytest included) | 286 of 288, 1,908 s. Two failures, neither in H45's code (below) |
+
+- **`h45_unit`:** ctest puts `third_party/verilator/bin` first on PATH. In this worktree `third_party` was a link to
+  another checkout's built tools (for z3), whose Verilator was built against an older macOS SDK and no longer compiles
+  (`__API_DEPRECATED_MSG0`). The same tests pass with Verilator 5.034 from PATH (22 passed, and T10 with `HARM_BIN`).
+  In a checkout with its own `third_party` this does not arise.
+- **`h14_doc_coverage`:** "report: milestone H44 not found". `dev` fails the same way, because H44 was merged without
+  its report entry. **To do before the merge:** H44 and H45 in the report (the milestone table, the evaluation
+  section), and the PDF rebuilt, as H43 did.
+
+**Runs:**
+- **Configurations:** C0, R, R+F, R+F+X, RR, RR+F+X on the 10 base designs (saturn, `h45-tools:1` = samger/harm:v4
+  plus Verilator 5.034, the Mac's version; the base golden traces built on Linux are byte-identical to the Mac's).
+  All 60 runs ended; C0 timed out on 10 of 10 and RR on 5.
+- **Result:** RR+F+X kills 718 of 839 activated mutants (86%) against R+F+X's 464 (55%).
+- **The 5,000-cycle pilot of 2026-11-13** (one seed per trace) had many false positives, for example 376 assertions of
+  R+F+X failing on golden seed 2. It led to the amendment, and its numbers are not used.
+
+**Coverage** (all 20 entries, mining seeds 1-5; in HL1's results):
+- Line coverage is below 90% only on code that cannot run with the corpus parameters:
+  - lfsr: the cipher-layer functions, `CipherLayers` 0;
+  - id_queue: the `FULL_BW` branch, `FULL_BW` 0;
+  - stream_delay: the `FixedDelay == 1` and `StallRandom` branches.
+- Toggle coverage: exp_backoff 63% (the high counter bits; 93% at d14) and stream_delay 67%.
+
+**Found and not fixed** (the user, 2026-11-14: a proposed amendment for these was dropped):
+- **`--fd` and the deadline:** `--fd` checks the fault traces on one thread (`Qualifier::fbqUsingFaultyTraces` sets
+  `MAX_THREADS = 1`) and does not look at `--deadline`. On larger designs (a UART loopback from PULP apb_uart_sv, PULP
+  axi's AXI-Lite to APB bridge, common_cells' cdc_reset_ctrlr), HARM was killed by the caller's hard limit with no
+  output.
+- **Non-ASCII sources:** `mutate.apply` cuts the source as a Python string at pyslang's byte offsets, so in a file
+  with a non-ASCII character (the UART's licence header) every later edit lands off and no mutant compiles. No
+  corpus entry has such a character.
+
+**Release:** per the amendment, after sign-off this merges into `dev` and is released as HARM v4.1 (dev, H44's parser
+fix, the `faults` field, the `--fd` trace-length fix); the paper cites that commit (a condition of trivergence, 2026-11-13).
