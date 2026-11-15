@@ -1,4 +1,4 @@
-"""The hint-level study's scripts (eval/hint-levels, doc/plan/H46_PLAN.md): T1-T5.
+"""The hint-level study's scripts (eval/hint-levels, doc/plan/H46_PLAN.md, H47_PLAN.md): T1-T6.
 
 T2 compares the arms with the wrapper they were extracted from: tests/fixtures/adapter_reference.json holds, per
 harm-coi fixture and arm, the configuration files, HARM's command lines and the kept and dropped assertions that the
@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parents[1]
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 
-SCRIPTS = ("arms.py", "cut.py", "run_arms.py", "tables.py", "filter_check.py")
+SCRIPTS = ("arms.py", "cut.py", "run_arms.py", "tables.py", "filter_check.py", "sizes.py")
 FIXTURES = {"counter": "tests/input/coi/counter", "fsm": "tests/input/coi/fsm"}
 HARM_BIN = os.environ.get("HARM_BIN")
 needs_harm = pytest.mark.skipif(not HARM_BIN, reason="HARM_BIN not set (ctest sets it)")
@@ -145,3 +145,21 @@ def test_t5_tables() -> None:
     assert t["configs"]["assertllm2"]["R+F+X"] == {"finished": 9, "assertions": 15834}
     assert t["rq3"]["lossy_valid_to_stream"]["deep_only"] == 7
     assert t["filter"] == {"lost": 61, "gained": 2, "reset": 32, "delay": 20, "out_of_cone": 9}
+
+
+# T6: the design sizes of the letter's Table IV, and results/sizes.csv equal to sizes.py's output
+@pytest.mark.skipif(not (ROOT / "build" / "h45" / "common_cells").is_dir(), reason="common_cells not fetched")
+def test_t6_sizes(tmp_path: Path) -> None:
+    import sizes
+
+    out = tmp_path / "sizes.csv"
+    sizes.main([str(ROOT / "eval" / "mutants" / "corpus.json"), "--out", str(out)])
+    got = {r["design"]: r for r in csv.DictReader(open(out))}
+    table4 = {"spill_register": (5, 3, 91), "fall_through_register": (6, 3, 135), "fifo_v3": (6, 4, 99),
+              "rr_arb_tree": (6, 4, 273), "id_queue": (11, 8, 420), "lfsr": (3, 1, 225), "plru_tree": (3, 1, 62),
+              "delta_counter": (8, 2, 65), "exp_backoff": (4, 1, 44), "credit_counter": (5, 4, 35)}  # fmt: skip
+    for d, (i, o, loc) in table4.items():
+        assert (int(got[d]["inputs"]), int(got[d]["outputs"]), int(got[d]["loc"])) == (i, o, loc), d
+    assert sum(int(got[d]["loc"]) for d in table4) == 1449
+    assert len(got) == 20
+    assert list(csv.DictReader(open(HERE / "results" / "sizes.csv"))) == list(csv.DictReader(open(out)))
