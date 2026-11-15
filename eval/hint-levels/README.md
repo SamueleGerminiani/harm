@@ -12,7 +12,8 @@ those of `eval/run_eval.py`.
 
 | Arm | What HARM is given |
 |---|---|
-| `none` | HARM's own `--generate-config`: every trace signal, no RTL |
+| `none` | HARM's own `--generate-config`: every trace signal less those constant over the mining traces (parameters), no RTL |
+| `none-full` | `none` without the deadline and the time limit: mining and the fault check timed apart |
 | `L0` | `harm-coi` predicates and cones; one template `G({..#1&..} \|-> P0)` |
 | `L0+roles` | L0 with `--hints`: roles, placement, one template per target class (`\|->` combinational, `\|=>` registered) |
 | `rel` | L0+roles with `--relations`: `x == $past(e)`, `$stable(x)`, reset-value consequents and reset templates |
@@ -20,7 +21,7 @@ those of `eval/run_eval.py`.
 
 What all the arms share:
 - **HARM's arguments:** `--reduce implies --atom-premises --sva --reset <reset> --max-threads <n>`, and a deadline at
-  80% of the time left less 5 s.
+  80% of the time left less 5 s (none but `none-full`).
 - **Scoring:** `--fd <fault traces> --find-min-subset`. A kill is an assertion that holds on every held-out golden
   trace and fails on one of a mutant's traces. An assertion that fails on a golden trace is a false positive and
   kills nothing.
@@ -62,7 +63,8 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | `prepare` | traces (directed tests, then 5,000 random cycles), 100 mutants per design, activation | 2-3 h |
 | `configs` | HARM's six configurations on the 10 base designs, 600 s per run | 1.5 h |
 | `assertllm2` | the same configurations on AssertLLM2, without fault traces | 1.5 h |
-| `arms` | the five arms on the 10 base designs, deep 3 times, 3,600 s per run | 5 h |
+| `arms` | the arms L0 to deep on the 10 base designs, deep 3 times, 3,600 s per run | 5 h |
+| `none` | `none` on the 10 base designs, 3,600 s per run; `none-full`, one run at a time on every thread | 4 h; about a day |
 | `depth` | the 8 depth variants, L0+roles and deep | 2.5 h |
 | `deep` | the 4 designs where deep kills more, L0+roles and deep | 30 min |
 | `filter` | R and R+F, and the filter's lost kills | 40 min |
@@ -87,4 +89,5 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | `rq3.csv` | the four designs where deep kills more, every run, with the killed mutants' ids |
 | `rq3-depth.csv` | the depth variants, every run |
 | `filter.csv` | per design: kills by R and R+F, lost, gained, and the three causes |
+| `none.csv` | per design, `none` and `none-full`: status, assertions, kills, false positives, mining and fault-check times, the search done (consequents mined of the total), peak memory |
 | `sizes.csv` | per design: input and output ports (clock and reset included) and their bits; the non-blank, non-comment lines of the PULP files it compiles, submodules included, the corpus wrapper excluded |

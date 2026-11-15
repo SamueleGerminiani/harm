@@ -1,5 +1,7 @@
 #include <fstream>
+#include <future>
 #include <mutex>
+#include <thread>
 #include <algorithm>
 #include <chrono>
 #include <iomanip>
@@ -956,6 +958,25 @@ void Qualifier::fbqUsingFaultyTraces(
 
   progressBarPS.done(0);
 
+  // H48: the assertions are split into contiguous chunks, one per thread (--max-threads); each fault trace is parsed
+  // once (the VCD scanner is not reentrant: one parse at a time, the next one while the current trace is checked)
+  // and every chunk is checked on it in parallel. Each assertion's template is reused across the fault traces
+  // (changeTrace resets its caches). The fault lists are merged in the order of 'selected', as on one thread.
+  const size_t nThreads = std::max<size_t>(1, clc::maxThreads);
+  messageInfo("Fault check on " + std::to_string(nThreads) + " threads");
+  std::vector<TemplateImplicationPtr> templates;
+  templates.reserve(selected.size());
+  for (const AssertionPtr &a : selected) {
+    templates.push_back(aid_to_noCacheTemplates.at(a->_id));
+  }
+  std::vector<std::pair<size_t, size_t>> chunks;
+  for (size_t c = 0; c < nThreads; c++) {
+    size_t b = c * selected.size() / nThreads, e = (c + 1) * selected.size() / nThreads;
+    if (b < e) {
+      chunks.emplace_back(b, e);
+    }
+  }
+
   //silence warnings and infos (to silence the traceReader)
   clc::isilent = 1;
   clc::wsilent = 1;
@@ -968,6 +989,15 @@ void Qualifier::fbqUsingFaultyTraces(
       selected.size() * clc::faultyTraceFiles.size(), 70);
   progressBar.display();
 
+  auto parseAsync = [this](size_t j) {
+    return std::async(std::launch::async, [this, j]() {
+      return parseFaultyTrace(clc::faultyTraceFiles[j]);
+    });
+  };
+  std::future<TracePtr> next;
+  if (!clc::faultyTraceFiles.empty()) {
+    next = parseAsync(0);
+  }
   for (size_t j = 0; j < clc::faultyTraceFiles.size(); j++) {
     //for each faulty trace
 
@@ -981,44 +1011,53 @@ void Qualifier::fbqUsingFaultyTraces(
                "%)" + " (Elaborating " + clc::faultyTraceFiles[j] +
                " [" + std::to_string(j + 1) + "])");
 
-    auto ft = parseFaultyTrace(clc::faultyTraceFiles[j]);
-    size_t elaborated = 0;
-    //iterate in the order of 'selected': assertion ids depend on thread timing, so the id-keyed
-    //map's order would decide (non-deterministically) which assertion is credited with a fault
-    for (const AssertionPtr &a : selected) {
-      size_t aid = a->_id;
-      const TemplateImplicationPtr &noCacheTemplate =
-          aid_to_noCacheTemplates.at(aid);
-      //test if the assertion fails on the faulty trace
-
-      //new assertion with faulty trace
-      TemplateImplicationPtr fAss =
-          generatePtr<TemplateImplication>(*noCacheTemplate);
-      fAss->changeTrace(ft);
-
-      if (!fAss->assHoldsOnTrace(Location::AntCon)) {
-        // new fault covered
+    TracePtr ft = next.get();
+    if (j + 1 < clc::faultyTraceFiles.size()) {
+      next = parseAsync(j + 1);
+    }
+    //per chunk, the indices (in 'selected') of the assertions that fail on ft; without --find-min-subset only the
+    //chunk's first: the first of all is then the first of the first chunk that has one
+    std::vector<std::vector<size_t>> failing(chunks.size());
+    auto check = [&](size_t c) {
+      for (size_t i = chunks[c].first; i < chunks[c].second; i++) {
+        templates[i]->changeTrace(ft);
+        if (!templates[i]->assHoldsOnTrace(Location::AntCon)) {
+          failing[c].push_back(i);
+          if (!clc::findMinSubset) {
+            break;
+          }
+        }
+      }
+    };
+    if (chunks.size() == 1) {
+      check(0);
+    } else {
+      std::vector<std::thread> workers;
+      for (size_t c = 0; c < chunks.size(); c++) {
+        workers.emplace_back(check, c);
+      }
+      for (auto &w : workers) {
+        w.join();
+      }
+    }
+    for (const auto &f : failing) {
+      for (size_t i : f) {
+        size_t aid = selected[i]->_id;
         // store the assertion id that covers the fault
         _aidToF[aid].push_back(j);
         // store the fault that is covered by the assertion
         _fToAid[j].push_back(aid);
         if (!clc::findMinSubset) {
-          //stop search for this fault if you do not want the optimal covering set
-          //fill the progress bar with the remaining assertions not elaborated
-          progressBar.increment(0, aid_to_noCacheTemplates.size() -
-                                       elaborated);
-          progressBar.display();
-
           break;
         }
       }
-
-      progressBar.increment(0);
-      progressBar.display();
-
-      //keep track of the number of elaborated assertions (for the progress bar)
-      elaborated++;
+      if (!clc::findMinSubset && !f.empty()) {
+        //stop search for this fault if you do not want the optimal covering set
+        break;
+      }
     }
+    progressBar.increment(0, selected.size());
+    progressBar.display();
   }
 
   // print last
