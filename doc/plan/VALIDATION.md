@@ -1780,3 +1780,5 @@ this milestone puts the script behind those numbers in the package.
   `DYLD_LIBRARY_PATH`. Environmental; nothing in the repository changed.
 - **The doc checks:** `check.sh` passes (37 pages), and so does `check_coverage.py` (56 milestones). The PDF's text has
   no private path.
+
+**H47-design-sizes signed off by the user 2026-11-15** ("sign off H47 and release v4.1.2"); merged into `dev`, `dev` into `main`, tagged `v4.1.2`.
