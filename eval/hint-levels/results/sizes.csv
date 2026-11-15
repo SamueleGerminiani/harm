@@ -1,0 +1,21 @@
+design,top,inputs,input_bits,outputs,output_bits,loc,files
+fifo_v3,h45_fifo_v3,6,13,4,12,99,fifo_v3.sv
+spill_register,h45_spill_register,5,12,3,10,91,spill_register_flushable.sv spill_register.sv
+fall_through_register,h45_fall_through_register,6,13,3,10,135,fifo_v3.sv fall_through_register.sv
+rr_arb_tree,h45_rr_arb_tree,6,40,4,15,273,cf_math_pkg.sv lzc.sv rr_arb_tree.sv
+delta_counter,h45_delta_counter,8,18,2,7,65,delta_counter.sv
+lfsr,h45_lfsr,3,3,1,8,225,lfsr.sv
+id_queue,h45_id_queue,11,34,8,15,420,cf_math_pkg.sv lzc.sv onehot_to_bin.sv id_queue.sv
+plru_tree,h45_plru_tree,3,10,1,8,62,plru_tree.sv
+exp_backoff,h45_exp_backoff,4,4,1,1,44,exp_backoff.sv
+credit_counter,h45_credit_counter,5,5,4,6,35,credit_counter.sv
+exp_backoff_d10,h45_exp_backoff,4,4,1,1,44,exp_backoff.sv
+exp_backoff_d14,h45_exp_backoff,4,4,1,1,44,exp_backoff.sv
+delta_counter_d10,h45_delta_counter,8,26,2,11,65,delta_counter.sv
+delta_counter_d14,h45_delta_counter,8,34,2,15,65,delta_counter.sv
+credit_counter_d16,h45_credit_counter,5,5,4,8,35,credit_counter.sv
+credit_counter_d64,h45_credit_counter,5,5,4,10,35,credit_counter.sv
+fifo_v3_d16,h45_fifo_v3,6,13,4,14,99,fifo_v3.sv
+fifo_v3_d64,h45_fifo_v3,6,13,4,16,99,fifo_v3.sv
+lossy_valid_to_stream,h45_lossy_valid_to_stream,5,12,3,10,68,lossy_valid_to_stream.sv
+stream_delay,h45_stream_delay,5,12,3,10,232,counter.sv delta_counter.sv lfsr_16bit.sv stream_delay.sv

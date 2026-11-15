@@ -39,6 +39,7 @@ changes, it keeps the first two.
 | `cut.py` | the trace cut for the deep arm |
 | `run_arms.py` | runs arms on `eval/mutants`' prepared designs and scores them; writes `results.csv` |
 | `filter_check.py` | sorts the kills the cone filter costs (R against R+F) into three causes |
+| `sizes.py` | each design's input/output ports and lines of RTL (Table IV) |
 | `tables.py` | the letter's tables from the CSVs |
 | `reproduce.sh` | every step in order |
 | `results/` | the CSVs behind the letter's tables |
@@ -57,6 +58,7 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | Step | What | Time on the original runs |
 |---|---|---|
 | `fetch` | PULP common_cells v1.40.0 (pinned) | seconds |
+| `sizes` | each design's ports and lines of RTL | seconds |
 | `prepare` | traces (directed tests, then 5,000 random cycles), 100 mutants per design, activation | 2-3 h |
 | `configs` | HARM's six configurations on the 10 base designs, 600 s per run | 1.5 h |
 | `assertllm2` | the same configurations on AssertLLM2, without fault traces | 1.5 h |
@@ -85,3 +87,4 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | `rq3.csv` | the four designs where deep kills more, every run, with the killed mutants' ids |
 | `rq3-depth.csv` | the depth variants, every run |
 | `filter.csv` | per design: kills by R and R+F, lost, gained, and the three causes |
+| `sizes.csv` | per design: input and output ports (clock and reset included) and their bits; the non-blank, non-comment lines of the PULP files it compiles, submodules included, the corpus wrapper excluded |

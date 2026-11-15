@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Reproduce the hint-level study's numbers, step by step. Each step calls an existing script; times are those of
 # the original runs (Linux, 20-24 cores, 3 runs at a time, 6 HARM threads each). Usage:
-#   eval/hint-levels/reproduce.sh <out dir> [step ...]     steps: fetch prepare configs assertllm2 arms depth deep filter tables
+#   eval/hint-levels/reproduce.sh <out dir> [step ...]     steps: fetch sizes prepare configs assertllm2 arms depth deep filter tables
 # HARM_BIN: the harm binary (default build/harm); PYTHON: a Python with harm-coi's dependencies (default python3).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$(mkdir -p "$1" && cd "$1" && pwd); shift
-STEPS=${*:-fetch prepare configs assertllm2 arms depth deep filter tables}
+STEPS=${*:-fetch sizes prepare configs assertllm2 arms depth deep filter tables}
 HARM_BIN=${HARM_BIN:-$ROOT/build/harm}
 PY=${PYTHON:-python3}
 M=$ROOT/eval/mutants
@@ -26,6 +26,8 @@ for s in $STEPS; do
   case $s in
     fetch)  # PULP common_cells v1.40.0, pinned
       bash "$M/fetch.sh" "$ROOT" ;;
+    sizes)  # each design's ports and lines of RTL (the letter's Table IV): seconds
+      $PY "$H/sizes.py" "$M/corpus.json" --out "$OUT/sizes.csv" ;;
     prepare)  # traces (directed tests then 5,000 random cycles), 100 mutants per design, activation: about 2-3 h
       $PY "$M/mutants_eval.py" "$M/corpus.json" "$OUT/prepared" --harm "$HARM_BIN" --python "$PY" \
         --configs prepare-only "${SEEDS[@]}" --jobs 8 ;;
@@ -68,6 +70,7 @@ EOF
       [ -f "$OUT/deep/results.csv" ] && cp "$OUT/deep/results.csv" "$T/rq3.csv"
       [ -f "$OUT/depth/results.csv" ] && cp "$OUT/depth/results.csv" "$T/rq3-depth.csv"
       [ -f "$OUT/filter.csv" ] && cp "$OUT/filter.csv" "$T/filter.csv"
+      [ -f "$OUT/sizes.csv" ] && cp "$OUT/sizes.csv" "$T/sizes.csv"
       $PY "$H/tables.py" "$T" ;;
     *) echo "unknown step $s" >&2; exit 2 ;;
   esac
