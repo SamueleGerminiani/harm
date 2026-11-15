@@ -1751,3 +1751,32 @@ absent):
   path.
 
 **H46-hint-levels-eval signed off by the user 2026-11-14** ("both fine, sign off H46 after ctest, tag v4.1.1"); merged into `dev`, `dev` into `main`, tagged `v4.1.1`.
+
+## H47-design-sizes
+
+**Plan:** `doc/plan/H47_PLAN.md`, approved by the user 2026-11-15. The letter's Table IV now gives each design's size;
+this milestone puts the script behind those numbers in the package.
+
+**What changed** (`eval/hint-levels/` only; `harm` and `harm-coi` unchanged):
+- **`sizes.py`:** per corpus design, elaborated with `eval/mutants`' `elaborate()` at the corpus's defines: the top's
+  input and output ports (clock and reset included) and their bits, and the non-blank, non-comment lines of the PULP
+  files it compiles (submodules included, the corpus wrapper excluded).
+- **`results/sizes.csv`:** the 20 corpus designs; the 10 base designs total 1,449 lines.
+- **`reproduce.sh`** (a `sizes` step), **`tables.py`** (prints the sizes when `sizes.csv` is present), **`README.md`**.
+- **Report:** H47 in the milestone table and the milestone count; the PDF rebuilt.
+
+**Tests** (written first, committed failing in `78be41b`, where T1 and T6 fail because `sizes.py` is absent):
+
+| # | Test | Result |
+|---|---|---|
+| T1 | as at H46, now also over `sizes.py` and `results/sizes.csv` | pass |
+| T6 | `sizes.py` gives Table IV's values on the 10 base designs, 1,449 lines in all, and `results/sizes.csv` equals its output on the 20 designs | pass |
+| — | `eval/hint-levels/tests` with the Mac's harm (`build-mac`) | 12 passed, 2 skipped (T4: no prepared directory) |
+
+- **Not run:** the full `ctest`. The change touches only `eval/hint-levels/` and its tests, which run under `h46_unit`;
+  the test count stays 289.
+- **Found while testing:** this worktree's `build-mac/harm` no longer finds z3, antlr4 and boost (its `third_party`
+  is no longer a link to a full checkout). The tests ran with those libraries from another checkout on
+  `DYLD_LIBRARY_PATH`. Environmental; nothing in the repository changed.
+- **The doc checks:** `check.sh` passes (37 pages), and so does `check_coverage.py` (56 milestones). The PDF's text has
+  no private path.
