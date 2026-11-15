@@ -7,7 +7,8 @@
   AssertLLM2 without fault traces (assertion counts and times only);
 - rq3.csv: the four designs where the deep arm kills more, raw rows (3 deep repeats each);
 - rq3-depth.csv: the depth variants (L0+roles and deep);
-- filter.csv: the cone filter's lost kills by class (filter_check.py)."""
+- filter.csv: the cone filter's lost kills by class (filter_check.py);
+- sizes.csv (when present): each design's ports and lines of RTL (sizes.py)."""
 
 from __future__ import annotations
 
@@ -65,6 +66,8 @@ def build(results: Path) -> dict[str, Any]:
                          "fp": max(int(r["false_positives"]) for r in deep)}  # fmt: skip
     filt = _rows(results / "filter.csv")
     out["filter"] = {k: sum(int(r[k]) for r in filt) for k in ("lost", "gained", "reset", "delay", "out_of_cone")}
+    if (results / "sizes.csv").exists():
+        out["sizes"] = {r["design"]: (int(r["inputs"]), int(r["outputs"]), int(r["loc"])) for r in _rows(results / "sizes.csv")}
     return out
 
 
@@ -84,6 +87,11 @@ def main(argv: list[str] | None = None) -> None:
         print(f"  {d:22} L0+roles {r['l0roles']}/{r['activated']}  deep {r['deep']}  only deep {r['deep_only']}  "
               f"time {r['time'][0]} / {r['time'][1]} s")
     print(f"The cone filter's lost kills: {t['filter']}")
+    if "sizes" in t:
+        print("Design sizes (inputs/outputs, lines of RTL), the arms' designs:")
+        for d in sorted({d for d, _ in t["kills"]["per_design"]}):
+            i, o, n = t["sizes"][d]
+            print(f"  {d:22} {i}/{o}  {n}")
 
 
 if __name__ == "__main__":
