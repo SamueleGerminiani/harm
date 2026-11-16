@@ -63,8 +63,9 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | `prepare` | traces (directed tests, then 5,000 random cycles), 100 mutants per design, activation | 2-3 h |
 | `configs` | HARM's six configurations on the 10 base designs, 600 s per run | 1.5 h |
 | `assertllm2` | the same configurations on AssertLLM2, without fault traces | 1.5 h |
+| `assertllm2-20` | after `assertllm2`: C0 and RR+F+X again with 20 HARM threads, one run at a time | 1 h |
 | `arms` | the arms L0 to deep on the 10 base designs, deep 3 times, 3,600 s per run | 5 h |
-| `none` | `none` on the 10 base designs, 3,600 s per run; `none-full`, one run at a time on every thread | 4 h; about a day |
+| `none` | `none` on the 10 base designs, 3,600 s per run, 20 GiB per HARM process; `none-full`, one run at a time on every thread, 38 GiB per HARM process | 4 h; 6 h and more (below) |
 | `depth` | the 8 depth variants, L0+roles and deep | 2.5 h |
 | `deep` | the 4 designs where deep kills more, L0+roles and deep | 30 min |
 | `filter` | R and R+F, and the filter's lost kills | 40 min |
@@ -72,9 +73,14 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 
 **Machines:** two Linux machines (24 and 20 cores), 3 runs at a time with 6 HARM threads each.
 
+**`none-full`'s runs** were one at a time on all of a container's threads: eight designs on 20 threads with 20 GiB per
+HARM process (3-42 min each); `rr_arb_tree` on 24 threads reached its 38 GiB limit after 2.2 h; `id_queue` was
+OOM-killed in a 22 GB container after 5.7 h (mining took about 5.2 h of it) and was re-run on 28 threads with 26 GiB.
+`none.csv` gives each run's machine and peak memory.
+
 **What varies between runs:**
 - **The deep arm's cut is wall-clock based.** It ran 3 times; the repeats agreed exactly in kills and assertions.
-- **Times depend on the machine,** and include the fault check.
+- **Times depend on the machine** and on the number of HARM threads, and include the fault check.
 - **Kills, assertions and false positives** are the same on any machine for every other arm.
 
 **AssertLLM2:** the `assertllm2` step needs the AssertLLM2 designs and their golden traces under `build/assertllm2`

@@ -2,7 +2,8 @@
 # Reproduce the hint-level study's numbers, step by step. Each step calls an existing script; times are those of
 # the original runs (Linux, 20-24 cores, 3 runs at a time, 6 HARM threads each). Usage:
 #   eval/hint-levels/reproduce.sh <out dir> [step ...]     steps: fetch sizes prepare configs assertllm2 assertllm2-20 arms none depth deep filter tables
-# HARM_BIN: the harm binary (default build/harm); PYTHON: a Python with harm-coi's dependencies (default python3).
+# HARM_BIN: the harm binary (default build/harm); PYTHON: a Python with harm-coi's dependencies (default python3);
+# NONE_MEM_GIB: none-full's memory limit per HARM process (default 38).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$(mkdir -p "$1" && cd "$1" && pwd); shift
@@ -52,12 +53,14 @@ EOF
     arms)  # the arms L0 to deep on the 10 base designs, deep 3 times, 3,600 s per run: about 5 h
       $PY "$H/run_arms.py" "$M/corpus.json" "$OUT/prepared" "$OUT/arms" --designs $BASE --arms L0,L0+roles,rel,deep --repeats deep=3 \
         --timeout 3600 --threads 6 --jobs 3 --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY" ;;
-    none)  # HARM alone: none, 3,600 s per run (about 4 h), then none-full one run at a time on every thread (about a day)
+    none)  # HARM alone: none, 3,600 s per run, 20 GiB per HARM process (about 4 h); then none-full, one run at a time on
+      # every thread, 38 GiB per HARM process (NONE_MEM_GIB): about 6 h for the eight designs that finish; rr_arb_tree
+      # reached 38 GiB after 2.2 h and id_queue needs more than 20 GiB (see README). Needs that much RAM free.
       $PY "$H/run_arms.py" "$M/corpus.json" "$OUT/prepared" "$OUT/none" --designs $BASE --arms none \
-        --timeout 3600 --threads 6 --jobs 3 --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY"
+        --timeout 3600 --threads 6 --jobs 3 --mem-gib 20 --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY"
       $PY "$H/run_arms.py" "$M/corpus.json" "$OUT/prepared" "$OUT/none-full" --designs $BASE --arms none-full \
-        --threads "$(nproc 2>/dev/null || sysctl -n hw.ncpu)" --jobs 1 --mem-gib 36 --machine "$(uname -s)" \
-        --harm "$HARM_BIN" --python "$PY" ;;
+        --threads "$(nproc 2>/dev/null || sysctl -n hw.ncpu)" --jobs 1 --mem-gib "${NONE_MEM_GIB:-38}" \
+        --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY" ;;
     depth)  # the depth variants: L0+roles and deep (3 times): about 2.5 h
       $PY "$H/run_arms.py" "$M/corpus.json" "$OUT/prepared" "$OUT/depth" --designs $DEPTH --arms L0+roles,deep \
         --repeats deep=3 --timeout 3600 --threads 6 --jobs 3 --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY" ;;
