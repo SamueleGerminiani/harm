@@ -138,6 +138,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--timeout", type=float, default=3600)
     ap.add_argument("--threads", type=int, default=6)
     ap.add_argument("--jobs", type=int, default=2, help="runs at once")
+    ap.add_argument("--mem-gib", type=float, default=arms.MEM_GIB, help="the none arms' resident memory limit")
     ap.add_argument("--machine", required=True, help="a name for the machine, recorded with each row")
     ap.add_argument("--harm", type=Path, required=True, help="the harm binary")
     ap.add_argument("--python", type=Path, required=True, help="a Python with harm-coi's dependencies (pyslang)")
@@ -158,7 +159,7 @@ def main(argv: list[str] | None = None) -> None:
             prep = json.loads((a.prepared / d["name"] / "prepared.json").read_text())
             entry, traces = arms.entry_for(d, base, prep)
             cands, st = arms.run_arm(arm, entry, traces, work, tools, prep["faults"], timeout_s=a.timeout,
-                                     threads=a.threads)  # fmt: skip
+                                     threads=a.threads, mem_gib=a.mem_gib)  # fmt: skip
         except Exception as e:
             cands, st = [], {"status": "error", "wall_s": 0, "error": " ".join(str(e).split())[:300] or type(e).__name__}
         row = {"design": d["name"], "arm": arm, "repeat": i, "machine": machine, **st}
@@ -179,7 +180,7 @@ def main(argv: list[str] | None = None) -> None:
         rows = list(ex.map(one, jobs))
     cols = ["design", "arm", "repeat", "machine", "status", "wall_s", "assertions", "false_positives", "activated",
             "killed", "score", "activated_output", "killed_output", "by_level", "long_range", "by_op", "killed_ids",
-            "error"]
+            *arms.NONE_STATS, "dropped_constant", "error"]
     with open(a.out / "results.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         w.writeheader()

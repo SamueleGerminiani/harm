@@ -1782,3 +1782,62 @@ this milestone puts the script behind those numbers in the package.
   no private path.
 
 **H47-design-sizes signed off by the user 2026-11-15** ("sign off H47 and release v4.1.2"); merged into `dev`, `dev` into `main`, tagged `v4.1.2`.
+
+## H48-none-arm: the fault check on all threads; the hint-level study's none arm, bounded and complete (2026-11-15 to 2026-11-16; owner the portfolio's Mac session)
+
+**Plan:** `doc/plan/H48_PLAN.md`, approved by the user 2026-11-15. In the letter's runs, `none` (HARM's own
+`--generate-config`, no RTL) passed no `--deadline` and timed out on 8 of 9 designs; on `credit_counter` most of its
+time was the fault check, which ran on one thread.
+
+**What changed:**
+- **HARM, `Qualifier::fbqUsingFaultyTraces`:** the fault check runs on `--max-threads` threads and prints "Fault check
+  on N threads". The assertions are split into contiguous chunks, one per thread; each fault trace is parsed once (one
+  parse at a time, the next one while the current is checked: the VCD scanner is not reentrant); the fault lists are
+  merged in the assertions' order, and without `--find-min-subset` only the first failing assertion is kept, as before.
+  No new option; `--max-threads 1` is the old loop.
+- **`eval/hint-levels`:** `none` gets the other arms' `--deadline`; `none-full` gets none, and reports HARM's "Time to
+  mine" and the time after it (`post_s`: reduction, ranking, fault check, output), the search done and the peak memory.
+  Both drop from `--generate-config`'s output the signals constant over the mining traces (parameters).
+  `run_arms.py --mem-gib`; `tables.py` reads `results/none.csv`; `reproduce.sh` gets `none` and `assertllm2-20` steps.
+- **Data:** `results/none.csv` (the last run of each design, both variants), `results/assertllm2-20-threads.csv`
+  (AssertLLM2, C0 and RR+F+X with 20 HARM threads); `results/arms.csv` loses its 10 v4.1 `none` rows.
+- **Report:** H48 in the milestone table, 57 milestones, 290 tests; the limitations on the fault check and on the
+  implication workers' memory; the PDF rebuilt.
+
+**Tests** (written first, committed failing in `ded1043`; T8 and T9 again in `035d8f0` for the `post_s` rename):
+
+| # | Test | Result |
+|---|---|---|
+| T7 | `check_h48_parallel_fd.py` (ctest `h48_parallel_fd`): the h45 fault fixture, its three fault traces copied 8 times and interleaved; `--max-threads 1` and `4` give the same `--dump-assertion-info`, fault lists included, with and without `--find-min-subset`; the threads message is printed | pass |
+| T8 | `none` passes `--deadline`, `none-full` does not; both drop a constant parameter; both report `mine_s`, `post_s`, the search and the peak memory | pass |
+| T9 | `tables.py` reads `none.csv` (status, assertions, kills, false positives, `mine_s`, `post_s`, search, peak memory) | pass |
+| T4 | (H46) the arms on `credit_counter` reproduce the letter's numbers | pass, 249 s (413 s before H48) |
+| — | `eval/hint-levels/tests` with the Mac's harm | 15 passed, 2 skipped |
+| — | `ctest -j8` on macOS at `c3c370d` with this entry's report changes | 288 of 290, 1,940 s. `h45_unit` fails as at H45 and H46 (Verilator's runtime does not compile against this Mac's SDK headers; environmental); `h14_doc_coverage` failed because the committed PDF did not cite H48 yet, and passes after the rebuild |
+
+- **Deviation from the plan:** the plan's T7 named the two harm-coi fixtures and three prepared designs; T7 uses one
+  fixture, with 24 fault traces so that every thread's share holds every kind of fault. The study's runs are a second
+  check on real designs: on the eight designs where both variants finish, `none` and `none-full` kill the same
+  mutants.
+- **Linux:** the binary built on Linux (jupiter and saturn, Verilator 5.052) made every run below; the full `ctest` on
+  Linux was not run for H48.
+- **Found while testing:** this worktree's `third_party` links had gone; with only spot, antlr4, boost and z3 relinked,
+  CMake found no yosys and no Verilator 5.052, so a first `ctest` registered 283 tests and failed the 7
+  `*_reproduce_*` ones (they need Verilator 5.052; macOS has 5.034 on the path). With yosys, Verilator and Icarus
+  relinked, 290 are registered. Environmental; nothing in the repository changed.
+
+**The runs** (HARM at `dbeaabb`, Docker image `h45-tools:1`; `results/none.csv`):
+- **`none`, 3,600 s, 6 threads, 3 at a time, 20 GiB per HARM process (saturn):** kills 806 of 839 activated mutants
+  (96%), 42,518 assertions, 4,680 false positives; it stops at its deadline on six designs. A first batch at 7 GiB
+  stopped `rr_arb_tree`, `id_queue` and `exp_backoff` at that limit; they were re-run at 20 GiB.
+- **`none-full`, one at a time on all of a container's threads:** eight designs finish on saturn (20 threads, 20 GiB)
+  in 208-2,522 s, with the same kills as `none`. `rr_arb_tree` reached 20 GiB on saturn after 6,925 s and 38 GiB on
+  jupiter (24 threads, 40 GB container) after 7,824 s. `id_queue` ran out of memory after mining, in
+  `--reduce implies` (28 forked workers), in a 22 GB container on jupiter (after 5.7 h) and in a 28 GB container on
+  saturn (28 threads, after 4.2 h). The user chose to report it as it stands, without a run with fewer workers.
+- **AssertLLM2, C0 and RR+F+X, 20 threads, 600 s (saturn):** C0 finishes 2 of 10 designs, RR+F+X 8.
+- trivergence's lead let these runs go first on both machines and allowed 28 threads and 28 GB on saturn for them.
+- **The doc checks:** `check.sh` passes (37 pages), and so does `check_coverage.py` (58 milestones). The PDF's text has
+  no private path.
+
+**H48-none-arm signed off by the user 2026-11-16** ("ok, signed. Merge into dev and main (no linux rerun for now)"); merged into `dev`, `dev` into `main`. The full `ctest` on Linux was left for later by the user.
