@@ -74,9 +74,11 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 **Machines:** two Linux machines (24 and 20 cores), 3 runs at a time with 6 HARM threads each.
 
 **`none-full`'s runs** were one at a time on all of a container's threads: eight designs on 20 threads with 20 GiB per
-HARM process (3-42 min each); `rr_arb_tree` on 24 threads reached its 38 GiB limit after 2.2 h; `id_queue` was
-OOM-killed in a 22 GB container after 5.7 h (mining took about 5.2 h of it) and was re-run on 28 threads with 26 GiB.
-`none.csv` gives each run's machine and peak memory.
+HARM process (3-42 min each); `rr_arb_tree` on 24 threads reached its 38 GiB limit after 2.2 h; `id_queue` ran
+out of memory after mining, in `--reduce implies`, both in a 22 GB container on 24 threads (after 5.7 h) and in a
+28 GB container on 28 threads (after 4.2 h). `none.csv` gives the last run of each design, its machine and its peak
+memory per process; the `none` rows that `arms.csv` had (HARM v4.1, no deadline: a timeout on 8 of 9 designs) are
+replaced by it.
 
 **What varies between runs:**
 - **The deep arm's cut is wall-clock based.** It ran 3 times; the repeats agreed exactly in kills and assertions.
