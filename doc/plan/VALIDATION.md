@@ -1839,3 +1839,5 @@ time was the fault check, which ran on one thread.
 - trivergence's lead let these runs go first on both machines and allowed 28 threads and 28 GB on saturn for them.
 - **The doc checks:** `check.sh` passes (37 pages), and so does `check_coverage.py` (58 milestones). The PDF's text has
   no private path.
+
+**H48-none-arm signed off by the user 2026-11-16** ("ok, signed. Merge into dev and main (no linux rerun for now)"); merged into `dev`, `dev` into `main`. The full `ctest` on Linux was left for later by the user.
