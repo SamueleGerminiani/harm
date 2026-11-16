@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Reproduce the hint-level study's numbers, step by step. Each step calls an existing script; times are those of
 # the original runs (Linux, 20-24 cores, 3 runs at a time, 6 HARM threads each). Usage:
-#   eval/hint-levels/reproduce.sh <out dir> [step ...]     steps: fetch sizes prepare configs assertllm2 arms none depth deep filter tables
+#   eval/hint-levels/reproduce.sh <out dir> [step ...]     steps: fetch sizes prepare configs assertllm2 assertllm2-20 arms none depth deep filter tables
 # HARM_BIN: the harm binary (default build/harm); PYTHON: a Python with harm-coi's dependencies (default python3).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$(mkdir -p "$1" && cd "$1" && pwd); shift
-STEPS=${*:-fetch sizes prepare configs assertllm2 arms none depth deep filter tables}
+STEPS=${*:-fetch sizes prepare configs assertllm2 assertllm2-20 arms none depth deep filter tables}
 HARM_BIN=${HARM_BIN:-$ROOT/build/harm}
 PY=${PYTHON:-python3}
 M=$ROOT/eval/mutants
@@ -46,6 +46,9 @@ json.dump(m, open(sys.argv[2], "w"), indent=1)
 EOF
       (cd "$ROOT" && $PY eval/run_eval.py "$OUT/assertllm2-nofaults.json" "$OUT/assertllm2" --harm "$HARM_BIN" \
         --python "$PY" --configs C0,R,R+F,R+F+X,RR,RR+F+X --timeout 600 --threads 6) ;;
+    assertllm2-20)  # after assertllm2: C0 and RR+F+X again with 20 HARM threads, one run at a time: about 1 h
+      (cd "$ROOT" && $PY eval/run_eval.py "$OUT/assertllm2-nofaults.json" "$OUT/assertllm2-20" --harm "$HARM_BIN" \
+        --python "$PY" --configs C0,RR+F+X --timeout 600 --threads 20) ;;
     arms)  # the arms L0 to deep on the 10 base designs, deep 3 times, 3,600 s per run: about 5 h
       $PY "$H/run_arms.py" "$M/corpus.json" "$OUT/prepared" "$OUT/arms" --designs $BASE --arms L0,L0+roles,rel,deep --repeats deep=3 \
         --timeout 3600 --threads 6 --jobs 3 --machine "$(uname -s)" --harm "$HARM_BIN" --python "$PY" ;;
@@ -77,6 +80,7 @@ EOF
       [ -f "$OUT/depth/results.csv" ] && cp "$OUT/depth/results.csv" "$T/rq3-depth.csv"
       [ -f "$OUT/filter.csv" ] && cp "$OUT/filter.csv" "$T/filter.csv"
       [ -f "$OUT/sizes.csv" ] && cp "$OUT/sizes.csv" "$T/sizes.csv"
+      [ -f "$OUT/assertllm2-20/results.csv" ] && cp "$OUT/assertllm2-20/results.csv" "$T/assertllm2-20-threads.csv"
       if [ -f "$OUT/none/results.csv" ]; then  # none.csv: the none and none-full runs' rows
         { cat "$OUT/none/results.csv"; [ -f "$OUT/none-full/results.csv" ] && tail -n +2 "$OUT/none-full/results.csv"; } \
           > "$T/none.csv"

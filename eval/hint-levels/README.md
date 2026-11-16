@@ -86,6 +86,7 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 |---|---|
 | `arms.csv` | per design and arm: status, assertions, time, kills (all, outputs), false positives, kills by level; deep as the median of 3 repeats |
 | `configurations-pulp.csv`, `configurations-assertllm2.csv` | per design and configuration: status, assertions, time (and kills on PULP) |
+| `assertllm2-20-threads.csv` | AssertLLM2, C0 and RR+F+X with 20 HARM threads (instead of 6), 600 s per run: assertions and time |
 | `rq3.csv` | the four designs where deep kills more, every run, with the killed mutants' ids |
 | `rq3-depth.csv` | the depth variants, every run |
 | `filter.csv` | per design: kills by R and R+F, lost, gained, and the three causes |

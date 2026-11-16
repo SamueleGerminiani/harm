@@ -1,0 +1,21 @@
+design,config,assertions,wall_s,dropped,permutations,dt_pairs,coi_frac,coi_depth_fit,coverage,ok,error
+aes_cipher,C0,,600,,,,,,,False,timeout (600 s)
+aes_cipher,RR+F+X,,600,,,,,,,False,timeout (600 s)
+uart,C0,27541,255.61,,,,,,,True,
+uart,RR+F+X,1127,3.06,121,81->81,27512->19369,1.0,1.0,,True,
+uart_to_bus,C0,58400,109.17,,,,,,,True,
+uart_to_bus,RR+F+X,17741,91.33,5222,281->281,126991->73748,1.0,1.0,,True,
+ethernet_smii_txrx,C0,,600,,,,,,,False,timeout (600 s)
+ethernet_smii_txrx,RR+F+X,324,10.33,3,69->69,37771->35922,1.0,1.0,,True,
+srdy-drdy-library,C0,,600,,,,,,,False,timeout (600 s)
+srdy-drdy-library,RR+F+X,2550,11.4,130,102->102,153297->125991,1.0,1.0,,True,
+ima_adpcm_encoder,C0,,600,,,,,,,False,timeout (600 s)
+ima_adpcm_encoder,RR+F+X,2004,53.36,72,150->150,209683->180464,1.0,1.0,,True,
+ima_adpcm_decoder,C0,,600,,,,,,,False,timeout (600 s)
+ima_adpcm_decoder,RR+F+X,1397,133.36,34,133->133,537871->519941,1.0,1.0,,True,
+sha3,C0,,600,,,,,,,False,timeout (600 s)
+sha3,RR+F+X,2290,5.88,47,81->81,63817->52722,1.0,1.0,,True,
+gaussian_noise_generator,C0,,600,,,,,,,False,timeout (600 s)
+gaussian_noise_generator,RR+F+X,,600,,,,,,,False,timeout (600 s)
+video_stream_scaler,C0,,600,,,,,,,False,timeout (600 s)
+video_stream_scaler,RR+F+X,5769,19.84,1764,164->164,84483->49478,1.0,1.0,,True,
