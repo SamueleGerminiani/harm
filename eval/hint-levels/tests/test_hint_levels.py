@@ -194,7 +194,7 @@ def test_t8_none_variants(tmp_path: Path, variant: str) -> None:
     conf = (tmp_path / "w" / "config.xml").read_text()
     assert 'exp="a"' in conf and 'exp="b"' in conf and 'exp="P"' not in conf
     assert ("--deadline" in r.stats["command"]) == (variant == "none")
-    for k in ("mine_s", "fault_s", "permutations_done", "permutations_total", "peak_gib", "dropped_constant"):
+    for k in ("mine_s", "post_s", "permutations_done", "permutations_total", "peak_gib", "dropped_constant"):
         assert k in r.stats, k
     assert r.stats["dropped_constant"] == ["P"]
 
@@ -205,7 +205,7 @@ def test_t9_none_table(tmp_path: Path) -> None:
 
     for p in (HERE / "results").glob("*.csv"):
         shutil.copy(p, tmp_path / p.name)
-    cols = ["design", "arm", "machine", "status", "assertions", "wall_s", "mine_s", "fault_s", "permutations_done",
+    cols = ["design", "arm", "machine", "status", "assertions", "wall_s", "mine_s", "post_s", "permutations_done",
             "permutations_total", "peak_gib", "activated", "killed", "false_positives"]  # fmt: skip
     with open(tmp_path / "none.csv", "w", newline="") as f:
         w = csv.writer(f)
@@ -215,7 +215,7 @@ def test_t9_none_table(tmp_path: Path) -> None:
         w.writerow(["id_queue", "none", "jupiter", "timeout", 758, 3500, 2800, 700, 60, 351, 3.0, 90, 50, 20])
     t = tables.build(tmp_path)
     assert t["none"]["none"]["id_queue"] == {"status": "timeout", "assertions": 758, "killed": 50, "activated": 90,
-                                             "false_positives": 20, "mine_s": 2800.0, "fault_s": 700.0,
+                                             "false_positives": 20, "mine_s": 2800.0, "post_s": 700.0,
                                              "search": (60, 351), "peak_gib": 3.0}  # fmt: skip
     assert t["none"]["none-full"]["credit_counter"]["search"] == (7, 7)
     assert "none" not in tables.build(HERE / "results") or (HERE / "results" / "none.csv").exists()
