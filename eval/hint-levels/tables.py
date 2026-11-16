@@ -9,7 +9,7 @@
 - rq3-depth.csv: the depth variants (L0+roles and deep);
 - filter.csv: the cone filter's lost kills by class (filter_check.py);
 - none.csv (when present): HARM alone, bounded (none) and complete (none-full): assertions, kills, false positives,
-  mining and fault-check times, the search done;
+  mining time and the time after it (reduction, ranking, fault check), the search done;
 - sizes.csv (when present): each design's ports and lines of RTL (sizes.py)."""
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ def build(results: Path) -> dict[str, Any]:
             out["none"].setdefault(r["arm"], {})[r["design"]] = {
                 "status": r["status"], "assertions": num(r["assertions"], int), "killed": num(r["killed"], int),
                 "activated": num(r["activated"], int), "false_positives": num(r["false_positives"], int),
-                "mine_s": num(r["mine_s"]), "fault_s": num(r["fault_s"]),
+                "mine_s": num(r["mine_s"]), "post_s": num(r["post_s"]),
                 "search": (num(r["permutations_done"], int), num(r["permutations_total"], int)),
                 "peak_gib": num(r["peak_gib"])}  # fmt: skip
     if (results / "sizes.csv").exists():
@@ -100,10 +100,10 @@ def main(argv: list[str] | None = None) -> None:
               f"time {r['time'][0]} / {r['time'][1]} s")
     print(f"The cone filter's lost kills: {t['filter']}")
     for arm, rows in t.get("none", {}).items():
-        print(f"HARM alone ({arm}): assertions, kills, false positives, mining and fault-check times, search done:")
+        print(f"HARM alone ({arm}): assertions, kills, false positives, mining time and the time after it, search done:")
         for d, r in sorted(rows.items()):
             print(f"  {d:22} {r['status']:8} {r['assertions']}  {r['killed']}/{r['activated']}  fp {r['false_positives']}  "
-                  f"mine {r['mine_s']} s  faults {r['fault_s']} s  search {r['search'][0]}/{r['search'][1]}")
+                  f"mine {r['mine_s']} s  after mining {r['post_s']} s  search {r['search'][0]}/{r['search'][1]}")
     if "sizes" in t:
         print("Design sizes (inputs/outputs, lines of RTL), the arms' designs:")
         for d in sorted({d for d, _ in t["kills"]["per_design"]}):

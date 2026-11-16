@@ -348,7 +348,7 @@ def _ports(files: tuple[str, ...], top: str, includes: tuple[str, ...], defines:
 
 ARMS: dict[str, dict[str, Any] | None] = {
     "none": None,  # HARM alone on its --generate-config configuration, the arms' deadline
-    "none-full": None,  # the same, no deadline and no time limit: mining and the fault check timed apart
+    "none-full": None,  # the same, no deadline and no time limit: mining and what follows it timed apart
     "L0": {"hints": "none", "knobs": {}},
     "L0+roles": {"hints": "all", "knobs": {}},
     "rel": {"hints": "relations", "knobs": {}},
@@ -606,7 +606,7 @@ def run_none(entry: dict[str, Any], traces: list[dict[str, Any]], work: Path, to
              threads: int, harm_args: list[str] = (), full: bool = False, mem_gib: float = MEM_GIB) -> Result:  # fmt: skip
     """HARM alone: its --generate-config configuration over every trace signal less those constant over the mining
     traces (parameters), the arms' arguments. `full` False: the arms' deadline and hard limit; True: neither, mining
-    and the fault check timed apart (HARM's "Time to mine" and the rest)."""
+    and what follows it (reduction, ranking, fault check, output) timed apart (HARM's "Time to mine" and the rest)."""
     start = time.time()
     work.mkdir(parents=True, exist_ok=True)
     ta = trace_args(entry, traces, work)
@@ -629,7 +629,7 @@ def run_none(entry: dict[str, Any], traces: list[dict[str, Any]], work: Path, to
         left = timeout_s - (time.time() - start)
         cmd += ["--deadline", f"{max(0.0, left * (1 - DEADLINE_FRACTION) - DEADLINE_MARGIN_S):.1f}"]
     cmd += list(harm_args)
-    stats: dict[str, Any] = {"command": cmd, "dropped_constant": const, "mine_s": None, "fault_s": None,
+    stats: dict[str, Any] = {"command": cmd, "dropped_constant": const, "mine_s": None, "post_s": None,
                              "permutations_done": None, "permutations_total": None, "peak_gib": None}  # fmt: skip
     t0 = time.time()
     try:
@@ -644,7 +644,7 @@ def run_none(entry: dict[str, Any], traces: list[dict[str, Any]], work: Path, to
     wall = round(time.time() - t0, 2)
     stats.update(wall_s=wall, peak_gib=p.peak_gib)  # type: ignore[attr-defined]
     if (m := _TIME_TO_MINE.search(log)) is not None:
-        stats.update(mine_s=float(m.group(1)), fault_s=round(wall - float(m.group(1)), 2))
+        stats.update(mine_s=float(m.group(1)), post_s=round(wall - float(m.group(1)), 2))
     if p.returncode != 0 or not (work / "info.json").exists():
         return Result([], "error", stats=stats, error=f"HARM exit {p.returncode}")
     dump = json.loads((work / "info.json").read_text())
@@ -680,4 +680,4 @@ def run_arm(arm: str, entry: dict[str, Any], traces: list[dict[str, Any]], work:
     return res.candidates, st
 
 
-NONE_STATS = ("mine_s", "fault_s", "permutations_done", "permutations_total", "peak_gib")
+NONE_STATS = ("mine_s", "post_s", "permutations_done", "permutations_total", "peak_gib")

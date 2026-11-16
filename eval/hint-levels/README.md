@@ -13,7 +13,7 @@ those of `eval/run_eval.py`.
 | Arm | What HARM is given |
 |---|---|
 | `none` | HARM's own `--generate-config`: every trace signal less those constant over the mining traces (parameters), no RTL |
-| `none-full` | `none` without the deadline and the time limit: mining and the fault check timed apart |
+| `none-full` | `none` without the deadline and the time limit: mining and what follows it (reduction, ranking, fault check) timed apart |
 | `L0` | `harm-coi` predicates and cones; one template `G({..#1&..} \|-> P0)` |
 | `L0+roles` | L0 with `--hints`: roles, placement, one template per target class (`\|->` combinational, `\|=>` registered) |
 | `rel` | L0+roles with `--relations`: `x == $past(e)`, `$stable(x)`, reset-value consequents and reset templates |
@@ -89,5 +89,5 @@ eval/hint-levels/reproduce.sh /path/to/out prepare arms tables  # some steps
 | `rq3.csv` | the four designs where deep kills more, every run, with the killed mutants' ids |
 | `rq3-depth.csv` | the depth variants, every run |
 | `filter.csv` | per design: kills by R and R+F, lost, gained, and the three causes |
-| `none.csv` | per design, `none` and `none-full`: status, assertions, kills, false positives, mining and fault-check times, the search done (consequents mined of the total), peak memory |
+| `none.csv` | per design, `none` and `none-full`: status, assertions, kills, false positives, mining time and the time after it (reduction, ranking, fault check), the search done (consequents mined of the total), peak memory |
 | `sizes.csv` | per design: input and output ports (clock and reset included) and their bits; the non-blank, non-comment lines of the PULP files it compiles, submodules included, the corpus wrapper excluded |
