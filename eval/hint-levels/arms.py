@@ -14,6 +14,7 @@ encodings, mined on traces with their long stable stretches cut (cut.py)."""
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import re
@@ -313,7 +314,9 @@ def run(cmd: list[str], *, wall_s: float, mem_gib: float = MEM_GIB, cwd: Path | 
         t.join(timeout=10)
     if kind:
         raise HardLimit(kind, wall_s if kind == "wall" else mem_gib, peak, out.get("stdout", ""), out.get("stderr", ""))
-    return subprocess.CompletedProcess(cmd, proc.returncode, out.get("stdout", ""), out.get("stderr", ""))
+    cp = subprocess.CompletedProcess(cmd, proc.returncode, out.get("stdout", ""), out.get("stderr", ""))
+    cp.peak_gib = round(peak, 3)  # type: ignore[attr-defined]  # the tree's peak resident memory, sampled
+    return cp
 
 
 @cache
@@ -344,7 +347,8 @@ def _ports(files: tuple[str, ...], top: str, includes: tuple[str, ...], defines:
 # ------------------------------------------------------------------------------------------------- the arms
 
 ARMS: dict[str, dict[str, Any] | None] = {
-    "none": None,  # HARM alone on its --generate-config configuration
+    "none": None,  # HARM alone on its --generate-config configuration, the arms' deadline
+    "none-full": None,  # the same, no deadline and no time limit: mining and what follows it timed apart
     "L0": {"hints": "none", "knobs": {}},
     "L0+roles": {"hints": "all", "knobs": {}},
     "rel": {"hints": "relations", "knobs": {}},
@@ -572,50 +576,108 @@ def _mine_with_cut(entry: dict[str, Any], traces: list[dict[str, Any]], work: Pa
     return Result(r1.candidates + r2.candidates, status, stats=stats, dropped=r1.dropped + r2.dropped, error=err)
 
 
+_CONST_ENTRY = re.compile(r'^\s*<(?:prop|numeric)\s.*\sexp="([^"]*)".*/>\s*$')  # clustering holds "><"
+_TIME_TO_MINE = re.compile(r"Time to mine: ([0-9.]+)s")
+
+
+def constant_signals(csv_path: Path) -> list[str]:
+    """The signals of HARM's --dump-trace-as-csv file whose value never changes (header cells "<type> <name>")."""
+    with open(csv_path, newline="") as f:
+        rows = csv.reader(f)
+        names = [c.strip().rsplit(" ", 1)[-1] for c in next(rows)]
+        first = next(rows, None)
+        if first is None:
+            return []
+        const = set(range(len(names)))
+        for r in rows:
+            const -= {i for i in const if r[i] != first[i]}
+            if not const:
+                break
+    return sorted(names[i] for i in const)
+
+
+def drop_entries(xml: str, names: set[str]) -> str:
+    """The configuration without the <prop>/<numeric> entries whose exp is one of `names`."""
+    return "".join(line for line in xml.splitlines(keepends=True)
+                   if not ((m := _CONST_ENTRY.match(line)) and m.group(1) in names))  # fmt: skip
+
+
 def run_none(entry: dict[str, Any], traces: list[dict[str, Any]], work: Path, tools: Tools, *, timeout_s: float,
-             threads: int, harm_args: list[str] = ()) -> Result:  # fmt: skip
-    """HARM alone: its --generate-config configuration over every trace signal, the arms' arguments."""
+             threads: int, harm_args: list[str] = (), full: bool = False, mem_gib: float = MEM_GIB) -> Result:  # fmt: skip
+    """HARM alone: its --generate-config configuration over every trace signal less those constant over the mining
+    traces (parameters), the arms' arguments. `full` False: the arms' deadline and hard limit; True: neither, mining
+    and what follows it (reduction, ranking, fault check, output) timed apart (HARM's "Time to mine" and the rest)."""
+    start = time.time()
     work.mkdir(parents=True, exist_ok=True)
     ta = trace_args(entry, traces, work)
     conf = work / "config.xml"
-    run([str(tools.harm), *ta, "--conf", str(conf), "--generate-config", "--psilent", "--isilent"], wall_s=600, cwd=work)
+    run([str(tools.harm), *ta, "--conf", str(work / "generated.xml"), "--generate-config", "--psilent", "--isilent"],
+        wall_s=600, cwd=work)  # fmt: skip
+    run([str(tools.harm), *ta, "--dump-trace-as-csv", str(work / "trace.csv"), "--psilent", "--isilent"], wall_s=600,
+        cwd=work)  # fmt: skip
+    const = constant_signals(work / "trace.csv")
+    (work / "trace.csv").unlink()
+    conf.write_text(drop_entries((work / "generated.xml").read_text(), set(const)))
     b = entry["design"]
     r = b.get("reset")
     args = ["--reduce", "implies", "--atom-premises", "--sva", "--max-threads", str(threads)]
     if r is not None:
         args += ["--reset", f"!{r['name']}" if r["active_low"] else r["name"]]
     cmd = [str(tools.harm), *ta, "--conf", str(conf), *args, "--psilent", "--isilent", "--dont-print-ass",
-           "--dump-assertion-info", str(work / "info.json"), *harm_args]  # fmt: skip
+           "--dump-assertion-info", str(work / "info.json")]  # fmt: skip
+    if not full:
+        left = timeout_s - (time.time() - start)
+        cmd += ["--deadline", f"{max(0.0, left * (1 - DEADLINE_FRACTION) - DEADLINE_MARGIN_S):.1f}"]
+    cmd += list(harm_args)
+    stats: dict[str, Any] = {"command": cmd, "dropped_constant": const, "mine_s": None, "post_s": None,
+                             "permutations_done": None, "permutations_total": None, "peak_gib": None}  # fmt: skip
     t0 = time.time()
     try:
-        p = run(cmd, wall_s=timeout_s, cwd=work)
+        p = run(cmd, wall_s=float("inf") if full else max(1.0, hard_limit_s(timeout_s) - (t0 - start)),
+                mem_gib=mem_gib, cwd=work)  # fmt: skip
     except HardLimit as e:
-        (work / "harm.log").write_text(e.stdout + e.stderr)
-        return Result([], "timeout", stats={"wall_s": round(time.time() - t0, 2)}, error=str(e))
-    (work / "harm.log").write_text(p.stdout + p.stderr)
+        (work / "harm.log").write_text(_ESC.sub("", e.stdout + e.stderr))
+        stats.update(wall_s=round(time.time() - t0, 2), peak_gib=round(e.peak_gib, 3))
+        return Result([], "timeout", stats=stats, error=str(e))
+    log = _ESC.sub("", p.stdout + p.stderr)
+    (work / "harm.log").write_text(log)
     wall = round(time.time() - t0, 2)
+    stats.update(wall_s=wall, peak_gib=p.peak_gib)  # type: ignore[attr-defined]
+    if (m := _TIME_TO_MINE.search(log)) is not None:
+        stats.update(mine_s=float(m.group(1)), post_s=round(wall - float(m.group(1)), 2))
     if p.returncode != 0 or not (work / "info.json").exists():
-        return Result([], "error", stats={"wall_s": wall}, error=f"HARM exit {p.returncode}")
+        return Result([], "error", stats=stats, error=f"HARM exit {p.returncode}")
+    dump = json.loads((work / "info.json").read_text())
+    cut = dump.get("deadline") or {}
+    stats.update(permutations_done=cut.get("permutationsDone"), permutations_total=cut.get("permutationsTotal"))
     reset, low = (r or {}).get("name"), bool((r or {}).get("active_low"))
     cands = []
-    for a in json.loads((work / "info.json").read_text())["assertions"]:
+    for a in dump["assertions"]:
         if reset and needs_reset_active(a["leaves"], reset, active_low=low):
             continue
         cands.append({"provenance": {"harm_text": a["text"], "rtl_level": level(a, reset, active_low=low),
                                      "pass": "full"}})  # fmt: skip
-    return Result(cands, "ok", stats={"wall_s": wall})
+    return Result(cands, "timeout" if cut.get("mineCut") else "ok", stats=stats)
 
 
 def run_arm(arm: str, entry: dict[str, Any], traces: list[dict[str, Any]], work: Path, tools: Tools, faults: str, *,
-            timeout_s: float, threads: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:  # fmt: skip
+            timeout_s: float, threads: int, mem_gib: float = MEM_GIB) -> tuple[list[dict[str, Any]], dict[str, Any]]:  # fmt: skip
     """One arm on one design, scored on `faults` (the fault traces directory): candidates and the run's status."""
     spec = ARMS[arm]
     fd = ["--fd", faults, "--find-min-subset"]
     t0 = time.time()
     if spec is None:
-        res = run_none(entry, traces, work, tools, timeout_s=timeout_s, threads=threads, harm_args=fd)
+        res = run_none(entry, traces, work, tools, timeout_s=timeout_s, threads=threads, harm_args=fd,
+                       full=arm == "none-full", mem_gib=mem_gib)  # fmt: skip
     else:
         res = mine(entry, traces, work, tools, timeout_s=timeout_s, threads=threads, hints=spec["hints"],
                    knobs={**spec["knobs"], "harm_args": fd})  # fmt: skip
-    wall = res.stats.get("wall_s", 0) if spec is None else round(time.time() - t0, 2)  # none: HARM's mining time
-    return res.candidates, {"status": res.status, "wall_s": wall, "error": res.error or ""}
+    wall = res.stats.get("wall_s", 0) if spec is None else round(time.time() - t0, 2)  # none: HARM's own run
+    st = {"status": res.status, "wall_s": wall, "error": res.error or ""}
+    if spec is None:
+        st.update({k: res.stats.get(k) for k in NONE_STATS})
+        st["dropped_constant"] = len(res.stats.get("dropped_constant") or [])
+    return res.candidates, st
+
+
+NONE_STATS = ("mine_s", "post_s", "permutations_done", "permutations_total", "peak_gib")

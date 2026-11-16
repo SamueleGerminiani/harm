@@ -137,6 +137,11 @@ if(PYTHON3_FOUND)
         COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h45_lengths.py $<TARGET_FILE:harm>
                 ${CMAKE_SOURCE_DIR}/tests/input/h45/lengths)
     set_tests_properties(h45_fault_lengths PROPERTIES LABELS regression)
+    # H48-none-arm, T7: the fault check on --max-threads threads, the same output as on one
+    add_test(NAME h48_parallel_fd
+        COMMAND ${PYTHON3_FOUND} ${REGRESSION_DIR}/check_h48_parallel_fd.py $<TARGET_FILE:harm>
+                ${CMAKE_SOURCE_DIR}/tests/input/h45/faults)
+    set_tests_properties(h48_parallel_fd PROPERTIES LABELS regression)
 endif()
 
 # ---- H3: --dump-implications ----------------------------------------------------------------------

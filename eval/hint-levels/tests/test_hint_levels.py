@@ -163,3 +163,59 @@ def test_t6_sizes(tmp_path: Path) -> None:
     assert sum(int(got[d]["loc"]) for d in table4) == 1449
     assert len(got) == 20
     assert list(csv.DictReader(open(HERE / "results" / "sizes.csv"))) == list(csv.DictReader(open(out)))
+
+
+def _const_vcd(path: Path) -> None:
+    """clk, a, b (b follows a), and P: 4 bits that never change (a parameter)."""
+    lines = ["$scope module tb $end", "$scope module dut $end", "$var wire 1 ! clk $end", "$var wire 1 \" a $end",
+             "$var wire 1 # b $end", "$var wire 4 $ P $end", "$upscope $end", "$upscope $end", "$enddefinitions $end",
+             "#0", "0!", "0\"", "0#", "b1010 $"]  # fmt: skip
+    for c in range(40):
+        v = "1" if c % 3 == 0 else "0"
+        lines += [f"#{10 * c + 5}", "1!", f"{v}\"", f"#{10 * c + 10}", "0!", f"{v}#"]
+    path.write_text("\n".join(lines) + "\n")
+
+
+# T8: none passes the arms' --deadline, none-full none; both drop the signals constant over the mining traces
+@needs_harm
+@pytest.mark.parametrize("variant", ["none", "none-full"])
+def test_t8_none_variants(tmp_path: Path, variant: str) -> None:
+    import arms
+
+    assert variant in arms.ARMS
+    vcd = tmp_path / "t.vcd"
+    _const_vcd(vcd)
+    e = {"id": "c", "vcd_recursion": 0, "design": {"id": "c", "root": str(tmp_path), "rtl_files": [], "top": "c",
+         "clock": {"name": "clk", "edge": "posedge"}, "reset": None, "include_dirs": [], "defines": {}}}  # fmt: skip
+    tools = arms.Tools(Path(HARM_BIN).resolve(), Path(sys.executable), ROOT)
+    r = arms.run_none(e, [{"vcd_paths": [str(vcd)], "scope": "tb::dut"}], tmp_path / "w", tools, timeout_s=120,
+                      threads=2, full=variant == "none-full")  # fmt: skip
+    assert r.status == "ok", r.error
+    conf = (tmp_path / "w" / "config.xml").read_text()
+    assert 'exp="a"' in conf and 'exp="b"' in conf and 'exp="P"' not in conf
+    assert ("--deadline" in r.stats["command"]) == (variant == "none")
+    for k in ("mine_s", "post_s", "permutations_done", "permutations_total", "peak_gib", "dropped_constant"):
+        assert k in r.stats, k
+    assert r.stats["dropped_constant"] == ["P"]
+
+
+# T9: tables.py reports none and none-full from results/none.csv's columns
+def test_t9_none_table(tmp_path: Path) -> None:
+    import tables
+
+    for p in (HERE / "results").glob("*.csv"):
+        shutil.copy(p, tmp_path / p.name)
+    cols = ["design", "arm", "machine", "status", "assertions", "wall_s", "mine_s", "post_s", "permutations_done",
+            "permutations_total", "peak_gib", "activated", "killed", "false_positives"]  # fmt: skip
+    with open(tmp_path / "none.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(cols)
+        w.writerow(["credit_counter", "none", "saturn", "ok", 2450, 400, 320, 80, 7, 7, 1.5, 46, 46, 418])
+        w.writerow(["credit_counter", "none-full", "saturn", "ok", 2450, 400, 320, 80, 7, 7, 1.5, 46, 46, 418])
+        w.writerow(["id_queue", "none", "jupiter", "timeout", 758, 3500, 2800, 700, 60, 351, 3.0, 90, 50, 20])
+    t = tables.build(tmp_path)
+    assert t["none"]["none"]["id_queue"] == {"status": "timeout", "assertions": 758, "killed": 50, "activated": 90,
+                                             "false_positives": 20, "mine_s": 2800.0, "post_s": 700.0,
+                                             "search": (60, 351), "peak_gib": 3.0}  # fmt: skip
+    assert t["none"]["none-full"]["credit_counter"]["search"] == (7, 7)
+    assert "none" not in tables.build(HERE / "results") or (HERE / "results" / "none.csv").exists()
